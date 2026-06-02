@@ -8,7 +8,6 @@ const navLinks = [
   { label: "Contact", to: "/#contact" },
   { label: "END", to: "/#end" },
   { label: "Bili Hub", to: "/bili", end: true },
-  { label: "登录", to: "/login", end: true },
 ];
 
 const NavBar = () => {
@@ -60,8 +59,6 @@ const NavBar = () => {
   }, [isNavVisible]);
 
   const isBiliPage = pathname === "/bili" || pathname.startsWith("/bili/");
-  const isLoginPage = pathname === "/login";
-
   return (
     <div
       ref={navContainerRef}
@@ -90,9 +87,7 @@ const NavBar = () => {
           <div className="flex h-full items-center">
             <div className="flex flex-wrap items-center justify-end gap-x-0 gap-y-1 max-md:text-xs">
               {navLinks.map((item) => {
-                const active =
-                  (item.to === "/bili" && isBiliPage) ||
-                  (item.to === "/login" && isLoginPage);
+                const active = item.to === "/bili" && isBiliPage;
                 return (
                   <Link
                     key={item.label}

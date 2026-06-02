@@ -47,13 +47,17 @@ DEEPSEEK_MODEL=deepseek-v4-flash
 - 简短 system prompt，不注入整篇文章
 - 失败不重试
 
-## 登录用户（可选）
+## 登录
 
-```http
-X-Blog-User-Id: 123
-```
+在任意页面打开右下角 **✦ 问问博客** → 面板内 **登录 / 注册**（`/login` 会跳转并自动打开面板）。
 
-或 Cookie：`blog_user_id=123`
+| 身份 | 额度 |
+|------|------|
+| 游客 | 10 次/天 |
+| 普通登录 | 50 次/天 |
+| 站长 `173236231@qq.com` | 学号二次验证后 **无限** |
+
+服务器 `/opt/acg-api/.env` 需配置 `AUTH_OWNER_PASSWORD`、`AUTH_OWNER_SECURITY_ANSWER`（或通过 GitHub Actions Secrets 自动同步）。
 
 ## 部署检查
 

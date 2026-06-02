@@ -120,6 +120,29 @@ jobs:
               $TMP_DIR/acg-api/acg-api.service
           "
 
+      - name: Sync owner auth env on server
+        if: ${{ secrets.AUTH_OWNER_PASSWORD != '' && secrets.AUTH_OWNER_SECURITY_ANSWER != '' }}
+        env:
+          AUTH_OWNER_PASSWORD: ${{ secrets.AUTH_OWNER_PASSWORD }}
+          AUTH_OWNER_SECURITY_ANSWER: ${{ secrets.AUTH_OWNER_SECURITY_ANSWER }}
+        run: |
+          SSH_PORT="${UCLOUD_PORT:-22}"
+          FRAG=$(mktemp)
+          chmod 600 "$FRAG"
+          printf 'AUTH_OWNER_PASSWORD=%s\n' "$AUTH_OWNER_PASSWORD" >> "$FRAG"
+          printf 'AUTH_OWNER_SECURITY_ANSWER=%s\n' "$AUTH_OWNER_SECURITY_ANSWER" >> "$FRAG"
+          scp -P "$SSH_PORT" deploy/sync-auth-env.sh "$FRAG" \
+            "$UCLOUD_USER@$UCLOUD_HOST:/tmp/"
+          FRAG_NAME=$(basename "$FRAG")
+          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
+            set -e
+            sed -i 's/\r$//' /tmp/sync-auth-env.sh
+            chmod +x /tmp/sync-auth-env.sh
+            SUDO_PASSWORD='$UCLOUD_SUDO_PASSWORD' /tmp/sync-auth-env.sh /tmp/$FRAG_NAME
+            rm -f /tmp/sync-auth-env.sh
+          "
+          rm -f "$FRAG"
+
       - name: Switch to production directories
         run: |
           SSH_PORT="${UCLOUD_PORT:-22}"
