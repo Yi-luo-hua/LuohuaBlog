@@ -145,6 +145,7 @@ jobs:
       - name: Post-deploy health check
         run: |
           curl -sf --max-time 20 https://taozhiyy.top/api/v1/health | grep -q '"status":"ok"'
+          curl -sf --max-time 20 https://taozhiyy.top/api/chat | grep -q '"remaining"'
           curl -fL --max-time 20 https://taozhiyy.top/ > /dev/null
           curl -fL --max-time 20 https://taozhiyy.top/blog/ > /dev/null
           curl -fL --max-time 20 https://taozhiyy.top/build/ > /dev/null

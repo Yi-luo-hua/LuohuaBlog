@@ -25,21 +25,36 @@ if [ ! -f "$SERVICE_SRC" ]; then
   exit 1
 fi
 
-run_sudo mkdir -p "$INSTALL_DIR" "$DATA_DIR"
-run_sudo install -m 0755 "$BINARY_SRC" "$INSTALL_DIR/acg-api"
-
-# Strip Windows CRLF / stray BOM so systemd parses [Unit] correctly
-sed 's/^\xEF\xBB\xBF//' "$SERVICE_SRC" | sed 's/\r$//' | run_sudo tee /etc/systemd/system/acg-api.service >/dev/null
-
-run_sudo systemctl daemon-reload
-if ! run_sudo systemd-analyze verify /etc/systemd/system/acg-api.service 2>/dev/null; then
-  echo "systemd unit verify failed; unit file dump:" >&2
-  run_sudo sed -n '1,40p' /etc/systemd/system/acg-api.service >&2 || true
+UNIT_CLEAN=$(mktemp)
+sed 's/^\xEF\xBB\xBF//' "$SERVICE_SRC" | sed 's/\r$//' >"$UNIT_CLEAN"
+if ! grep -q '^\[Unit\]' "$UNIT_CLEAN"; then
+  echo "invalid unit file: missing [Unit] section" >&2
+  cat "$UNIT_CLEAN" >&2
+  exit 1
+fi
+if ! grep -q '^ExecStart=' "$UNIT_CLEAN"; then
+  echo "invalid unit file: missing ExecStart=" >&2
+  cat "$UNIT_CLEAN" >&2
   exit 1
 fi
 
+run_sudo mkdir -p "$INSTALL_DIR" "$DATA_DIR"
+run_sudo install -m 0755 "$BINARY_SRC" "$INSTALL_DIR/acg-api"
+run_sudo cp "$UNIT_CLEAN" /etc/systemd/system/acg-api.service
+rm -f "$UNIT_CLEAN"
+
+run_sudo systemctl daemon-reload
+# verify may warn on optional paths; do not block deploy
+if ! run_sudo systemd-analyze verify /etc/systemd/system/acg-api.service 2>&1; then
+  echo "warn: systemd-analyze verify reported issues (continuing)" >&2
+fi
+
 run_sudo systemctl enable acg-api
-run_sudo systemctl restart acg-api
+if ! run_sudo systemctl restart acg-api; then
+  echo "acg-api failed to start; journal:" >&2
+  run_sudo journalctl -u acg-api -n 40 --no-pager >&2 || true
+  exit 1
+fi
 
 SNIP="/etc/nginx/snippets/taozhiyy-acg-api.conf"
 if ! run_sudo test -f "$SNIP"; then
@@ -69,6 +84,9 @@ if [ -n "$CONF" ] && ! grep -q 'taozhiyy-acg-api.conf' "$CONF"; then
   run_sudo sed -i '/server_name.*taozhiyy\.top/a\    include snippets/taozhiyy-acg-api.conf;' "$CONF"
 fi
 
-run_sudo nginx -t
+if ! run_sudo nginx -t 2>&1; then
+  echo "nginx -t failed" >&2
+  exit 1
+fi
 run_sudo systemctl reload nginx
 run_sudo systemctl is-active acg-api

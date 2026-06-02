@@ -20,6 +20,9 @@ var (
 )
 
 func main() {
+	// Load /opt/acg-api/.env in-process (avoids systemd EnvironmentFile parse issues).
+	loadOptionalEnvFiles("/opt/acg-api/.env", ".env")
+
 	addr := env("ACG_API_ADDR", ":8787")
 	dataDir := env("ACG_DATA_DIR", "./data")
 	cacheDir = filepath.Join(dataDir, "cache")
