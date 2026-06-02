@@ -4,8 +4,9 @@ set -euo pipefail
 
 INSTALL_DIR="/opt/acg-api"
 DATA_DIR="/var/lib/acg-api"
-BINARY_SRC="${1:?usage: remote-install-acg-api.sh /path/to/acg-api-binary}"
-SUDO_PASSWORD="${2:-}"
+BINARY_SRC="${1:?usage: remote-install-acg-api.sh /path/to/acg-api-binary /path/to/acg-api.service [sudo_password]}"
+SERVICE_SRC="${2:?usage: remote-install-acg-api.sh /path/to/acg-api-binary /path/to/acg-api.service [sudo_password]}"
+SUDO_PASSWORD="${3:-}"
 
 run_sudo() {
   if [ -n "$SUDO_PASSWORD" ]; then
@@ -17,25 +18,7 @@ run_sudo() {
 
 run_sudo mkdir -p "$INSTALL_DIR" "$DATA_DIR"
 run_sudo install -m 0755 "$BINARY_SRC" "$INSTALL_DIR/acg-api"
-
-run_sudo tee /etc/systemd/system/acg-api.service >/dev/null <<'UNIT'
-[Unit]
-Description=Taozhiyy Bilibili tracker API (acg-api)
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-WorkingDirectory=/opt/acg-api
-Environment=ACG_API_ADDR=127.0.0.1:8787
-Environment=ACG_DATA_DIR=/var/lib/acg-api
-ExecStart=/opt/acg-api/acg-api
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-UNIT
+run_sudo install -m 0644 "$SERVICE_SRC" /etc/systemd/system/acg-api.service
 
 run_sudo systemctl daemon-reload
 run_sudo systemctl enable acg-api
