@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>御坂美琴 - 相册</title>
+<link rel="stylesheet" href="../site-pages.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;display:flex;overflow-x:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;background:#f9fafb}
+.bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 72% 58% at 18% 22%,rgba(186,206,255,0.22),transparent 68%),radial-gradient(ellipse 62% 56% at 88% 78%,rgba(255,218,225,0.18),transparent 64%),linear-gradient(165deg,#fdfefe 0%,#f8f9fb 40%,#fafbfc 100%)}
+.sidebar{position:relative;z-index:10;width:220px;min-width:220px;height:100vh;background:rgba(255,255,255,0.7);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-right:1px solid rgba(0,0,0,0.04);display:flex;flex-direction:column;padding:38px 22px}
+.sidebar-header{display:flex;align-items:center;gap:11px;margin-bottom:18px}
+.avatar{width:36px;height:36px;border-radius:50%;overflow:hidden;border:1.5px solid rgba(0,0,0,0.1)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.blog-name{color:#3a3a4a;font-size:13px;font-weight:500}
+.sidebar-social{display:flex;gap:12px;margin-bottom:32px}
+.sidebar-social a{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px}
+.sidebar-nav{flex:1;display:flex;flex-direction:column}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 13px;border-radius:7px;color:#b0b0b8;font-size:12px;text-decoration:none}
+.nav-item:hover{background:rgba(0,0,0,0.02);color:#666}
+.nav-item.active{background:rgba(0,0,0,0.03);color:#3a3a4a}
+.nav-icon{width:17px;opacity:0.35;font-size:12px}
+.nav-item.active .nav-icon{opacity:0.65}
+.blog-name-full{font-size:12px;max-width:140px;line-height:1.35}
+.sidebar-footer{padding-top:16px;border-top:1px solid rgba(0,0,0,0.03);color:#c0c0c4;font-size:9px}
+.main{position:relative;z-index:5;flex:1;overflow-y:auto;height:100vh;padding:40px 50px}
+.back-link{display:inline-block;color:#8a8aa0;text-decoration:none;font-size:14px;margin-bottom:24px}.back-link:hover{color:#4a4a5a}
+.album-title{font-size:24px;font-weight:600;color:#3a3a4a;margin-bottom:6px}
+.album-sub{font-size:14px;color:#9a9aa8}
+.section-title{font-size:18px;font-weight:600;color:#5a5a6a;margin:32px 0 16px;padding-bottom:8px;border-bottom:1px solid rgba(0,0,0,0.06)}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+.photo-grid img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;transition:transform 0.3s}
+.photo-grid img:hover{transform:scale(1.03)}
+@media(max-width:768px){.sidebar{width:50px;min-width:50px;padding:20px 8px}.blog-name,.nav-label,.sidebar-footer,.sidebar-social{display:none}.nav-item{justify-content:center}.main{padding:30px 20px}}
+.sidebar-toggle{position:absolute;top:12px;right:12px;width:28px;height:28px;border:1px solid rgba(0,0,0,0.1);background:rgba(255,255,255,0.6);border-radius:6px;cursor:pointer;font-size:14px;color:#999;display:flex;align-items:center;justify-content:center;z-index:20;transition:all 0.2s}.sidebar-toggle:hover{background:rgba(0,0,0,0.04);color:#555}.sidebar.collapsed{width:50px;min-width:50px;padding:20px 8px}.sidebar.collapsed .sidebar-header,.sidebar.collapsed .blog-name,.sidebar.collapsed .nav-label,.sidebar.collapsed .sidebar-footer,.sidebar.collapsed .sidebar-social,.sidebar.collapsed .lang-toggle-wrap{display:none}.sidebar.collapsed .nav-item{justify-content:center;padding:8px}.sidebar.collapsed .sidebar-toggle{top:6px;right:auto;left:50%;transform:translateX(-50%)}.sidebar.collapsed .sidebar-nav{padding-top:30px}
+</style>
+<link rel="stylesheet" href="../site-mobile-nav.css">
+</head>
+<body>
+<div class="bg"></div>
+<aside class="sidebar">
+  <button type="button" class="sidebar-toggle" onclick="this.parentElement.classList.toggle('collapsed')" title="折叠导航栏">☰</button>
+  <div class="sidebar-header"><div class="avatar"><img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/1.png" alt=""></div><div><div class="blog-name blog-name-full">桃之夭夭の创作屋</div></div></div>
+  <div class="sidebar-social">
+    <a href="https://space.bilibili.com/1061280173" target="_blank" rel="noopener" title="B站"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="12.5" rx="2" stroke="#aaa" stroke-width="1.2"/><path d="M6 2l2 3M18 2l-2 3" stroke="#aaa" stroke-width="1.2" stroke-linecap="round"/><path d="M8 9v5M11 9v5M14 9v5M16 9v5" stroke="#aaa" stroke-width="1" stroke-linecap="round"/></svg></a>
+    <a href="https://github.com/bistutzyy" target="_blank" rel="noopener" title="GitHub"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.78.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0112 6.8c.85.004 1.7.11 2.5.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.82-2.34 4.66-4.57 4.91.36.31.68.92.68 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12c0-5.52-4.48-10-10-10z" fill="#aaa"/></svg></a>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="../index.html" class="nav-item"><span class="nav-icon">HOME</span><span class="nav-label">首页</span></a>
+    <a href="../archives.html" class="nav-item"><span class="nav-icon">ARC</span><span class="nav-label">归档</span></a>
+    <a href="../articles.html" class="nav-item"><span class="nav-icon">ART</span><span class="nav-label">文章</span></a>
+    <a href="../shuoshuo.html" class="nav-item"><span class="nav-icon">MOM</span><span class="nav-label">说说</span></a>
+    <a href="../gallery.html" class="nav-item active"><span class="nav-icon">ALB</span><span class="nav-label">相册</span></a>
+    <a href="../links.html" class="nav-item"><span class="nav-icon">LNK</span><span class="nav-label">友链</span></a>
+    <a href="../message.html" class="nav-item"><span class="nav-icon">MSG</span><span class="nav-label">留言墙</span></a>
+  </nav>
+  <div class="sidebar-footer">桃之夭夭 © 2026</div>
+</aside>
+<main class="main">
+  <a href="../gallery.html" class="back-link">← 返回相册</a>
+  <h1 class="album-title">收藏番剧与截图的角落</h1>
+  <p class="album-sub">Anime Gallery · 30 张</p>
+
+  <h2 class="section-title">御坂美琴</h2>
+  <div class="photo-grid">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/4535f8677a92b484bd9320d27fdc5517.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/49b59d762bf5cd0c10d18537d2d8af36.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/0eb95d8658244e51fbcb0da56acb8427.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/4bc63bca979d7348d500f27685b2501d.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/6ab90bbd7326d788c80b7014768bd0c7.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/7a83b1f88d1b571dbed005cdd1707f7a.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/915cdb4184d77e9d06e789755f30f792.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/970e4914909bb82a70edbac46bd34f47.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/b1fcbdeeb1cc22bf00cf99bd3a186e9a.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/fb9073623eb3e3bce01de71f916b3ab9.jpg" alt="" loading="lazy">
+  </div>
+
+  <h2 class="section-title">我的青春恋爱物语果然有问题</h2>
+  <div class="photo-grid">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/8850f2efda188bd1dabdd68b7cb47ddd.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/476eacc0536c04604d8881f9c4782c7a.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/fdff0b6c899061246aa4f24781413fb6.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/f2c4e89bfc6471f917fccccb2cc97150.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/02eff38f6ec5d32a1175a638933c4a2d.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/dc43312bd7868afc6e6b66f801df1930.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/4004b6caa5f5fdec9bd42904ec641657.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/280029aa5be7b45731188a1c375ab34b.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/1c6bfb08af427f9bbf83103a9558df6f.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/0e7e10e2acdb398941c10735a791918d.jpg" alt="" loading="lazy">
+  </div>
+
+  <h2 class="section-title">唐舞麟</h2>
+  <div class="photo-grid">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/e75ae60d917f2b0e99aaa1530017657.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/0b226672166ec46d1c2c6e61e6f616b.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/3990de0688d71af8e8fe16c4d0726a2.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/4a615619c07eee9bd06cb4049d458dd.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/8f15208c9340078a307f210d2d60d76.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/abcc9128742e729a437dab9a1e76071.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/b04e03255cb7d789313c96fbadffc88.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/d1f89b0618399985bf1256a93dfda3c.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/91e2ed43c281a2aaeac59edd6a11195.jpg" alt="" loading="lazy">
+    <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/fd88946f9ebd15192179fb9ade6c212.jpg" alt="" loading="lazy">
+  </div>
+</main>
+</body>
+</html>

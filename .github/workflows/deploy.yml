@@ -1,0 +1,67 @@
+name: Deploy to UCloud HK
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Build main site (award-winning-website)
+      - name: Build main site
+        run: |
+          cd main
+          npm install
+          npm run build
+
+      # Build blog (Hexo)
+      - name: Build blog
+        run: |
+          cd blog
+          npm install
+          npm run build || true
+          # Hexo public/ is pre-built, just ensure it exists
+          ls public/ && echo "Blog ready"
+
+      # Build chronicle site
+      - name: Build chronicle
+        run: |
+          cd build
+          npm install
+          npm run build
+
+      # Deploy all to UCloud
+      - name: Deploy to UCloud
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.UCLOUD_HOST }}
+          username: ${{ secrets.UCLOUD_USER }}
+          password: ${{ secrets.UCLOUD_PASS }}
+          source: |
+            main/dist/
+            blog/public/
+            build/dist/
+          target: /tmp/taozhiyy-deploy/
+          strip_components: 1
+          rm: true
+
+      - name: Reload nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.UCLOUD_HOST }}
+          username: ${{ secrets.UCLOUD_USER }}
+          password: ${{ secrets.UCLOUD_PASS }}
+          script: |
+            sudo cp -r /tmp/taozhiyy-deploy/main/dist/* /var/www/taozhiyy/
+            sudo cp -r /tmp/taozhiyy-deploy/blog/public/* /var/www/taozhiyy/blog/
+            sudo cp -r /tmp/taozhiyy-deploy/build/dist/* /var/www/taozhiyy/build/
+            sudo chown -R www-data:www-data /var/www/taozhiyy
+            sudo nginx -t && sudo systemctl reload nginx
+            rm -rf /tmp/taozhiyy-deploy
