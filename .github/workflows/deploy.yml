@@ -3,12 +3,14 @@ name: Deploy to UCloud HK
 on:
   push:
     branches: [master]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -19,57 +21,52 @@ jobs:
       - name: Build chronicle
         run: cd build && npm install && npm run build
 
-      - name: Package and deploy
-        uses: appleboy/ssh-action@v1.2.1
+      - name: Deploy main via rsync
+        uses: easingthemes/ssh-deploy@v5.1.0
         with:
-          host: ${{ secrets.UCLOUD_HOST }}
-          username: ${{ secrets.UCLOUD_USER }}
-          password: ${{ secrets.UCLOUD_PASS }}
-          script_stop: true
-          script: |
-            # Remove old tmp files
-            rm -rf /tmp/gh-deploy && mkdir -p /tmp/gh-deploy
+          SSH_PRIVATE_KEY: ${{ secrets.UCLOUD_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.UCLOUD_HOST }}
+          REMOTE_USER: ${{ secrets.UCLOUD_USER }}
+          REMOTE_PASSWORD: ${{ secrets.UCLOUD_PASS }}
+          ARGS: -rlgoDzvc -i --delete
+          SOURCE: main/dist/
+          TARGET: /tmp/gh-deploy-main/
+          EXCLUDE: node_modules
 
-      - name: Upload main via scp
-        uses: appleboy/scp-action@v0.1.7
+      - name: Deploy blog via rsync
+        uses: easingthemes/ssh-deploy@v5.1.0
         with:
-          host: ${{ secrets.UCLOUD_HOST }}
-          username: ${{ secrets.UCLOUD_USER }}
-          password: ${{ secrets.UCLOUD_PASS }}
-          source: main/dist/*
-          target: /tmp/gh-deploy/main/
-          strip_components: 2
+          SSH_PRIVATE_KEY: ${{ secrets.UCLOUD_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.UCLOUD_HOST }}
+          REMOTE_USER: ${{ secrets.UCLOUD_USER }}
+          REMOTE_PASSWORD: ${{ secrets.UCLOUD_PASS }}
+          ARGS: -rlgoDzvc -i --delete
+          SOURCE: blog/public/
+          TARGET: /tmp/gh-deploy-blog/
+          EXCLUDE: node_modules
 
-      - name: Upload blog via scp
-        uses: appleboy/scp-action@v0.1.7
+      - name: Deploy build via rsync
+        uses: easingthemes/ssh-deploy@v5.1.0
         with:
-          host: ${{ secrets.UCLOUD_HOST }}
-          username: ${{ secrets.UCLOUD_USER }}
-          password: ${{ secrets.UCLOUD_PASS }}
-          source: blog/public/*
-          target: /tmp/gh-deploy/blog/
-          strip_components: 2
+          SSH_PRIVATE_KEY: ${{ secrets.UCLOUD_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.UCLOUD_HOST }}
+          REMOTE_USER: ${{ secrets.UCLOUD_USER }}
+          REMOTE_PASSWORD: ${{ secrets.UCLOUD_PASS }}
+          ARGS: -rlgoDzvc -i --delete
+          SOURCE: build/dist/
+          TARGET: /tmp/gh-deploy-build/
+          EXCLUDE: node_modules
 
-      - name: Upload build via scp
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.UCLOUD_HOST }}
-          username: ${{ secrets.UCLOUD_USER }}
-          password: ${{ secrets.UCLOUD_PASS }}
-          source: build/dist/*
-          target: /tmp/gh-deploy/build/
-          strip_components: 2
-
-      - name: Move to web root and reload
+      - name: Move to web root
         uses: appleboy/ssh-action@v1.2.1
         with:
           host: ${{ secrets.UCLOUD_HOST }}
           username: ${{ secrets.UCLOUD_USER }}
           password: ${{ secrets.UCLOUD_PASS }}
           script: |
-            sudo cp -r /tmp/gh-deploy/main/* /var/www/taozhiyy/
-            sudo cp -r /tmp/gh-deploy/blog/* /var/www/taozhiyy/blog/
-            sudo cp -r /tmp/gh-deploy/build/* /var/www/taozhiyy/build/
+            sudo cp -r /tmp/gh-deploy-main/* /var/www/taozhiyy/
+            sudo cp -r /tmp/gh-deploy-blog/* /var/www/taozhiyy/blog/
+            sudo cp -r /tmp/gh-deploy-build/* /var/www/taozhiyy/build/
             sudo chown -R www-data:www-data /var/www/taozhiyy
             sudo nginx -t && sudo systemctl reload nginx
-            rm -rf /tmp/gh-deploy
+            rm -rf /tmp/gh-deploy-*
