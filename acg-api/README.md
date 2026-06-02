@@ -32,9 +32,13 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 - `GET /api/v1/bangumi/list`
 - `GET /api/v1/radar/feed`
 - `GET /api/chat` — quota status (blog AI assistant)
-- `POST /api/chat` — `{ "message": "..." }` → DeepSeek-v4-flash (see `blog/AI-ASSISTANT.md`)
+- `POST /api/chat` — `{ "message": "...", "pageUrl", "pageTitle" }` → DeepSeek-v4-flash (see `blog/AI-ASSISTANT.md`)
+- `POST /api/auth/register` — 邮箱注册（站长邮箱不可注册）
+- `POST /api/auth/login` — 登录；站长邮箱需再调 `verify-security`
+- `POST /api/auth/verify-security` — `{ "challengeToken", "answer" }` 学号验证 → 无限 AI
+- `POST /api/auth/logout` / `GET /api/auth/me`
 
-Copy `.env.example` → `/opt/acg-api/.env` with `DEEPSEEK_API_KEY`.
+Copy `.env.example` → `/opt/acg-api/.env` with `DEEPSEEK_API_KEY`, `AUTH_OWNER_PASSWORD`, `AUTH_OWNER_SECURITY_ANSWER`（站长 `173236231@qq.com` 学号二次验证）。
 
 ## Frontend
 

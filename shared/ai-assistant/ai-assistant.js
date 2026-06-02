@@ -17,6 +17,7 @@
     used: 0,
     remaining: 10,
     isLogin: false,
+    unlimited: false,
   };
 
   function el(tag, cls, text) {
@@ -134,8 +135,13 @@
 
   function updateQuotaLabel(quotaEl) {
     if (!quotaEl) return;
+    if (state.unlimited) {
+      quotaEl.textContent = "今日剩余：无限（已登录站长）";
+      return;
+    }
+    var suffix = state.isLogin ? "" : " · 登录后 50 次/天";
     quotaEl.textContent =
-      "今日剩余：" + state.remaining + "/" + state.limit;
+      "今日剩余：" + state.remaining + "/" + state.limit + suffix;
   }
 
   function appendMsg(container, role, text) {
@@ -146,7 +152,11 @@
 
   function refreshQuota() {
     var quotaEl = document.getElementById("blog-ai-quota");
-    fetch(API_CHAT, { method: "GET", headers: { Accept: "application/json" } })
+    fetch(API_CHAT, {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
       .then(function (r) {
         return r.json().then(function (d) {
           return { ok: r.ok, data: d };
@@ -158,6 +168,7 @@
           state.used = res.data.used ?? state.used;
           state.remaining = res.data.remaining ?? state.remaining;
           state.isLogin = !!res.data.isLogin;
+          state.unlimited = !!res.data.unlimited;
           if (res.data.chatEnabled === false) state.chatEnabled = false;
         }
         updateQuotaLabel(quotaEl);
@@ -190,6 +201,7 @@
 
     fetch(API_CHAT, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         message: text,
@@ -210,6 +222,7 @@
         if (d.used != null) state.used = d.used;
         if (d.remaining != null) state.remaining = d.remaining;
         if (d.isLogin != null) state.isLogin = d.isLogin;
+        if (d.unlimited != null) state.unlimited = d.unlimited;
         if (d.chatEnabled === false) state.chatEnabled = false;
         updateQuotaLabel(document.getElementById("blog-ai-quota"));
 

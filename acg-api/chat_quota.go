@@ -4,10 +4,15 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 )
+
+func formatUserID(id int64) string {
+	return fmt.Sprintf("%d", id)
+}
 
 const (
 	guestDailyLimit = 10
@@ -16,22 +21,26 @@ const (
 )
 
 type chatIdentity struct {
-	Key     string
-	IsLogin bool
-	Limit   int
+	Key       string
+	IsLogin   bool
+	Limit     int
+	Unlimited bool
 }
 
 func resolveChatIdentity(r *http.Request) chatIdentity {
-	if uid := strings.TrimSpace(r.Header.Get("X-Blog-User-Id")); uid != "" {
-		uid = sanitizeID(uid)
-		if uid != "" {
-			return chatIdentity{Key: "user:" + uid, IsLogin: true, Limit: userDailyLimit}
+	if sess, ok := sessionFromRequest(r); ok {
+		if sess.Unlimited {
+			return chatIdentity{
+				Key:       "user:" + formatUserID(sess.UserID),
+				IsLogin:   true,
+				Limit:     0,
+				Unlimited: true,
+			}
 		}
-	}
-	if c, err := r.Cookie("blog_user_id"); err == nil {
-		uid := sanitizeID(c.Value)
-		if uid != "" {
-			return chatIdentity{Key: "user:" + uid, IsLogin: true, Limit: userDailyLimit}
+		return chatIdentity{
+			Key:     "user:" + formatUserID(sess.UserID),
+			IsLogin: true,
+			Limit:   userDailyLimit,
 		}
 	}
 	raw := clientIP(r) + "|" + r.UserAgent()
@@ -80,6 +89,7 @@ type quotaSnapshot struct {
 	Limit     int
 	Remaining int
 	IsLogin   bool
+	Unlimited bool
 	Date      string
 }
 
@@ -90,16 +100,19 @@ func getQuotaSnapshot(db *sql.DB, id chatIdentity) (quotaSnapshot, error) {
 		return quotaSnapshot{}, err
 	}
 	_ = lastAt
+	if id.Unlimited {
+		return quotaSnapshot{
+			Used: used, Limit: -1, Remaining: -1,
+			IsLogin: id.IsLogin, Unlimited: true, Date: date,
+		}, nil
+	}
 	remaining := id.Limit - used
 	if remaining < 0 {
 		remaining = 0
 	}
 	return quotaSnapshot{
-		Used:      used,
-		Limit:     id.Limit,
-		Remaining: remaining,
-		IsLogin:   id.IsLogin,
-		Date:      date,
+		Used: used, Limit: id.Limit, Remaining: remaining,
+		IsLogin: id.IsLogin, Date: date,
 	}, nil
 }
 
@@ -161,6 +174,12 @@ func reserveQuota(db *sql.DB, id chatIdentity) (quotaSnapshot, error) {
 		}
 	}
 	if !checkRateLimit(lastAt) {
+		if id.Unlimited {
+			return quotaSnapshot{
+				Used: used, Limit: -1, Remaining: -1,
+				IsLogin: id.IsLogin, Unlimited: true, Date: date,
+			}, errRateLimited
+		}
 		rem := id.Limit - used
 		if rem < 0 {
 			rem = 0
@@ -170,7 +189,7 @@ func reserveQuota(db *sql.DB, id chatIdentity) (quotaSnapshot, error) {
 			IsLogin: id.IsLogin, Date: date,
 		}, errRateLimited
 	}
-	if used >= id.Limit {
+	if !id.Unlimited && used >= id.Limit {
 		remaining := 0
 		return quotaSnapshot{
 			Used: used, Limit: id.Limit, Remaining: remaining,
@@ -194,16 +213,19 @@ func reserveQuota(db *sql.DB, id chatIdentity) (quotaSnapshot, error) {
 		return quotaSnapshot{}, err
 	}
 
+	if id.Unlimited {
+		return quotaSnapshot{
+			Used: used, Limit: -1, Remaining: -1,
+			IsLogin: id.IsLogin, Unlimited: true, Date: date,
+		}, nil
+	}
 	remaining := id.Limit - used
 	if remaining < 0 {
 		remaining = 0
 	}
 	return quotaSnapshot{
-		Used:      used,
-		Limit:     id.Limit,
-		Remaining: remaining,
-		IsLogin:   id.IsLogin,
-		Date:      date,
+		Used: used, Limit: id.Limit, Remaining: remaining,
+		IsLogin: id.IsLogin, Date: date,
 	}, nil
 }
 
@@ -230,12 +252,29 @@ var (
 )
 
 func quotaErrBody(id chatIdentity, snap quotaSnapshot, qe *quotaError) map[string]any {
-	return map[string]any{
+	body := map[string]any{
 		"error":     qe.Code,
 		"message":   qe.Message,
-		"limit":     id.Limit,
+		"limit":     snap.Limit,
 		"used":      snap.Used,
 		"remaining": snap.Remaining,
 		"isLogin":   id.IsLogin,
+		"unlimited": snap.Unlimited,
+	}
+	if id.Unlimited {
+		body["limit"] = -1
+		body["remaining"] = -1
+		body["unlimited"] = true
+	}
+	return body
+}
+
+func chatQuotaJSON(snap quotaSnapshot) map[string]any {
+	return map[string]any{
+		"limit":       snap.Limit,
+		"used":        snap.Used,
+		"remaining":   snap.Remaining,
+		"isLogin":     snap.IsLogin,
+		"unlimited":   snap.Unlimited,
 	}
 }

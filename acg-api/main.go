@@ -39,6 +39,7 @@ func main() {
 	if err := migrateAll(db); err != nil {
 		log.Fatal(err)
 	}
+	ensureOwnerAccount(db)
 
 	startSyncLoops(db, cfg, cacheDir)
 
@@ -59,6 +60,7 @@ func main() {
 		writeJSON(w, map[string]string{"status": "ok", "uid": cfg.BilibiliUID})
 	})
 	mux.HandleFunc("/api/chat", chatHandler)
+	mux.HandleFunc("/api/auth/", authHandler)
 	mux.HandleFunc("/api/v1/sync/trigger", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -194,6 +196,7 @@ func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, X-Blog-User-Id")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)

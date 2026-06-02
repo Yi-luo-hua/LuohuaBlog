@@ -47,13 +47,58 @@ func migrateAll(db *sql.DB) error {
 			last_request_at TEXT,
 			PRIMARY KEY (identity_key, quota_date)
 		);`,
+		`CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			email TEXT NOT NULL UNIQUE,
+			password_hash TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			is_owner INTEGER NOT NULL DEFAULT 0
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
+		`CREATE TABLE IF NOT EXISTS sessions (
+			id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			expires_at TEXT NOT NULL,
+			unlimited INTEGER NOT NULL DEFAULT 0,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);`,
+		`CREATE TABLE IF NOT EXISTS login_challenges (
+			id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			expires_at TEXT NOT NULL,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		);`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
 			return err
 		}
 	}
+	ensureColumn(db, "users", "is_owner", "INTEGER NOT NULL DEFAULT 0")
+	ensureColumn(db, "sessions", "unlimited", "INTEGER NOT NULL DEFAULT 0")
 	return nil
+}
+
+func ensureColumn(db *sql.DB, table, column, colDef string) {
+	rows, err := db.Query(`PRAGMA table_info(` + table + `)`)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return
+		}
+		if name == column {
+			return
+		}
+	}
+	_, _ = db.Exec(`ALTER TABLE ` + table + ` ADD COLUMN ` + column + ` ` + colDef)
 }
 
 func upsertRadarCreators(db *sql.DB, creators []RadarCreator) error {

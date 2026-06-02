@@ -19,13 +19,9 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, map[string]any{
-			"limit":       snap.Limit,
-			"used":        snap.Used,
-			"remaining":   snap.Remaining,
-			"isLogin":     snap.IsLogin,
-			"chatEnabled": enabled,
-		})
+		out := chatQuotaJSON(snap)
+		out["chatEnabled"] = enabled
+		writeJSON(w, out)
 		return
 	case http.MethodPost:
 		handleChatPost(w, r, id, enabled)
@@ -79,7 +75,7 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 	}
 
 	preSnap, _ := getQuotaSnapshot(db, id)
-	if preSnap.Used >= id.Limit {
+	if !id.Unlimited && preSnap.Used >= id.Limit {
 		writeJSONStatus(w, http.StatusTooManyRequests, quotaErrBody(id, preSnap, errDailyExceeded))
 		return
 	}
@@ -114,13 +110,9 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 		return
 	}
 
-	writeJSON(w, map[string]any{
-		"reply":     reply,
-		"limit":     id.Limit,
-		"used":      snap.Used,
-		"remaining": snap.Remaining,
-		"isLogin":   id.IsLogin,
-	})
+	out := chatQuotaJSON(snap)
+	out["reply"] = reply
+	writeJSON(w, out)
 }
 
 func writeJSONStatus(w http.ResponseWriter, status int, v any) {
