@@ -142,7 +142,7 @@ const Features = () => (
         />
       </BentoTilt>
 
-      {/* Mobile bento stagger (ms-32 / me-14 + h-[135vh]) — do not change without explicit request */}
+      {/* Mobile bento stagger: ms-32 / me-14 on small screens (no max-md reset). Do not change without explicit request. */}
       <div className="features-bento-grid grid h-[135vh] w-full grid-cols-2 grid-rows-3 gap-7">
         <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2">
           <BentoCard
@@ -154,7 +154,7 @@ const Features = () => (
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1 row-span-1 max-md:ms-0 ms-32 md:col-span-1 md:ms-0">
+        <BentoTilt className="bento-tilt_1 row-span-1 ms-32 md:col-span-1 md:ms-0">
           <BentoCard
             src={`${COS}/videos/feature-3.mp4`}
             title={<>The Chr<b>o</b>nicles of Creation</>}
@@ -164,7 +164,7 @@ const Features = () => (
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1 max-md:me-0 me-14 md:col-span-1 md:me-0">
+        <BentoTilt className="bento-tilt_1 me-14 md:col-span-1 md:me-0">
           <BentoCard src={`${COS}/videos/feature-4.mp4`} visualOnly />
         </BentoTilt>
 

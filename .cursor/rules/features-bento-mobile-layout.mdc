@@ -9,8 +9,8 @@ alwaysApply: false
 The four-card bento block in `Features.jsx` uses a fixed staggered mobile layout:
 
 - Grid: `features-bento-grid grid h-[135vh] w-full grid-cols-2 grid-rows-3 gap-7`
-- Feature 3 tilt: `max-md:ms-0 ms-32 md:col-span-1 md:ms-0`
-- Feature 4 tilt: `max-md:me-0 me-14 md:col-span-1 md:me-0`
+- Feature 3 tilt: `ms-32 md:col-span-1 md:ms-0` (stagger on mobile — never add `max-md:ms-0`)
+- Feature 4 tilt: `me-14 md:col-span-1 md:me-0` (stagger on mobile — never add `max-md:me-0`)
 
 **Do not change** these grid/tilt classes when fixing copy, video, or overlay bugs. Only adjust `BentoCard` internals (e.g. absolute overlay for text on `LazyVideo`).
 
