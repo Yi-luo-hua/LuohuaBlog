@@ -9,7 +9,7 @@ function App() {
       <Routes>
         <Route element={<SiteLayout />}>
           <Route index element={<HomePage />} />
-          <Route path="bili" element={<BiliHubPage />} />
+          <Route path="bili/*" element={<BiliHubPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
