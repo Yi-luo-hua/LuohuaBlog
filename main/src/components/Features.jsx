@@ -78,9 +78,9 @@ export const BentoCard = ({
       <LazyVideo src={src} priority={videoPriority} />
       <div className="relative z-10 flex size-full flex-col justify-between p-4 md:p-5 text-blue-50">
         <div className="inline-block max-w-full rounded-lg bg-black/50 px-3 py-2 backdrop-blur-sm">
-          <h1 className="bento-title text-yellow-300 break-words">{title}</h1>
+          <h1 className="bento-title special-font text-yellow-300 break-words">{title}</h1>
           {description && (
-            <p className="features-bento-card-copy mt-2 text-white font-medium break-words md:mt-3 md:text-base md:leading-normal">
+            <p className="features-bento-card-copy mt-2 text-white font-semibold break-words md:mt-3 md:text-base md:leading-normal">
               {description}
             </p>
           )}
@@ -132,34 +132,34 @@ const Features = () => (
         />
       </BentoTilt>
 
-      <div className="features-bento-grid grid min-h-[80vh] w-full grid-cols-2 grid-rows-3 gap-4 md:h-[135vh] md:gap-7">
+      <div className="features-bento-grid grid h-[135vh] w-full grid-cols-2 grid-rows-3 gap-7">
         <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2">
           <BentoCard
             src={`${COS}/videos/feature-2.mp4`}
             title={<>Frag<b>m</b>ented Solitude</>}
-            description="A gentle corner dedicated to casual thoughts, everyday whims, and transient sparks of inspiration."
+            description="A gentle corner dedicated to casual thoughts, everyday whims, and transient sparks of inspiration. Whispering stories to the wind, captured in the warmth of passing days."
             linkUrl="/blog/"
             linkText="Enter Garden"
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1">
+        <BentoTilt className="bento-tilt_1 row-span-1 ms-32 md:col-span-1 md:ms-0">
           <BentoCard
             src={`${COS}/videos/feature-3.mp4`}
             title={<>The Chr<b>o</b>nicles of Creation</>}
-            description="Engineering milestones, circuit layouts, and the architecture of hardware logic."
+            description="A minimalist sanctuary detailing full-stack engineering milestones, digital circuit layouts, and the architecture of hardware logic. Where wild ideas shape into reality, code by code."
             linkUrl="/build/"
             linkText="Access Lab"
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1 md:col-span-1">
+        <BentoTilt className="bento-tilt_1 me-14 md:col-span-1 md:me-0">
           <BentoCard src={`${COS}/videos/feature-4.mp4`} visualOnly />
         </BentoTilt>
 
         <BentoTilt className="bento-tilt_2">
           <div className="flex size-full flex-col justify-between bg-violet-300 p-5">
-            <h1 className="bento-title max-w-64 text-black">
+            <h1 className="bento-title special-font max-w-64 text-black">
               M<b>o</b>re co<b>m</b>ing s<b>o</b>on.
             </h1>
 
