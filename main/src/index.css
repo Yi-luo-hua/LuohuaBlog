@@ -11,32 +11,8 @@ body {
   font-family: "General Sans", sans-serif;
 }
 
-@layer base {
-  @font-face {
-    font-family: "circular-web";
-    src: url("/fonts/circularweb-book.woff2") format("woff2");
-  }
-
-  @font-face {
-    font-family: "general";
-    src: url("/fonts/general.woff2") format("woff2");
-  }
-
-  @font-face {
-    font-family: "robert-medium";
-    src: url("/fonts/robert-medium.woff2") format("woff2");
-  }
-
-  @font-face {
-    font-family: "robert-regular";
-    src: url("/fonts/robert-regular.woff2") format("woff2");
-  }
-
-  @font-face {
-    font-family: "zentry";
-    src: url("/fonts/zentry-regular.woff2") format("woff2");
-  }
-}
+/* Custom font families are mapped to General Sans in tailwind.config.js.
+   Local /fonts/*.woff2 files are not shipped; avoid broken @font-face requests. */
 
 @layer utilities {
   .border-hsla {
