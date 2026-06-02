@@ -121,11 +121,14 @@ jobs:
           "
 
       - name: Sync owner auth env on server
-        if: ${{ secrets.AUTH_OWNER_PASSWORD != '' && secrets.AUTH_OWNER_SECURITY_ANSWER != '' }}
         env:
           AUTH_OWNER_PASSWORD: ${{ secrets.AUTH_OWNER_PASSWORD }}
           AUTH_OWNER_SECURITY_ANSWER: ${{ secrets.AUTH_OWNER_SECURITY_ANSWER }}
         run: |
+          if [ -z "$AUTH_OWNER_PASSWORD" ] || [ -z "$AUTH_OWNER_SECURITY_ANSWER" ]; then
+            echo "Skip auth env sync: AUTH_OWNER_PASSWORD or AUTH_OWNER_SECURITY_ANSWER not set in repo secrets"
+            exit 0
+          fi
           SSH_PORT="${UCLOUD_PORT:-22}"
           FRAG=$(mktemp)
           chmod 600 "$FRAG"
