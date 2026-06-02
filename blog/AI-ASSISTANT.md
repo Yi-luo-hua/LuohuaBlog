@@ -2,11 +2,11 @@
 
 右下角胶囊按钮 **✦ 问问博客**，展开后与 **博客小精灵** 对话。所有对话经后端 `POST /api/chat` 转发至 **DeepSeek-v4-flash**，前端不接触 API Key。
 
-## 前端
+## 前端（全站共用）
 
-- `source/css/ai-assistant.css`
-- `source/js/ai-assistant.js`
-- 已在 `_config.butterfly.yml` 的 `inject` 中注入
+- 静态资源：`shared/ai-assistant/` → 部署到 `https://taozhiyy.top/ai-assistant/`
+- 主站 `main/index.html`、`build/index.html`、博客 `_config.butterfly.yml` inject 均引用上述路径
+- 打开面板会显示 **当前页面** 标题；发消息时附带 `pageUrl`、`pageTitle` 供模型理解上下文（不抓取整页 HTML）
 
 配额展示：`今日剩余：7/10`（游客）或 `今日剩余：42/50`（登录）
 
@@ -15,7 +15,7 @@
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/api/chat` | 查询今日剩余次数（不扣次） |
-| POST | `/api/chat` | `{ "message": "..." }` → DeepSeek 回复 |
+| POST | `/api/chat` | `{ "message": "...", "pageUrl": "...", "pageTitle": "..." }` → DeepSeek 回复 |
 
 由 `acg-api` 提供，Nginx 将 `/api/` 反代到 `127.0.0.1:8787`。
 
@@ -58,8 +58,8 @@ X-Blog-User-Id: 123
 ## 部署检查
 
 1. `curl https://taozhiyy.top/api/chat` → JSON 含 `remaining`
-2. 博客文章页右下角可见 **✦ 问问博客**
-3. 发消息能收到回复且次数递减
+2. 主站、`/blog/`、`/build/`、`/bili` 等页面右下角可见 **✦ 问问博客**
+3. 发消息能收到回复且次数递减；可问「我现在在看什么页面」验证上下文
 
 ## 安全
 

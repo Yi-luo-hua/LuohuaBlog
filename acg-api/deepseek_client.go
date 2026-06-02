@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const deepseekSystemPrompt = "你是一个博客 AI 小助手，名字叫博客小精灵。说话简洁、友好、轻微二次元风格，但不要过度卖萌。优先回答和博客文章、技术内容、学习内容相关的问题。回答尽量简短。"
+const deepseekSystemPrompt = "你是一个博客 AI 小助手，名字叫博客小精灵。说话简洁、友好、轻微二次元风格，但不要过度卖萌。用户消息里可能附带当前页面的标题和链接，可据此理解用户所在位置；不要编造页面正文里不存在的内容。优先回答和博客文章、技术内容、学习内容相关的问题。回答尽量简短。"
 
 type deepseekClient struct {
 	apiKey  string
@@ -33,15 +33,46 @@ func chatConfigured() bool {
 	return env("DEEPSEEK_API_KEY", "") != ""
 }
 
-func (c *deepseekClient) Chat(userMessage string) (string, error) {
+func buildChatUserContent(msg, pageURL, pageTitle string) string {
+	msg = strings.TrimSpace(msg)
+	pageURL = strings.TrimSpace(pageURL)
+	pageTitle = strings.TrimSpace(pageTitle)
+	if pageURL == "" && pageTitle == "" {
+		return msg
+	}
+	if len([]rune(pageTitle)) > 120 {
+		pageTitle = string([]rune(pageTitle)[:120]) + "…"
+	}
+	if len(pageURL) > 400 {
+		pageURL = pageURL[:400] + "…"
+	}
+	var b strings.Builder
+	b.WriteString("【用户当前浏览的页面】\n")
+	if pageTitle != "" {
+		b.WriteString("标题：")
+		b.WriteString(pageTitle)
+		b.WriteString("\n")
+	}
+	if pageURL != "" {
+		b.WriteString("链接：")
+		b.WriteString(pageURL)
+		b.WriteString("\n")
+	}
+	b.WriteString("\n【用户问题】\n")
+	b.WriteString(msg)
+	return b.String()
+}
+
+func (c *deepseekClient) Chat(userMessage, pageURL, pageTitle string) (string, error) {
 	if c.apiKey == "" {
 		return "", fmt.Errorf("DEEPSEEK_API_KEY not configured")
 	}
+	userContent := buildChatUserContent(userMessage, pageURL, pageTitle)
 	body := map[string]any{
 		"model": c.model,
 		"messages": []map[string]string{
 			{"role": "system", "content": deepseekSystemPrompt},
-			{"role": "user", "content": userMessage},
+			{"role": "user", "content": userContent},
 		},
 		"temperature": 0.7,
 		"max_tokens":  400,

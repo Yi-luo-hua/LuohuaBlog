@@ -37,7 +37,9 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 
 func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, enabled bool) {
 	var body struct {
-		Message string `json:"message"`
+		Message   string `json:"message"`
+		PageURL   string `json:"pageUrl"`
+		PageTitle string `json:"pageTitle"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
@@ -97,7 +99,7 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 	}
 
 	ds := newDeepSeekClient()
-	reply, err := ds.Chat(msg)
+	reply, err := ds.Chat(msg, strings.TrimSpace(body.PageURL), strings.TrimSpace(body.PageTitle))
 	if err != nil {
 		rollbackQuota(db, id)
 		snap, _ = getQuotaSnapshot(db, id)
