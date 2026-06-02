@@ -39,7 +39,15 @@ export const BentoTilt = ({ children, className = "" }) => {
   );
 };
 
-export const BentoCard = ({ src, title, description, linkUrl, linkText, videoPriority = false }) => {
+export const BentoCard = ({
+  src,
+  title,
+  description,
+  linkUrl,
+  linkText,
+  videoPriority = false,
+  visualOnly = false,
+}) => {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [hoverOpacity, setHoverOpacity] = useState(0);
   const hoverButtonRef = useRef(null);
@@ -56,6 +64,14 @@ export const BentoCard = ({ src, title, description, linkUrl, linkText, videoPri
 
   const handleMouseEnter = () => setHoverOpacity(1);
   const handleMouseLeave = () => setHoverOpacity(0);
+
+  if (visualOnly) {
+    return (
+      <div className="relative size-full">
+        <LazyVideo src={src} priority={videoPriority} />
+      </div>
+    );
+  }
 
   return (
     <div className="relative size-full">
@@ -112,10 +128,7 @@ const Features = () => (
         <BentoCard
           src={`${COS}/videos/feature-1.mp4`}
           videoPriority
-          title={<>导<b>航</b>站</>}
-          description="个人导航页，常用链接与工具一站直达。"
-          linkUrl="https://chengzi-two.vercel.app/"
-          linkText="Let's go! 导航站"
+          visualOnly
         />
       </BentoTilt>
 
@@ -141,13 +154,7 @@ const Features = () => (
         </BentoTilt>
 
         <BentoTilt className="bento-tilt_1 md:col-span-1">
-          <BentoCard
-            src={`${COS}/videos/feature-4.mp4`}
-            title={<>Rei<b>m</b>u</>}
-            description="A Reimu-themed blog space for thoughts, stories, and inspiration."
-            linkUrl="https://blog1-reimu.vercel.app/"
-            linkText="Let's go! 博客3"
-          />
+          <BentoCard src={`${COS}/videos/feature-4.mp4`} visualOnly />
         </BentoTilt>
 
         <BentoTilt className="bento-tilt_2">
