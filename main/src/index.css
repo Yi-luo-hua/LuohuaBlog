@@ -76,11 +76,15 @@ body {
 
   @media (max-width: 767px) {
     .features-bento-grid .bento-title {
-      @apply text-sm leading-snug;
+      @apply text-base leading-snug;
     }
 
     .features-bento-card-copy {
-      @apply line-clamp-3 text-xs leading-snug font-normal;
+      @apply line-clamp-4 text-xs leading-snug font-normal;
+    }
+
+    .features-bento-grid .bento-card-overlay {
+      max-width: calc(100% - 8px);
     }
   }
 

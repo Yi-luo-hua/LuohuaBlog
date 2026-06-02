@@ -77,7 +77,7 @@ export const BentoCard = ({
     <div className="relative size-full">
       <LazyVideo src={src} priority={videoPriority} />
       <div className="relative z-10 flex size-full flex-col justify-between p-4 md:p-5 text-blue-50">
-        <div className="inline-block max-w-full rounded-lg bg-black/50 px-3 py-2 backdrop-blur-sm">
+        <div className="bento-card-overlay inline-block max-w-full rounded-lg bg-black/50 px-3 py-2 backdrop-blur-sm">
           <h1 className="bento-title special-font text-yellow-300 break-words">{title}</h1>
           {description && (
             <p className="features-bento-card-copy mt-2 text-white font-semibold break-words md:mt-3 md:text-base md:leading-normal">
@@ -87,7 +87,12 @@ export const BentoCard = ({
         </div>
 
         {linkUrl && (
-          <a href={linkUrl} target="_blank" rel="noopener noreferrer">
+          <a
+            href={linkUrl}
+            {...(String(linkUrl).startsWith("http")
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+          >
             <div
               ref={hoverButtonRef}
               onMouseMove={handleMouseMove}
@@ -143,7 +148,7 @@ const Features = () => (
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1 row-span-1 ms-32 md:col-span-1 md:ms-0">
+        <BentoTilt className="bento-tilt_1 row-span-1 max-md:ms-0 ms-32 md:col-span-1 md:ms-0">
           <BentoCard
             src={`${COS}/videos/feature-3.mp4`}
             title={<>The Chr<b>o</b>nicles of Creation</>}
@@ -153,7 +158,7 @@ const Features = () => (
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1 me-14 md:col-span-1 md:me-0">
+        <BentoTilt className="bento-tilt_1 max-md:me-0 me-14 md:col-span-1 md:me-0">
           <BentoCard src={`${COS}/videos/feature-4.mp4`} visualOnly />
         </BentoTilt>
 
