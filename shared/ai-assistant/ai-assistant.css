@@ -169,10 +169,11 @@ body.acct-auth-open {
   position: fixed;
   inset: 0;
   z-index: 1000000;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
   background: rgba(0, 0, 0, 0.52);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -180,11 +181,18 @@ body.acct-auth-open {
     sans-serif;
 }
 
+.acct-auth-overlay.is-visible {
+  display: flex;
+}
+
 .acct-auth-modal {
   position: relative;
-  width: min(400px, 100%);
-  max-height: min(90vh, 640px);
+  box-sizing: border-box;
+  width: min(400px, calc(100vw - 32px));
+  max-height: min(88vh, 640px);
+  overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
@@ -228,15 +236,18 @@ body.acct-auth-open {
 }
 
 .acct-auth-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 64px;
   height: 64px;
   margin: 0 auto 14px;
   border-radius: 14px;
   background: linear-gradient(145deg, #12b7f5, #0d9de0);
   color: #fff;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
-  line-height: 64px;
+  line-height: 1;
   box-shadow: 0 8px 24px rgba(18, 183, 245, 0.35);
 }
 

@@ -92,7 +92,7 @@
     ui.authOverlay = el("div");
     ui.authOverlay.id = "acct-auth-overlay";
     ui.authOverlay.className = "acct-auth-overlay";
-    ui.authOverlay.hidden = true;
+    ui.authOverlay.setAttribute("aria-hidden", "true");
     ui.authOverlay.addEventListener("click", function (e) {
       if (e.target === ui.authOverlay) closeAuthModal();
     });
@@ -139,7 +139,8 @@
     ensureAuthModal();
     state.authMode = mode || "login";
     state.authModalOpen = true;
-    ui.authOverlay.hidden = false;
+    ui.authOverlay.classList.add("is-visible");
+    ui.authOverlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("acct-auth-open");
     renderAuthModalContent();
   }
@@ -147,7 +148,8 @@
   function closeAuthModal() {
     if (!ui.authOverlay) return;
     state.authModalOpen = false;
-    ui.authOverlay.hidden = true;
+    ui.authOverlay.classList.remove("is-visible");
+    ui.authOverlay.setAttribute("aria-hidden", "true");
     document.body.classList.remove("acct-auth-open");
   }
 
@@ -437,8 +439,6 @@
     root.appendChild(panel);
     document.body.appendChild(root);
 
-    ensureAuthModal();
-
     toggle.addEventListener("click", function () {
       setOpen(!state.open);
       if (state.open) {
@@ -466,7 +466,7 @@
     window.addEventListener("blog-ai-open", function (e) {
       setOpen(true);
       var detail = (e && e.detail) || {};
-      if (detail.view === "auth") {
+      if (detail.openAuth === true) {
         openAuthModal(detail.mode || "login");
       }
       refreshAuthMe().then(refreshQuota);
