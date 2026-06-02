@@ -102,7 +102,7 @@ const Guestbook = () => {
           {loading ? (
             <p className="text-sm text-white/50">Loading entries…</p>
           ) : (
-            entries.map((row) => (
+            (Array.isArray(entries) ? entries : []).map((row) => (
               <article
                 key={row.id}
                 className="h-auto rounded-xl border border-white/10 bg-black/50 p-5 text-blue-50"
