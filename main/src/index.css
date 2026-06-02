@@ -80,13 +80,12 @@ body {
   }
 
   @media (max-width: 767px) {
-    .features-bento-grid .bento-tilt_1,
-    .features-bento-grid .bento-tilt_2 {
-      @apply col-span-1 min-h-[22rem];
+    .features-bento-grid .bento-title {
+      @apply text-lg leading-tight;
     }
 
     .features-bento-card-copy {
-      @apply line-clamp-4 text-[11px] leading-snug;
+      @apply line-clamp-3 text-[10px] leading-snug font-medium;
     }
   }
 

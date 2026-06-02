@@ -65,11 +65,11 @@ export const BentoCard = ({ src, title, description, linkUrl, linkText }) => {
         autoPlay
         className="absolute left-0 top-0 size-full object-cover object-center"
       />
-      <div className="relative z-10 flex size-full min-h-0 flex-col justify-between gap-3 p-3 md:gap-0 md:p-5 text-blue-50">
-        <div className="max-w-full rounded-lg bg-black/50 px-3 py-2 backdrop-blur-sm">
+      <div className="relative z-10 flex size-full flex-col justify-between p-4 md:p-5 text-blue-50">
+        <div className="inline-block max-w-full rounded-lg bg-black/50 px-3 py-2 backdrop-blur-sm">
           <h1 className="bento-title special-font text-yellow-300 break-words">{title}</h1>
           {description && (
-            <p className="features-bento-card-copy mt-2 text-white font-semibold break-words md:mt-3 md:text-base md:font-semibold md:leading-normal">
+            <p className="features-bento-card-copy mt-2 text-white font-semibold break-words md:mt-3 md:text-base md:leading-normal">
               {description}
             </p>
           )}
@@ -123,8 +123,8 @@ const Features = () => (
         />
       </BentoTilt>
 
-      <div className="features-bento-grid grid w-full auto-rows-auto grid-cols-1 gap-4 md:h-[135vh] md:grid-cols-2 md:grid-rows-3 md:gap-7">
-        <BentoTilt className="bento-tilt_1 md:row-span-2">
+      <div className="features-bento-grid grid h-[135vh] w-full grid-cols-2 grid-rows-3 gap-7">
+        <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2">
           <BentoCard
             src={`${COS}/videos/feature-2.mp4`}
             title={<>Frag<b>m</b>ented Solitude</>}
@@ -134,7 +134,7 @@ const Features = () => (
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1">
+        <BentoTilt className="bento-tilt_1 row-span-1 ms-32 md:col-span-1 md:ms-0">
           <BentoCard
             src={`${COS}/videos/feature-3.mp4`}
             title={<>The Chr<b>o</b>nicles of Creation</>}
@@ -144,7 +144,7 @@ const Features = () => (
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1">
+        <BentoTilt className="bento-tilt_1 me-14 md:col-span-1 md:me-0">
           <BentoCard
             src={`${COS}/videos/feature-4.mp4`}
             title={<>Rei<b>m</b>u</>}
