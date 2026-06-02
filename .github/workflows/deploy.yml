@@ -104,8 +104,13 @@ jobs:
           SSH_PORT="${UCLOUD_PORT:-22}"
           ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
             set -e
+            sed -i 's/\r$//' $TMP_DIR/acg-api/remote-install-acg-api.sh
             chmod +x $TMP_DIR/acg-api/remote-install-acg-api.sh
-            bash $TMP_DIR/acg-api/remote-install-acg-api.sh $TMP_DIR/acg-api/acg-api '$UCLOUD_SUDO_PASSWORD'
+            if ! bash $TMP_DIR/acg-api/remote-install-acg-api.sh $TMP_DIR/acg-api/acg-api '$UCLOUD_SUDO_PASSWORD'; then
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl status acg-api --no-pager || true
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' sed -n '1,120p' /etc/systemd/system/acg-api.service || true
+              exit 1
+            fi
           "
 
       - name: Switch to production directories
