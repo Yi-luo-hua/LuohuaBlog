@@ -27,7 +27,6 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.UCLOUD_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.UCLOUD_HOST }}
           REMOTE_USER: ${{ secrets.UCLOUD_USER }}
-          REMOTE_PASSWORD: ${{ secrets.UCLOUD_PASS }}
           ARGS: -rlgoDzvc -i --delete
           SOURCE: main/dist/
           TARGET: /tmp/gh-deploy-main/
@@ -62,7 +61,7 @@ jobs:
         with:
           host: ${{ secrets.UCLOUD_HOST }}
           username: ${{ secrets.UCLOUD_USER }}
-          password: ${{ secrets.UCLOUD_PASS }}
+          key: ${{ secrets.UCLOUD_SSH_KEY }}
           script: |
             sudo cp -r /tmp/gh-deploy-main/* /var/www/taozhiyy/
             sudo cp -r /tmp/gh-deploy-blog/* /var/www/taozhiyy/blog/
