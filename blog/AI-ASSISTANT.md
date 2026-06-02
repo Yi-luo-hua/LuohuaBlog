@@ -6,6 +6,7 @@
 
 - 静态资源：`shared/ai-assistant/` → 部署到 `https://taozhiyy.top/ai-assistant/`
 - 主站 `main/index.html`、`build/index.html`、博客 `_config.butterfly.yml` inject 均引用上述路径
+- 博客 **勿** 再开 Butterfly 的 Tidio/Chatra（`_config.butterfly.yml` → `chat.use` 留空），避免与全站小精灵重复
 - 打开面板会显示 **当前页面** 标题；发消息时附带 `pageUrl`、`pageTitle` 供模型理解上下文（不抓取整页 HTML）
 
 配额展示：`今日剩余：7/10`（游客）或 `今日剩余：42/50`（登录）

@@ -657,13 +657,9 @@ artalk:
 # --------------------------------------
 
 chat:
-  # Choose: chatra/tidio/crisp
-  # Leave it empty if you don't need chat
-  use: tidio
-  # Chat Button [recommend]
-  # It will create a button in the bottom right corner of website, and hide the origin button
+  # Choose: chatra/tidio/crisp — 留空；全站统一用 /ai-assistant/ 小精灵，勿与 Tidio 等同开
+  use:
   rightside_button: false
-  # The origin chat button is displayed when scrolling up, and the button is hidden when scrolling down
   button_hide_show: false
 
 # https://chatra.io/
@@ -672,7 +668,7 @@ chatra:
 
 # https://www.tidio.com/
 tidio:
-  public_key: kw2uvlikubnt1sb2rkcrlkpa219lzwz0
+  public_key:
 
 # https://crisp.chat/en/
 crisp:
