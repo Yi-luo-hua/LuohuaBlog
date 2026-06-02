@@ -83,3 +83,10 @@ func (c *deepseekClient) Chat(userMessage string) (string, error) {
 	}
 	return payload.Choices[0].Message.Content, nil
 }
+
+func truncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "…"
+}
