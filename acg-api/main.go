@@ -82,7 +82,7 @@ func bangumiListHandler(w http.ResponseWriter, _ *http.Request) {
 			items = fetched
 		}
 	}
-	writeJSON(w, map[string]any{"items": jsonItems(items)})
+	writeJSON(w, map[string]any{"items": jsonList(items)})
 }
 
 func radarFeedHandler(w http.ResponseWriter, _ *http.Request) {
@@ -91,15 +91,7 @@ func radarFeedHandler(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, map[string]any{"items": jsonItems(items)})
-}
-
-// jsonItems ensures JSON encodes [] instead of null for empty/nil slices.
-func jsonItems[T any](items []T) []T {
-	if items == nil {
-		return []T{}
-	}
-	return items
+	writeJSON(w, map[string]any{"items": jsonList(items)})
 }
 
 func imageHandler(w http.ResponseWriter, r *http.Request) {
@@ -145,7 +137,7 @@ func guestbookHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			items = append(items, g)
 		}
-		writeJSON(w, map[string]any{"items": jsonItems(items)})
+		writeJSON(w, map[string]any{"items": jsonList(items)})
 	case http.MethodPost:
 		var body struct {
 			Name    string `json:"name"`
@@ -211,4 +203,12 @@ func writeJSON(w http.ResponseWriter, v any) {
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(v)
+}
+
+// Go nil slices encode as JSON null; frontends expect [].
+func jsonList[T any](items []T) []T {
+	if items == nil {
+		return []T{}
+	}
+	return items
 }
