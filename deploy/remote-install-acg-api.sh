@@ -4,15 +4,8 @@ set -euo pipefail
 
 INSTALL_DIR="/opt/acg-api"
 DATA_DIR="/var/lib/acg-api"
-BINARY_SRC="${1:?usage: remote-install-acg-api.sh /path/to/acg-api-binary [sudo_password]}"
-SUDO_PASSWORD="${ACG_SUDO_PASS:-${2:-}}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVICE_SRC="${SCRIPT_DIR}/acg-api.service"
-NGINX_SNIP_SRC="${SCRIPT_DIR}/nginx-acg-api.snippet"
-
-strip_cr() {
-  sed 's/\r$//' "$1"
-}
+BINARY_SRC="${1:?usage: remote-install-acg-api.sh /path/to/acg-api-binary}"
+SUDO_PASSWORD="${2:-}"
 
 run_sudo() {
   if [ -n "$SUDO_PASSWORD" ]; then
@@ -22,41 +15,47 @@ run_sudo() {
   fi
 }
 
-install_unit_file() {
-  local src="$1"
-  local dest="$2"
-  local tmp
-  tmp="$(mktemp)"
-  strip_cr "$src" >"$tmp"
-  run_sudo install -m 0644 "$tmp" "$dest"
-  rm -f "$tmp"
-}
-
-if [ ! -f "$SERVICE_SRC" ]; then
-  echo "missing $SERVICE_SRC" >&2
-  exit 1
-fi
-if [ ! -f "$NGINX_SNIP_SRC" ]; then
-  echo "missing $NGINX_SNIP_SRC" >&2
-  exit 1
-fi
-
 run_sudo mkdir -p "$INSTALL_DIR" "$DATA_DIR"
 run_sudo install -m 0755 "$BINARY_SRC" "$INSTALL_DIR/acg-api"
 
-install_unit_file "$SERVICE_SRC" /etc/systemd/system/acg-api.service
+run_sudo tee /etc/systemd/system/acg-api.service >/dev/null <<'UNIT'
+[Unit]
+Description=Taozhiyy Bilibili tracker API (acg-api)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/acg-api
+Environment=ACG_API_ADDR=127.0.0.1:8787
+Environment=ACG_DATA_DIR=/var/lib/acg-api
+EnvironmentFile=-/opt/acg-api/.env
+ExecStart=/opt/acg-api/acg-api
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+UNIT
 
 run_sudo systemctl daemon-reload
 run_sudo systemctl enable acg-api
-if ! run_sudo systemctl restart acg-api; then
-  run_sudo systemctl status acg-api --no-pager || true
-  run_sudo sed -n '1,120p' /etc/systemd/system/acg-api.service || true
-  exit 1
-fi
+run_sudo systemctl restart acg-api
 
 SNIP="/etc/nginx/snippets/taozhiyy-acg-api.conf"
-run_sudo mkdir -p /etc/nginx/snippets
-install_unit_file "$NGINX_SNIP_SRC" "$SNIP"
+if ! run_sudo test -f "$SNIP"; then
+  run_sudo mkdir -p /etc/nginx/snippets
+  run_sudo tee "$SNIP" >/dev/null <<'NGX'
+location /api/ {
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+NGX
+fi
 
 CONF=""
 for f in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do

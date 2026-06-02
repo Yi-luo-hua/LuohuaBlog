@@ -31,6 +31,10 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 - `POST /api/v1/guestbook` — JSON `{ "name": "...", "content": "..." }`
 - `GET /api/v1/bangumi/list`
 - `GET /api/v1/radar/feed`
+- `GET /api/chat` — quota status (blog AI assistant)
+- `POST /api/chat` — `{ "message": "..." }` → DeepSeek-v4-flash (see `blog/AI-ASSISTANT.md`)
+
+Copy `.env.example` → `/opt/acg-api/.env` with `DEEPSEEK_API_KEY`.
 
 ## Frontend
 

@@ -55,6 +55,7 @@ func main() {
 	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, map[string]string{"status": "ok", "uid": cfg.BilibiliUID})
 	})
+	mux.HandleFunc("/api/chat", chatHandler)
 	mux.HandleFunc("/api/v1/sync/trigger", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -66,7 +67,8 @@ func main() {
 		writeJSON(w, map[string]string{"queued": "sync"})
 	})
 
-	log.Printf("acg-api on %s | bilibili uid=%s | radar=%d creators\n", addr, cfg.BilibiliUID, len(cfg.RadarCreators))
+	deepseekReady := chatConfigured()
+	log.Printf("acg-api on %s | bilibili uid=%s | radar=%d creators | deepseek=%v\n", addr, cfg.BilibiliUID, len(cfg.RadarCreators), deepseekReady)
 	log.Fatal(http.ListenAndServe(addr, withCORS(mux)))
 }
 
@@ -82,7 +84,7 @@ func bangumiListHandler(w http.ResponseWriter, _ *http.Request) {
 			items = fetched
 		}
 	}
-	writeJSON(w, map[string]any{"items": jsonList(items)})
+	writeJSON(w, map[string]any{"items": items})
 }
 
 func radarFeedHandler(w http.ResponseWriter, _ *http.Request) {
@@ -91,13 +93,7 @@ func radarFeedHandler(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if len(items) == 0 {
-		cfg := loadConfig()
-		bili := NewBiliClient(cfg)
-		runRadarSync(db, bili, cfg, cacheDir)
-		items, _ = listRadarFromDB(db)
-	}
-	writeJSON(w, map[string]any{"items": jsonList(items)})
+	writeJSON(w, map[string]any{"items": items})
 }
 
 func imageHandler(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +139,7 @@ func guestbookHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			items = append(items, g)
 		}
-		writeJSON(w, map[string]any{"items": jsonList(items)})
+		writeJSON(w, map[string]any{"items": items})
 	case http.MethodPost:
 		var body struct {
 			Name    string `json:"name"`
@@ -195,7 +191,7 @@ func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, X-Blog-User-Id")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -209,12 +205,4 @@ func writeJSON(w http.ResponseWriter, v any) {
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(v)
-}
-
-// Go nil slices encode as JSON null; frontends expect [].
-func jsonList[T any](items []T) []T {
-	if items == nil {
-		return []T{}
-	}
-	return items
 }

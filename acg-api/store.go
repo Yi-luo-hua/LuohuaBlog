@@ -40,6 +40,13 @@ func migrateAll(db *sql.DB) error {
 			published_at TEXT NOT NULL,
 			updated_at TEXT NOT NULL
 		);`,
+		`CREATE TABLE IF NOT EXISTS ai_chat_quota (
+			identity_key TEXT NOT NULL,
+			quota_date TEXT NOT NULL,
+			used INTEGER NOT NULL DEFAULT 0,
+			last_request_at TEXT,
+			PRIMARY KEY (identity_key, quota_date)
+		);`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {

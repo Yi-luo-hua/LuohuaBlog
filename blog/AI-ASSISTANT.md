@@ -1,0 +1,67 @@
+# 博客 AI 小精灵
+
+右下角胶囊按钮 **✦ 问问博客**，展开后与 **博客小精灵** 对话。所有对话经后端 `POST /api/chat` 转发至 **DeepSeek-v4-flash**，前端不接触 API Key。
+
+## 前端
+
+- `source/css/ai-assistant.css`
+- `source/js/ai-assistant.js`
+- 已在 `_config.butterfly.yml` 的 `inject` 中注入
+
+配额展示：`今日剩余：7/10`（游客）或 `今日剩余：42/50`（登录）
+
+## 后端
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/chat` | 查询今日剩余次数（不扣次） |
+| POST | `/api/chat` | `{ "message": "..." }` → DeepSeek 回复 |
+
+由 `acg-api` 提供，Nginx 将 `/api/` 反代到 `127.0.0.1:8787`。
+
+## 环境变量
+
+服务器 `/opt/acg-api/.env`（勿提交 Git）：
+
+```bash
+DEEPSEEK_API_KEY=sk-xxx
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
+```
+
+重启：`sudo systemctl restart acg-api`
+
+## 次数与频率
+
+| 身份 | 每日上限 | 识别 |
+|------|----------|------|
+| 游客 | 10 | IP + User-Agent 哈希 |
+| 登录 | 50 | Cookie `blog_user_id` 或 Header `X-Blog-User-Id` |
+
+同一身份 **5 秒内最多 1 次** 请求。超限返回 429，**不调用 DeepSeek**。
+
+## 成本控制
+
+- 用户输入最多 **500 字**
+- `max_tokens` **400**
+- 简短 system prompt，不注入整篇文章
+- 失败不重试
+
+## 登录用户（可选）
+
+```http
+X-Blog-User-Id: 123
+```
+
+或 Cookie：`blog_user_id=123`
+
+## 部署检查
+
+1. `curl https://taozhiyy.top/api/chat` → JSON 含 `remaining`
+2. 博客文章页右下角可见 **✦ 问问博客**
+3. 发消息能收到回复且次数递减
+
+## 安全
+
+- 不要在前端、仓库、聊天中暴露 `DEEPSEEK_API_KEY`
+- 不要使用千问 / Cursor API / 本地大模型

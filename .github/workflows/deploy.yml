@@ -54,7 +54,6 @@ jobs:
       - name: Build acg-api (linux)
         run: |
           cd acg-api
-          go mod tidy
           go mod download
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o acg-api .
 
@@ -97,26 +96,15 @@ jobs:
           rsync -az --delete -e "ssh -p $SSH_PORT" main/dist/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/main/"
           rsync -az --delete -e "ssh -p $SSH_PORT" blog/public/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/blog/"
           rsync -az --delete -e "ssh -p $SSH_PORT" build/dist/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/build/"
-          scp -P "$SSH_PORT" \
-            acg-api/acg-api \
-            deploy/remote-install-acg-api.sh \
-            deploy/acg-api.service \
-            deploy/nginx-acg-api.snippet \
-            "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/acg-api/"
+          scp -P "$SSH_PORT" acg-api/acg-api deploy/remote-install-acg-api.sh "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/acg-api/"
 
       - name: Install acg-api and nginx /api proxy
         run: |
           SSH_PORT="${UCLOUD_PORT:-22}"
           ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
             set -e
-            sed -i 's/\r$//' $TMP_DIR/acg-api/remote-install-acg-api.sh
-            sed -i 's/\r$//' $TMP_DIR/acg-api/acg-api.service
             chmod +x $TMP_DIR/acg-api/remote-install-acg-api.sh
-            if ! ACG_SUDO_PASS='$UCLOUD_SUDO_PASSWORD' bash $TMP_DIR/acg-api/remote-install-acg-api.sh $TMP_DIR/acg-api/acg-api; then
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl status acg-api --no-pager || true
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' sed -n '1,120p' /etc/systemd/system/acg-api.service || true
-              exit 1
-            fi
+            bash $TMP_DIR/acg-api/remote-install-acg-api.sh $TMP_DIR/acg-api/acg-api '$UCLOUD_SUDO_PASSWORD'
           "
 
       - name: Switch to production directories
