@@ -1,26 +1,18 @@
-import About from "./components/About";
-import Hero from "./components/Hero";
-import NavBar from "./components/Navbar";
-import Features from "./components/Features";
-import Story from "./components/Story";
-import Contact from "./components/Contact";
-import AcgNavigation from "./components/AcgNavigation";
-import Guestbook from "./components/Guestbook";
-import Footer from "./components/Footer";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import SiteLayout from "./layouts/SiteLayout";
+import HomePage from "./pages/HomePage";
+import BiliHubPage from "./pages/BiliHubPage";
 
 function App() {
   return (
-    <main className="relative min-h-screen w-screen overflow-x-hidden">
-      <NavBar />
-      <Hero />
-      <About />
-      <Features />
-      <Story />
-      <Contact />
-      <AcgNavigation />
-      <Guestbook />
-      <Footer />
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<SiteLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="bili" element={<BiliHubPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

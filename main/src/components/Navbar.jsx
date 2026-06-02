@@ -2,18 +2,19 @@ import clsx from "clsx";
 import gsap from "gsap";
 import { useWindowScroll } from "react-use";
 import { useEffect, useRef, useState } from "react";
-import { TiLocationArrow } from "react-icons/ti";
-
-import Button from "./Button";
-
-const navItems = ["About", "Contact", "END"];
+import { Link, useLocation } from "react-router-dom";
+const navLinks = [
+  { label: "About", to: "/#about" },
+  { label: "Contact", to: "/#contact" },
+  { label: "END", to: "/#end" },
+  { label: "Bili Hub", to: "/bili", end: true },
+];
 
 const NavBar = () => {
-  // State for toggling audio and visual indicator
+  const { pathname } = useLocation();
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isIndicatorActive, setIsIndicatorActive] = useState(false);
 
-  // Refs for audio and navigation container
   const audioElementRef = useRef(null);
   const navContainerRef = useRef(null);
 
@@ -21,13 +22,11 @@ const NavBar = () => {
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Toggle audio and visual indicator
   const toggleAudioIndicator = () => {
     setIsAudioPlaying((prev) => !prev);
     setIsIndicatorActive((prev) => !prev);
   };
 
-  // Manage audio playback
   useEffect(() => {
     if (isAudioPlaying) {
       audioElementRef.current.play();
@@ -38,15 +37,12 @@ const NavBar = () => {
 
   useEffect(() => {
     if (currentScrollY === 0) {
-      // Topmost position: show navbar without floating-nav
       setIsNavVisible(true);
       navContainerRef.current.classList.remove("floating-nav");
     } else if (currentScrollY > lastScrollY) {
-      // Scrolling down: hide navbar and apply floating-nav
       setIsNavVisible(false);
       navContainerRef.current.classList.add("floating-nav");
     } else if (currentScrollY < lastScrollY) {
-      // Scrolling up: show navbar with floating-nav
       setIsNavVisible(true);
       navContainerRef.current.classList.add("floating-nav");
     }
@@ -62,6 +58,8 @@ const NavBar = () => {
     });
   }, [isNavVisible]);
 
+  const isBiliPage = pathname === "/bili" || pathname.startsWith("/bili/");
+
   return (
     <div
       ref={navContainerRef}
@@ -69,10 +67,15 @@ const NavBar = () => {
     >
       <header className="absolute top-1/2 w-full -translate-y-1/2">
         <nav className="flex size-full items-center justify-between p-4">
-          {/* Logo and Product button */}
           <div className="flex items-center gap-7">
-            <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/logo.png" alt="logo" className="w-10" />
-            {currentScrollY === 0 && (
+            <Link to="/" className="block" aria-label="Home">
+              <img
+                src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/logo.png"
+                alt="logo"
+                className="w-10"
+              />
+            </Link>
+            {currentScrollY === 0 && !isBiliPage && (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent("showHeroPreview"))}
                 className="nav-hover-btn hidden md:inline"
@@ -82,23 +85,27 @@ const NavBar = () => {
             )}
           </div>
 
-          {/* Navigation Links and Audio Button */}
           <div className="flex h-full items-center">
-            <div className="hidden md:block">
-              {navItems.map((item, index) => (
-                <a
-                  key={index}
-                  href={`#${item.toLowerCase()}`}
-                  className="nav-hover-btn"
-                >
-                  {item}
-                </a>
-              ))}
+            <div className="flex flex-wrap items-center justify-end gap-x-0 gap-y-1 max-md:text-xs">
+              {navLinks.map((item) => {
+                const active = item.end === true && isBiliPage;
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className={clsx("nav-hover-btn", {
+                      "text-yellow-300": active,
+                    })}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </div>
 
             <button
               onClick={toggleAudioIndicator}
-              className="ml-10 flex items-center space-x-0.5"
+              className="ml-4 flex items-center space-x-0.5 md:ml-10"
             >
               <audio
                 ref={audioElementRef}

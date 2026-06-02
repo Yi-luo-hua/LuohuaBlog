@@ -107,13 +107,10 @@ const AcgNavigation = () => {
   }, []);
 
   return (
-    <section id="acg" className="bg-black pb-16 pt-10">
+    <section id="acg" className="bg-black pb-16 pt-4">
       <div className="container mx-auto px-3 md:px-10">
         <header className="mb-8 px-2">
-          <p className="font-circular-web text-xs uppercase tracking-[0.35em] text-blue-50/70">
-            ACG · Tracker & Radar
-          </p>
-          <h2 className="mt-2 font-zentry text-3xl font-black uppercase text-blue-50 md:text-5xl">
+          <h2 className="font-zentry text-2xl font-black uppercase text-blue-50 md:text-4xl">
             Bangumi & Creators
           </h2>
         </header>
