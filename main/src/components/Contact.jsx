@@ -13,11 +13,11 @@ const Contact = () => {
       <div className="relative rounded-lg bg-gray-700 py-24 text-white sm:overflow-hidden">
         <div className="absolute -left-20 top-0 hidden h-full w-72 overflow-hidden sm:block lg:left-20 lg:w-96">
           <ImageClipBox
-            src="/img/contact-1.webp"
+            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/contact-1.webp"
             clipClass="contact-clip-path-1"
           />
           <ImageClipBox
-            src="/img/contact-2.webp"
+            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/contact-2.webp"
             clipClass="contact-clip-path-2 lg:translate-y-40 translate-y-60"
           />
           <p className="absolute top-[45%] left-1/2 -translate-x-1/2 font-zentry text-xl uppercase text-white whitespace-nowrap">
@@ -28,11 +28,11 @@ const Contact = () => {
 
         <div className="absolute -top-40 left-20 w-60 sm:top-1/2 md:left-auto md:right-10 lg:top-20 lg:w-80 hidden md:block">
           <ImageClipBox
-            src="/img/swordman-partial.webp"
+            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/swordman-partial.webp"
             clipClass="absolute md:scale-125"
           />
           <ImageClipBox
-            src="/img/swordman.webp"
+            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/swordman.webp"
             clipClass="sword-man-clip-path md:scale-125"
           />
         </div>

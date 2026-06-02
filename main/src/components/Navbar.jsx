@@ -71,7 +71,7 @@ const NavBar = () => {
         <nav className="flex size-full items-center justify-between p-4">
           {/* Logo and Product button */}
           <div className="flex items-center gap-7">
-            <img src="/img/logo.png" alt="logo" className="w-10" />
+            <img src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/logo.png" alt="logo" className="w-10" />
             {currentScrollY === 0 && (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent("showHeroPreview"))}
@@ -103,7 +103,7 @@ const NavBar = () => {
               <audio
                 ref={audioElementRef}
                 className="hidden"
-                src="/audio/loop.mp3"
+                src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/audio/loop.mp3"
                 loop
               />
               {[1, 2, 3, 4].map((bar) => (

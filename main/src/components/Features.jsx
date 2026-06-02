@@ -110,7 +110,7 @@ const Features = () => (
 
       <BentoTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-md md:h-[65vh]">
         <BentoCard
-          src="videos/feature-1.mp4"
+          src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/videos/feature-1.mp4"
           title={<>导<b>航</b>站</>}
           description="个人导航页，常用链接与工具一站直达。"
           linkUrl="https://chengzi-two.vercel.app/"
@@ -121,7 +121,7 @@ const Features = () => (
       <div className="grid h-[135vh] w-full grid-cols-2 grid-rows-3 gap-7">
         <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2">
           <BentoCard
-            src="videos/feature-2.mp4"
+            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/videos/feature-2.mp4"
             title={<>Frag<b>m</b>ented Solitude</>}
             description="A gentle corner dedicated to casual thoughts, everyday whims, and transient sparks of inspiration. Whispering stories to the wind, captured in the warmth of passing days."
             linkUrl="/blog/"
@@ -131,7 +131,7 @@ const Features = () => (
 
         <BentoTilt className="bento-tilt_1 row-span-1 ms-32 md:col-span-1 md:ms-0">
           <BentoCard
-            src="videos/feature-3.mp4"
+            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/videos/feature-3.mp4"
             title={<>The Chr<b>o</b>nicles of Creation</>}
             description="A minimalist sanctuary detailing full-stack engineering milestones, digital circuit layouts, and the architecture of hardware logic. Where wild ideas shape into reality, code by code."
             linkUrl="/build/"
@@ -141,7 +141,7 @@ const Features = () => (
 
         <BentoTilt className="bento-tilt_1 me-14 md:col-span-1 md:me-0">
           <BentoCard
-            src="videos/feature-4.mp4"
+            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/videos/feature-4.mp4"
             title={<>Rei<b>m</b>u</>}
             description="A Reimu-themed blog space for thoughts, stories, and inspiration."
             linkUrl="https://blog1-reimu.vercel.app/"
@@ -161,7 +161,7 @@ const Features = () => (
 
         <BentoTilt className="bento-tilt_2">
           <video
-            src="videos/feature-5.mp4"
+            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/videos/feature-5.mp4"
             loop
             muted
             autoPlay
