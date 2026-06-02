@@ -20,7 +20,7 @@ jobs:
       UCLOUD_PORT: ${{ secrets.UCLOUD_PORT }}
       UCLOUD_USER: ${{ secrets.UCLOUD_USER }}
       UCLOUD_SUDO_PASSWORD: ${{ secrets.UCLOUD_SUDO_PASSWORD }}
-      ROOT_DIR: /www/sites/taozhiyy.top/index
+      ROOT_DIR: /var/www/taozhiyy
       TMP_DIR: /tmp/taozhiyy-deploy
 
     steps:
