@@ -4,11 +4,46 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        zentry: ['"General Sans"', "system-ui", "sans-serif"],
-        general: ['"General Sans"', "system-ui", "sans-serif"],
-        "circular-web": ['"General Sans"', "system-ui", "sans-serif"],
-        "robert-medium": ['"General Sans"', "system-ui", "sans-serif"],
-        "robert-regular": ['"General Sans"', "system-ui", "sans-serif"],
+        zentry: [
+          "system-ui",
+          "-apple-system",
+          '"Segoe UI"',
+          '"PingFang SC"',
+          '"Microsoft YaHei"',
+          "sans-serif",
+        ],
+        general: [
+          "system-ui",
+          "-apple-system",
+          '"Segoe UI"',
+          '"PingFang SC"',
+          '"Microsoft YaHei"',
+          "sans-serif",
+        ],
+        "circular-web": [
+          "system-ui",
+          "-apple-system",
+          '"Segoe UI"',
+          '"PingFang SC"',
+          '"Microsoft YaHei"',
+          "sans-serif",
+        ],
+        "robert-medium": [
+          "system-ui",
+          "-apple-system",
+          '"Segoe UI"',
+          '"PingFang SC"',
+          '"Microsoft YaHei"',
+          "sans-serif",
+        ],
+        "robert-regular": [
+          "system-ui",
+          "-apple-system",
+          '"Segoe UI"',
+          '"PingFang SC"',
+          '"Microsoft YaHei"',
+          "sans-serif",
+        ],
       },
       colors: {
         blue: {

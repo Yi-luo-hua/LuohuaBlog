@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { TiLocationArrow } from "react-icons/ti";
+import LazyVideo from "./LazyVideo";
 
 export const BentoTilt = ({ children, className = "" }) => {
   const [transformStyle, setTransformStyle] = useState("");
@@ -38,7 +39,7 @@ export const BentoTilt = ({ children, className = "" }) => {
   );
 };
 
-export const BentoCard = ({ src, title, description, linkUrl, linkText }) => {
+export const BentoCard = ({ src, title, description, linkUrl, linkText, videoPriority = false }) => {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [hoverOpacity, setHoverOpacity] = useState(0);
   const hoverButtonRef = useRef(null);
@@ -58,18 +59,12 @@ export const BentoCard = ({ src, title, description, linkUrl, linkText }) => {
 
   return (
     <div className="relative size-full">
-      <video
-        src={src}
-        loop
-        muted
-        autoPlay
-        className="absolute left-0 top-0 size-full object-cover object-center"
-      />
+      <LazyVideo src={src} priority={videoPriority} />
       <div className="relative z-10 flex size-full flex-col justify-between p-4 md:p-5 text-blue-50">
         <div className="inline-block max-w-full rounded-lg bg-black/50 px-3 py-2 backdrop-blur-sm">
-          <h1 className="bento-title special-font text-yellow-300 break-words">{title}</h1>
+          <h1 className="bento-title text-yellow-300 break-words">{title}</h1>
           {description && (
-            <p className="features-bento-card-copy mt-2 text-white font-semibold break-words md:mt-3 md:text-base md:leading-normal">
+            <p className="features-bento-card-copy mt-2 text-white font-medium break-words md:mt-3 md:text-base md:leading-normal">
               {description}
             </p>
           )}
@@ -108,7 +103,7 @@ const Features = () => (
   <section className="bg-black pb-52">
     <div className="container mx-auto px-3 md:px-10">
       <div className="px-5 py-32">
-        <p className="font-circular-web text-lg text-blue-50">
+        <p className="text-lg text-blue-50">
           There will be three hidden surprises here
         </p>
       </div>
@@ -116,6 +111,7 @@ const Features = () => (
       <BentoTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-md md:h-[65vh]">
         <BentoCard
           src={`${COS}/videos/feature-1.mp4`}
+          videoPriority
           title={<>导<b>航</b>站</>}
           description="个人导航页，常用链接与工具一站直达。"
           linkUrl="https://chengzi-two.vercel.app/"
@@ -123,28 +119,28 @@ const Features = () => (
         />
       </BentoTilt>
 
-      <div className="features-bento-grid grid h-[135vh] w-full grid-cols-2 grid-rows-3 gap-7">
+      <div className="features-bento-grid grid min-h-[80vh] w-full grid-cols-2 grid-rows-3 gap-4 md:h-[135vh] md:gap-7">
         <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2">
           <BentoCard
             src={`${COS}/videos/feature-2.mp4`}
             title={<>Frag<b>m</b>ented Solitude</>}
-            description="A gentle corner dedicated to casual thoughts, everyday whims, and transient sparks of inspiration. Whispering stories to the wind, captured in the warmth of passing days."
+            description="A gentle corner dedicated to casual thoughts, everyday whims, and transient sparks of inspiration."
             linkUrl="/blog/"
             linkText="Enter Garden"
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1 row-span-1 ms-32 md:col-span-1 md:ms-0">
+        <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1">
           <BentoCard
             src={`${COS}/videos/feature-3.mp4`}
             title={<>The Chr<b>o</b>nicles of Creation</>}
-            description="A minimalist sanctuary detailing full-stack engineering milestones, digital circuit layouts, and the architecture of hardware logic. Where wild ideas shape into reality, code by code."
+            description="Engineering milestones, circuit layouts, and the architecture of hardware logic."
             linkUrl="/build/"
             linkText="Access Lab"
           />
         </BentoTilt>
 
-        <BentoTilt className="bento-tilt_1 me-14 md:col-span-1 md:me-0">
+        <BentoTilt className="bento-tilt_1 md:col-span-1">
           <BentoCard
             src={`${COS}/videos/feature-4.mp4`}
             title={<>Rei<b>m</b>u</>}
@@ -156,7 +152,7 @@ const Features = () => (
 
         <BentoTilt className="bento-tilt_2">
           <div className="flex size-full flex-col justify-between bg-violet-300 p-5">
-            <h1 className="bento-title special-font max-w-64 text-black">
+            <h1 className="bento-title max-w-64 text-black">
               M<b>o</b>re co<b>m</b>ing s<b>o</b>on.
             </h1>
 
@@ -165,11 +161,8 @@ const Features = () => (
         </BentoTilt>
 
         <BentoTilt className="bento-tilt_2">
-          <video
+          <LazyVideo
             src={`${COS}/videos/feature-5.mp4`}
-            loop
-            muted
-            autoPlay
             className="size-full object-cover object-center"
           />
         </BentoTilt>

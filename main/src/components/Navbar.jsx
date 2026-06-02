@@ -62,16 +62,16 @@ const NavBar = () => {
   return (
     <div
       ref={navContainerRef}
-      className="fixed inset-x-0 top-4 z-50 h-16 border-none transition-all duration-700 sm:inset-x-6"
+      className="fixed inset-x-0 top-2 z-50 h-14 border-none transition-all duration-700 sm:inset-x-4 sm:top-4 sm:h-16 md:inset-x-6"
     >
       <header className="absolute top-1/2 w-full -translate-y-1/2">
-        <nav className="flex size-full items-center justify-between p-4">
-          <div className="flex items-center gap-7">
-            <Link to="/" className="block" aria-label="Home">
+        <nav className="flex size-full min-w-0 items-center justify-between gap-2 px-2 sm:gap-3 sm:p-4">
+          <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-7">
+            <Link to="/" className="block shrink-0" aria-label="Home">
               <img
                 src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/logo.png"
                 alt="logo"
-                className="w-10"
+                className="h-8 w-8 sm:h-10 sm:w-10"
               />
             </Link>
             {currentScrollY === 0 && !isBiliPage && (
@@ -84,8 +84,8 @@ const NavBar = () => {
             )}
           </div>
 
-          <div className="flex h-full items-center">
-            <div className="flex flex-wrap items-center justify-end gap-x-0 gap-y-1 max-md:text-xs">
+          <div className="flex min-w-0 flex-1 items-center justify-end">
+            <div className="flex max-w-full flex-nowrap items-center justify-end overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navLinks.map((item) => {
                 const active = item.to === "/bili" && isBiliPage;
                 return (
@@ -104,7 +104,9 @@ const NavBar = () => {
 
             <button
               onClick={toggleAudioIndicator}
-              className="ml-4 flex items-center space-x-0.5 md:ml-10"
+              className="ml-1 flex shrink-0 items-center space-x-0.5 sm:ml-3 md:ml-6"
+              type="button"
+              aria-label="Toggle background music"
             >
               <audio
                 ref={audioElementRef}
