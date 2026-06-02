@@ -1,37 +1,101 @@
-name: Deploy
+name: Deploy Taozhiyy To UCloud
 
 on:
   push:
     branches: [master]
+    paths:
+      - "main/**"
+      - "blog/**"
+      - "build/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      UCLOUD_HOST: ${{ secrets.UCLOUD_HOST }}
+      UCLOUD_PORT: ${{ secrets.UCLOUD_PORT }}
+      UCLOUD_USER: ${{ secrets.UCLOUD_USER }}
+      UCLOUD_SUDO_PASSWORD: ${{ secrets.UCLOUD_SUDO_PASSWORD }}
+      ROOT_DIR: /www/sites/taozhiyy.top/index
+      TMP_DIR: /tmp/taozhiyy-deploy
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: |
+            main/package-lock.json
+            blog/package-lock.json
+            build/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Build main
-        run: cd main && npm install && npm run build
+        run: |
+          cd main
+          npm ci
+          npm run build
 
-      - name: Build chronicle
-        run: cd build && npm install && npm run build
+      - name: Build blog (Hexo)
+        run: |
+          cd blog
+          npm ci
+          npm run clean
+          npm run build
 
-      - name: Deploy
+      - name: Build build (Vite)
+        run: |
+          cd build
+          npm ci
+          npm run build
+
+      - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.UCLOUD_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r main/dist/* ${{ secrets.UCLOUD_USER }}@${{ secrets.UCLOUD_HOST }}:/tmp/deploy-main/
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r blog/public/* ${{ secrets.UCLOUD_USER }}@${{ secrets.UCLOUD_HOST }}:/tmp/deploy-blog/
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r build/dist/* ${{ secrets.UCLOUD_USER }}@${{ secrets.UCLOUD_HOST }}:/tmp/deploy-build/
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.UCLOUD_USER }}@${{ secrets.UCLOUD_HOST }} "
-            sudo cp -r /tmp/deploy-main/* /var/www/taozhiyy/
-            sudo cp -r /tmp/deploy-blog/* /var/www/taozhiyy/blog/
-            sudo cp -r /tmp/deploy-build/* /var/www/taozhiyy/build/
-            sudo chown -R www-data:www-data /var/www/taozhiyy
-            sudo nginx -t && sudo systemctl reload nginx
-            rm -rf /tmp/deploy-*
+          if [ -n "$UCLOUD_PORT" ]; then
+            ssh-keyscan -p "$UCLOUD_PORT" "$UCLOUD_HOST" >> ~/.ssh/known_hosts
+          else
+            ssh-keyscan "$UCLOUD_HOST" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Upload artifacts to remote tmp
+        run: |
+          SSH_PORT="${UCLOUD_PORT:-22}"
+          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "mkdir -p $TMP_DIR/main $TMP_DIR/blog $TMP_DIR/build"
+          rsync -az --delete -e "ssh -p $SSH_PORT" main/dist/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/main/"
+          rsync -az --delete -e "ssh -p $SSH_PORT" blog/public/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/blog/"
+          rsync -az --delete -e "ssh -p $SSH_PORT" build/dist/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/build/"
+
+      - name: Switch to production directories
+        run: |
+          SSH_PORT="${UCLOUD_PORT:-22}"
+          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
+            set -e
+            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' mkdir -p $ROOT_DIR $ROOT_DIR/blog $ROOT_DIR/build
+            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a --delete $TMP_DIR/main/ $ROOT_DIR/
+            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a --delete $TMP_DIR/blog/ $ROOT_DIR/blog/
+            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a --delete $TMP_DIR/build/ $ROOT_DIR/build/
+            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' nginx -t
+            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl reload nginx
+            rm -rf $TMP_DIR
           "
+
+      - name: Post-deploy health check
+        run: |
+          curl -fL --max-time 20 https://taozhiyy.top/ > /dev/null
+          curl -fL --max-time 20 https://taozhiyy.top/blog/ > /dev/null
+          curl -fL --max-time 20 https://taozhiyy.top/build/ > /dev/null
