@@ -112,7 +112,7 @@ jobs:
             sed -i 's/\r$//' $TMP_DIR/acg-api/remote-install-acg-api.sh
             sed -i 's/\r$//' $TMP_DIR/acg-api/acg-api.service
             chmod +x $TMP_DIR/acg-api/remote-install-acg-api.sh
-            if ! bash $TMP_DIR/acg-api/remote-install-acg-api.sh $TMP_DIR/acg-api/acg-api $TMP_DIR/acg-api/acg-api.service '$UCLOUD_SUDO_PASSWORD'; then
+            if ! ACG_SUDO_PASS='$UCLOUD_SUDO_PASSWORD' bash $TMP_DIR/acg-api/remote-install-acg-api.sh $TMP_DIR/acg-api/acg-api; then
               echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl status acg-api --no-pager || true
               echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' sed -n '1,120p' /etc/systemd/system/acg-api.service || true
               exit 1
