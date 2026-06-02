@@ -4,6 +4,8 @@ import NavBar from "./components/Navbar";
 import Features from "./components/Features";
 import Story from "./components/Story";
 import Contact from "./components/Contact";
+import AcgNavigation from "./components/AcgNavigation";
+import Guestbook from "./components/Guestbook";
 import Footer from "./components/Footer";
 
 function App() {
@@ -15,6 +17,8 @@ function App() {
       <Features />
       <Story />
       <Contact />
+      <AcgNavigation />
+      <Guestbook />
       <Footer />
     </main>
   );

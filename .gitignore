@@ -6,3 +6,7 @@ public/
 cos_upload.py
 blog/cos_upload.py
 build/cos_upload.py
+acg-api/data/
+acg-api/acg-api
+acg-api/acg-api.exe
+acg-api/test_bili.py
