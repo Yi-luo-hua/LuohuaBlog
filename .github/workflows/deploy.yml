@@ -1,5 +1,7 @@
 name: Deploy Taozhiyy To UCloud
 
+run-name: Deploy ${{ github.sha }}
+
 on:
   push:
     branches: [master]
