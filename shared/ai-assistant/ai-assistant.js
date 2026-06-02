@@ -13,8 +13,8 @@
 
   var state = {
     open: false,
-    view: "chat",
     authMode: "login",
+    authModalOpen: false,
     sending: false,
     chatEnabled: true,
     limit: 10,
@@ -81,20 +81,74 @@
     var login = el("button", "blog-ai-auth-link", "登录 / 注册");
     login.type = "button";
     login.addEventListener("click", function () {
-      showView("auth", "login");
+      openAuthModal("login");
     });
     ui.authBar.appendChild(login);
   }
 
-  function showView(view, authMode) {
-    state.view = view;
-    if (authMode) state.authMode = authMode;
-    var isAuth = view === "auth";
-    if (ui.messages) ui.messages.hidden = isAuth;
-    if (ui.chatForm) ui.chatForm.hidden = isAuth;
-    if (ui.authPanel) ui.authPanel.hidden = !isAuth;
-    if (isAuth) renderAuthForm();
-    updateAuthBar();
+  function ensureAuthModal() {
+    if (ui.authOverlay) return;
+
+    ui.authOverlay = el("div");
+    ui.authOverlay.id = "acct-auth-overlay";
+    ui.authOverlay.className = "acct-auth-overlay";
+    ui.authOverlay.hidden = true;
+    ui.authOverlay.addEventListener("click", function (e) {
+      if (e.target === ui.authOverlay) closeAuthModal();
+    });
+
+    ui.authModal = el("div");
+    ui.authModal.className = "acct-auth-modal";
+    ui.authModal.setAttribute("role", "dialog");
+    ui.authModal.setAttribute("aria-modal", "true");
+    ui.authModal.setAttribute("aria-labelledby", "acct-auth-title");
+    ui.authModal.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+
+    var closeBtn = el("button", "acct-auth-close", "×");
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", "关闭");
+    closeBtn.addEventListener("click", closeAuthModal);
+
+    var brand = el("div", "acct-auth-brand");
+    var avatar = el("div", "acct-auth-avatar", "账");
+    brand.appendChild(avatar);
+    ui.authTitle = el("h2", "acct-auth-title");
+    ui.authTitle.id = "acct-auth-title";
+    brand.appendChild(ui.authTitle);
+    ui.authSubtitle = el("p", "acct-auth-subtitle");
+    brand.appendChild(ui.authSubtitle);
+
+    ui.authTabs = el("div", "acct-auth-tabs");
+    ui.authModalBody = el("div", "acct-auth-body");
+
+    ui.authModal.appendChild(closeBtn);
+    ui.authModal.appendChild(brand);
+    ui.authModal.appendChild(ui.authTabs);
+    ui.authModal.appendChild(ui.authModalBody);
+    ui.authOverlay.appendChild(ui.authModal);
+    document.body.appendChild(ui.authOverlay);
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && state.authModalOpen) closeAuthModal();
+    });
+  }
+
+  function openAuthModal(mode) {
+    ensureAuthModal();
+    state.authMode = mode || "login";
+    state.authModalOpen = true;
+    ui.authOverlay.hidden = false;
+    document.body.classList.add("acct-auth-open");
+    renderAuthModalContent();
+  }
+
+  function closeAuthModal() {
+    if (!ui.authOverlay) return;
+    state.authModalOpen = false;
+    ui.authOverlay.hidden = true;
+    document.body.classList.remove("acct-auth-open");
   }
 
   function setAuthError(msg) {
@@ -103,90 +157,124 @@
     ui.authError.hidden = !msg;
   }
 
-  function renderAuthForm() {
-    if (!ui.authPanel) return;
-    ui.authPanel.innerHTML = "";
+  function renderAuthTabs() {
+    if (!ui.authTabs) return;
+    ui.authTabs.innerHTML = "";
+    if (state.authMode === "security") {
+      ui.authTabs.hidden = true;
+      return;
+    }
+    ui.authTabs.hidden = false;
+
+    var loginTab = el("button", "acct-auth-tab", "登录");
+    loginTab.type = "button";
+    var regTab = el("button", "acct-auth-tab", "注册");
+    regTab.type = "button";
+
+    if (state.authMode === "login") loginTab.classList.add("is-active");
+    else regTab.classList.add("is-active");
+
+    loginTab.addEventListener("click", function () {
+      state.authMode = "login";
+      renderAuthModalContent();
+    });
+    regTab.addEventListener("click", function () {
+      state.authMode = "register";
+      renderAuthModalContent();
+    });
+
+    ui.authTabs.appendChild(loginTab);
+    ui.authTabs.appendChild(regTab);
+  }
+
+  function renderAuthModalContent() {
+    if (!ui.authModalBody) return;
+    ui.authModalBody.innerHTML = "";
     setAuthError("");
+    renderAuthTabs();
 
     if (state.authMode === "security") {
-      ui.authPanel.appendChild(el("h3", "blog-ai-auth-title", "二次验证"));
-      ui.authPanel.appendChild(
-        el("p", "blog-ai-auth-desc", "站长账号需回答问题后启用无限 AI 额度")
-      );
-      ui.authPanel.appendChild(
-        el("label", "blog-ai-auth-label", state.securityQuestion || "你现在的学号")
+      ui.authTitle.textContent = "安全验证";
+      ui.authSubtitle.textContent = "站长账号需完成验证后启用无限 AI 额度";
+      ui.authModalBody.appendChild(
+        el("label", "acct-auth-label", state.securityQuestion || "你现在的学号")
       );
       var ans = document.createElement("input");
       ans.type = "text";
-      ans.className = "blog-ai-auth-input";
-      ans.placeholder = "请输入学号";
-      ans.autocomplete = "off";
+      ans.className = "acct-auth-input";
       ans.id = "blog-ai-auth-answer";
-      ui.authPanel.appendChild(ans);
-      var btnOk = el("button", "blog-ai-auth-submit", "确认");
+      ans.placeholder = "请输入答案";
+      ans.autocomplete = "off";
+      ui.authModalBody.appendChild(ans);
+      ui.authError = el("p", "acct-auth-error");
+      ui.authError.hidden = true;
+      ui.authModalBody.appendChild(ui.authError);
+      var btnOk = el("button", "acct-auth-primary", "确认验证");
       btnOk.type = "button";
       btnOk.addEventListener("click", onVerifySecurity);
-      ui.authPanel.appendChild(btnOk);
-      var back = el("button", "blog-ai-auth-back", "返回登录");
+      ui.authModalBody.appendChild(btnOk);
+      var back = el("button", "acct-auth-text-btn", "返回重新登录");
       back.type = "button";
       back.addEventListener("click", function () {
-        showView("auth", "login");
+        openAuthModal("login");
       });
-      ui.authPanel.appendChild(back);
+      ui.authModalBody.appendChild(back);
       ans.focus();
       return;
     }
 
     var isLogin = state.authMode === "login";
-    ui.authPanel.appendChild(
-      el("h3", "blog-ai-auth-title", isLogin ? "登录" : "注册")
-    );
-    ui.authPanel.appendChild(
-      el("p", "blog-ai-auth-desc", isLogin
-        ? "登录后每日 50 次提问；游客 10 次"
-        : "注册成功将自动登录（无需验证邮箱）")
-    );
+    ui.authTitle.textContent = isLogin ? "账号登录" : "注册账号";
+    ui.authSubtitle.textContent = isLogin
+      ? "登录后每日可提问 50 次（游客 10 次）"
+      : "注册成功将自动登录，无需邮箱验证";
 
-    ui.authPanel.appendChild(el("label", "blog-ai-auth-label", "邮箱"));
+    ui.authModalBody.appendChild(el("label", "acct-auth-label", "邮箱"));
     var email = document.createElement("input");
     email.type = "email";
-    email.className = "blog-ai-auth-input";
+    email.className = "acct-auth-input";
     email.id = "blog-ai-auth-email";
-    email.placeholder = "you@example.com";
-    ui.authPanel.appendChild(email);
+    email.placeholder = "请输入邮箱";
+    email.autocomplete = "username";
+    ui.authModalBody.appendChild(email);
 
     if (!isLogin) {
-      ui.authPanel.appendChild(
-        el("p", "blog-ai-auth-note", OWNER_EMAIL + " 为站长专用，不可注册")
+      ui.authModalBody.appendChild(
+        el("p", "acct-auth-hint", OWNER_EMAIL + " 为站长专用邮箱，不可注册")
       );
     }
 
-    ui.authPanel.appendChild(el("label", "blog-ai-auth-label", "密码"));
+    ui.authModalBody.appendChild(el("label", "acct-auth-label", "密码"));
     var pw = document.createElement("input");
     pw.type = "password";
-    pw.className = "blog-ai-auth-input";
+    pw.className = "acct-auth-input";
     pw.id = "blog-ai-auth-password";
-    pw.placeholder = "至少 8 位";
+    pw.placeholder = "至少 8 位字符";
     pw.minLength = 8;
-    ui.authPanel.appendChild(pw);
+    pw.autocomplete = isLogin ? "current-password" : "new-password";
+    ui.authModalBody.appendChild(pw);
 
-    ui.authError = el("p", "blog-ai-auth-error");
+    ui.authError = el("p", "acct-auth-error");
     ui.authError.hidden = true;
-    ui.authPanel.appendChild(ui.authError);
+    ui.authModalBody.appendChild(ui.authError);
 
-    var submit = el("button", "blog-ai-auth-submit", isLogin ? "登录" : "注册并登录");
+    var submit = el("button", "acct-auth-primary", isLogin ? "登 录" : "注册并登录");
     submit.type = "button";
     submit.addEventListener("click", isLogin ? onLogin : onRegister);
-    ui.authPanel.appendChild(submit);
+    ui.authModalBody.appendChild(submit);
 
-    var switchBtn = el("button", "blog-ai-auth-back", isLogin ? "没有账号？注册" : "已有账号？登录");
-    switchBtn.type = "button";
-    switchBtn.addEventListener("click", function () {
-      showView("auth", isLogin ? "register" : "login");
-    });
-    ui.authPanel.appendChild(switchBtn);
+    var foot = el("p", "acct-auth-foot");
+    foot.textContent = "登录用于 AI 提问额度，与博客小精灵聊天入口分离";
+    ui.authModalBody.appendChild(foot);
 
     email.focus();
+  }
+
+  function finishAuthSuccess(message) {
+    closeAuthModal();
+    updateAuthBar();
+    refreshQuota();
+    if (message && ui.messages) appendMsg(ui.messages, "bot", message);
   }
 
   function refreshAuthMe() {
@@ -221,9 +309,7 @@
       state.user = res.data.user;
       state.isLogin = true;
       state.unlimited = false;
-      showView("chat");
-      refreshQuota();
-      appendMsg(ui.messages, "bot", "注册成功～现在每天可以问我 50 次啦！");
+      finishAuthSuccess("注册成功～现在每天可以问我 50 次啦！");
     });
   }
 
@@ -244,15 +330,14 @@
         state.challengeToken = res.data.challengeToken || "";
         state.securityQuestion = res.data.securityQuestion || "你现在的学号";
         state.user = res.data.user;
-        showView("auth", "security");
+        state.authMode = "security";
+        renderAuthModalContent();
         return;
       }
       state.user = res.data.user;
       state.isLogin = true;
       state.unlimited = !!res.data.unlimited;
-      showView("chat");
-      refreshQuota();
-      appendMsg(ui.messages, "bot", "登录成功～");
+      finishAuthSuccess("登录成功～");
     });
   }
 
@@ -274,9 +359,7 @@
       state.user = res.data.user;
       state.isLogin = true;
       state.unlimited = true;
-      showView("chat");
-      refreshQuota();
-      appendMsg(ui.messages, "bot", "验证通过～站长无限额度已启用 ✦");
+      finishAuthSuccess("验证通过～站长无限额度已启用 ✦");
     });
   }
 
@@ -285,7 +368,7 @@
       state.user = null;
       state.isLogin = false;
       state.unlimited = false;
-      showView("chat");
+      updateAuthBar();
       refreshQuota();
       appendMsg(ui.messages, "system", "已退出登录");
     });
@@ -332,13 +415,7 @@
     ui.messages.id = "blog-ai-messages";
     appendMsg(ui.messages, "bot", "你好呀～点上方「登录 / 注册」可提升到 50 次/天～");
 
-    ui.authPanel = el("div");
-    ui.authPanel.id = "blog-ai-auth";
-    ui.authPanel.className = "blog-ai-auth";
-    ui.authPanel.hidden = true;
-
     body.appendChild(ui.messages);
-    body.appendChild(ui.authPanel);
 
     ui.chatForm = el("form");
     ui.chatForm.id = "blog-ai-form";
@@ -359,6 +436,8 @@
     root.appendChild(toggle);
     root.appendChild(panel);
     document.body.appendChild(root);
+
+    ensureAuthModal();
 
     toggle.addEventListener("click", function () {
       setOpen(!state.open);
@@ -388,9 +467,7 @@
       setOpen(true);
       var detail = (e && e.detail) || {};
       if (detail.view === "auth") {
-        showView("auth", detail.mode || "login");
-      } else {
-        showView("chat");
+        openAuthModal(detail.mode || "login");
       }
       refreshAuthMe().then(refreshQuota);
     });
@@ -453,7 +530,7 @@
   }
 
   function sendMessage(input, sendBtn) {
-    if (state.sending || state.view !== "chat") return;
+    if (state.sending || state.authModalOpen) return;
     var text = (input.value || "").trim();
     if (!text) return;
     if (!state.chatEnabled) {
