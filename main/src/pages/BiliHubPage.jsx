@@ -1,5 +1,4 @@
 import AcgNavigation from "../components/AcgNavigation";
-import Guestbook from "../components/Guestbook";
 
 const BiliHubPage = () => (
   <div className="relative min-h-screen overflow-hidden pt-24">
@@ -34,7 +33,6 @@ const BiliHubPage = () => (
     </header>
 
     <AcgNavigation />
-    <Guestbook theme="candy" />
   </div>
 );
 

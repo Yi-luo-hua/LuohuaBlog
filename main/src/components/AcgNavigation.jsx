@@ -25,6 +25,26 @@ const MOBILE_BANGUMI_LIMIT = 3;
 const EXPAND_BTN =
   "rounded-full border border-[#00C2FF]/50 bg-white/60 px-5 py-2 font-mono text-xs uppercase tracking-wide text-[#2D2A3A] shadow-sm backdrop-blur-md transition-all duration-300 hover:border-[#00C2FF] hover:bg-[#00C2FF]/10 active:scale-[0.98]";
 
+const creatorTag = (name = "") =>
+  String(name)
+    .replace(/^UP\s*·\s*/i, "")
+    .trim()
+    .slice(0, 18);
+
+const creatorInitials = (name = "") => {
+  const cleaned = creatorTag(name);
+  if (!cleaned) return "UP";
+  if (/\s/.test(cleaned)) {
+    return cleaned
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase())
+      .join("");
+  }
+  return cleaned.slice(0, 2).toUpperCase();
+};
+
 const PosterFrame = ({ item, variant = "bangumi", aspectClass = "aspect-[3/4]" }) => {
   const remote = hasRemoteCover(item);
   const src = remote ? resolveCoverSrc(item, API_BASE) : null;
@@ -50,6 +70,27 @@ const PosterFrame = ({ item, variant = "bangumi", aspectClass = "aspect-[3/4]" }
           decoding="async"
           className="relative z-[1] h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
         />
+      ) : isRadar ? (
+        <div className="relative z-[1] flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#FFF8D8] via-[#FFE8F2] to-[#E9F7FF]">
+          <div className="absolute -right-6 -top-8 h-20 w-20 rounded-full bg-[#FF6BAA]/20 blur-md" />
+          <div className="absolute -left-6 -bottom-8 h-20 w-20 rounded-full bg-[#00C2FF]/20 blur-md" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(124,92,255,0.10)_1px,transparent_1px),linear-gradient(to_bottom,rgba(124,92,255,0.10)_1px,transparent_1px)] bg-[size:18px_18px]" />
+          <div className="absolute right-6 top-4 text-[#FF6BAA]/50">✦</div>
+          <div className="absolute left-8 bottom-4 text-[#7C5CFF]/35">✧</div>
+          <div className="relative flex items-center gap-3 rounded-full border border-white/70 bg-white/70 px-4 py-2 backdrop-blur-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#7C5CFF]/15 font-mono text-xs font-semibold text-[#7C5CFF]">
+              {creatorInitials(item.creatorName)}
+            </div>
+            <div className="max-w-[11rem]">
+              <p className="truncate font-mono text-[10px] uppercase tracking-[0.2em] text-[#7C5CFF]/75">
+                Creator
+              </p>
+              <p className="truncate text-xs font-semibold text-[#2D2A3A]/85">
+                {creatorTag(item.creatorName) || "Bili Creator"}
+              </p>
+            </div>
+          </div>
+        </div>
       ) : (
         <img
           src={makePosterDataUri(item.title, variant)}
