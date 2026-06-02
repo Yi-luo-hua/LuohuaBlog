@@ -3,3 +3,6 @@ dist/
 public/
 **/node_modules/
 **/.cache/
+cos_upload.py
+blog/cos_upload.py
+build/cos_upload.py
