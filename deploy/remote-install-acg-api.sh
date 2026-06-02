@@ -4,9 +4,15 @@ set -euo pipefail
 
 INSTALL_DIR="/opt/acg-api"
 DATA_DIR="/var/lib/acg-api"
-BINARY_SRC="${1:?usage: remote-install-acg-api.sh /path/to/acg-api-binary /path/to/acg-api.service [sudo_password]}"
-SERVICE_SRC="${2:?usage: remote-install-acg-api.sh /path/to/acg-api-binary /path/to/acg-api.service [sudo_password]}"
-SUDO_PASSWORD="${3:-}"
+BINARY_SRC="${1:?usage: remote-install-acg-api.sh /path/to/acg-api-binary}"
+SUDO_PASSWORD="${SUDO_PASSWORD:-${2:-}}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVICE_SRC="${SCRIPT_DIR}/acg-api.service"
+NGINX_SNIP_SRC="${SCRIPT_DIR}/nginx-acg-api.snippet"
+
+strip_cr() {
+  sed 's/\r$//' "$1"
+}
 
 run_sudo() {
   if [ -n "$SUDO_PASSWORD" ]; then
@@ -16,28 +22,26 @@ run_sudo() {
   fi
 }
 
+if [ ! -f "$SERVICE_SRC" ]; then
+  echo "missing $SERVICE_SRC" >&2
+  exit 1
+fi
+if [ ! -f "$NGINX_SNIP_SRC" ]; then
+  echo "missing $NGINX_SNIP_SRC" >&2
+  exit 1
+fi
+
 run_sudo mkdir -p "$INSTALL_DIR" "$DATA_DIR"
 run_sudo install -m 0755 "$BINARY_SRC" "$INSTALL_DIR/acg-api"
-run_sudo install -m 0644 "$SERVICE_SRC" /etc/systemd/system/acg-api.service
 
+strip_cr "$SERVICE_SRC" | run_sudo tee /etc/systemd/system/acg-api.service >/dev/null
 run_sudo systemctl daemon-reload
 run_sudo systemctl enable acg-api
 run_sudo systemctl restart acg-api
 
 SNIP="/etc/nginx/snippets/taozhiyy-acg-api.conf"
-if ! run_sudo test -f "$SNIP"; then
-  run_sudo mkdir -p /etc/nginx/snippets
-  run_sudo tee "$SNIP" >/dev/null <<'NGX'
-location /api/ {
-    proxy_pass http://127.0.0.1:8787;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}
-NGX
-fi
+run_sudo mkdir -p /etc/nginx/snippets
+strip_cr "$NGINX_SNIP_SRC" | run_sudo tee "$SNIP" >/dev/null
 
 CONF=""
 for f in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
