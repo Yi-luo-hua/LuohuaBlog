@@ -131,21 +131,25 @@ jobs:
             exit 0
           fi
           SSH_PORT="${UCLOUD_PORT:-22}"
+          REMOTE_FRAG="/tmp/taozhiyy-auth.env.frag"
           FRAG=$(mktemp)
           chmod 600 "$FRAG"
-          printf 'AUTH_OWNER_PASSWORD=%s\n' "$AUTH_OWNER_PASSWORD" >> "$FRAG"
+          printf 'AUTH_OWNER_PASSWORD=%s\n' "$AUTH_OWNER_PASSWORD" > "$FRAG"
           printf 'AUTH_OWNER_SECURITY_ANSWER=%s\n' "$AUTH_OWNER_SECURITY_ANSWER" >> "$FRAG"
-          scp -P "$SSH_PORT" deploy/sync-auth-env.sh "$FRAG" \
-            "$UCLOUD_USER@$UCLOUD_HOST:/tmp/"
-          FRAG_NAME=$(basename "$FRAG")
+          PW_Q=$(printf '%q' "$UCLOUD_SUDO_PASSWORD")
+          scp -P "$SSH_PORT" deploy/sync-auth-env.sh \
+            "$UCLOUD_USER@$UCLOUD_HOST:/tmp/sync-auth-env.sh"
+          scp -P "$SSH_PORT" "$FRAG" \
+            "$UCLOUD_USER@$UCLOUD_HOST:$REMOTE_FRAG"
+          rm -f "$FRAG"
           ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
             set -e
             sed -i 's/\r$//' /tmp/sync-auth-env.sh
             chmod +x /tmp/sync-auth-env.sh
-            SUDO_PASSWORD='$UCLOUD_SUDO_PASSWORD' /tmp/sync-auth-env.sh /tmp/$FRAG_NAME
-            rm -f /tmp/sync-auth-env.sh
+            export SUDO_PASSWORD=$PW_Q
+            /tmp/sync-auth-env.sh $REMOTE_FRAG
+            rm -f /tmp/sync-auth-env.sh $REMOTE_FRAG
           "
-          rm -f "$FRAG"
 
       - name: Switch to production directories
         run: |

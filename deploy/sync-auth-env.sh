@@ -27,7 +27,7 @@ load_fragment_to_env() {
     val="${line#*=}"
     case "$key" in
       AUTH_OWNER_PASSWORD|AUTH_OWNER_SECURITY_ANSWER|AUTH_SESSION_DAYS)
-        export "$key=$val"
+        export "$key"="$val"
         ;;
     esac
   done <"$frag"
@@ -35,6 +35,10 @@ load_fragment_to_env() {
 }
 
 merge_keys_python() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "error: python3 is required on the server to merge auth env" >&2
+    exit 1
+  fi
   local src merged
   src=$(mktemp)
   merged=$(mktemp)
@@ -80,8 +84,14 @@ fi
 merge_keys_python
 
 if run_sudo grep -q '^AUTH_OWNER_PASSWORD=' "$ENV_FILE" 2>/dev/null; then
-  run_sudo systemctl restart acg-api
-  echo "auth env synced; acg-api restarted"
+  if run_sudo systemctl restart acg-api; then
+    echo "auth env synced; acg-api restarted"
+  else
+    echo "error: acg-api restart failed" >&2
+    run_sudo systemctl status acg-api --no-pager >&2 || true
+    exit 1
+  fi
 else
   echo "warn: AUTH_OWNER_PASSWORD not set in $ENV_FILE (skip restart)"
+  exit 1
 fi
