@@ -7,6 +7,8 @@ on:
       - "main/**"
       - "blog/**"
       - "build/**"
+      - "acg-api/**"
+      - "deploy/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -22,6 +24,7 @@ jobs:
       UCLOUD_SUDO_PASSWORD: ${{ secrets.UCLOUD_SUDO_PASSWORD }}
       ROOT_DIR: /var/www/taozhiyy
       TMP_DIR: /tmp/taozhiyy-deploy
+      VITE_API_BASE: https://taozhiyy.top
 
     steps:
       - name: Checkout
@@ -37,16 +40,30 @@ jobs:
             blog/package-lock.json
             build/package-lock.json
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache-dependency-path: acg-api/go.mod
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Build acg-api (linux)
+        run: |
+          cd acg-api
+          go mod download
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o acg-api .
 
       - name: Build main
         run: |
           cd main
           npm ci
           npm run build
+        env:
+          VITE_API_BASE: ${{ env.VITE_API_BASE }}
 
       - name: Build blog (Hexo)
         run: |
@@ -75,10 +92,20 @@ jobs:
       - name: Upload artifacts to remote tmp
         run: |
           SSH_PORT="${UCLOUD_PORT:-22}"
-          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "mkdir -p $TMP_DIR/main $TMP_DIR/blog $TMP_DIR/build"
+          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "mkdir -p $TMP_DIR/main $TMP_DIR/blog $TMP_DIR/build $TMP_DIR/acg-api"
           rsync -az --delete -e "ssh -p $SSH_PORT" main/dist/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/main/"
           rsync -az --delete -e "ssh -p $SSH_PORT" blog/public/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/blog/"
           rsync -az --delete -e "ssh -p $SSH_PORT" build/dist/ "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/build/"
+          scp -P "$SSH_PORT" acg-api/acg-api deploy/remote-install-acg-api.sh "$UCLOUD_USER@$UCLOUD_HOST:$TMP_DIR/acg-api/"
+
+      - name: Install acg-api and nginx /api proxy
+        run: |
+          SSH_PORT="${UCLOUD_PORT:-22}"
+          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
+            set -e
+            chmod +x $TMP_DIR/acg-api/remote-install-acg-api.sh
+            bash $TMP_DIR/acg-api/remote-install-acg-api.sh $TMP_DIR/acg-api/acg-api '$UCLOUD_SUDO_PASSWORD'
+          "
 
       - name: Switch to production directories
         run: |
@@ -94,8 +121,20 @@ jobs:
             rm -rf $TMP_DIR
           "
 
+      - name: Trigger Bilibili sync (covers)
+        run: |
+          curl -sf -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger
+          echo "sync queued, waiting for downloads..."
+          sleep 45
+          BODY=$(curl -sf --max-time 30 https://taozhiyy.top/api/v1/bangumi/list)
+          echo "$BODY" | head -c 500
+          echo ""
+          echo "$BODY" | grep -q 'acg/image' && echo "covers: ok" || echo "covers: pending (retry sync later)"
+
       - name: Post-deploy health check
         run: |
+          curl -sf --max-time 20 https://taozhiyy.top/api/v1/health | grep -q '"status":"ok"'
           curl -fL --max-time 20 https://taozhiyy.top/ > /dev/null
           curl -fL --max-time 20 https://taozhiyy.top/blog/ > /dev/null
           curl -fL --max-time 20 https://taozhiyy.top/build/ > /dev/null
+          curl -fL --max-time 20 https://taozhiyy.top/bili > /dev/null

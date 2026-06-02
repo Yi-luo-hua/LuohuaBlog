@@ -137,7 +137,7 @@ func listBangumiFromDB(db *sql.DB) ([]bangumiItem, error) {
 
 func listRadarFromDB(db *sql.DB) ([]radarItem, error) {
 	rows, err := db.Query(
-		`SELECT id, creator_name, latest_text, is_new, link_url FROM radar_feed ORDER BY published_at DESC`,
+		`SELECT id, creator_name, latest_text, is_new, link_url, cover_path FROM radar_feed ORDER BY published_at DESC`,
 	)
 	if err != nil {
 		return nil, err
@@ -147,10 +147,14 @@ func listRadarFromDB(db *sql.DB) ([]radarItem, error) {
 	for rows.Next() {
 		var it radarItem
 		var isNew int
-		if err := rows.Scan(&it.ID, &it.CreatorName, &it.LatestText, &isNew, &it.LinkURL); err != nil {
+		var coverPath sql.NullString
+		if err := rows.Scan(&it.ID, &it.CreatorName, &it.LatestText, &isNew, &it.LinkURL, &coverPath); err != nil {
 			return nil, err
 		}
 		it.IsNew = isNew == 1
+		if coverPath.Valid && coverPath.String != "" {
+			it.CoverURL = "/api/v1/acg/image/" + coverPath.String
+		}
 		items = append(items, it)
 	}
 	return items, nil

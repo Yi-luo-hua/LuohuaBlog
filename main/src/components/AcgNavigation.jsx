@@ -62,6 +62,17 @@ const BangumiCard = ({ item }) => {
 
 const RadarCard = ({ item }) => (
   <article className="relative h-auto overflow-hidden rounded-xl border border-white/10 bg-white/5 p-5 text-blue-50">
+    {item.coverUrl && (
+      <div className="mb-3 aspect-video w-full overflow-hidden rounded-lg bg-black/30">
+        <img
+          src={resolveCoverSrc(item, API_BASE)}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
+      </div>
+    )}
     {item.isNew && (
       <>
         <span className="absolute right-4 top-4 h-3 w-3 animate-pulse rounded-full bg-red-500" />
@@ -116,7 +127,7 @@ const AcgNavigation = () => {
         </header>
 
         {loading ? (
-          <p className="px-4 text-sm text-white/50">Syncing mock feed…</p>
+          <p className="px-4 text-sm text-white/50">Loading feed…</p>
         ) : (
           <>
             <div className="mb-10 px-2">

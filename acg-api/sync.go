@@ -32,6 +32,7 @@ type radarItem struct {
 	LatestText  string `json:"latestText"`
 	IsNew       bool   `json:"isNew"`
 	LinkURL     string `json:"linkUrl,omitempty"`
+	CoverURL    string `json:"coverUrl,omitempty"`
 	CoverPath   string `json:"-"`
 	PublishedAt string `json:"-"`
 }
