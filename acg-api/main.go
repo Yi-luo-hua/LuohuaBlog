@@ -91,6 +91,12 @@ func radarFeedHandler(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if len(items) == 0 {
+		cfg := loadConfig()
+		bili := NewBiliClient(cfg)
+		runRadarSync(db, bili, cfg, cacheDir)
+		items, _ = listRadarFromDB(db)
+	}
 	writeJSON(w, map[string]any{"items": jsonList(items)})
 }
 

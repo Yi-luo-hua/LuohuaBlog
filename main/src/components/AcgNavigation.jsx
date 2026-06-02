@@ -135,7 +135,7 @@ const AcgNavigation = () => {
                 追番大追击
               </h3>
               <div className="grid grid-cols-1 gap-6 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {(Array.isArray(bangumiList) ? bangumiList : []).map((item) => (
+                {bangumiList.map((item) => (
                   <BangumiCard key={item.id} item={item} />
                 ))}
               </div>
@@ -145,11 +145,15 @@ const AcgNavigation = () => {
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-yellow-300">
                 大佬动态雷达
               </h3>
-              <div className="grid grid-cols-1 gap-6 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {(Array.isArray(radarList) ? radarList : []).map((item) => (
-                  <RadarCard key={item.id} item={item} />
-                ))}
-              </div>
+              {radarList.length === 0 ? (
+                <p className="px-4 text-sm text-white/50">Radar feed is syncing…</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-6 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {radarList.map((item) => (
+                    <RadarCard key={item.id} item={item} />
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}

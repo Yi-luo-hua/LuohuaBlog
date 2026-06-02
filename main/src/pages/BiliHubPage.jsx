@@ -1,5 +1,4 @@
 import AcgNavigation from "../components/AcgNavigation";
-import Guestbook from "../components/Guestbook";
 
 const BiliHubPage = () => (
   <div className="min-h-screen bg-black pt-24">
@@ -11,12 +10,10 @@ const BiliHubPage = () => (
         Bili Hub
       </h1>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-blue-50/75">
-        Bangumi tracker, creator radar, and the guestbook — separate from the main
-        landing scroll.
+        Bangumi tracker and creator radar — separate from the main landing scroll.
       </p>
     </header>
     <AcgNavigation />
-    <Guestbook />
   </div>
 );
 

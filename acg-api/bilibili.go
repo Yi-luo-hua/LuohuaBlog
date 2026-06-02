@@ -138,16 +138,33 @@ func (c *BiliClient) FetchLatestVideo(mid string) (*latestVideo, error) {
 	for k, v := range params {
 		q.Set(k, v)
 	}
-	apiURL := "https://api.bilibili.com/x/space/wbi/arc/search?" + q.Encode()
+	vid, err := c.fetchArcSearch(mid, "https://api.bilibili.com/x/space/wbi/arc/search?"+q.Encode())
+	if err == nil {
+		return vid, nil
+	}
+	legacyQ := url.Values{}
+	legacyQ.Set("mid", mid)
+	legacyQ.Set("pn", "1")
+	legacyQ.Set("ps", "1")
+	legacyQ.Set("order", "pubdate")
+	return c.fetchArcSearch(mid, "https://api.bilibili.com/x/space/arc/search?"+legacyQ.Encode())
+}
+
+func (c *BiliClient) fetchArcSearch(mid, apiURL string) (*latestVideo, error) {
 	req, _ := http.NewRequest(http.MethodGet, apiURL, nil)
 	req.Header.Set("User-Agent", biliUA)
 	req.Header.Set("Referer", "https://space.bilibili.com/"+mid)
+	req.Header.Set("Origin", "https://space.bilibili.com")
+	req.Header.Set("Accept", "application/json, text/plain, */*")
 	res, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
+	if res.StatusCode >= 400 {
+		return nil, fmt.Errorf("arc search http=%d", res.StatusCode)
+	}
 	var payload struct {
 		Code int `json:"code"`
 		Data struct {

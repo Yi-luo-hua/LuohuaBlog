@@ -41,33 +41,32 @@ export const mockBangumiList = [
 
 export const mockRadarList = [
   {
-    id: "r1",
-    creatorName: "UP · TechLullaby",
-    latestText:
-      "Posted a calm devlog with a fresh cover — worth a peek tonight.",
-    isNew: true,
-    linkUrl: "https://space.bilibili.com/",
-  },
-  {
-    id: "r2",
-    creatorName: "UP · SystemsGarden",
-    latestText: "New video: stream caches, latency tuning, no ads.",
+    id: "r_517327498",
+    creatorName: "UP · 罗翔说刑法",
+    latestText: "Open space to see the latest upload.",
     isNew: false,
-    linkUrl: "https://space.bilibili.com/",
+    linkUrl: "https://space.bilibili.com/517327498",
   },
   {
-    id: "r3",
-    creatorName: "UP · MythicCoder",
-    latestText: "Radar sync: 3 creators added to the watch list.",
-    isNew: true,
-    linkUrl: "https://space.bilibili.com/",
-  },
-  {
-    id: "r4",
-    creatorName: "UP · CalmCanvas",
-    latestText: "Mobile grid polish for ACG navigation cards.",
+    id: "r_431073645",
+    creatorName: "UP · 你的影月月",
+    latestText: "Open space to see the latest upload.",
     isNew: false,
-    linkUrl: "https://space.bilibili.com/",
+    linkUrl: "https://space.bilibili.com/431073645",
+  },
+  {
+    id: "r_37974444",
+    creatorName: "UP · 黑马程序员",
+    latestText: "Open space to see the latest upload.",
+    isNew: false,
+    linkUrl: "https://space.bilibili.com/37974444",
+  },
+  {
+    id: "r_398915225",
+    creatorName: "UP · 挪威的月亮",
+    latestText: "Open space to see the latest upload.",
+    isNew: false,
+    linkUrl: "https://space.bilibili.com/398915225",
   },
 ];
 

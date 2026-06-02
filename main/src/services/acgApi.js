@@ -26,7 +26,8 @@ export async function getBangumiList() {
 export async function getRadarFeed() {
   try {
     const data = await fetchJson("/api/v1/radar/feed");
-    return asList(data);
+    const items = asList(data);
+    return items.length > 0 ? items : mockRadarList;
   } catch {
     return mockRadarList;
   }
