@@ -76,7 +76,18 @@ body {
   }
 
   .bento-title {
-    @apply uppercase md:text-6xl text-4xl font-black font-zentry;
+    @apply uppercase text-xl font-black font-zentry leading-tight md:text-6xl;
+  }
+
+  @media (max-width: 767px) {
+    .features-bento-grid .bento-tilt_1,
+    .features-bento-grid .bento-tilt_2 {
+      @apply col-span-1 min-h-[22rem];
+    }
+
+    .features-bento-card-copy {
+      @apply line-clamp-4 text-[11px] leading-snug;
+    }
   }
 
   .story-img-container {
