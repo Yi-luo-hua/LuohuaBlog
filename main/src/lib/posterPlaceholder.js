@@ -1,26 +1,33 @@
-/** Tiny SVG poster — no network, minimal memory. */
-export const makePosterDataUri = (label, hue = 210) => {
-  const safe = String(label).replace(/[<>&"]/g, "");
+/** Muted placeholder when API cover is not ready yet. */
+export const makePosterDataUri = (label) => {
+  const safe = String(label).replace(/[<>&"]/g, "").slice(0, 24);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
     <defs>
-      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="hsl(${hue} 85% 55%)"/>
-        <stop offset="100%" stop-color="hsl(${(hue + 55) % 360} 80% 48%)"/>
+      <linearGradient id="g" x1="0" y1="0" x2="0.4" y2="1">
+        <stop offset="0%" stop-color="#3f3f46" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#18181b" stop-opacity="0.9"/>
       </linearGradient>
+      <filter id="n">
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" stitchTiles="stitch"/>
+        <feColorMatrix type="saturate" values="0"/>
+        <feBlend in="SourceGraphic" mode="overlay"/>
+      </filter>
     </defs>
-    <rect width="600" height="800" rx="28" fill="url(#g)"/>
-    <text x="300" y="420" text-anchor="middle" font-family="system-ui,sans-serif" font-size="36" font-weight="700" fill="#f8fff9">${safe}</text>
+    <rect width="600" height="800" fill="url(#g)"/>
+    <rect width="600" height="800" filter="url(#n)" opacity="0.12"/>
+    <text x="300" y="420" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" letter-spacing="0.2em" fill="#a1a1aa" opacity="0.5">${safe || "POSTER"}</text>
   </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
+export const hasRemoteCover = (item) =>
+  Boolean(item?.coverUrl && !String(item.coverUrl).startsWith("data:"));
+
 export const resolveCoverSrc = (item, apiBase) => {
-  if (item.coverUrl) {
-    if (item.coverUrl.startsWith("http") || item.coverUrl.startsWith("data:")) {
-      return item.coverUrl;
-    }
-    const base = (apiBase || "").replace(/\/$/, "");
-    return base ? `${base}${item.coverUrl}` : item.coverUrl;
+  if (!item?.coverUrl) return null;
+  if (item.coverUrl.startsWith("http") || item.coverUrl.startsWith("data:")) {
+    return item.coverUrl;
   }
-  return makePosterDataUri(item.title?.slice(0, 12) || "ACG", item.hue ?? 210);
+  const base = (apiBase || "").replace(/\/$/, "");
+  return base ? `${base}${item.coverUrl}` : item.coverUrl;
 };
