@@ -44,16 +44,33 @@ body {
   }
 
   .nav-mobile-link {
-    @apply flex min-h-12 w-full items-center rounded-xl px-4 text-[17px] font-semibold normal-case tracking-normal text-[#2B2B2B] no-underline transition-colors duration-200;
+    @apply flex min-h-12 w-full items-center rounded-xl px-4 text-[17px] font-semibold normal-case tracking-normal no-underline transition-colors duration-200;
   }
 
-  .nav-mobile-link:hover,
-  .nav-mobile-link:focus-visible {
+  .nav-mobile-link--light {
+    @apply text-[#2B2B2B];
+  }
+
+  .nav-mobile-link--light:hover,
+  .nav-mobile-link--light:focus-visible {
     @apply bg-white/80 text-[#FF8FAB] outline-none;
   }
 
-  .nav-mobile-link--active {
+  .nav-mobile-link--active-light {
     @apply bg-white text-[#FF8FAB];
+  }
+
+  .nav-mobile-link--dark {
+    @apply text-blue-50;
+  }
+
+  .nav-mobile-link--dark:hover,
+  .nav-mobile-link--dark:focus-visible {
+    @apply bg-white/10 text-yellow-300 outline-none;
+  }
+
+  .nav-mobile-link--active-dark {
+    @apply bg-white/10 text-yellow-300;
   }
 
   .absolute-center {
@@ -329,10 +346,17 @@ body {
   border: none;
   margin: 0;
   padding: 0;
-  background: rgba(43, 43, 43, 0.25);
   opacity: 0;
   transition: opacity 220ms ease;
   cursor: pointer;
+}
+
+.nav-mobile-backdrop--light {
+  background: rgba(43, 43, 43, 0.25);
+}
+
+.nav-mobile-backdrop--dark {
+  background: rgba(0, 0, 0, 0.62);
 }
 
 .nav-mobile-backdrop.is-open {
@@ -352,13 +376,22 @@ body {
   height: 100dvh;
   padding: calc(12px + env(safe-area-inset-top, 0px)) 16px
     calc(20px + env(safe-area-inset-bottom, 0px));
-  background: rgba(255, 248, 231, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-left: 1px solid #f2e6c9;
-  box-shadow: -8px 0 32px rgba(255, 143, 171, 0.15);
   transform: translateX(100%);
   transition: transform 220ms ease;
+}
+
+.nav-mobile-drawer--light {
+  background: rgba(255, 248, 231, 0.92);
+  border-left: 1px solid #f2e6c9;
+  box-shadow: -8px 0 32px rgba(255, 143, 171, 0.15);
+}
+
+.nav-mobile-drawer--dark {
+  background: rgba(12, 12, 18, 0.96);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.45);
 }
 
 .nav-mobile-drawer.is-open {
@@ -371,7 +404,14 @@ body {
   justify-content: space-between;
   margin-bottom: 12px;
   padding-bottom: 12px;
+}
+
+.nav-mobile-drawer--light .nav-mobile-drawer-head {
   border-bottom: 1px solid rgba(242, 230, 201, 0.9);
+}
+
+.nav-mobile-drawer--dark .nav-mobile-drawer-head {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .nav-mobile-drawer-title {
@@ -379,7 +419,14 @@ body {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
+}
+
+.nav-mobile-drawer--light .nav-mobile-drawer-title {
   color: #6b7280;
+}
+
+.nav-mobile-drawer--dark .nav-mobile-drawer-title {
+  color: rgba(226, 232, 240, 0.55);
 }
 
 .nav-mobile-close {
@@ -388,20 +435,37 @@ body {
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: 1px solid #f2e6c9;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.85);
-  color: #2b2b2b;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  transition: background 180ms ease, border-color 180ms ease;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
-.nav-mobile-close:hover,
-.nav-mobile-close:focus-visible {
+.nav-mobile-drawer--light .nav-mobile-close {
+  border: 1px solid #f2e6c9;
+  background: rgba(255, 255, 255, 0.85);
+  color: #2b2b2b;
+}
+
+.nav-mobile-drawer--light .nav-mobile-close:hover,
+.nav-mobile-drawer--light .nav-mobile-close:focus-visible {
   border-color: #ff8fab;
   background: #fff;
+  outline: none;
+}
+
+.nav-mobile-drawer--dark .nav-mobile-close {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+}
+
+.nav-mobile-drawer--dark .nav-mobile-close:hover,
+.nav-mobile-drawer--dark .nav-mobile-close:focus-visible {
+  border-color: rgba(253, 224, 71, 0.45);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fde047;
   outline: none;
 }
 

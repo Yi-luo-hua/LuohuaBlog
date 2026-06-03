@@ -161,7 +161,14 @@ const NavBar = () => {
       <Link
         key={item.label}
         to={item.to}
-        className={clsx("nav-mobile-link", active && "nav-mobile-link--active")}
+        className={clsx(
+          "nav-mobile-link",
+          isLightNav ? "nav-mobile-link--light" : "nav-mobile-link--dark",
+          active &&
+            (isLightNav
+              ? "nav-mobile-link--active-light"
+              : "nav-mobile-link--active-dark")
+        )}
         onClick={closeMobile}
       >
         {item.label}
@@ -169,13 +176,19 @@ const NavBar = () => {
     );
   };
 
+  const drawerTheme = isLightNav ? "light" : "dark";
+
   const mobileDrawer =
     drawerMounted &&
     createPortal(
       <div className="nav-mobile-root md:hidden" aria-hidden={!drawerVisible}>
         <button
           type="button"
-          className={clsx("nav-mobile-backdrop", drawerVisible && "is-open")}
+          className={clsx(
+            "nav-mobile-backdrop",
+            `nav-mobile-backdrop--${drawerTheme}`,
+            drawerVisible && "is-open"
+          )}
           aria-label="关闭导航菜单"
           tabIndex={drawerVisible ? 0 : -1}
           onClick={closeMobile}
@@ -187,7 +200,11 @@ const NavBar = () => {
           aria-modal="true"
           aria-label="站点导航"
           aria-hidden={!drawerVisible}
-          className={clsx("nav-mobile-drawer", drawerVisible && "is-open")}
+          className={clsx(
+            "nav-mobile-drawer",
+            `nav-mobile-drawer--${drawerTheme}`,
+            drawerVisible && "is-open"
+          )}
         >
           <div className="nav-mobile-drawer-head">
             <span className="nav-mobile-drawer-title">菜单</span>
