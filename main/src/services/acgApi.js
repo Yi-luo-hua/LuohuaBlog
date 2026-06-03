@@ -17,7 +17,8 @@ async function fetchJson(path) {
 export async function getBangumiList() {
   try {
     const data = await fetchJson("/api/v1/bangumi/list");
-    return asList(data);
+    const items = asList(data);
+    return items.length > 0 ? items : mockBangumiList;
   } catch {
     return mockBangumiList;
   }

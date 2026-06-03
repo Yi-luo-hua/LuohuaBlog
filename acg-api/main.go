@@ -40,6 +40,7 @@ func main() {
 		log.Fatal(err)
 	}
 	ensureOwnerAccount(db)
+	seedDefaultACGData(db)
 
 	startSyncLoops(db, cfg, cacheDir)
 
@@ -86,12 +87,6 @@ func bangumiListHandler(w http.ResponseWriter, _ *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-	if len(items) == 0 {
-		bili := NewBiliClient(loadConfig())
-		if fetched, e := bili.FetchBangumi(1, 12); e == nil {
-			items = fetched
-		}
 	}
 	writeJSON(w, map[string]any{"items": items})
 }

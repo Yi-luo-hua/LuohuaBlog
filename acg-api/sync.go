@@ -65,6 +65,10 @@ func runBangumiSync(db *sql.DB, bili *BiliClient, cacheDir string) {
 		log.Println("sync: bangumi fetch error:", err)
 		return
 	}
+	if len(items) == 0 {
+		log.Println("sync: bangumi fetch returned empty list; keeping cached data")
+		return
+	}
 	for i := range items {
 		if items[i].CoverURL == "" {
 			continue
@@ -86,6 +90,7 @@ func runBangumiSync(db *sql.DB, bili *BiliClient, cacheDir string) {
 func runRadarSync(db *sql.DB, bili *BiliClient, cfg AppConfig, cacheDir string) {
 	log.Println("sync: radar start")
 	now := time.Now()
+	synced := 0
 	for _, creator := range cfg.RadarCreators {
 		vid, err := bili.FetchLatestVideo(creator.UID)
 		if err != nil {
@@ -111,7 +116,12 @@ func runRadarSync(db *sql.DB, bili *BiliClient, cfg AppConfig, cacheDir string) 
 		}
 		if err := upsertRadarFeed(db, item); err != nil {
 			log.Println("sync: radar db", creator.Name, err)
+			continue
 		}
+		synced++
+	}
+	if synced > 0 {
+		_, _ = db.Exec(`DELETE FROM radar_feed WHERE id LIKE 'seed_%'`)
 	}
 	log.Println("sync: radar done")
 }
@@ -129,7 +139,8 @@ func downloadToCache(remoteURL, dest string) error {
 	}
 	req.Header.Set("User-Agent", biliUA)
 	req.Header.Set("Referer", "https://www.bilibili.com")
-	res, err := http.DefaultClient.Do(req)
+	client := &http.Client{Timeout: biliHTTPTimeout()}
+	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}

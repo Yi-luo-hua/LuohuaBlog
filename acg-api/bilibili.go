@@ -21,9 +21,19 @@ type BiliClient struct {
 
 func NewBiliClient(cfg AppConfig) *BiliClient {
 	return &BiliClient{
-		http: &http.Client{Timeout: 25 * time.Second},
+		http: &http.Client{Timeout: biliHTTPTimeout()},
 		cfg:  cfg,
 	}
+}
+
+func biliHTTPTimeout() time.Duration {
+	seconds := 8
+	if v := env("BILIBILI_TIMEOUT_SECONDS", ""); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 60 {
+			seconds = n
+		}
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 func (c *BiliClient) FetchBangumi(page, pageSize int) ([]bangumiItem, error) {
