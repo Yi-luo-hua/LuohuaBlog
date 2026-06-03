@@ -131,18 +131,28 @@
   margin-top: 8px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   flex-wrap: wrap;
 }
 
 .blog-ai-auth-user {
+  flex: 1 1 auto;
   font-size: 11px;
   color: rgba(43, 43, 43, 0.75);
   max-width: 160px;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.blog-ai-auth-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
 .blog-ai-auth-link {

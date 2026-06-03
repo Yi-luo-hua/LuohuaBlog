@@ -100,9 +100,11 @@
       var out = el("button", "blog-ai-auth-link", "退出");
       out.type = "button";
       out.addEventListener("click", onLogout);
+      var actions = el("span", "blog-ai-auth-actions");
+      actions.appendChild(rename);
+      actions.appendChild(out);
       ui.authBar.appendChild(who);
-      ui.authBar.appendChild(rename);
-      ui.authBar.appendChild(out);
+      ui.authBar.appendChild(actions);
       return;
     }
     var login = el("button", "blog-ai-auth-link", "登录 / 注册");
