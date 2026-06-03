@@ -201,8 +201,8 @@ const AcgNavigation = () => {
       setBangumiExpanded(false);
       const [bangumi, radar] = await Promise.all([getBangumiList(), getRadarFeed()]);
       if (!cancelled) {
-        setBangumiList(bangumi);
-        setRadarList(radar);
+        setBangumiList(Array.isArray(bangumi) ? bangumi : []);
+        setRadarList(Array.isArray(radar) ? radar : []);
         setLoading(false);
       }
     })();

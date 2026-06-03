@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
+import { asList } from "../lib/asList";
 import { authMe } from "../services/authApi";
 import {
   deleteGuestbookMessage,
@@ -52,7 +53,8 @@ const GuestbookPage = () => {
     }
     setTotal(data.total ?? 0);
     setIsAdmin(!!data.isAdmin);
-    setItems((prev) => (append ? [...prev, ...(data.items || [])] : data.items || []));
+    const list = asList(data);
+    setItems((prev) => (append ? [...prev, ...list] : list));
     setPage(p);
     setLoading(false);
     setLoadingMore(false);
