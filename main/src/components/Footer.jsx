@@ -20,10 +20,11 @@ const socialLinks = [
 
 const footerThemes = {
   default: {
-    shell: "bg-[#5542ff] text-black",
-    copy: "text-black",
-    icon: "text-black hover:text-white",
-    tip: "bg-white text-black",
+    shell:
+      "border-t border-[#F2E6C9] bg-gradient-to-r from-[#FFF8E7] via-[#FFEAF4] to-[#EAF6FF] text-[#2B2B2B]",
+    copy: "text-[#5F4B52]",
+    icon: "text-[#2B2B2B] hover:text-[#FF8FAB]",
+    tip: "border border-[#F2E6C9] bg-white/95 text-[#2B2B2B]",
   },
   bili: {
     shell:

@@ -46,20 +46,26 @@ const FloatingImage = () => {
   };
 
   return (
-    <div id="contact" className="min-h-dvh w-screen bg-black text-blue-50">
-      <div className="flex size-full flex-col items-center py-10 pb-24">
-        <p className="font-general text-sm uppercase md:text-[10px]">
+    <div
+      id="contact"
+      className="min-h-dvh w-screen bg-[linear-gradient(180deg,#f6fbff_0%,#fff8f1_48%,#ffeef5_100%)] text-[#241322]"
+    >
+      <div className="flex size-full flex-col items-center py-8 pb-20 md:py-10 md:pb-24">
+        <p className="font-general text-sm uppercase tracking-[0.35em] text-[#b76e79] md:text-[10px]">
           FOLLOW-UP PLAN
         </p>
 
         <div className="relative size-full">
           <AnimatedTitle
             title="L<b>O</b>OK FORWARD <br /> TO IT TO THE F<b>U</b>LLEST"
-            containerClass="mt-5 pointer-events-none mix-blend-difference relative z-10"
+            containerClass="mt-5 pointer-events-none relative z-10 !text-[#241322]"
           />
 
           <div className="story-img-container">
+            <div className="story-note-tape story-note-tape-left" />
+            <div className="story-note-tape story-note-tape-right" />
             <div className="story-img-mask">
+              <div className="story-note-label">FOLLOW-UP NOTE</div>
               <div className="story-img-content">
                 <img
                   ref={frameRef}
@@ -74,7 +80,6 @@ const FloatingImage = () => {
               </div>
             </div>
 
-            {/* for the rounded corner */}
             <svg
               className="invisible absolute size-0"
               xmlns="http://www.w3.org/2000/svg"
@@ -103,16 +108,17 @@ const FloatingImage = () => {
           </div>
         </div>
 
-        <div className="-mt-80 flex w-full justify-center md:-mt-64 md:me-44 md:justify-end">
-          <div className="flex h-full w-fit flex-col items-center md:items-start">
-            <p className="mt-3 max-w-sm text-center font-circular-web text-violet-50 md:text-start">
-              Thank you for watching. If there are any areas that need correction, you are sincerely invited to provide feedback below.
+        <div className="relative z-30 -mt-48 flex w-full justify-center px-6 md:-mt-72 md:me-36 md:justify-end">
+          <div className="flex h-full w-fit max-w-xl flex-col items-center rounded-[1.75rem] border border-white/75 bg-[#fffaf3]/92 px-6 py-5 shadow-[0_24px_80px_rgba(183,110,121,0.18)] backdrop-blur-md md:items-start md:rounded-[2rem] md:px-9 md:py-7">
+            <p className="mt-1 max-w-xl text-center font-circular-web text-xl leading-8 text-[#4d3941] md:text-start md:text-3xl md:leading-[1.45]">
+              Thank you for watching. If there are any areas that need
+              correction, you are sincerely invited to provide feedback below.
             </p>
 
             <Button
               id="realm-btn"
               title="LEAVE A MESSAGE"
-              containerClass="mt-5"
+              containerClass="mt-7 bg-[#241322] text-[#ffe7ef]"
               to="/guestbook"
             />
           </div>
