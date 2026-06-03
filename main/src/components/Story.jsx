@@ -1,7 +1,6 @@
 import gsap from "gsap";
 import { useRef } from "react";
 
-import { Link } from "react-router-dom";
 import Button from "./Button";
 import AnimatedTitle from "./AnimatedTitle";
 
@@ -110,13 +109,12 @@ const FloatingImage = () => {
               Thank you for watching. If there are any areas that need correction, you are sincerely invited to provide feedback below.
             </p>
 
-            <Link to="/guestbook">
-              <Button
-                id="realm-btn"
-                title="LEAVE A MESSAGE"
-                containerClass="mt-5"
-              />
-            </Link>
+            <Button
+              id="realm-btn"
+              title="LEAVE A MESSAGE"
+              containerClass="mt-5"
+              to="/guestbook"
+            />
           </div>
         </div>
       </div>

@@ -47,9 +47,13 @@ const Contact = () => {
             className="special-font !md:text-[6.2rem] w-full font-zentry !text-5xl !font-black !leading-[.9]"
           />
 
-          <a href="https://github.com/adrianhajdin/award-winning-website#introduction" target="_blank" rel="noopener noreferrer">
-            <Button title="Learn more" containerClass="mt-10 cursor-pointer" />
-          </a>
+          <Button
+            title="Learn more"
+            containerClass="mt-10 cursor-pointer"
+            href="https://github.com/adrianhajdin/award-winning-website#introduction"
+            target="_blank"
+            rel="noopener noreferrer"
+          />
         </div>
       </div>
     </div>
