@@ -86,6 +86,7 @@ func migrateAll(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			email TEXT NOT NULL UNIQUE,
+			display_name TEXT NOT NULL DEFAULT '',
 			password_hash TEXT NOT NULL,
 			created_at TEXT NOT NULL,
 			is_owner INTEGER NOT NULL DEFAULT 0
@@ -112,6 +113,7 @@ func migrateAll(db *sql.DB) error {
 		}
 	}
 	ensureColumn(db, "users", "is_owner", "INTEGER NOT NULL DEFAULT 0")
+	ensureColumn(db, "users", "display_name", "TEXT NOT NULL DEFAULT ''")
 	ensureColumn(db, "sessions", "unlimited", "INTEGER NOT NULL DEFAULT 0")
 	ensureColumn(db, "ai_chat_hourly", "owner_calls", "INTEGER NOT NULL DEFAULT 0")
 	ensureColumn(db, "ai_chat_hourly", "owner_tokens", "INTEGER NOT NULL DEFAULT 0")

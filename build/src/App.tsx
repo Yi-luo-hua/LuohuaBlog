@@ -8,7 +8,6 @@ import { GalleryAlbumPage } from './pages/GalleryAlbumPage';
 import { GalleryPage } from './pages/GalleryPage';
 import { HomePage } from './pages/HomePage';
 import { LinksPage } from './pages/LinksPage';
-import { MessagePage } from './pages/MessagePage';
 import { MomentsPage } from './pages/MomentsPage';
 import { PostPage } from './pages/PostPage';
 
@@ -27,7 +26,6 @@ export function App() {
               <Route path="/gallery" element={<GalleryPage />} />
               <Route path="/gallery/:id" element={<GalleryAlbumPage />} />
               <Route path="/links" element={<LinksPage />} />
-              <Route path="/message" element={<MessagePage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

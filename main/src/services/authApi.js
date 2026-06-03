@@ -51,3 +51,13 @@ export async function authLogout() {
   });
   return parseJson(res);
 }
+
+export async function authUpdateProfile(displayName) {
+  const res = await fetch("/api/auth/profile", {
+    method: "PATCH",
+    credentials: "include",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ displayName }),
+  });
+  return parseJson(res);
+}

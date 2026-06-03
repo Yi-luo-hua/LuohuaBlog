@@ -21,6 +21,7 @@ const (
 	minPasswordLen      = 8
 	maxPasswordBytes    = 72
 	maxEmailLen         = 254
+	maxDisplayNameRunes = 12
 )
 
 var (
@@ -29,10 +30,11 @@ var (
 )
 
 type authUser struct {
-	ID        int64  `json:"id"`
-	Email     string `json:"email"`
-	IsOwner   bool   `json:"isOwner,omitempty"`
-	CreatedAt string `json:"createdAt,omitempty"`
+	ID          int64  `json:"id"`
+	Email       string `json:"email"`
+	DisplayName string `json:"displayName,omitempty"`
+	IsOwner     bool   `json:"isOwner,omitempty"`
+	CreatedAt   string `json:"createdAt,omitempty"`
 }
 
 type sessionInfo struct {
@@ -67,6 +69,12 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		handleLogout(w, r)
+	case "profile":
+		if r.Method != http.MethodPatch {
+			methodNotAllowed(w)
+			return
+		}
+		handleAuthProfile(w, r)
 	case "me":
 		if r.Method != http.MethodGet {
 			methodNotAllowed(w)
@@ -101,6 +109,28 @@ func validatePassword(pw string) error {
 		return errors.New("密码过长")
 	}
 	return nil
+}
+
+func normalizeDisplayName(s string) (string, error) {
+	name := strings.TrimSpace(s)
+	if name == "" {
+		return "", errors.New("昵称不能为空")
+	}
+	if utf8.RuneCountInString(name) > maxDisplayNameRunes {
+		return "", errors.New("昵称最多 12 个字")
+	}
+	return name, nil
+}
+
+func displayNameOrEmail(email, displayName string) string {
+	name := strings.TrimSpace(displayName)
+	if name == "" {
+		return nicknameFromEmail(email)
+	}
+	if utf8.RuneCountInString(name) > maxDisplayNameRunes {
+		return string([]rune(name)[:maxDisplayNameRunes])
+	}
+	return name
 }
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -150,9 +180,10 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	created := time.Now().UTC().Format(time.RFC3339)
+	displayName := nicknameFromEmail(email)
 	res, err := db.Exec(
-		`INSERT INTO users (email, password_hash, created_at, is_owner) VALUES (?, ?, ?, 0)`,
-		email, string(hash), created,
+		`INSERT INTO users (email, display_name, password_hash, created_at, is_owner) VALUES (?, ?, ?, ?, 0)`,
+		email, displayName, string(hash), created,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
@@ -170,7 +201,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]any{
-		"ok": true, "user": authUser{ID: userID, Email: email, CreatedAt: created},
+		"ok": true, "user": authUser{ID: userID, Email: email, DisplayName: displayName, CreatedAt: created},
 	})
 }
 
@@ -194,7 +225,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	email := normalizeEmail(body.Email)
-	userID, isOwner, err := lookupUserCredentials(email, body.Password)
+	userID, displayName, isOwner, err := lookupUserCredentials(email, body.Password)
 	if err != nil {
 		if errors.Is(err, errInvalidCredentials) {
 			writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
@@ -217,7 +248,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 			"needsSecurityQuestion":  true,
 			"securityQuestion":       ownerSecurityQuestion,
 			"challengeToken":         token,
-			"user":                   authUser{ID: userID, Email: email, IsOwner: true},
+			"user":                   authUser{ID: userID, Email: email, DisplayName: displayName, IsOwner: true},
 		})
 		return
 	}
@@ -227,7 +258,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]any{
-		"ok": true, "user": authUser{ID: userID, Email: email},
+		"ok": true, "user": authUser{ID: userID, Email: email, DisplayName: displayName},
 	})
 }
 
@@ -265,11 +296,11 @@ func handleVerifySecurity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var email string
+	var email, displayName string
 	var isOwner int
 	if err := db.QueryRow(
-		`SELECT email, is_owner FROM users WHERE id = ?`, userID,
-	).Scan(&email, &isOwner); err != nil || isOwner != 1 {
+		`SELECT email, display_name, is_owner FROM users WHERE id = ?`, userID,
+	).Scan(&email, &displayName, &isOwner); err != nil || isOwner != 1 {
 		writeJSONStatus(w, http.StatusForbidden, map[string]any{
 			"error": "FORBIDDEN", "message": "无权进行此验证",
 		})
@@ -290,7 +321,7 @@ func handleVerifySecurity(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"ok":        true,
 		"unlimited": true,
-		"user":      authUser{ID: userID, Email: email, IsOwner: true},
+		"user":      authUser{ID: userID, Email: email, DisplayName: displayNameOrEmail(email, displayName), IsOwner: true},
 	})
 }
 
@@ -302,17 +333,67 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"ok": true})
 }
 
+func handleAuthProfile(w http.ResponseWriter, r *http.Request) {
+	sess, ok := sessionFromRequest(r)
+	if !ok {
+		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
+			"error": "UNAUTHORIZED", "message": "请先登录",
+		})
+		return
+	}
+	var body struct {
+		DisplayName string `json:"displayName"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+			"error": "INVALID_JSON", "message": "请求格式不正确",
+		})
+		return
+	}
+	displayName, err := normalizeDisplayName(body.DisplayName)
+	if err != nil {
+		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+			"error": "INVALID_DISPLAY_NAME", "message": err.Error(),
+		})
+		return
+	}
+	if _, err := db.Exec(`UPDATE users SET display_name = ? WHERE id = ?`, displayName, sess.UserID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var email string
+	var isOwner int
+	if err := db.QueryRow(
+		`SELECT email, is_owner FROM users WHERE id = ?`, sess.UserID,
+	).Scan(&email, &isOwner); err != nil {
+		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
+			"error": "UNAUTHORIZED", "message": "请先登录",
+		})
+		return
+	}
+	writeJSON(w, map[string]any{
+		"ok": true,
+		"user": authUser{
+			ID:          sess.UserID,
+			Email:       email,
+			DisplayName: displayName,
+			IsOwner:     isOwner == 1,
+		},
+	})
+}
+
 func handleAuthMe(w http.ResponseWriter, r *http.Request) {
 	sess, ok := sessionFromRequest(r)
 	if !ok {
 		writeJSON(w, map[string]any{"loggedIn": false})
 		return
 	}
-	var email string
+	var email, displayName string
 	var isOwner int
 	if err := db.QueryRow(
-		`SELECT email, is_owner FROM users WHERE id = ?`, sess.UserID,
-	).Scan(&email, &isOwner); err != nil {
+		`SELECT email, display_name, is_owner FROM users WHERE id = ?`, sess.UserID,
+	).Scan(&email, &displayName, &isOwner); err != nil {
 		writeJSON(w, map[string]any{"loggedIn": false})
 		return
 	}
@@ -320,32 +401,34 @@ func handleAuthMe(w http.ResponseWriter, r *http.Request) {
 		"loggedIn":  true,
 		"unlimited": sess.Unlimited,
 		"user": authUser{
-			ID:      sess.UserID,
-			Email:   email,
-			IsOwner: isOwner == 1,
+			ID:          sess.UserID,
+			Email:       email,
+			DisplayName: displayNameOrEmail(email, displayName),
+			IsOwner:     isOwner == 1,
 		},
 	})
 }
 
 var errInvalidCredentials = errors.New("invalid credentials")
 
-func lookupUserCredentials(email, password string) (int64, bool, error) {
+func lookupUserCredentials(email, password string) (int64, string, bool, error) {
 	var userID int64
 	var hash string
+	var displayName string
 	var isOwner int
 	err := db.QueryRow(
-		`SELECT id, password_hash, is_owner FROM users WHERE email = ?`, email,
-	).Scan(&userID, &hash, &isOwner)
+		`SELECT id, password_hash, display_name, is_owner FROM users WHERE email = ?`, email,
+	).Scan(&userID, &hash, &displayName, &isOwner)
 	if err == sql.ErrNoRows {
-		return 0, false, errInvalidCredentials
+		return 0, "", false, errInvalidCredentials
 	}
 	if err != nil {
-		return 0, false, err
+		return 0, "", false, err
 	}
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {
-		return 0, false, errInvalidCredentials
+		return 0, "", false, errInvalidCredentials
 	}
-	return userID, isOwner == 1, nil
+	return userID, displayNameOrEmail(email, displayName), isOwner == 1, nil
 }
 
 func createLoginChallenge(userID int64) (string, error) {

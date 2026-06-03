@@ -35,11 +35,11 @@ func getCurrentUserFromRequest(r *http.Request) *currentUser {
 	if !ok {
 		return nil
 	}
-	var email string
+	var email, displayName string
 	var isOwner int
 	err := db.QueryRow(
-		`SELECT email, is_owner FROM users WHERE id = ?`, sess.UserID,
-	).Scan(&email, &isOwner)
+		`SELECT email, display_name, is_owner FROM users WHERE id = ?`, sess.UserID,
+	).Scan(&email, &displayName, &isOwner)
 	if err == sql.ErrNoRows {
 		return nil
 	}
@@ -52,7 +52,7 @@ func getCurrentUserFromRequest(r *http.Request) *currentUser {
 	}
 	return &currentUser{
 		ID:       sess.UserID,
-		Nickname: nicknameFromEmail(email),
+		Nickname: displayNameOrEmail(email, displayName),
 		Avatar:   "",
 		Role:     role,
 	}

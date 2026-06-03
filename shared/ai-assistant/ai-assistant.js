@@ -74,15 +74,34 @@
     ui.pageHint.title = ctx.pageUrl;
   }
 
+  function fallbackNameFromEmail(email) {
+    var value = (email || "").trim();
+    var at = value.indexOf("@");
+    var local = at > 0 ? value.slice(0, at) : value;
+    return (local || "已登录").slice(0, 12);
+  }
+
+  function userDisplayName(user) {
+    var displayName = ((user && user.displayName) || "").trim();
+    return displayName || fallbackNameFromEmail((user && user.email) || "");
+  }
+
   function updateAuthBar() {
     if (!ui.authBar) return;
     ui.authBar.innerHTML = "";
     if (state.user) {
-      var who = el("span", "blog-ai-auth-user", state.user.email || "已登录");
+      var who = el("span", "blog-ai-auth-user", userDisplayName(state.user));
+      if (state.user.email) who.title = state.user.email;
+      var rename = el("button", "blog-ai-auth-link", "改名");
+      rename.type = "button";
+      rename.addEventListener("click", function () {
+        openAuthModal("profile");
+      });
       var out = el("button", "blog-ai-auth-link", "退出");
       out.type = "button";
       out.addEventListener("click", onLogout);
       ui.authBar.appendChild(who);
+      ui.authBar.appendChild(rename);
       ui.authBar.appendChild(out);
       return;
     }
@@ -170,7 +189,7 @@
   function renderAuthTabs() {
     if (!ui.authTabs) return;
     ui.authTabs.innerHTML = "";
-    if (state.authMode === "security") {
+    if (state.authMode === "security" || state.authMode === "profile") {
       ui.authTabs.hidden = true;
       return;
     }
@@ -202,6 +221,38 @@
     ui.authModalBody.innerHTML = "";
     setAuthError("");
     renderAuthTabs();
+
+    if (state.authMode === "profile") {
+      ui.authTitle.textContent = "修改昵称";
+      ui.authSubtitle.textContent = "这个名字会显示在 AI 小窗，也会用于主页留言板";
+      ui.authModalBody.appendChild(el("label", "acct-auth-label", "昵称"));
+      var name = document.createElement("input");
+      name.type = "text";
+      name.className = "acct-auth-input";
+      name.id = "blog-ai-auth-display-name";
+      name.placeholder = "最多 12 个字";
+      name.maxLength = 12;
+      name.value = userDisplayName(state.user);
+      name.autocomplete = "nickname";
+      ui.authModalBody.appendChild(name);
+      ui.authModalBody.appendChild(
+        el("p", "acct-auth-hint", "保存后，新发表的留言会使用这个名字；历史留言保持原样。")
+      );
+      ui.authError = el("p", "acct-auth-error");
+      ui.authError.hidden = true;
+      ui.authModalBody.appendChild(ui.authError);
+      var save = el("button", "acct-auth-primary", "保存昵称");
+      save.type = "button";
+      save.addEventListener("click", onUpdateProfile);
+      ui.authModalBody.appendChild(save);
+      var cancel = el("button", "acct-auth-text-btn", "先不改了");
+      cancel.type = "button";
+      cancel.addEventListener("click", closeAuthModal);
+      ui.authModalBody.appendChild(cancel);
+      name.focus();
+      name.select();
+      return;
+    }
 
     if (state.authMode === "security") {
       ui.authTitle.textContent = "安全验证";
@@ -370,6 +421,29 @@
       state.isLogin = true;
       state.unlimited = true;
       finishAuthSuccess("验证通过～站长无限额度已启用 ✦");
+    });
+  }
+
+  function onUpdateProfile() {
+    var displayName = (document.getElementById("blog-ai-auth-display-name") || {}).value || "";
+    setAuthError("");
+    authFetch("/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName: displayName.trim() }),
+    }).then(function (res) {
+      if (!res.ok) {
+        setAuthError((res.data && res.data.message) || "昵称更新失败");
+        return;
+      }
+      state.user = res.data.user || Object.assign({}, state.user, {
+        displayName: displayName.trim(),
+      });
+      state.isLogin = true;
+      window.dispatchEvent(new CustomEvent("blog-auth-profile-updated", {
+        detail: { user: state.user },
+      }));
+      finishAuthSuccess("昵称更新好啦～之后留言会用这个名字。");
     });
   }
 

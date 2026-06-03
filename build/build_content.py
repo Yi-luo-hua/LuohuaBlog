@@ -14,7 +14,6 @@ MOMENTS_DIR = ROOT / "content" / "moments"
 POST_DIR = ROOT / "post"
 REACT_DATA = ROOT / "src" / "data" / "content.json"
 HOME_CSS = ROOT / "src" / "styles" / "home.css"
-MESSAGE_CSS = ROOT / "src" / "styles" / "message.css"
 HELLO_FONT = ROOT / "src" / "assets" / "hello-font.b64"
 
 try:
@@ -38,8 +37,7 @@ NAV = """    <a href="{p}index.html" class="nav-item{home}"><span class="nav-ico
     <a href="{p}articles.html" class="nav-item{art}"><span class="nav-icon">ART</span><span class="nav-label" data-i18n="navArticle">文章</span></a>
     <a href="{p}shuoshuo.html" class="nav-item{mom}"><span class="nav-icon">MOM</span><span class="nav-label" data-i18n="navShuo">说说</span></a>
     <a href="{p}gallery.html" class="nav-item{gal}"><span class="nav-icon">ALB</span><span class="nav-label" data-i18n="navGallery">相册</span></a>
-    <a href="{p}links.html" class="nav-item{lnk}"><span class="nav-icon">LNK</span><span class="nav-label" data-i18n="navLinks">友链</span></a>
-    <a href="{p}message.html" class="nav-item{msg}"><span class="nav-icon">MSG</span><span class="nav-label" data-i18n="navMsg">留言墙</span></a>"""
+    <a href="{p}links.html" class="nav-item{lnk}"><span class="nav-icon">LNK</span><span class="nav-label" data-i18n="navLinks">友链</span></a>"""
 
 PAGE_STYLES = """
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -329,11 +327,10 @@ def nav_html(active: str, prefix: str = "") -> str:
         "shuoshuo": "mom",
         "gallery": "gal",
         "links": "lnk",
-        "message": "msg",
         "post": "art",
     }
     act = mapping.get(active, "")
-    fmt = {k: " active" if k == act else "" for k in ("home", "arc", "art", "mom", "gal", "lnk", "msg")}
+    fmt = {k: " active" if k == act else "" for k in ("home", "arc", "art", "mom", "gal", "lnk")}
     fmt["p"] = prefix
     return NAV.format(**fmt)
 
@@ -645,10 +642,6 @@ def extract_static_assets() -> None:
     else:
         HOME_CSS.parent.mkdir(parents=True, exist_ok=True)
         HOME_CSS.write_text("/* home */\n", encoding="utf-8")
-    msg = ROOT / "message.html"
-    if not msg.is_file():
-        msg = ROOT / "legacy" / "message.html"
-    _extract_style(msg, MESSAGE_CSS)
     if index:
         text = index.read_text(encoding="utf-8")
         m = re.search(r'const FONT_B64 = "([^"]+)"', text)

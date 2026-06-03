@@ -15,6 +15,12 @@ const cardTone = (item) => {
   return "guest";
 };
 
+const nameFromUser = (user) => {
+  const displayName = user?.displayName?.trim();
+  if (displayName) return displayName;
+  return user?.email ? user.email.split("@")[0].slice(0, 12) : "";
+};
+
 const GuestbookPage = () => {
   const [user, setUser] = useState(null);
   const [items, setItems] = useState([]);
@@ -38,6 +44,16 @@ const GuestbookPage = () => {
         setUser(data.user);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    const onProfileUpdated = (event) => {
+      if (event.detail?.user) setUser(event.detail.user);
+    };
+    window.addEventListener("blog-auth-profile-updated", onProfileUpdated);
+    return () => {
+      window.removeEventListener("blog-auth-profile-updated", onProfileUpdated);
+    };
   }, []);
 
   const loadPage = useCallback(async (p, append) => {
@@ -102,9 +118,7 @@ const GuestbookPage = () => {
     if (ok) setItems((prev) => prev.filter((x) => x.id !== id));
   };
 
-  const displayName = user?.email
-    ? user.email.split("@")[0].slice(0, 12)
-    : "";
+  const displayName = nameFromUser(user);
 
   return (
     <section

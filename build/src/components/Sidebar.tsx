@@ -12,7 +12,6 @@ const NAV = [
   { to: '/moments', icon: '💬', key: 'navShuo' as const },
   { to: '/gallery', icon: '🖼️', key: 'navGallery' as const },
   { to: '/links', icon: '🔗', key: 'navLinks' as const },
-  { to: '/message', icon: '✉️', key: 'navMsg' as const },
 ];
 
 export function Sidebar() {

@@ -39,22 +39,38 @@ const BarChart = ({ rows, pick, compact, emptyLabel = CHART_EMPTY }) => {
     <div className={`flex items-end gap-1 sm:gap-2 ${compact ? "h-36" : "h-44"}`}>
       {rows.map((row, i) => {
         const v = pick(row);
-        const h = v > 0 ? Math.max(10, Math.round((v / peak) * 100)) : 6;
+        const barHeight = v > 0 ? Math.max(14, Math.round((v / peak) * 100)) : 4;
         return (
           <div
             key={row.key}
-            className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1"
+            className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
             title={`${row.label}: ${v}`}
           >
             <div
-              className="w-full max-w-[28px] rounded-t-lg transition-all"
+              className="flex min-h-0 w-full flex-1 flex-col items-center justify-end gap-1"
+            >
+              <span
+                className="text-[9px] font-semibold text-[#6B7280] sm:text-[10px]"
+                style={{ opacity: v > 0 ? 1 : 0.4 }}
+              >
+                {v}
+              </span>
+              <div
+                className="w-full max-w-[28px] rounded-t-lg transition-all"
+                style={{
+                  height: `${barHeight}%`,
+                  background: BAR_COLORS[i % BAR_COLORS.length],
+                  boxShadow: "0 4px 12px rgba(116, 192, 252, 0.2)",
+                  opacity: v > 0 ? 1 : 0.22,
+                }}
+              />
+            </div>
+            <span
+              className="truncate text-[9px] text-[#6B7280] sm:text-[10px]"
               style={{
-                height: `${h}%`,
-                background: BAR_COLORS[i % BAR_COLORS.length],
-                boxShadow: "0 4px 12px rgba(116, 192, 252, 0.2)",
+                minHeight: "14px",
               }}
-            />
-            <span className="truncate text-[9px] text-[#6B7280] sm:text-[10px]">
+            >
               {row.label}
             </span>
           </div>
