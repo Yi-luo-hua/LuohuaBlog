@@ -1,6 +1,8 @@
 # Taozhiyy Monorepo / 桃之夭夭 Monorepo
 
-> 中文说明在前，English version follows.
+[中文](#中文说明) | [English](#english-version)
+
+---
 
 ## 中文说明
 
@@ -48,6 +50,38 @@
 
 但如果某些内容涉及原参考项目的设计、结构、交互思路或代码来源，请不要直接从本仓库视为授权来源；请自行前往原作者项目查阅其说明、许可和使用边界。
 
+### 子页面与后端说明
+
+#### `blog/` 博客页面
+
+`blog/` 子页面是基于 Hexo + Butterfly 搭建的博客页面。
+
+该部分的具体博客源码、主题配置、部署方式和更完整说明，请前往我的独立博客仓库查看：
+
+[bistutzyy/bistutzyy.github.io](https://github.com/bistutzyy/bistutzyy.github.io)
+
+该博客使用的主题原作者与项目为：
+
+[Butterfly](https://butterfly.js.org/)
+
+如果你有 Hexo、Butterfly 主题部署、主题配置、引用来源标注或许可边界相关问题，请自行前往 Butterfly 官方文档与原作者项目查阅。
+
+#### `build/` 成长博客页面
+
+`build/` 页面是我借助 **vibecoding** 搭建出的成长博客子站，用于记录本站从域名、服务器、部署流程到功能迭代的搭建过程。
+
+该页面属于我个人学习和实践过程中搭建的原创/定制页面，欢迎自由参考、学习和使用。
+
+#### `acg-api/` 后端与 API
+
+后端部分以及 API 调用逻辑主要借助 **vibecoding** 完成，包括留言板、AI 助手上下文、Bili Hub 数据缓存同步等功能。
+
+如果你希望参考或复用后端逻辑，请先自行阅读、验证和测试，确保符合你的使用场景后再使用。
+
+环境变量、密钥、服务器地址、数据库或外部服务配置请自行准备和配置，本仓库不会提供可直接复用的私密环境变量。
+
+如果你在使用、阅读或部署过程中发现任何问题，或有任何建议，欢迎向我提出。
+
 ### 非商业立场
 
 本项目仅用于 **个人学习、技术探索、个人网站部署与非商业技术交流**。
@@ -61,6 +95,8 @@
 ---
 
 ## English Version
+
+[中文](#中文说明) | [English](#english-version)
 
 This is the monorepo for my personal website `Taozhiyy / 桃之夭夭`, including the main site, build-log subsite, Hexo blog, shared AI assistant scripts, and backend API.
 
@@ -105,6 +141,38 @@ These original/customized parts were mainly completed through **vibecoding**: I 
 The parts that were created, designed, organized, or iterated by me through vibecoding may be freely referenced, studied, and used, as long as this notice is respected.
 
 However, for anything that may involve the original referenced project's design, structure, interaction ideas, or code origin, please do not treat this repository as the source of permission. Please go to the original author's project to review its own documentation, license, and usage boundaries.
+
+### Subpages And Backend Notes
+
+#### `blog/` Blog Page
+
+The `blog/` subpage is built with Hexo + Butterfly.
+
+For the detailed blog source code, theme configuration, deployment process, and fuller documentation, please refer to my independent blog repository:
+
+[bistutzyy/bistutzyy.github.io](https://github.com/bistutzyy/bistutzyy.github.io)
+
+The original theme author/project used by this blog is:
+
+[Butterfly](https://butterfly.js.org/)
+
+If you have questions about Hexo, Butterfly deployment, theme configuration, attribution, or licensing boundaries, please refer to the official Butterfly documentation and the original author's project.
+
+#### `build/` Build Log Page
+
+The `build/` page is a build-log subsite created with the help of **vibecoding**. It records the process of building this website, including domain setup, server configuration, deployment workflow, and feature iteration.
+
+This page is an original/customized page created during my personal learning and practice process. You are welcome to freely reference, study, and use it.
+
+#### `acg-api/` Backend And API
+
+The backend and API calling logic were mainly completed with the help of **vibecoding**, including guestbook, AI assistant context, Bili Hub data cache sync, and related functions.
+
+If you want to reference or reuse the backend logic, please read, verify, and test it first to make sure it fits your own use case.
+
+Environment variables, secrets, server addresses, database settings, and external service configurations must be prepared and configured by yourself. This repository does not provide private environment variables that can be reused directly.
+
+If you find any problem while reading, using, or deploying this project, or if you have any suggestions, you are welcome to contact me.
 
 ### Non-Commercial Position
 
