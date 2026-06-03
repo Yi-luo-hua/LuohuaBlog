@@ -15,6 +15,13 @@ const navLinks = [
 
 const DRAWER_MS = 220;
 
+const getNavTheme = (pathname) => {
+  if (pathname === "/bili" || pathname.startsWith("/bili/")) return "bili";
+  if (pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/")) return "ai";
+  if (pathname === "/guestbook" || pathname.startsWith("/guestbook/")) return "guestbook";
+  return "dark";
+};
+
 const NavBar = () => {
   const { pathname } = useLocation();
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -36,8 +43,11 @@ const NavBar = () => {
   const isBiliPage = pathname === "/bili" || pathname.startsWith("/bili/");
   const isAiTrafficPage =
     pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/");
-  const isSubPage = isBiliPage || isAiTrafficPage;
-  const isLightNav = isSubPage;
+  const isGuestbookPage =
+    pathname === "/guestbook" || pathname.startsWith("/guestbook/");
+  const isSubPage = isBiliPage || isAiTrafficPage || isGuestbookPage;
+  const navTheme = getNavTheme(pathname);
+  const isLightNav = navTheme !== "dark";
 
   const closeMobile = useCallback(() => {
     setDrawerVisible(false);
@@ -103,29 +113,50 @@ const NavBar = () => {
     if (!navContainerRef.current) return;
     if (currentScrollY === 0) {
       setIsNavVisible(true);
-      navContainerRef.current.classList.remove("floating-nav", "floating-nav-light");
+      navContainerRef.current.classList.remove(
+        "floating-nav",
+        "floating-nav-bili",
+        "floating-nav-ai",
+        "floating-nav-guestbook"
+      );
     } else if (currentScrollY > lastScrollY) {
       setIsNavVisible(false);
-      if (isLightNav) {
-        navContainerRef.current.classList.add("floating-nav-light");
-        navContainerRef.current.classList.remove("floating-nav");
+      navContainerRef.current.classList.remove(
+        "floating-nav",
+        "floating-nav-bili",
+        "floating-nav-ai",
+        "floating-nav-guestbook"
+      );
+      if (navTheme === "bili") {
+        navContainerRef.current.classList.add("floating-nav-bili");
+      } else if (navTheme === "ai") {
+        navContainerRef.current.classList.add("floating-nav-ai");
+      } else if (navTheme === "guestbook") {
+        navContainerRef.current.classList.add("floating-nav-guestbook");
       } else {
         navContainerRef.current.classList.add("floating-nav");
-        navContainerRef.current.classList.remove("floating-nav-light");
       }
     } else if (currentScrollY < lastScrollY) {
       setIsNavVisible(true);
-      if (isLightNav) {
-        navContainerRef.current.classList.add("floating-nav-light");
-        navContainerRef.current.classList.remove("floating-nav");
+      navContainerRef.current.classList.remove(
+        "floating-nav",
+        "floating-nav-bili",
+        "floating-nav-ai",
+        "floating-nav-guestbook"
+      );
+      if (navTheme === "bili") {
+        navContainerRef.current.classList.add("floating-nav-bili");
+      } else if (navTheme === "ai") {
+        navContainerRef.current.classList.add("floating-nav-ai");
+      } else if (navTheme === "guestbook") {
+        navContainerRef.current.classList.add("floating-nav-guestbook");
       } else {
         navContainerRef.current.classList.add("floating-nav");
-        navContainerRef.current.classList.remove("floating-nav-light");
       }
     }
 
     setLastScrollY(currentScrollY);
-  }, [currentScrollY, lastScrollY, isLightNav]);
+  }, [currentScrollY, lastScrollY, navTheme]);
 
   useEffect(() => {
     gsap.to(navContainerRef.current, {
@@ -136,14 +167,16 @@ const NavBar = () => {
   }, [isNavVisible]);
 
   const desktopLinkClass = (active) =>
-    clsx("nav-hover-btn", isLightNav && "nav-hover-btn-light", {
-      "text-[#FF8FAB]": active && isLightNav,
-      "text-yellow-300": active && !isLightNav,
+    clsx("nav-hover-btn", isLightNav && `nav-hover-btn--${navTheme}`, {
+      "text-[#7C5CFF]": active && navTheme === "bili",
+      "text-[#FF8FAB]": active && (navTheme === "ai" || navTheme === "guestbook"),
+      "text-yellow-300": active && navTheme === "dark",
     });
 
   const isLinkActive = (item) =>
     (item.to === "/bili" && isBiliPage) ||
-    (item.to === "/ai-traffic" && isAiTrafficPage);
+    (item.to === "/ai-traffic" && isAiTrafficPage) ||
+    (item.to === "/guestbook" && isGuestbookPage);
 
   const renderDesktopLink = (item) => (
     <Link
@@ -163,11 +196,8 @@ const NavBar = () => {
         to={item.to}
         className={clsx(
           "nav-mobile-link",
-          isLightNav ? "nav-mobile-link--light" : "nav-mobile-link--dark",
-          active &&
-            (isLightNav
-              ? "nav-mobile-link--active-light"
-              : "nav-mobile-link--active-dark")
+          `nav-mobile-link--${navTheme}`,
+          active && `nav-mobile-link--active-${navTheme}`
         )}
         onClick={closeMobile}
       >
@@ -175,8 +205,6 @@ const NavBar = () => {
       </Link>
     );
   };
-
-  const drawerTheme = isLightNav ? "light" : "dark";
 
   const mobileDrawer =
     drawerMounted &&
@@ -186,7 +214,7 @@ const NavBar = () => {
           type="button"
           className={clsx(
             "nav-mobile-backdrop",
-            `nav-mobile-backdrop--${drawerTheme}`,
+            `nav-mobile-backdrop--${navTheme}`,
             drawerVisible && "is-open"
           )}
           aria-label="关闭导航菜单"
@@ -202,7 +230,7 @@ const NavBar = () => {
           aria-hidden={!drawerVisible}
           className={clsx(
             "nav-mobile-drawer",
-            `nav-mobile-drawer--${drawerTheme}`,
+            `nav-mobile-drawer--${navTheme}`,
             drawerVisible && "is-open"
           )}
         >
@@ -232,7 +260,9 @@ const NavBar = () => {
         ref={navContainerRef}
         className={clsx(
           "fixed inset-x-0 top-2 z-50 h-14 border-none transition-all duration-700 sm:inset-x-4 sm:top-4 sm:h-16 md:inset-x-6",
-          isLightNav && currentScrollY === 0 && "floating-nav-light"
+          navTheme === "bili" && currentScrollY === 0 && "floating-nav-bili",
+          navTheme === "ai" && currentScrollY === 0 && "floating-nav-ai",
+          navTheme === "guestbook" && currentScrollY === 0 && "floating-nav-guestbook"
         )}
       >
         <header className="absolute top-1/2 w-full -translate-y-1/2">
@@ -253,7 +283,7 @@ const NavBar = () => {
                   }
                   className={clsx(
                     "nav-hover-btn hidden md:inline",
-                    isLightNav && "nav-hover-btn-light"
+                    isLightNav && `nav-hover-btn--${navTheme}`
                   )}
                 >
                   CHANGE
@@ -271,7 +301,7 @@ const NavBar = () => {
                 type="button"
                 className={clsx(
                   "nav-menu-btn md:hidden",
-                  isLightNav && "nav-menu-btn--light"
+                  navTheme !== "dark" && `nav-menu-btn--${navTheme}`
                 )}
                 aria-label="打开导航菜单"
                 aria-expanded={mobileOpen}
@@ -300,7 +330,8 @@ const NavBar = () => {
                     key={bar}
                     className={clsx("indicator-line", {
                       active: isIndicatorActive,
-                      "indicator-line-light": isLightNav,
+                      "indicator-line-bili": navTheme === "bili",
+                      "indicator-line-ai": navTheme === "ai" || navTheme === "guestbook",
                     })}
                     style={{
                       animationDelay: `${bar * 0.1}s`,

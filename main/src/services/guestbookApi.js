@@ -1,6 +1,5 @@
 import { mockGuestbookEntries } from "../data/acgMock";
 import { apiUrl } from "../lib/apiBase";
-import { asList } from "../lib/asList";
 
 export async function getGuestbook(limit = 50) {
   try {
@@ -9,7 +8,7 @@ export async function getGuestbook(limit = 50) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    return asList(data);
+    return Array.isArray(data?.items) ? data.items : data;
   } catch {
     return [...mockGuestbookEntries];
   }

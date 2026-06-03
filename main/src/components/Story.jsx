@@ -1,6 +1,7 @@
 import gsap from "gsap";
 import { useRef } from "react";
 
+import { Link } from "react-router-dom";
 import Button from "./Button";
 import AnimatedTitle from "./AnimatedTitle";
 
@@ -109,13 +110,13 @@ const FloatingImage = () => {
               Thank you for watching. If there are any areas that need correction, you are sincerely invited to provide feedback below.
             </p>
 
-            <a href="https://tzyy11.vercel.app/message" target="_blank" rel="noopener noreferrer">
+            <Link to="/guestbook">
               <Button
                 id="realm-btn"
                 title="LEAVE A MESSAGE"
                 containerClass="mt-5"
               />
-            </a>
+            </Link>
           </div>
         </div>
       </div>

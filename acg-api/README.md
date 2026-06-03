@@ -38,6 +38,25 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 - `POST /api/auth/verify-security` — `{ "challengeToken", "answer" }` 学号验证 → 无限 AI
 - `POST /api/auth/logout` / `GET /api/auth/me`
 
+### 留言小纸条（`/api/guestbook/`）
+
+自研轻量留言板，复用 `acg_session` 登录态；支持匿名与登录用户留言，站长（`is_owner`）可删/隐藏。
+
+建表：启动时自动创建 `guestbook_messages`（见 `deploy/guestbook.sql`）。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/guestbook/messages?page=1&pageSize=20` | 列表；普通用户仅 `visible`，管理员含 `hidden` |
+| POST | `/api/guestbook/messages` | 发布；匿名 `{ nickname, content }`，登录 `{ content }` |
+| DELETE | `/api/guestbook/messages/:id` | 软删除（`deleted`），仅 admin |
+| PATCH | `/api/guestbook/messages/:id/status` 或 `/:id` | `{ "status": "hidden" }`，仅 admin |
+
+限流：匿名 3/小时、10/天；登录 10/小时、30/天；60 秒内同内容防重复。429 返回 `RATE_LIMITED`。
+
+IP：仅存 `ip_hash`、`ip_masked`；公开展示 `ipRegion`（依赖 `ip-api.com`，失败时为「未知地区」）。
+
+前端页面：`main/` 路由 `/guestbook`，首页 Story「LEAVE A MESSAGE」入口。
+
 Copy `.env.example` → `/opt/acg-api/.env` with `DEEPSEEK_API_KEY`, `AUTH_OWNER_PASSWORD`, `AUTH_OWNER_SECURITY_ANSWER`（站长 `173236231@qq.com` 学号二次验证）。
 
 ## Frontend

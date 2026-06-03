@@ -54,6 +54,7 @@ func main() {
 	}()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/api/guestbook/", guestbookRouter)
 	mux.HandleFunc("/api/v1/guestbook", guestbookHandler)
 	mux.HandleFunc("/api/v1/bangumi/list", bangumiListHandler)
 	mux.HandleFunc("/api/v1/radar/feed", radarFeedHandler)
@@ -198,7 +199,7 @@ func env(k, def string) string {
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, X-Blog-User-Id")
 		if r.Method == http.MethodOptions {

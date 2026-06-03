@@ -10,3 +10,4 @@ acg-api/data/
 acg-api/acg-api
 acg-api/acg-api.exe
 acg-api/test_bili.py
+acg-api/.env

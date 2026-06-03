@@ -38,6 +38,13 @@ const footerThemes = {
     icon: "text-[#2B2B2B] hover:text-[#FF8FAB]",
     tip: "border border-[#F2E6C9] bg-white text-[#2B2B2B]",
   },
+  guestbook: {
+    shell:
+      "border-t border-[#F2E6C9] bg-gradient-to-r from-[#FFF8E7] via-[#FFFDF5] to-[#EAF6FF] text-[#2B2B2B]",
+    copy: "text-[#6B7280]",
+    icon: "text-[#2B2B2B] hover:text-[#FF8FAB]",
+    tip: "border border-[#F2E6C9] bg-white text-[#2B2B2B]",
+  },
 };
 
 const Footer = () => {
@@ -46,7 +53,9 @@ const Footer = () => {
     ? "bili"
     : pathname.startsWith("/ai-traffic")
       ? "ai"
-      : "default";
+      : pathname.startsWith("/guestbook")
+        ? "guestbook"
+        : "default";
   const theme = footerThemes[variant];
 
   return (
