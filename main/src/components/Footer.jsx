@@ -1,39 +1,87 @@
+import clsx from "clsx";
 import { FaGithub, FaEnvelope } from "react-icons/fa";
 import { SiBilibili, SiVercel } from "react-icons/si";
+import { useLocation } from "react-router-dom";
 
 const socialLinks = [
   { href: "https://github.com/bistutzyy", icon: <FaGithub />, label: "GitHub" },
-  { href: "https://space.bilibili.com/1061280173?spm_id_from=333.1007.0.0", icon: <SiBilibili />, label: "Bilibili" },
+  {
+    href: "https://space.bilibili.com/1061280173?spm_id_from=333.1007.0.0",
+    icon: <SiBilibili />,
+    label: "Bilibili",
+  },
   { href: "https://tzyy11.vercel.app/", icon: <SiVercel />, label: "Vercel" },
-  { href: "mailto:nzc173236231@gmail.com", icon: <FaEnvelope />, label: "nzc173236231@gmail.com" },
+  {
+    href: "mailto:nzc173236231@gmail.com",
+    icon: <FaEnvelope />,
+    label: "nzc173236231@gmail.com",
+  },
 ];
 
+const footerThemes = {
+  default: {
+    shell: "bg-[#5542ff] text-black",
+    copy: "text-black",
+    icon: "text-black hover:text-white",
+    tip: "bg-white text-black",
+  },
+  bili: {
+    shell:
+      "border-t border-[#E8DFFB] bg-gradient-to-r from-[#EAF6FF] via-[#FFEAF4] to-[#F3E8FF] text-[#2D2A3A]",
+    copy: "text-[#2D2A3A]/85",
+    icon: "text-[#2D2A3A] hover:text-[#7C5CFF]",
+    tip: "border border-[#E8DFFB] bg-white/95 text-[#2D2A3A]",
+  },
+  ai: {
+    shell: "border-t border-[#F2E6C9] bg-[#FFF8E7] text-[#2B2B2B]",
+    copy: "text-[#6B7280]",
+    icon: "text-[#2B2B2B] hover:text-[#FF8FAB]",
+    tip: "border border-[#F2E6C9] bg-white text-[#2B2B2B]",
+  },
+};
+
 const Footer = () => {
+  const { pathname } = useLocation();
+  const variant = pathname.startsWith("/bili")
+    ? "bili"
+    : pathname.startsWith("/ai-traffic")
+      ? "ai"
+      : "default";
+  const theme = footerThemes[variant];
+
   return (
-    <footer className="w-screen bg-[#5542ff] py-4 text-black">
+    <footer className={clsx("w-screen py-4 md:py-5", theme.shell)}>
       <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
-        <p className="text-center text-sm font-light md:text-left">
+        <p className={clsx("text-center text-sm font-light md:text-left", theme.copy)}>
           @bistutzyy
         </p>
 
         <div className="flex justify-center gap-4 md:justify-start">
-          {socialLinks.map((link, index) => (
+          {socialLinks.map((link) => (
             <a
-              key={index}
+              key={link.label}
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative flex items-center gap-2 text-black transition-colors duration-500 ease-in-out hover:text-white"
+              className={clsx(
+                "group relative flex items-center gap-2 text-lg transition-colors duration-300 ease-in-out",
+                theme.icon
+              )}
             >
               {link.icon}
-              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-white px-2 py-0.5 text-xs text-black opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+              <span
+                className={clsx(
+                  "pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded px-2 py-0.5 text-xs opacity-0 transition-opacity group-hover:opacity-100",
+                  theme.tip
+                )}
+              >
                 {link.label}
               </span>
             </a>
           ))}
         </div>
 
-        <p className="text-center text-sm font-light md:text-right">
+        <p className={clsx("text-center text-sm font-light md:text-right", theme.copy)}>
           本站仅作学习使用，感谢开源
         </p>
       </div>
