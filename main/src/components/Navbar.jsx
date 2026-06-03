@@ -8,6 +8,7 @@ const navLinks = [
   { label: "Contact", to: "/#contact" },
   { label: "END", to: "/#end" },
   { label: "Bili Hub", to: "/bili", end: true },
+  { label: "AI 流量", to: "/ai-traffic", end: true },
 ];
 
 const NavBar = () => {
@@ -59,6 +60,9 @@ const NavBar = () => {
   }, [isNavVisible]);
 
   const isBiliPage = pathname === "/bili" || pathname.startsWith("/bili/");
+  const isAiTrafficPage =
+    pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/");
+  const isSubPage = isBiliPage || isAiTrafficPage;
   return (
     <div
       ref={navContainerRef}
@@ -74,7 +78,7 @@ const NavBar = () => {
                 className="h-8 w-8 sm:h-10 sm:w-10"
               />
             </Link>
-            {currentScrollY === 0 && !isBiliPage && (
+            {currentScrollY === 0 && !isSubPage && (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent("showHeroPreview"))}
                 className="nav-hover-btn hidden md:inline"
@@ -87,7 +91,9 @@ const NavBar = () => {
           <div className="flex min-w-0 flex-1 items-center justify-end">
             <div className="flex max-w-full flex-nowrap items-center justify-end overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navLinks.map((item) => {
-                const active = item.to === "/bili" && isBiliPage;
+                const active =
+                  (item.to === "/bili" && isBiliPage) ||
+                  (item.to === "/ai-traffic" && isAiTrafficPage);
                 return (
                   <Link
                     key={item.label}

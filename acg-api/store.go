@@ -47,6 +47,16 @@ func migrateAll(db *sql.DB) error {
 			last_request_at TEXT,
 			PRIMARY KEY (identity_key, quota_date)
 		);`,
+		`CREATE TABLE IF NOT EXISTS ai_chat_hourly (
+			bucket TEXT PRIMARY KEY,
+			success INTEGER NOT NULL DEFAULT 0,
+			upstream_error INTEGER NOT NULL DEFAULT 0,
+			quota_denied INTEGER NOT NULL DEFAULT 0,
+			rate_denied INTEGER NOT NULL DEFAULT 0,
+			not_configured INTEGER NOT NULL DEFAULT 0,
+			guest_calls INTEGER NOT NULL DEFAULT 0,
+			user_calls INTEGER NOT NULL DEFAULT 0
+		);`,
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			email TEXT NOT NULL UNIQUE,

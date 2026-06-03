@@ -17,6 +17,7 @@
 |------|------|------|
 | GET | `/api/chat` | 查询今日剩余次数（不扣次） |
 | POST | `/api/chat` | `{ "message": "...", "pageUrl": "...", "pageTitle": "..." }` → DeepSeek 回复 |
+| GET | `/api/chat/stats?days=14` | 聚合调用统计（成功/失败/限流，不含聊天内容） |
 
 由 `acg-api` 提供，Nginx 将 `/api/` 反代到 `127.0.0.1:8787`。
 

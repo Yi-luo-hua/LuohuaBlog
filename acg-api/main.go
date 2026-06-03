@@ -46,8 +46,10 @@ func main() {
 	go func() {
 		t := time.NewTicker(24 * time.Hour)
 		cleanupCache(cacheDir, 7*24*time.Hour)
+		pruneChatHourlyStats(db)
 		for range t.C {
 			cleanupCache(cacheDir, 7*24*time.Hour)
+			pruneChatHourlyStats(db)
 		}
 	}()
 
@@ -59,6 +61,7 @@ func main() {
 	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, map[string]string{"status": "ok", "uid": cfg.BilibiliUID})
 	})
+	mux.HandleFunc("/api/chat/stats", chatStatsHandler)
 	mux.HandleFunc("/api/chat", chatHandler)
 	mux.HandleFunc("/api/auth/", authHandler)
 	mux.HandleFunc("/api/v1/sync/trigger", func(w http.ResponseWriter, r *http.Request) {

@@ -3,6 +3,7 @@ import SiteLayout from "./layouts/SiteLayout";
 import HomePage from "./pages/HomePage";
 import BiliHubPage from "./pages/BiliHubPage";
 import LoginPage from "./pages/LoginPage";
+import AiTrafficPage from "./pages/AiTrafficPage";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route element={<SiteLayout />}>
           <Route index element={<HomePage />} />
           <Route path="bili" element={<BiliHubPage />} />
+          <Route path="ai-traffic" element={<AiTrafficPage />} />
           <Route path="login" element={<LoginPage />} />
         </Route>
       </Routes>
