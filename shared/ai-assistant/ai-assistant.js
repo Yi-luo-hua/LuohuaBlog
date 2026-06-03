@@ -141,7 +141,7 @@
     closeBtn.addEventListener("click", closeAuthModal);
 
     var brand = el("div", "acct-auth-brand");
-    var avatar = el("div", "acct-auth-avatar", "账");
+    var avatar = el("div", "acct-auth-avatar", "✦");
     brand.appendChild(avatar);
     ui.authTitle = el("h2", "acct-auth-title");
     ui.authTitle.id = "acct-auth-title";

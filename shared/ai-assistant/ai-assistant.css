@@ -252,13 +252,17 @@ body.acct-auth-open {
   width: 64px;
   height: 64px;
   margin: 0 auto 14px;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #12b7f5, #0d9de0);
-  color: #fff;
-  font-size: 26px;
-  font-weight: 700;
+  border: 1px solid rgba(255, 143, 171, 0.35);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.95) 0 18%, transparent 19%),
+    linear-gradient(145deg, #fff3bf 0%, #ffd8e8 54%, #d0ebff 100%);
+  color: #ff8fab;
+  font-size: 30px;
+  font-weight: 800;
   line-height: 1;
-  box-shadow: 0 8px 24px rgba(18, 183, 245, 0.35);
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.85);
+  box-shadow: 0 12px 28px rgba(255, 143, 171, 0.28);
 }
 
 .acct-auth-title {
