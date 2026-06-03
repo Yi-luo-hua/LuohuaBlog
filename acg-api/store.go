@@ -55,7 +55,9 @@ func migrateAll(db *sql.DB) error {
 			rate_denied INTEGER NOT NULL DEFAULT 0,
 			not_configured INTEGER NOT NULL DEFAULT 0,
 			guest_calls INTEGER NOT NULL DEFAULT 0,
-			user_calls INTEGER NOT NULL DEFAULT 0
+			user_calls INTEGER NOT NULL DEFAULT 0,
+			owner_calls INTEGER NOT NULL DEFAULT 0,
+			owner_tokens INTEGER NOT NULL DEFAULT 0
 		);`,
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,6 +89,8 @@ func migrateAll(db *sql.DB) error {
 	}
 	ensureColumn(db, "users", "is_owner", "INTEGER NOT NULL DEFAULT 0")
 	ensureColumn(db, "sessions", "unlimited", "INTEGER NOT NULL DEFAULT 0")
+	ensureColumn(db, "ai_chat_hourly", "owner_calls", "INTEGER NOT NULL DEFAULT 0")
+	ensureColumn(db, "ai_chat_hourly", "owner_tokens", "INTEGER NOT NULL DEFAULT 0")
 	return nil
 }
 

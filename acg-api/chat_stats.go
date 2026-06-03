@@ -44,44 +44,44 @@ func chatHourBucket(t time.Time) string {
 	return t.UTC().Format(chatStatsHourLayout)
 }
 
-func recordChatStat(db *sql.DB, id chatIdentity, column string) {
+func recordChatStat(db *sql.DB, id chatIdentity, column string, tokens int) {
 	bucket := chatHourBucket(time.Now())
-	guestInc, userInc := 0, 0
-	if id.IsLogin {
+	guestInc, userInc, ownerInc := 0, 0, 0
+	ownerTokens := 0
+	if id.IsOwner {
+		ownerInc = 1
+		if column == "success" && tokens > 0 {
+			ownerTokens = tokens
+		}
+	} else if id.IsLogin {
 		userInc = 1
 	} else {
 		guestInc = 1
 	}
 	_, _ = db.Exec(
-		`INSERT INTO ai_chat_hourly (bucket, success, upstream_error, quota_denied, rate_denied, not_configured, guest_calls, user_calls)
-		 VALUES (?, 0, 0, 0, 0, 0, ?, ?)
+		`INSERT INTO ai_chat_hourly (bucket, success, upstream_error, quota_denied, rate_denied, not_configured, guest_calls, user_calls, owner_calls, owner_tokens)
+		 VALUES (?, 0, 0, 0, 0, 0, ?, ?, ?, ?)
 		 ON CONFLICT(bucket) DO UPDATE SET `+column+` = `+column+` + 1,
 		   guest_calls = guest_calls + excluded.guest_calls,
-		   user_calls = user_calls + excluded.user_calls`,
-		bucket, guestInc, userInc,
-	)
-}
-
-func recordChatStatSimple(db *sql.DB, column string) {
-	bucket := chatHourBucket(time.Now())
-	_, _ = db.Exec(
-		`INSERT INTO ai_chat_hourly (bucket, success, upstream_error, quota_denied, rate_denied, not_configured, guest_calls, user_calls)
-		 VALUES (?, 0, 0, 0, 0, 0, 0, 0)
-		 ON CONFLICT(bucket) DO UPDATE SET `+column+` = `+column+` + 1`,
-		bucket,
+		   user_calls = user_calls + excluded.user_calls,
+		   owner_calls = owner_calls + excluded.owner_calls,
+		   owner_tokens = owner_tokens + excluded.owner_tokens`,
+		bucket, guestInc, userInc, ownerInc, ownerTokens,
 	)
 }
 
 type chatDailyRow struct {
-	Date            string `json:"date"`
-	Success         int    `json:"success"`
-	UpstreamError   int    `json:"upstreamError"`
-	QuotaDenied     int    `json:"quotaDenied"`
-	RateDenied      int    `json:"rateDenied"`
-	NotConfigured   int    `json:"notConfigured"`
-	GuestCalls      int    `json:"guestCalls"`
-	UserCalls       int    `json:"userCalls"`
-	Total           int    `json:"total"`
+	Date          string `json:"date"`
+	Success       int    `json:"success"`
+	UpstreamError int    `json:"upstreamError"`
+	QuotaDenied   int    `json:"quotaDenied"`
+	RateDenied    int    `json:"rateDenied"`
+	NotConfigured int    `json:"notConfigured"`
+	GuestCalls    int    `json:"guestCalls"`
+	UserCalls     int    `json:"userCalls"`
+	OwnerCalls    int    `json:"ownerCalls"`
+	OwnerTokens   int    `json:"ownerTokens"`
+	Total         int    `json:"total"`
 }
 
 type chatHourlyRow struct {
@@ -90,6 +90,7 @@ type chatHourlyRow struct {
 	UpstreamError int    `json:"upstreamError"`
 	QuotaDenied   int    `json:"quotaDenied"`
 	RateDenied    int    `json:"rateDenied"`
+	OwnerCalls    int    `json:"ownerCalls"`
 	Total         int    `json:"total"`
 }
 
@@ -98,7 +99,7 @@ func listChatDailyStats(db *sql.DB, days int) ([]chatDailyRow, error) {
 	rows, err := db.Query(
 		`SELECT substr(bucket, 1, 10) AS d,
 		        SUM(success), SUM(upstream_error), SUM(quota_denied), SUM(rate_denied), SUM(not_configured),
-		        SUM(guest_calls), SUM(user_calls)
+		        SUM(guest_calls), SUM(user_calls), SUM(owner_calls), SUM(owner_tokens)
 		 FROM ai_chat_hourly
 		 WHERE bucket >= ?
 		 GROUP BY d
@@ -114,7 +115,7 @@ func listChatDailyStats(db *sql.DB, days int) ([]chatDailyRow, error) {
 		var row chatDailyRow
 		if err := rows.Scan(
 			&row.Date, &row.Success, &row.UpstreamError, &row.QuotaDenied, &row.RateDenied, &row.NotConfigured,
-			&row.GuestCalls, &row.UserCalls,
+			&row.GuestCalls, &row.UserCalls, &row.OwnerCalls, &row.OwnerTokens,
 		); err != nil {
 			return nil, err
 		}
@@ -127,7 +128,7 @@ func listChatDailyStats(db *sql.DB, days int) ([]chatDailyRow, error) {
 func listChatHourlyToday(db *sql.DB) ([]chatHourlyRow, error) {
 	prefix := time.Now().UTC().Format("2006-01-02") + "T"
 	rows, err := db.Query(
-		`SELECT bucket, success, upstream_error, quota_denied, rate_denied
+		`SELECT bucket, success, upstream_error, quota_denied, rate_denied, owner_calls
 		 FROM ai_chat_hourly
 		 WHERE bucket LIKE ? || '%'
 		 ORDER BY bucket ASC`,
@@ -140,8 +141,8 @@ func listChatHourlyToday(db *sql.DB) ([]chatHourlyRow, error) {
 	byHour := map[string]chatHourlyRow{}
 	for rows.Next() {
 		var bucket string
-		var s, up, q, r int
-		if err := rows.Scan(&bucket, &s, &up, &q, &r); err != nil {
+		var s, up, q, r, owner int
+		if err := rows.Scan(&bucket, &s, &up, &q, &r, &owner); err != nil {
 			return nil, err
 		}
 		hour := bucket
@@ -154,6 +155,7 @@ func listChatHourlyToday(db *sql.DB) ([]chatHourlyRow, error) {
 		row.UpstreamError += up
 		row.QuotaDenied += q
 		row.RateDenied += r
+		row.OwnerCalls += owner
 		row.Total = row.Success + row.UpstreamError + row.QuotaDenied + row.RateDenied
 		byHour[hour] = row
 	}
@@ -181,11 +183,13 @@ func formatHour(h int) string {
 
 func summarizeChatStats(daily []chatDailyRow, hourly []chatHourlyRow) map[string]any {
 	today := time.Now().UTC().Format("2006-01-02")
-	var todaySuccess, todayTotal int
+	var todaySuccess, todayTotal, todayOwnerCalls, todayOwnerTokens int
 	for _, d := range daily {
 		if d.Date == today {
 			todaySuccess = d.Success
 			todayTotal = d.Total
+			todayOwnerCalls = d.OwnerCalls
+			todayOwnerTokens = d.OwnerTokens
 			break
 		}
 	}
@@ -193,24 +197,31 @@ func summarizeChatStats(daily []chatDailyRow, hourly []chatHourlyRow) map[string
 		for _, h := range hourly {
 			todaySuccess += h.Success
 			todayTotal += h.Total
+			todayOwnerCalls += h.OwnerCalls
 		}
 	}
-	var periodSuccess, periodTotal int
+	var periodSuccess, periodTotal, periodOwnerCalls, periodOwnerTokens int
 	for _, d := range daily {
 		periodSuccess += d.Success
 		periodTotal += d.Total
+		periodOwnerCalls += d.OwnerCalls
+		periodOwnerTokens += d.OwnerTokens
 	}
 	rate := 0.0
 	if periodTotal > 0 {
 		rate = float64(periodSuccess) / float64(periodTotal)
 	}
 	return map[string]any{
-		"todaySuccess":    todaySuccess,
-		"todayTotal":      todayTotal,
-		"periodSuccess":   periodSuccess,
-		"periodTotal":     periodTotal,
-		"successRate":     rate,
-		"successRateText": formatPercent(rate),
+		"todaySuccess":       todaySuccess,
+		"todayTotal":         todayTotal,
+		"todayOwnerCalls":    todayOwnerCalls,
+		"todayOwnerTokens":   todayOwnerTokens,
+		"periodSuccess":      periodSuccess,
+		"periodTotal":        periodTotal,
+		"periodOwnerCalls":   periodOwnerCalls,
+		"periodOwnerTokens":  periodOwnerTokens,
+		"successRate":        rate,
+		"successRateText":    formatPercent(rate),
 	}
 }
 

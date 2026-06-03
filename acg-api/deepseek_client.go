@@ -19,6 +19,11 @@ type deepseekClient struct {
 	http    *http.Client
 }
 
+type deepSeekChatResult struct {
+	Content string
+	Tokens  int
+}
+
 func newDeepSeekClient() *deepseekClient {
 	base := env("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 	return &deepseekClient{
@@ -63,9 +68,9 @@ func buildChatUserContent(msg, pageURL, pageTitle string) string {
 	return b.String()
 }
 
-func (c *deepseekClient) Chat(userMessage, pageURL, pageTitle string) (string, error) {
+func (c *deepseekClient) Chat(userMessage, pageURL, pageTitle string) (deepSeekChatResult, error) {
 	if c.apiKey == "" {
-		return "", fmt.Errorf("DEEPSEEK_API_KEY not configured")
+		return deepSeekChatResult{}, fmt.Errorf("DEEPSEEK_API_KEY not configured")
 	}
 	userContent := buildChatUserContent(userMessage, pageURL, pageTitle)
 	body := map[string]any{
@@ -79,24 +84,24 @@ func (c *deepseekClient) Chat(userMessage, pageURL, pageTitle string) (string, e
 	}
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return "", err
+		return deepSeekChatResult{}, err
 	}
 	endpoint := c.baseURL + "/v1/chat/completions"
 	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(raw))
 	if err != nil {
-		return "", err
+		return deepSeekChatResult{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 	res, err := c.http.Do(req)
 	if err != nil {
-		return "", err
+		return deepSeekChatResult{}, err
 	}
 	defer res.Body.Close()
 	respBody, _ := io.ReadAll(res.Body)
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return "", fmt.Errorf("deepseek http %d: %s", res.StatusCode, truncate(string(respBody), 200))
+		return deepSeekChatResult{}, fmt.Errorf("deepseek http %d: %s", res.StatusCode, truncate(string(respBody), 200))
 	}
 
 	var payload struct {
@@ -105,14 +110,20 @@ func (c *deepseekClient) Chat(userMessage, pageURL, pageTitle string) (string, e
 				Content string `json:"content"`
 			} `json:"message"`
 		} `json:"choices"`
+		Usage struct {
+			TotalTokens int `json:"total_tokens"`
+		} `json:"usage"`
 	}
 	if err := json.Unmarshal(respBody, &payload); err != nil {
-		return "", err
+		return deepSeekChatResult{}, err
 	}
 	if len(payload.Choices) == 0 || strings.TrimSpace(payload.Choices[0].Message.Content) == "" {
-		return "", fmt.Errorf("empty deepseek response")
+		return deepSeekChatResult{}, fmt.Errorf("empty deepseek response")
 	}
-	return payload.Choices[0].Message.Content, nil
+	return deepSeekChatResult{
+		Content: payload.Choices[0].Message.Content,
+		Tokens:  payload.Usage.TotalTokens,
+	}, nil
 }
 
 func truncate(s string, maxLen int) string {
