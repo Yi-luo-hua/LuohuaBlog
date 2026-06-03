@@ -155,7 +155,7 @@ const AiTrafficPage = () => {
           <span className="font-semibold text-[#74C0FC]">
             {stats?.model || "deepseek-v4-flash"}
           </span>
-          。含游客、登录用户与站长（学号验证后）的聚合统计，不含聊天内容。
+          。游客、登录用户与站长提问均计入总数；历史用量会从额度记录自动补齐。
         </p>
 
         {loading && (
@@ -169,7 +169,7 @@ const AiTrafficPage = () => {
 
         {stats && !error && (
           <>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 lg:gap-6">
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
               <StatCard
                 label="今日提问"
                 value={summary?.todaySuccess ?? 0}
@@ -177,24 +177,9 @@ const AiTrafficPage = () => {
                 accent="#FFD43B"
               />
               <StatCard
-                label="站长今日"
-                accent="#B197FC"
-              >
-                <span className="text-[#9775FA]">{summary?.todayOwnerCalls ?? 0}</span>
-              </StatCard>
-              <StatCard
-                label="站长 Token"
-                accent="#DA77F2"
-                hint={`今日约 ${summary?.todayOwnerTokens ?? 0} · 近 14 日 ${summary?.periodOwnerTokens ?? 0}`}
-              >
-                <span className="text-xl md:text-2xl text-[#BE4BDB]">
-                  {(summary?.periodOwnerTokens ?? 0).toLocaleString()}
-                </span>
-              </StatCard>
-              <StatCard
                 label="近 14 日"
                 value={summary?.periodSuccess ?? 0}
-                hint={`站长 ${summary?.periodOwnerCalls ?? 0} 次 · 全站 ${summary?.periodTotal ?? 0} 次`}
+                hint={`合计 ${summary?.periodTotal ?? 0} 次`}
                 accent="#74C0FC"
               />
               <StatCard
@@ -203,9 +188,6 @@ const AiTrafficPage = () => {
               >
                 <span className="text-[#FF8FAB]">{summary?.successRateText ?? "0%"}</span>
               </StatCard>
-            </div>
-
-            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
               <StatCard
                 label="服务状态"
                 accent="#51CF66"
@@ -270,8 +252,6 @@ const AiTrafficPage = () => {
                         <th className="px-4 py-3">限流</th>
                       <th className="px-4 py-3">游客</th>
                       <th className="px-4 py-3">登录</th>
-                      <th className="px-4 py-3">站长</th>
-                      <th className="px-4 py-3">站长 Token</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -289,12 +269,6 @@ const AiTrafficPage = () => {
                           <td className="px-4 py-2.5">{d.rateDenied}</td>
                         <td className="px-4 py-2.5">{d.guestCalls}</td>
                         <td className="px-4 py-2.5">{d.userCalls}</td>
-                        <td className="px-4 py-2.5 font-semibold text-[#9775FA]">
-                          {d.ownerCalls}
-                        </td>
-                        <td className="px-4 py-2.5 text-[#BE4BDB]">
-                          {(d.ownerTokens ?? 0).toLocaleString()}
-                        </td>
                         </tr>
                       ))}
                     </tbody>

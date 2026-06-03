@@ -61,7 +61,7 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 	}
 
 	if !enabled {
-		recordChatStat(db, id, "not_configured", 0)
+		recordChatStatSimple(db, "not_configured")
 		snap, _ := getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":       "CHAT_NOT_CONFIGURED",
@@ -77,7 +77,7 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 
 	preSnap, _ := getQuotaSnapshot(db, id)
 	if !id.Unlimited && preSnap.Used >= id.Limit {
-		recordChatStat(db, id, "quota_denied", 0)
+		recordChatStat(db, id, "quota_denied")
 		writeJSONStatus(w, http.StatusTooManyRequests, quotaErrBody(id, preSnap, errDailyExceeded))
 		return
 	}
@@ -90,9 +90,9 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 				snap, _ = getQuotaSnapshot(db, id)
 			}
 			if qe == errRateLimited {
-				recordChatStat(db, id, "rate_denied", 0)
+				recordChatStat(db, id, "rate_denied")
 			} else {
-				recordChatStat(db, id, "quota_denied", 0)
+				recordChatStat(db, id, "quota_denied")
 			}
 			writeJSONStatus(w, http.StatusTooManyRequests, quotaErrBody(id, snap, qe))
 			return
@@ -102,9 +102,9 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 	}
 
 	ds := newDeepSeekClient()
-	result, err := ds.Chat(msg, strings.TrimSpace(body.PageURL), strings.TrimSpace(body.PageTitle))
+	reply, err := ds.Chat(msg, strings.TrimSpace(body.PageURL), strings.TrimSpace(body.PageTitle))
 	if err != nil {
-		recordChatStat(db, id, "upstream_error", 0)
+		recordChatStat(db, id, "upstream_error")
 		rollbackQuota(db, id)
 		snap, _ = getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
@@ -118,9 +118,9 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 		return
 	}
 
-	recordChatStat(db, id, "success", result.Tokens)
+	recordChatStat(db, id, "success")
 	out := chatQuotaJSON(snap)
-	out["reply"] = result.Content
+	out["reply"] = reply
 	writeJSON(w, out)
 }
 

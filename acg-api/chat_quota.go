@@ -23,25 +23,16 @@ const (
 type chatIdentity struct {
 	Key       string
 	IsLogin   bool
-	IsOwner   bool
 	Limit     int
 	Unlimited bool
 }
 
-func userIsOwner(db *sql.DB, userID int64) bool {
-	var flag int
-	err := db.QueryRow(`SELECT is_owner FROM users WHERE id = ?`, userID).Scan(&flag)
-	return err == nil && flag == 1
-}
-
 func resolveChatIdentity(r *http.Request) chatIdentity {
 	if sess, ok := sessionFromRequest(r); ok {
-		owner := userIsOwner(db, sess.UserID)
 		if sess.Unlimited {
 			return chatIdentity{
 				Key:       "user:" + formatUserID(sess.UserID),
 				IsLogin:   true,
-				IsOwner:   owner,
 				Limit:     0,
 				Unlimited: true,
 			}
@@ -49,7 +40,6 @@ func resolveChatIdentity(r *http.Request) chatIdentity {
 		return chatIdentity{
 			Key:     "user:" + formatUserID(sess.UserID),
 			IsLogin: true,
-			IsOwner: owner,
 			Limit:   userDailyLimit,
 		}
 	}
