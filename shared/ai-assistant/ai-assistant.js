@@ -48,10 +48,18 @@
   }
 
   function getPageContext() {
+    if (
+      window.BlogAIPageContext &&
+      typeof window.BlogAIPageContext.collectPageContext === "function"
+    ) {
+      return window.BlogAIPageContext.collectPageContext(document, location);
+    }
     return {
       pageUrl: location.href,
       pageTitle: (document.title || "").trim(),
       pagePath: location.pathname || "/",
+      headings: [],
+      visibleText: "",
     };
   }
 
@@ -554,11 +562,17 @@
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        message: text,
-        pageUrl: ctx.pageUrl,
-        pageTitle: ctx.pageTitle,
-      }),
+      body: JSON.stringify(
+        window.BlogAIPageContext &&
+          typeof window.BlogAIPageContext.createChatPayload === "function"
+          ? window.BlogAIPageContext.createChatPayload(text, ctx)
+          : {
+              message: text,
+              pageUrl: ctx.pageUrl,
+              pageTitle: ctx.pageTitle,
+              pageContext: ctx,
+            }
+      ),
     })
       .then(function (r) {
         return r.json().then(function (d) {

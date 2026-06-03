@@ -6,8 +6,22 @@ import { useEffect, useRef, useState } from "react";
 
 import Button from "./Button";
 import VideoPreview from "./VideoPreview";
+import {
+  areHeroImagesReady,
+  getHeroIndexAfterClick,
+  getNextHeroIndex,
+  isHeroImageReady,
+} from "./heroImageState";
 
 gsap.registerPlugin(ScrollTrigger);
+
+const TOTAL_HERO_IMAGES = 4;
+const HERO_INDEXES = Array.from(
+  { length: TOTAL_HERO_IMAGES },
+  (_, index) => index + 1
+);
+const COS = `https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main`;
+const getImgSrc = (index) => `${COS}/img/hero-${index}.webp`;
 
 const Hero = () => {
   const [currentIndex, setCurrentIndex] = useState(1);
@@ -29,23 +43,52 @@ const Hero = () => {
   }, []);
 
   const [loading, setLoading] = useState(true);
-  const [loadedImages, setLoadedImages] = useState(0);
+  const [loadedHeroIndexes, setLoadedHeroIndexes] = useState(() => new Set());
 
-  const totalImages = 4;
+  const totalImages = TOTAL_HERO_IMAGES;
+  const previewIndex = getNextHeroIndex(currentIndex, totalImages);
+  const canAdvanceHero = isHeroImageReady(previewIndex, loadedHeroIndexes);
 
-  const handleImageLoad = () => {
-    setLoadedImages((prev) => prev + 1);
+  const markHeroImageLoaded = (index) => {
+    setLoadedHeroIndexes((prev) => {
+      if (prev.has(index)) return prev;
+      return new Set([...prev, index]);
+    });
   };
 
   useEffect(() => {
-    if (loadedImages >= totalImages - 1) {
+    if (areHeroImagesReady([1, 2], loadedHeroIndexes)) {
       setLoading(false);
     }
-  }, [loadedImages]);
+  }, [loadedHeroIndexes]);
+
+  useEffect(() => {
+    let cancelled = false;
+    HERO_INDEXES.forEach((index) => {
+      const img = new Image();
+      img.onload = () => {
+        if (cancelled) return;
+        setLoadedHeroIndexes((prev) => {
+          if (prev.has(index)) return prev;
+          return new Set([...prev, index]);
+        });
+      };
+      img.src = getImgSrc(index);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleMiniClick = () => {
+    const nextIndex = getHeroIndexAfterClick(
+      currentIndex,
+      loadedHeroIndexes,
+      totalImages
+    );
+    if (nextIndex === currentIndex) return;
     setHasClicked(true);
-    setCurrentIndex((prevIndex) => (prevIndex % totalImages) + 1);
+    setCurrentIndex(nextIndex);
   };
 
   useGSAP(
@@ -92,9 +135,6 @@ const Hero = () => {
     });
   });
 
-  const COS = `https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main`;
-  const getImgSrc = (index) => `${COS}/img/hero-${index}.webp`;
-
   return (
     <div className="relative h-dvh w-screen overflow-x-hidden">
       {loading && (
@@ -116,13 +156,15 @@ const Hero = () => {
             <VideoPreview>
               <div
                 onClick={handleMiniClick}
-                className={`origin-center transition-all duration-700 ease-out hover:scale-100 hover:opacity-100 ${previewVisible ? "scale-90 opacity-90" : "scale-50 opacity-0"}`}
+                aria-disabled={!canAdvanceHero}
+                title={canAdvanceHero ? "Switch hero image" : "Loading next hero image"}
+                className={`origin-center transition-all duration-700 ease-out hover:scale-100 hover:opacity-100 ${canAdvanceHero ? "cursor-pointer" : "cursor-wait"} ${previewVisible ? "scale-90 opacity-90" : "scale-50 opacity-0"}`}
               >
                 <img
-                  src={getImgSrc((currentIndex % totalImages) + 1)}
+                  src={getImgSrc(previewIndex)}
                   id="current-image"
                   className="size-64 origin-center scale-150 object-cover object-center"
-                  onLoad={handleImageLoad}
+                  onLoad={() => markHeroImageLoaded(previewIndex)}
                 />
               </div>
             </VideoPreview>
@@ -132,16 +174,14 @@ const Hero = () => {
             src={getImgSrc(currentIndex)}
             id="next-image"
             className="absolute-center invisible absolute z-20 size-64 object-cover object-center hidden md:block"
-            onLoad={handleImageLoad}
+            onLoad={() => markHeroImageLoaded(currentIndex)}
           />
           <img
-            src={getImgSrc(
-              currentIndex === totalImages - 1 ? 1 : currentIndex
-            )}
+            src={getImgSrc(currentIndex)}
             id="bg-image"
             className="absolute left-0 top-0 size-full object-cover object-center"
-            onLoad={handleImageLoad}
-            fetchpriority="high"
+            onLoad={() => markHeroImageLoaded(currentIndex)}
+            fetchPriority="high"
           />
         </div>
 

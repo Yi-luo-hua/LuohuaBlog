@@ -1040,6 +1040,7 @@ inject:
   head:
     - <link rel="stylesheet" href="/ai-assistant/ai-assistant.css">
   bottom:
+    - <script src="/ai-assistant/page-context.js" defer></script>
     - <script src="/ai-assistant/ai-assistant.js" defer></script>
 
 # CDN Settings

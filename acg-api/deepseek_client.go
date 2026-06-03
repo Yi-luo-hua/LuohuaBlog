@@ -10,7 +10,17 @@ import (
 	"time"
 )
 
-const deepseekSystemPrompt = "你是一个博客 AI 小助手，名字叫博客小精灵。说话简洁、友好、轻微二次元风格，但不要过度卖萌。用户消息里可能附带当前页面的标题和链接，可据此理解用户所在位置；不要编造页面正文里不存在的内容。优先回答和博客文章、技术内容、学习内容相关的问题。回答尽量简短。"
+const deepseekSystemPrompt = "You are the Taozhiyy site AI assistant. Be concise, friendly, and lightly anime-styled without overdoing it. Answer in the user's language. If current page context is provided, treat it as ground truth for what the user is viewing. Do not invent page content that is not present in the supplied context. Prefer answers about the site, posts, technical content, learning notes, and the current page."
+
+type chatPageContext struct {
+	PageURL     string   `json:"pageUrl"`
+	PageTitle   string   `json:"pageTitle"`
+	PagePath    string   `json:"pagePath"`
+	Language    string   `json:"language"`
+	SiteSection string   `json:"siteSection"`
+	Headings    []string `json:"headings"`
+	VisibleText string   `json:"visibleText"`
+}
 
 type deepseekClient struct {
 	apiKey  string
@@ -33,41 +43,61 @@ func chatConfigured() bool {
 	return env("DEEPSEEK_API_KEY", "") != ""
 }
 
-func buildChatUserContent(msg, pageURL, pageTitle string) string {
+func buildChatUserContent(msg, pageURL, pageTitle string, pageContext chatPageContext) string {
 	msg = strings.TrimSpace(msg)
 	pageURL = strings.TrimSpace(pageURL)
 	pageTitle = strings.TrimSpace(pageTitle)
-	if pageURL == "" && pageTitle == "" {
+	pageContext = normalizeChatPageContext(pageContext, pageURL, pageTitle)
+	if pageURL == "" && pageTitle == "" && !pageContext.hasContent() {
 		return msg
 	}
-	if len([]rune(pageTitle)) > 120 {
-		pageTitle = string([]rune(pageTitle)[:120]) + "…"
-	}
-	if len(pageURL) > 400 {
-		pageURL = pageURL[:400] + "…"
-	}
 	var b strings.Builder
-	b.WriteString("【用户当前浏览的页面】\n")
-	if pageTitle != "" {
-		b.WriteString("标题：")
-		b.WriteString(pageTitle)
+	b.WriteString("[Current page context]\n")
+	if pageContext.PageTitle != "" {
+		b.WriteString("Title: ")
+		b.WriteString(pageContext.PageTitle)
 		b.WriteString("\n")
 	}
-	if pageURL != "" {
-		b.WriteString("链接：")
-		b.WriteString(pageURL)
+	if pageContext.PageURL != "" {
+		b.WriteString("URL: ")
+		b.WriteString(pageContext.PageURL)
 		b.WriteString("\n")
 	}
-	b.WriteString("\n【用户问题】\n")
+	if pageContext.PagePath != "" {
+		b.WriteString("Path: ")
+		b.WriteString(pageContext.PagePath)
+		b.WriteString("\n")
+	}
+	if pageContext.SiteSection != "" {
+		b.WriteString("Section: ")
+		b.WriteString(pageContext.SiteSection)
+		b.WriteString("\n")
+	}
+	if pageContext.Language != "" {
+		b.WriteString("Language: ")
+		b.WriteString(pageContext.Language)
+		b.WriteString("\n")
+	}
+	if len(pageContext.Headings) > 0 {
+		b.WriteString("Headings: ")
+		b.WriteString(strings.Join(pageContext.Headings, " | "))
+		b.WriteString("\n")
+	}
+	if pageContext.VisibleText != "" {
+		b.WriteString("Visible text: ")
+		b.WriteString(pageContext.VisibleText)
+		b.WriteString("\n")
+	}
+	b.WriteString("\n[User question]\n")
 	b.WriteString(msg)
 	return b.String()
 }
 
-func (c *deepseekClient) Chat(userMessage, pageURL, pageTitle string) (string, error) {
+func (c *deepseekClient) Chat(userMessage, pageURL, pageTitle string, pageContext chatPageContext) (string, error) {
 	if c.apiKey == "" {
 		return "", fmt.Errorf("DEEPSEEK_API_KEY not configured")
 	}
-	userContent := buildChatUserContent(userMessage, pageURL, pageTitle)
+	userContent := buildChatUserContent(userMessage, pageURL, pageTitle, pageContext)
 	body := map[string]any{
 		"model": c.model,
 		"messages": []map[string]string{
@@ -119,5 +149,68 @@ func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s
 	}
-	return s[:maxLen] + "…"
+	return s[:maxLen] + "..."
+}
+
+func normalizeChatPageContext(ctx chatPageContext, fallbackURL, fallbackTitle string) chatPageContext {
+	ctx.PageURL = limitString(strings.TrimSpace(firstNonEmpty(ctx.PageURL, fallbackURL)), 400)
+	ctx.PageTitle = limitRunes(strings.TrimSpace(firstNonEmpty(ctx.PageTitle, fallbackTitle)), 120)
+	ctx.PagePath = limitRunes(strings.TrimSpace(ctx.PagePath), 160)
+	ctx.Language = limitRunes(strings.TrimSpace(ctx.Language), 30)
+	ctx.SiteSection = limitRunes(strings.TrimSpace(ctx.SiteSection), 60)
+	ctx.VisibleText = limitRunes(normalizeSpace(ctx.VisibleText), 2200)
+
+	headings := make([]string, 0, len(ctx.Headings))
+	seen := map[string]bool{}
+	for _, heading := range ctx.Headings {
+		text := limitRunes(normalizeSpace(heading), 120)
+		if text == "" || seen[text] {
+			continue
+		}
+		seen[text] = true
+		headings = append(headings, text)
+		if len(headings) >= 10 {
+			break
+		}
+	}
+	ctx.Headings = headings
+	return ctx
+}
+
+func (ctx chatPageContext) hasContent() bool {
+	return ctx.PageURL != "" ||
+		ctx.PageTitle != "" ||
+		ctx.PagePath != "" ||
+		ctx.Language != "" ||
+		ctx.SiteSection != "" ||
+		len(ctx.Headings) > 0 ||
+		ctx.VisibleText != ""
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func normalizeSpace(value string) string {
+	return strings.Join(strings.Fields(value), " ")
+}
+
+func limitRunes(value string, maxLen int) string {
+	runes := []rune(value)
+	if len(runes) <= maxLen {
+		return value
+	}
+	return string(runes[:maxLen]) + "..."
+}
+
+func limitString(value string, maxLen int) string {
+	if len(value) <= maxLen {
+		return value
+	}
+	return value[:maxLen] + "..."
 }
