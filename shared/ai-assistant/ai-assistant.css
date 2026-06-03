@@ -480,17 +480,17 @@ body.acct-auth-open {
   transform: scale(1.04);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   #blog-ai-toggle {
-    right: 14px;
-    bottom: 18px;
+    right: 16px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     font-size: 13px;
-    padding: 9px 14px;
+    padding: 8px 14px;
   }
 
   #blog-ai-panel {
-    right: 14px;
-    bottom: 72px;
-    height: min(420px, 62vh);
+    right: 16px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    height: min(400px, 58vh);
   }
 }
