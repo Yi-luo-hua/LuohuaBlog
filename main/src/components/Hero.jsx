@@ -382,7 +382,7 @@ const Hero = () => {
                   style={{ borderColor: compassTheme.line }}
                 >
                   <img
-                    src="/img/compass-avatar.jpg"
+                    src={`${COS}/img/compass-avatar.jpg`}
                     alt="桃之夭夭头像罗盘"
                     className="size-full object-cover"
                     style={{ objectPosition: "50% 43%" }}
