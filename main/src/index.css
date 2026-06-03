@@ -19,15 +19,6 @@ body {
     @apply relative shrink-0 whitespace-nowrap px-1.5 font-general text-[10px] uppercase text-blue-50 sm:px-2 sm:text-xs md:ms-6 md:px-0 lg:ms-10 after:absolute after:-bottom-0.5 after:left-0 after:h-[2px] after:w-full after:origin-bottom-right after:scale-x-0 after:bg-neutral-800 after:transition-transform after:duration-300 after:ease-[cubic-bezier(0.65_0.05_0.36_1)] hover:after:origin-bottom-left hover:after:scale-x-100 dark:after:bg-white cursor-pointer;
   }
 
-  .nav-hover-btn-light,
-  .nav-hover-btn--ai,
-  .nav-hover-btn--guestbook {
-    @apply text-[#2B2B2B] after:bg-[#FF8FAB];
-  }
-
-  .nav-hover-btn--bili {
-    @apply text-[#2D2A3A] after:bg-[#7C5CFF];
-  }
 
   .floating-nav {
     @apply bg-black rounded-lg border;
@@ -62,15 +53,6 @@ body {
     @apply relative flex h-10 w-10 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-black/40 text-blue-50;
   }
 
-  .nav-menu-btn--light,
-  .nav-menu-btn--ai,
-  .nav-menu-btn--guestbook {
-    @apply border-[#F2E6C9] bg-white/90 text-[#2B2B2B];
-  }
-
-  .nav-menu-btn--bili {
-    @apply border-[#E8DFFB] bg-white/75 text-[#2D2A3A];
-  }
 
   .nav-menu-btn-bar {
     @apply block h-0.5 w-5 rounded-full bg-current;
@@ -78,76 +60,6 @@ body {
 
   .nav-mobile-link {
     @apply flex min-h-12 w-full items-center rounded-xl px-4 text-[17px] font-semibold normal-case tracking-normal no-underline transition-colors duration-200;
-  }
-
-  /* AI 流量 — 奶油蜜桃 */
-  .nav-mobile-link--ai {
-    @apply text-[#2B2B2B];
-  }
-
-  .nav-mobile-link--ai:hover,
-  .nav-mobile-link--ai:focus-visible {
-    @apply bg-white/80 text-[#FF8FAB] outline-none;
-  }
-
-  .nav-mobile-link--active-ai {
-    @apply bg-white text-[#FF8FAB];
-  }
-
-  /* 留言板 — 与页面渐变一致 */
-  .nav-mobile-link--guestbook {
-    @apply text-[#2B2B2B];
-  }
-
-  .nav-mobile-link--guestbook:hover,
-  .nav-mobile-link--guestbook:focus-visible {
-    @apply bg-white/85 text-[#FF8FAB] outline-none;
-  }
-
-  .nav-mobile-link--active-guestbook {
-    @apply bg-white text-[#FF8FAB];
-  }
-
-  /* Bili Hub — Candy Sky */
-  .nav-mobile-link--bili {
-    @apply text-[#2D2A3A];
-  }
-
-  .nav-mobile-link--bili:hover,
-  .nav-mobile-link--bili:focus-visible {
-    @apply bg-white/70 text-[#7C5CFF] outline-none;
-  }
-
-  .nav-mobile-link--active-bili {
-    @apply bg-white/85 text-[#7C5CFF];
-  }
-
-  /* 首页深色 */
-  .nav-mobile-link--dark {
-    @apply text-blue-50;
-  }
-
-  .nav-mobile-link--dark:hover,
-  .nav-mobile-link--dark:focus-visible {
-    @apply bg-white/10 text-yellow-300 outline-none;
-  }
-
-  .nav-mobile-link--active-dark {
-    @apply bg-white/10 text-yellow-300;
-  }
-
-  /* 兼容旧 class */
-  .nav-mobile-link--light {
-    @apply text-[#2B2B2B];
-  }
-
-  .nav-mobile-link--light:hover,
-  .nav-mobile-link--light:focus-visible {
-    @apply bg-white/80 text-[#FF8FAB] outline-none;
-  }
-
-  .nav-mobile-link--active-light {
-    @apply bg-white text-[#FF8FAB];
   }
 
   .absolute-center {
@@ -620,4 +532,117 @@ body {
   flex-direction: column;
   gap: 6px;
   overflow-y: auto;
+}
+
+/* ── nav-mobile-link theme variants ─────────────────────────────────
+   Defined outside @layer utilities so Tailwind's purge never removes
+   them, even when the class names are built via template literals.     */
+
+/* AI 流量 — 奶油蜜桃 */
+.nav-mobile-link--ai {
+  color: #2b2b2b;
+}
+.nav-mobile-link--ai:hover,
+.nav-mobile-link--ai:focus-visible {
+  background: rgba(255, 255, 255, 0.8);
+  color: #ff8fab;
+  outline: none;
+}
+.nav-mobile-link--active-ai {
+  background: #ffffff;
+  color: #ff8fab;
+}
+
+/* 留言板 — 与页面渐变一致 */
+.nav-mobile-link--guestbook {
+  color: #2b2b2b;
+}
+.nav-mobile-link--guestbook:hover,
+.nav-mobile-link--guestbook:focus-visible {
+  background: rgba(255, 255, 255, 0.85);
+  color: #ff8fab;
+  outline: none;
+}
+.nav-mobile-link--active-guestbook {
+  background: #ffffff;
+  color: #ff8fab;
+}
+
+/* Bili Hub — Candy Sky */
+.nav-mobile-link--bili {
+  color: #2d2a3a;
+}
+.nav-mobile-link--bili:hover,
+.nav-mobile-link--bili:focus-visible {
+  background: rgba(255, 255, 255, 0.7);
+  color: #7c5cff;
+  outline: none;
+}
+.nav-mobile-link--active-bili {
+  background: rgba(255, 255, 255, 0.85);
+  color: #7c5cff;
+}
+
+/* 首页深色 */
+.nav-mobile-link--dark {
+  color: #dfdff0; /* blue-50 */
+}
+.nav-mobile-link--dark:hover,
+.nav-mobile-link--dark:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  color: #edff66; /* yellow-300 */
+  outline: none;
+}
+.nav-mobile-link--active-dark {
+  background: rgba(255, 255, 255, 0.1);
+  color: #edff66;
+}
+
+/* 兼容旧 class (light = ai/guestbook 风格) */
+.nav-mobile-link--light {
+  color: #2b2b2b;
+}
+.nav-mobile-link--light:hover,
+.nav-mobile-link--light:focus-visible {
+  background: rgba(255, 255, 255, 0.8);
+  color: #ff8fab;
+  outline: none;
+}
+.nav-mobile-link--active-light {
+  background: #ffffff;
+  color: #ff8fab;
+}
+
+/* ── nav-hover-btn theme variants ───────────────────────────────────
+   Outside @layer utilities so Tailwind purge cannot remove them.     */
+.nav-hover-btn-light,
+.nav-hover-btn--ai,
+.nav-hover-btn--guestbook {
+  color: #2b2b2b;
+}
+.nav-hover-btn-light::after,
+.nav-hover-btn--ai::after,
+.nav-hover-btn--guestbook::after {
+  background-color: #ff8fab;
+}
+.nav-hover-btn--bili {
+  color: #2d2a3a;
+}
+.nav-hover-btn--bili::after {
+  background-color: #7c5cff;
+}
+
+/* ── nav-menu-btn theme variants ────────────────────────────────────
+   Outside @layer utilities so Tailwind purge cannot remove them.     */
+.nav-menu-btn--light,
+.nav-menu-btn--ai,
+.nav-menu-btn--guestbook {
+  border-color: #f2e6c9;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2b2b2b;
+}
+.nav-menu-btn--bili {
+  border-color: #e8dffb;
+  background: rgba(255, 255, 255, 0.75);
+  color: #2d2a3a;
 }
