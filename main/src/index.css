@@ -19,8 +19,16 @@ body {
     @apply relative shrink-0 whitespace-nowrap px-1.5 font-general text-[10px] uppercase text-blue-50 sm:px-2 sm:text-xs md:ms-6 md:px-0 lg:ms-10 after:absolute after:-bottom-0.5 after:left-0 after:h-[2px] after:w-full after:origin-bottom-right after:scale-x-0 after:bg-neutral-800 after:transition-transform after:duration-300 after:ease-[cubic-bezier(0.65_0.05_0.36_1)] hover:after:origin-bottom-left hover:after:scale-x-100 dark:after:bg-white cursor-pointer;
   }
 
+  .nav-hover-btn-light {
+    @apply text-[#2B2B2B] after:bg-[#FF8FAB];
+  }
+
   .floating-nav {
     @apply bg-black rounded-lg border;
+  }
+
+  .floating-nav-light {
+    @apply rounded-2xl border border-[#F2E6C9] bg-white/95 shadow-[0_12px_30px_rgba(255,143,171,0.12)] backdrop-blur-sm;
   }
 
   .absolute-center {
@@ -136,6 +144,10 @@ body {
 
 .indicator-line {
   @apply h-1 w-px rounded-full bg-white transition-all duration-200 ease-in-out;
+}
+
+.indicator-line-light {
+  @apply bg-[#2B2B2B]/70;
 }
 
 .indicator-line.active {

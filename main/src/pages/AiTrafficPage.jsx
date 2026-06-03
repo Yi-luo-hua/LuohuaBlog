@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchChatStats } from "../services/chatStatsApi";
 
+const CHART_EMPTY =
+  "还没有提问记录，等第一个人来问问博客吧 ✦";
+
+const BAR_COLORS = [
+  "linear-gradient(180deg, #A5D8FF 0%, #74C0FC 100%)",
+  "linear-gradient(180deg, #FFE066 0%, #FFD43B 100%)",
+  "linear-gradient(180deg, #FFC9C9 0%, #FF8FAB 100%)",
+];
+
 const maxBar = (rows, pick) => {
   let m = 1;
   for (const row of rows) {
@@ -10,18 +19,27 @@ const maxBar = (rows, pick) => {
   return m;
 };
 
-const BarChart = ({ rows, pick, barClass, emptyLabel }) => {
+const BarChart = ({ rows, pick, compact, emptyLabel = CHART_EMPTY }) => {
   const peak = maxBar(rows, pick);
-  if (!rows.length || peak <= 0) {
+  const hasData = rows.length > 0 && peak > 0;
+
+  if (!hasData) {
     return (
-      <p className="text-sm text-blue-50/50">{emptyLabel}</p>
+      <div
+        className={`flex items-center justify-center rounded-2xl border border-dashed border-[#F2E6C9] bg-[#FFFBF0]/80 px-4 text-center text-sm leading-relaxed text-[#6B7280] ${
+          compact ? "min-h-[88px] py-4" : "min-h-[100px] py-5"
+        }`}
+      >
+        {emptyLabel}
+      </div>
     );
   }
+
   return (
-    <div className="flex h-44 items-end gap-1 sm:gap-2">
-      {rows.map((row) => {
+    <div className={`flex items-end gap-1 sm:gap-2 ${compact ? "h-36" : "h-44"}`}>
+      {rows.map((row, i) => {
         const v = pick(row);
-        const h = v > 0 ? Math.max(8, Math.round((v / peak) * 100)) : 4;
+        const h = v > 0 ? Math.max(10, Math.round((v / peak) * 100)) : 6;
         return (
           <div
             key={row.key}
@@ -29,10 +47,14 @@ const BarChart = ({ rows, pick, barClass, emptyLabel }) => {
             title={`${row.label}: ${v}`}
           >
             <div
-              className={`w-full max-w-[28px] rounded-t-md transition-all ${barClass}`}
-              style={{ height: `${h}%` }}
+              className="w-full max-w-[28px] rounded-t-lg transition-all"
+              style={{
+                height: `${h}%`,
+                background: BAR_COLORS[i % BAR_COLORS.length],
+                boxShadow: "0 4px 12px rgba(116, 192, 252, 0.2)",
+              }}
             />
-            <span className="truncate text-[9px] text-blue-50/60 sm:text-[10px]">
+            <span className="truncate text-[9px] text-[#6B7280] sm:text-[10px]">
               {row.label}
             </span>
           </div>
@@ -42,11 +64,20 @@ const BarChart = ({ rows, pick, barClass, emptyLabel }) => {
   );
 };
 
-const StatCard = ({ label, value, hint }) => (
-  <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
-    <p className="text-[10px] uppercase tracking-[0.25em] text-blue-50/50">{label}</p>
-    <p className="mt-1 font-zentry text-2xl font-black text-yellow-300 md:text-3xl">{value}</p>
-    {hint ? <p className="mt-1 text-xs text-blue-50/55">{hint}</p> : null}
+const StatCard = ({ label, value, hint, accent, children }) => (
+  <div className="relative overflow-hidden rounded-[20px] border border-[#F2E6C9] bg-white px-4 pb-4 pt-5 shadow-[0_12px_30px_rgba(255,143,171,0.12)]">
+    <div
+      className="absolute inset-x-0 top-0 h-1.5 rounded-t-[20px]"
+      style={{ background: accent }}
+      aria-hidden
+    />
+    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#6B7280]">
+      {label}
+    </p>
+    <div className="mt-2 min-h-[2rem] font-zentry text-2xl font-black text-[#2B2B2B] md:text-3xl">
+      {children ?? value}
+    </div>
+    {hint ? <p className="mt-1.5 text-xs leading-snug text-[#6B7280]">{hint}</p> : null}
   </div>
 );
 
@@ -93,112 +124,158 @@ const AiTrafficPage = () => {
   }, [stats]);
 
   const summary = stats?.summary;
+  const configured = stats?.configured;
 
   return (
-    <section className="relative min-h-screen bg-black pb-24 pt-24 text-blue-50">
-      <div className="container mx-auto px-3 md:px-10">
-        <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-yellow-300/80">
-          DeepSeek Monitor
+    <section
+      className="ai-traffic-page relative min-h-screen pb-20 pt-16 md:pt-20"
+      style={{
+        background:
+          "linear-gradient(135deg, #FFF8E7 0%, #FFFDF5 45%, #EAF6FF 100%)",
+      }}
+    >
+      <div
+        className="pointer-events-none absolute -left-16 top-24 h-56 w-56 rounded-full bg-[#FFD43B]/20 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-10 bottom-32 h-64 w-64 rounded-full bg-[#FF8FAB]/15 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative mx-auto w-full max-w-[1100px] px-4 md:px-6">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#FF8FAB]">
+          博客小精灵面板
         </p>
-        <h1 className="mt-2 font-zentry text-4xl font-black uppercase text-blue-50 md:text-6xl">
-          AI 调用流量
+        <h1 className="mt-2 text-3xl font-black tracking-tight text-[#2B2B2B] md:text-5xl">
+          <span className="text-[#FF8FAB]">✦</span> AI 调用流量
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-blue-50/70">
-          全站博客小精灵经后端转发至{" "}
-          <span className="text-yellow-300">{stats?.model || "deepseek-v4-flash"}</span>
-          。此处展示聚合调用量（不含用户身份与聊天内容）。部署本版本后开始累计。
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#6B7280]">
+          全站小精灵经后端温柔转发至{" "}
+          <span className="font-semibold text-[#74C0FC]">
+            {stats?.model || "deepseek-v4-flash"}
+          </span>
+          。此处是贴纸风统计页，只展示聚合次数，不含聊天内容。
         </p>
 
         {loading && (
-          <p className="mt-10 text-sm text-blue-50/50">加载统计中…</p>
+          <p className="mt-8 text-sm text-[#6B7280]">加载统计中…</p>
         )}
         {error && (
-          <p className="mt-10 rounded-lg border border-red-400/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+          <p className="mt-8 rounded-[20px] border border-[#FFC9C9] bg-white px-4 py-3 text-sm text-[#C92A2A] shadow-[0_8px_24px_rgba(255,143,171,0.1)]">
             {error}
           </p>
         )}
 
         {stats && !error && (
           <>
-            <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
               <StatCard
-                label="今日成功调用"
+                label="今日提问"
                 value={summary?.todaySuccess ?? 0}
                 hint={`今日请求 ${summary?.todayTotal ?? 0} 次`}
+                accent="#FFD43B"
               />
               <StatCard
-                label="近 14 日成功"
+                label="近 14 日"
                 value={summary?.periodSuccess ?? 0}
                 hint={`合计 ${summary?.periodTotal ?? 0} 次`}
+                accent="#74C0FC"
               />
               <StatCard
                 label="成功率"
-                value={summary?.successRateText ?? "0%"}
-                hint="成功 / 全部请求（含额度与限流）"
-              />
+                accent="#FF8FAB"
+              >
+                <span className="text-[#FF8FAB]">{summary?.successRateText ?? "0%"}</span>
+              </StatCard>
               <StatCard
                 label="服务状态"
-                value={stats.configured ? "已配置" : "未配置"}
-                hint={stats.configured ? "Key 已在服务器就绪" : "等待 DEEPSEEK_API_KEY"}
-              />
+                accent="#51CF66"
+                hint={
+                  configured
+                    ? "Key 已在服务器就绪"
+                    : "等待 DEEPSEEK_API_KEY"
+                }
+              >
+                {configured ? (
+                  <span className="inline-flex items-center rounded-full border border-[#B2F2BB] bg-[#E6FCF5] px-3 py-1 text-sm font-bold text-[#2B8A3E]">
+                    已配置
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full border border-[#FFE8CC] bg-[#FFF4E6] px-3 py-1 text-sm font-bold text-[#E67700]">
+                    未配置
+                  </span>
+                )}
+              </StatCard>
             </div>
 
-            <div className="mt-12 rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-8">
-              <h2 className="text-lg font-bold text-yellow-300">近 14 日每日流量</h2>
-              <p className="mt-1 text-xs text-blue-50/55">柱高 = 当日总请求（成功 + 失败 + 限流）</p>
-              <div className="mt-6">
-                <BarChart
-                  rows={dailyBars}
-                  pick={(r) => r.total}
-                  barClass="bg-gradient-to-t from-violet-600 to-yellow-400"
-                  emptyLabel="暂无历史数据，开始使用小精灵后即可看到曲线。"
-                />
+            <div className="mt-6 space-y-6">
+              <div className="rounded-[20px] border border-[#F2E6C9] bg-white p-5 shadow-[0_12px_30px_rgba(255,143,171,0.12)] md:p-7">
+                <h2 className="text-lg font-bold text-[#2B2B2B]">
+                  <span className="mr-1 text-[#74C0FC]">◆</span>
+                  近 14 日每日流量
+                </h2>
+                <p className="mt-1 text-xs text-[#6B7280]">
+                  柱高 = 当日总请求（成功 + 失败 + 限流）
+                </p>
+                <div className="mt-5">
+                  <BarChart rows={dailyBars} pick={(r) => r.total} />
+                </div>
               </div>
-            </div>
 
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-8">
-              <h2 className="text-lg font-bold text-yellow-300">今日按小时（UTC）</h2>
-              <p className="mt-1 text-xs text-blue-50/55">绿色系为成功调用占比提示</p>
-              <div className="mt-6">
-                <BarChart
-                  rows={hourlyBars}
-                  pick={(r) => r.success || r.total}
-                  barClass="bg-gradient-to-t from-emerald-700 to-emerald-300"
-                  emptyLabel="今日尚无调用记录。"
-                />
+              <div className="rounded-[20px] border border-[#F2E6C9] bg-white p-5 shadow-[0_12px_30px_rgba(255,143,171,0.12)] md:p-7">
+                <h2 className="text-lg font-bold text-[#2B2B2B]">
+                  <span className="mr-1 text-[#FFD43B]">◆</span>
+                  今日按小时（UTC）
+                </h2>
+                <p className="mt-1 text-xs text-[#6B7280]">
+                  浅蓝 / 浅黄 / 浅粉柱表示各时段调用
+                </p>
+                <div className="mt-5">
+                  <BarChart
+                    rows={hourlyBars}
+                    pick={(r) => r.success || r.total}
+                    compact
+                  />
+                </div>
               </div>
-            </div>
 
-            {stats.daily?.length > 0 && (
-              <div className="mt-8 overflow-x-auto rounded-xl border border-white/10">
-                <table className="min-w-full text-left text-xs text-blue-50/80">
-                  <thead className="bg-white/5 uppercase tracking-wider text-blue-50/50">
-                    <tr>
-                      <th className="px-4 py-3">日期</th>
-                      <th className="px-4 py-3">成功</th>
-                      <th className="px-4 py-3">上游失败</th>
-                      <th className="px-4 py-3">额度拒绝</th>
-                      <th className="px-4 py-3">限流</th>
-                      <th className="px-4 py-3">游客</th>
-                      <th className="px-4 py-3">登录</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...stats.daily].reverse().map((d) => (
-                      <tr key={d.date} className="border-t border-white/5">
-                        <td className="px-4 py-2">{d.date}</td>
-                        <td className="px-4 py-2 text-emerald-300">{d.success}</td>
-                        <td className="px-4 py-2">{d.upstreamError}</td>
-                        <td className="px-4 py-2">{d.quotaDenied}</td>
-                        <td className="px-4 py-2">{d.rateDenied}</td>
-                        <td className="px-4 py-2">{d.guestCalls}</td>
-                        <td className="px-4 py-2">{d.userCalls}</td>
+              {stats.daily?.length > 0 && (
+                <div className="overflow-x-auto rounded-[20px] border border-[#F2E6C9] bg-white shadow-[0_12px_30px_rgba(255,143,171,0.12)]">
+                  <table className="min-w-full text-left text-xs text-[#2B2B2B]">
+                    <thead className="bg-[#FFF8E7] uppercase tracking-wider text-[#6B7280]">
+                      <tr>
+                        <th className="px-4 py-3">日期</th>
+                        <th className="px-4 py-3">成功</th>
+                        <th className="px-4 py-3">上游失败</th>
+                        <th className="px-4 py-3">额度拒绝</th>
+                        <th className="px-4 py-3">限流</th>
+                        <th className="px-4 py-3">游客</th>
+                        <th className="px-4 py-3">登录</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {[...stats.daily].reverse().map((d) => (
+                        <tr
+                          key={d.date}
+                          className="border-t border-[#F2E6C9]/80 even:bg-[#FFFBF5]/60"
+                        >
+                          <td className="px-4 py-2.5 font-medium">{d.date}</td>
+                          <td className="px-4 py-2.5 font-semibold text-[#339AF0]">
+                            {d.success}
+                          </td>
+                          <td className="px-4 py-2.5">{d.upstreamError}</td>
+                          <td className="px-4 py-2.5">{d.quotaDenied}</td>
+                          <td className="px-4 py-2.5">{d.rateDenied}</td>
+                          <td className="px-4 py-2.5">{d.guestCalls}</td>
+                          <td className="px-4 py-2.5">{d.userCalls}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
