@@ -74,15 +74,23 @@ const Contact = () => {
   const [drawNumber, setDrawNumber] = useState(0);
   const [slotDigits, setSlotDigits] = useState(() => getDrawDigits(0));
   const [resultOpen, setResultOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [cheatOpen, setCheatOpen] = useState(false);
+  const [cheatCode, setCheatCode] = useState("");
+  const [drawHistory, setDrawHistory] = useState([]);
   const [activeWallpaper, setActiveWallpaper] = useState(() =>
     pickWallpaperGift()
   );
 
-  const drawPrize = () => {
+  const drawPrize = (forcedNumber) => {
     if (isDrawing) return;
     setIsDrawing(true);
     setResultOpen(false);
-    const nextNumber = Math.floor(Math.random() * 1000);
+    const nextNumber =
+      typeof forcedNumber === "number"
+        ? forcedNumber
+        : Math.floor(Math.random() * 1000);
     const nextPrize = getPrizeByDrawNumber(nextNumber);
     const spinTimer = window.setInterval(() => {
       setSlotDigits(getDrawDigits(Math.floor(Math.random() * 1000)));
@@ -90,16 +98,46 @@ const Contact = () => {
 
     window.setTimeout(() => {
       window.clearInterval(spinTimer);
+      let nextWallpaper = activeWallpaper;
       if (nextPrize.id === "wallpaper") {
-        setActiveWallpaper(pickWallpaperGift());
+        nextWallpaper = pickWallpaperGift();
+        setActiveWallpaper(nextWallpaper);
       }
       setDrawNumber(nextNumber);
       setSlotDigits(getDrawDigits(nextNumber));
       setActivePrize(nextPrize);
       setDrawCount((count) => count + 1);
+      setDrawHistory((history) =>
+        [
+          {
+            id: `${Date.now()}-${nextNumber}`,
+            number: nextNumber,
+            prize: nextPrize,
+            wallpaper: nextPrize.id === "wallpaper" ? nextWallpaper : null,
+          },
+          ...history,
+        ].slice(0, 8)
+      );
       setIsDrawing(false);
       setResultOpen(true);
     }, 1100);
+  };
+
+  const drawCheatPrize = () => {
+    const parsedNumber = Number.parseInt(cheatCode, 10);
+    if (Number.isNaN(parsedNumber)) return;
+    const safeNumber = Math.max(0, Math.min(999, parsedNumber));
+    setCheatCode(String(safeNumber).padStart(3, "0"));
+    drawPrize(safeNumber);
+  };
+
+  const openHistoryResult = (record) => {
+    setDrawNumber(record.number);
+    setSlotDigits(getDrawDigits(record.number));
+    setActivePrize(record.prize);
+    if (record.wallpaper) setActiveWallpaper(record.wallpaper);
+    setHistoryOpen(false);
+    setResultOpen(true);
   };
 
   const openPrize = () => {
@@ -129,17 +167,13 @@ const Contact = () => {
   const drawCode = String(drawNumber).padStart(3, "0");
 
   return (
-    <section id="end" className="my-20 min-h-96 w-screen px-4 md:px-10">
-      <div className="source-arcade-shell">
+    <>
+      <section
+        id="end"
+        className="source-lottery-section my-20 min-h-96 w-screen px-4 md:px-10"
+      >
+        <div className="source-arcade-shell">
         <div className="source-arcade-bg-grid" aria-hidden="true" />
-        <div className="source-arcade-head">
-          <p className="source-arcade-eyebrow">SOURCE LOTTERY</p>
-          <h2>桃之夭夭 Source Gacha</h2>
-          <p>
-            Pull the lever to draw one poster card. The result will pop out at
-            the center of the screen as an independent wallpaper-style card.
-          </p>
-        </div>
 
         <div className="source-lottery-stage">
           <div className="source-arcade-machine">
@@ -182,7 +216,7 @@ const Contact = () => {
                 >
                   <button
                     type="button"
-                    onClick={drawPrize}
+                    onClick={() => drawPrize()}
                     aria-label="Pull to draw a source prize"
                   >
                     <span className="source-lever-stick" />
@@ -194,7 +228,7 @@ const Contact = () => {
                 <button
                   type="button"
                   className="source-arcade-draw-btn"
-                  onClick={drawPrize}
+                  onClick={() => drawPrize()}
                   disabled={isDrawing}
                 >
                   {isDrawing ? "DRAWING" : "START"}
@@ -203,7 +237,158 @@ const Contact = () => {
             </div>
           </div>
         </div>
-      </div>
+
+        <div className="source-outer-tools" aria-label="Source slot tools">
+          <button
+            type="button"
+            className={manualOpen ? "source-manual-book is-open" : "source-manual-book"}
+            onClick={() => setManualOpen((open) => !open)}
+            aria-expanded={manualOpen}
+          >
+            <span>USER</span>
+            <strong>MANUAL</strong>
+          </button>
+
+          <div className="source-tool-dock">
+            <button
+              type="button"
+              className={historyOpen ? "source-tool-chip is-open" : "source-tool-chip"}
+              onClick={() => setHistoryOpen((open) => !open)}
+              aria-expanded={historyOpen}
+            >
+              <span>History</span>
+              <strong>{drawHistory.length}</strong>
+            </button>
+            <button
+              type="button"
+              className={cheatOpen ? "source-tool-chip source-tool-chip--cheat is-open" : "source-tool-chip source-tool-chip--cheat"}
+              onClick={() => setCheatOpen((open) => !open)}
+              aria-expanded={cheatOpen}
+            >
+              <span>Cheat</span>
+              <strong>000</strong>
+            </button>
+          </div>
+        </div>
+
+        </div>
+      </section>
+
+      {manualOpen && (
+        <div className="source-manual-modal" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="source-manual-backdrop"
+            aria-label="Close source manual"
+            onClick={() => setManualOpen(false)}
+          />
+          <div className="source-manual-result-card">
+            <button
+              type="button"
+              className="source-tool-close"
+              onClick={() => setManualOpen(false)}
+            >
+              Close
+            </button>
+            <div className="source-manual-page">
+              <p>USER MANUAL</p>
+              <h3>How to use the source slot</h3>
+              <span>Pull the desktop lever, or tap START on mobile, to draw one three-digit number from 000 to 999.</span>
+              <span>000-332 opens a text card about the homepage learning reference.</span>
+              <span>333-665 opens a text card about the Hexo Butterfly blog source.</span>
+              <span>666-999 opens a pure gallery wallpaper card. Text results never include wallpapers.</span>
+              <span>History keeps your latest eight draws. Cheat mode lets you type a number directly when you want to test a specific result.</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {historyOpen && (
+        <div className="source-tool-modal source-history-modal" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="source-tool-backdrop source-history-backdrop"
+            aria-label="Close history records"
+            onClick={() => setHistoryOpen(false)}
+          />
+          <div className="source-tool-result-card source-history-result-card">
+            <button
+              type="button"
+              className="source-tool-close"
+              onClick={() => setHistoryOpen(false)}
+            >
+              Close
+            </button>
+            <div className="source-history-card">
+              <p>History Records</p>
+              {drawHistory.length ? (
+                <div className="source-history-list">
+                  {drawHistory.map((record) => (
+                    <button
+                      type="button"
+                      key={record.id}
+                      onClick={() => openHistoryResult(record)}
+                    >
+                      <span>{String(record.number).padStart(3, "0")}</span>
+                      <small>{record.prize.label}</small>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="source-history-empty">
+                  No draws yet. Pull the lever once and the number will be stored here.
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cheatOpen && (
+        <div className="source-tool-modal source-cheat-modal" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="source-tool-backdrop source-cheat-backdrop"
+            aria-label="Close cheat mode"
+            onClick={() => setCheatOpen(false)}
+          />
+          <div className="source-tool-result-card source-cheat-result-card">
+            <button
+              type="button"
+              className="source-tool-close"
+              onClick={() => setCheatOpen(false)}
+            >
+              Close
+            </button>
+            <div className="source-cheat-card">
+              <p>Cheat Mode</p>
+              <span className="source-cheat-note">
+                Type any number from 000 to 999 to open its mapped result.
+              </span>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={3}
+                value={cheatCode}
+                placeholder="000"
+                onChange={(event) =>
+                  setCheatCode(event.target.value.replace(/\D/g, "").slice(0, 3))
+                }
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  drawCheatPrize();
+                  setCheatOpen(false);
+                }}
+                disabled={isDrawing || cheatCode.length === 0}
+              >
+                Set Number
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {resultOpen && (
         <div className="wallpaper-prize-modal" role="dialog" aria-modal="true">
@@ -213,7 +398,13 @@ const Contact = () => {
             aria-label="Close source result"
             onClick={() => setResultOpen(false)}
           />
-          <div className="wallpaper-prize-card">
+          <div
+            className={
+              activePrize.id === "wallpaper"
+                ? "wallpaper-prize-card is-wallpaper-result"
+                : "wallpaper-prize-card is-text-result"
+            }
+          >
             <button
               type="button"
               className="wallpaper-prize-close"
@@ -221,27 +412,35 @@ const Contact = () => {
             >
               Close
             </button>
-            <p>Source Result</p>
-            <h3>{activePrize.title}</h3>
-            <span>
-              No. {drawCode} · {resultPoster.meta}
-            </span>
-            <img src={resultPoster.image} alt={`${resultPoster.label} poster`} />
-            <p className="wallpaper-prize-description">
-              {activePrize.description}
-            </p>
-            <div className="wallpaper-prize-actions">
-              <button type="button" onClick={openPrize}>
-                {activePrize.action}
-              </button>
-              <button type="button" onClick={() => setResultOpen(false)}>
-                Keep Reading
-              </button>
-            </div>
+            {activePrize.id === "wallpaper" ? (
+              <img
+                src={resultPoster.image}
+                alt={`${resultPoster.label} wallpaper`}
+              />
+            ) : (
+              <>
+                <p>Source Result</p>
+                <h3>{activePrize.title}</h3>
+                <span>
+                  No. {drawCode} · {resultPoster.meta}
+                </span>
+                <p className="wallpaper-prize-description">
+                  {activePrize.description}
+                </p>
+                <div className="wallpaper-prize-actions">
+                  <button type="button" onClick={openPrize}>
+                    {activePrize.action}
+                  </button>
+                  <button type="button" onClick={() => setResultOpen(false)}>
+                    Keep Reading
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
-    </section>
+    </>
   );
 };
 

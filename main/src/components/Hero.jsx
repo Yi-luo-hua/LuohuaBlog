@@ -323,7 +323,7 @@ const Hero = () => {
             id="bg-image"
             className="absolute left-0 top-0 size-full object-cover object-center"
             onLoad={() => markHeroImageLoaded(currentIndex)}
-            fetchPriority="high"
+            fetchpriority="high"
           />
         </div>
 
