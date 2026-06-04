@@ -314,7 +314,7 @@ const NavBar = () => {
                     isLightNav && `nav-hover-btn--${navTheme}`
                   )}
                 >
-                  CHANGE
+                  SWITCH COVER
                 </button>
               )}
             </div>
