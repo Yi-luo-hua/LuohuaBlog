@@ -1399,6 +1399,704 @@ body {
   }
 }
 
+.source-lottery-stage {
+  display: grid;
+  align-items: stretch;
+  gap: 1.4rem;
+}
+
+.source-arcade-shell {
+  max-width: 64rem;
+  border-radius: 2.2rem;
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+
+.source-arcade-head {
+  max-width: 42rem;
+  padding-bottom: 1.2rem;
+}
+
+.source-arcade-head h2 {
+  font-size: clamp(2.2rem, 7vw, 5.2rem);
+}
+
+.source-arcade-machine {
+  width: min(17rem, 100%);
+  justify-self: center;
+}
+
+.source-machine-crown {
+  left: 17%;
+  right: 17%;
+  top: -0.65rem;
+  height: 1.7rem;
+  border-radius: 1.8rem 1.8rem 0 0;
+}
+
+.source-machine-crown::before {
+  bottom: 0.45rem;
+  left: 1rem;
+  height: 0.42rem;
+  width: 0.42rem;
+  box-shadow:
+    1.25rem 0 #fff7c9,
+    2.5rem 0 #fff7c9,
+    3.75rem 0 #fff7c9,
+    5rem 0 #fff7c9,
+    6.25rem 0 #fff7c9;
+}
+
+.source-arcade-marquee {
+  grid-template-columns: 1.15rem minmax(0, 1fr) 1.15rem;
+  width: calc(100% - 1.4rem);
+  margin-bottom: -0.25rem;
+  border-width: 0.24rem;
+  border-radius: 1.05rem;
+  padding: 0.32rem;
+}
+
+.source-arcade-marquee strong {
+  min-height: 1.7rem;
+  border-radius: 0.65rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+}
+
+.source-arcade-marquee span {
+  min-height: 1rem;
+}
+
+.source-machine-body {
+  grid-template-columns: minmax(0, 1fr) 4.4rem;
+  grid-template-areas: "screen controls";
+  gap: 0.5rem;
+  border-width: 0.38rem;
+  border-radius: 1.35rem 1.35rem 0.8rem 0.8rem;
+  padding: 0.7rem;
+}
+
+.source-machine-body::before {
+  inset: 0.45rem;
+  border-radius: 0.9rem;
+}
+
+.source-screen-bay {
+  border-width: 0.28rem;
+  border-radius: 0.95rem;
+  padding: 0.36rem;
+}
+
+.source-arcade-screen {
+  border-width: 0.14rem;
+  border-radius: 0.68rem;
+  padding: 0.34rem;
+}
+
+.source-screen-glass {
+  inset: 0.24rem;
+  border-radius: 0.52rem;
+}
+
+.source-reels {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.22rem;
+}
+
+.source-reel-card {
+  min-height: 5.1rem;
+  gap: 0.32rem;
+  border-radius: 0.55rem;
+}
+
+.source-reel-card span {
+  height: 1.85rem;
+  width: 1.85rem;
+  font-size: 0.62rem;
+}
+
+.source-reel-card strong {
+  max-width: 3.6rem;
+  font-size: 0.48rem;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.source-machine-controls {
+  border-width: 0.2rem;
+  border-radius: 0.9rem;
+  padding: 0.45rem 0.35rem;
+}
+
+.source-machine-controls::before {
+  display: none;
+}
+
+.source-arcade-lever {
+  display: grid;
+  margin-top: 0;
+}
+
+.source-arcade-lever button {
+  height: 5.2rem;
+  width: 3.5rem;
+}
+
+.source-arcade-lever button::after {
+  bottom: 0.2rem;
+  height: 1.35rem;
+  width: 2.8rem;
+  border-width: 0.16rem;
+}
+
+.source-lever-stick {
+  bottom: 0.95rem;
+  height: 3.5rem;
+  width: 0.45rem;
+  transform: translateX(-50%) rotate(-14deg);
+}
+
+.source-lever-ball {
+  height: 2.1rem;
+  width: 2.1rem;
+}
+
+.source-arcade-lever.is-pulled .source-lever-stick {
+  transform: translateX(-50%) rotate(24deg);
+}
+
+.source-arcade-lever.is-pulled .source-lever-ball {
+  transform: translate(0.72rem, 1rem);
+}
+
+.source-arcade-lever p {
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+}
+
+.source-arcade-draw-btn {
+  display: none;
+}
+
+.source-prize-panel {
+  display: grid;
+  align-content: center;
+  min-height: 15rem;
+  border: 1px solid rgba(226, 171, 137, 0.74);
+  border-radius: 1.45rem;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 210, 222, 0.48), transparent 9rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 247, 232, 0.95));
+  padding: clamp(1.1rem, 3vw, 1.8rem);
+  box-shadow: 0 1rem 2.6rem rgba(129, 87, 75, 0.13);
+}
+
+.source-prize-panel::before {
+  content: "RESULT";
+  width: max-content;
+  border-radius: 999px;
+  background: rgba(255, 219, 228, 0.72);
+  padding: 0.34rem 0.62rem;
+  color: #a45f6c;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+}
+
+.source-prize-label {
+  margin-top: 0.7rem;
+}
+
+.source-prize-panel h3 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+}
+
+.source-prize-panel p:not(.source-prize-label) {
+  max-width: 34rem;
+}
+
+.source-prize-action {
+  margin-top: 0.2rem;
+}
+
+.source-coin-slot,
+.source-prize-dispenser,
+.source-machine-base {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .source-lottery-stage {
+    grid-template-columns: 17rem minmax(0, 1fr);
+  }
+
+  .source-arcade-machine {
+    align-self: center;
+  }
+
+  .source-arcade-draw-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .source-lottery-stage {
+    gap: 1rem;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .source-arcade-machine {
+    width: min(14.5rem, 100%);
+  }
+
+  .source-machine-body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "screen"
+      "controls";
+    border-width: 0.32rem;
+    padding: 0.58rem;
+  }
+
+  .source-reel-card {
+    min-height: 4.6rem;
+  }
+
+  .source-reel-card:not(:nth-child(2)) {
+    display: grid;
+  }
+
+  .source-machine-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 4.1rem;
+    place-items: center;
+  }
+
+  .source-arcade-lever {
+    display: none;
+  }
+
+  .source-arcade-draw-btn {
+    display: grid;
+    height: 3.55rem;
+    width: 3.55rem;
+    font-size: 0.62rem;
+    box-shadow:
+      0 0.45rem 0 #b76e79,
+      0 0.9rem 1.5rem rgba(129, 87, 75, 0.2);
+  }
+
+  .source-prize-panel {
+    min-height: auto;
+    border-radius: 1.25rem;
+  }
+}
+
+.source-lottery-stage {
+  min-height: clamp(30rem, 58vw, 42rem);
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 16% 18%, rgba(255, 209, 221, 0.58), transparent 18rem),
+    radial-gradient(circle at 85% 14%, rgba(255, 237, 181, 0.58), transparent 20rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.42), rgba(255, 244, 225, 0.68));
+  padding: clamp(1rem, 3vw, 2rem);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 1.8rem 5rem rgba(129, 87, 75, 0.12);
+}
+
+.source-arcade-machine {
+  width: min(21rem, 100%);
+  align-self: center;
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.source-machine-crown {
+  height: 2.25rem;
+}
+
+.source-arcade-marquee {
+  border-width: 0.32rem;
+}
+
+.source-arcade-marquee strong {
+  min-height: 2.2rem;
+  font-size: 0.9rem;
+}
+
+.source-machine-body {
+  grid-template-columns: minmax(0, 1fr) 5.4rem;
+  gap: 0.7rem;
+  border-width: 0.48rem;
+  border-radius: 1.6rem 1.6rem 1rem 1rem;
+  padding: 0.9rem;
+}
+
+.source-screen-bay {
+  border-width: 0.36rem;
+  padding: 0.48rem;
+}
+
+.source-reel-card {
+  min-height: 6.5rem;
+}
+
+.source-reel-card span {
+  height: 2.25rem;
+  width: 2.25rem;
+  font-size: 0.72rem;
+}
+
+.source-reel-card strong {
+  max-width: 4.5rem;
+  font-size: 0.56rem;
+}
+
+.source-machine-controls {
+  border-width: 0.24rem;
+}
+
+.source-arcade-lever button {
+  height: 6rem;
+  width: 4rem;
+}
+
+.source-lever-stick {
+  height: 4rem;
+}
+
+.source-lever-ball {
+  height: 2.35rem;
+  width: 2.35rem;
+}
+
+.source-prize-panel {
+  grid-column: auto;
+  grid-row: auto;
+  min-height: clamp(26rem, 50vw, 36rem);
+  overflow: hidden;
+  border: 0;
+  border-radius: 1.9rem;
+  background: transparent;
+  padding: 0;
+  box-shadow: 0 1.8rem 5rem rgba(91, 55, 61, 0.18);
+}
+
+.source-prize-panel::before {
+  display: none;
+}
+
+.source-result-poster {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: inherit;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: inherit;
+  background: #fff4e5;
+}
+
+.source-result-poster img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.source-result-poster::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(50, 30, 36, 0.58), rgba(50, 30, 36, 0.18) 46%, rgba(255, 244, 225, 0.08)),
+    linear-gradient(180deg, transparent 46%, rgba(48, 29, 35, 0.62));
+}
+
+.source-result-shine {
+  pointer-events: none;
+  position: absolute;
+  inset: -40% 55% auto auto;
+  z-index: 2;
+  height: 120%;
+  width: 22%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  filter: blur(2px);
+}
+
+.source-result-copy {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  align-content: end;
+  gap: 0.75rem;
+  max-width: 34rem;
+  padding: clamp(1.3rem, 4vw, 2.3rem);
+  color: #fffaf0;
+  text-shadow: 0 0.2rem 1.4rem rgba(36, 22, 27, 0.42);
+}
+
+.source-result-copy .source-prize-label {
+  margin: 0;
+  color: #ffe7c7;
+}
+
+.source-result-copy .source-wallpaper-hint {
+  width: max-content;
+  max-width: 100%;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff9ef;
+  backdrop-filter: blur(10px);
+}
+
+.source-result-copy h3 {
+  color: #fffaf0;
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  line-height: 0.95;
+}
+
+.source-result-copy p:not(.source-prize-label) {
+  max-width: 28rem;
+  color: rgba(255, 250, 240, 0.86);
+}
+
+.source-result-copy .source-prize-action {
+  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 250, 240, 0.9);
+  color: #744750;
+  text-shadow: none;
+}
+
+@media (min-width: 768px) {
+  .source-lottery-stage {
+    grid-template-columns: minmax(18rem, 0.72fr) minmax(0, 1.45fr);
+  }
+
+  .source-prize-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .source-lottery-stage {
+    min-height: auto;
+    padding: 0.85rem;
+  }
+
+  .source-arcade-machine {
+    width: min(20rem, 100%);
+  }
+
+  .source-machine-body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "screen"
+      "controls";
+  }
+
+  .source-reel-card {
+    min-height: 5.4rem;
+  }
+
+  .source-prize-panel {
+    min-height: 28rem;
+    width: 100%;
+  }
+
+  .source-result-copy {
+    padding: 1.25rem;
+  }
+}
+
+.source-arcade-shell {
+  max-width: 68rem;
+  min-height: clamp(32rem, 58vw, 42rem);
+}
+
+.source-lottery-stage {
+  min-height: clamp(18rem, 36vw, 26rem);
+  display: grid;
+  grid-template-columns: 1fr;
+  place-items: center;
+  border-radius: 1.75rem;
+}
+
+.source-lottery-stage .source-arcade-machine {
+  width: min(22rem, 100%);
+}
+
+.source-lottery-stage .source-machine-body {
+  grid-template-columns: minmax(0, 1fr) 5.4rem;
+  grid-template-areas: "screen controls";
+}
+
+.source-lottery-stage .source-arcade-lever {
+  display: grid;
+}
+
+.source-lottery-stage .source-arcade-draw-btn {
+  display: none;
+}
+
+.source-digit-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 225, 234, 0.96)),
+    repeating-linear-gradient(0deg, transparent 0 0.8rem, rgba(116, 71, 80, 0.06) 0.8rem 0.86rem);
+}
+
+.source-digit-card::before,
+.source-digit-card::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 26%;
+}
+
+.source-digit-card::before {
+  top: 0;
+  background: linear-gradient(180deg, rgba(82, 48, 56, 0.18), transparent);
+}
+
+.source-digit-card::after {
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(82, 48, 56, 0.14), transparent);
+}
+
+.source-digit-card span {
+  height: auto;
+  width: auto;
+  border-radius: 0;
+  background: transparent;
+  color: #6d3f49;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: clamp(2.1rem, 6vw, 3.1rem);
+  font-weight: 950;
+  line-height: 0.9;
+  box-shadow: none;
+  text-shadow:
+    0 0.12rem 0 rgba(255, 255, 255, 0.8),
+    0 0.45rem 1rem rgba(129, 87, 75, 0.18);
+}
+
+.source-digit-card strong {
+  color: rgba(116, 71, 80, 0.58);
+  font-size: 0.46rem;
+}
+
+.source-reels.is-spinning .source-digit-card span {
+  animation: source-digit-flicker 0.18s steps(2, end) infinite;
+}
+
+.wallpaper-prize-card {
+  width: min(44rem, 100%);
+  padding: 1rem;
+}
+
+.wallpaper-prize-card img {
+  aspect-ratio: 16 / 10;
+  max-height: min(54vh, 30rem);
+  object-fit: cover;
+}
+
+.wallpaper-prize-description {
+  max-width: 38rem;
+  font-family: "Circular Web", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 0.95rem !important;
+  font-weight: 400 !important;
+  letter-spacing: normal !important;
+  line-height: 1.7;
+  text-transform: none !important;
+  color: rgba(84, 63, 67, 0.74) !important;
+}
+
+.wallpaper-prize-actions button {
+  border-radius: 999px;
+  border: 1px solid rgba(183, 110, 121, 0.2);
+  background: #fffaf2;
+  padding: 0.72rem 1rem;
+  color: #7b4b53;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: transform 240ms ease, box-shadow 240ms ease;
+}
+
+.wallpaper-prize-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(183, 110, 121, 0.16);
+}
+
+@media (max-width: 767px) {
+  .source-arcade-shell {
+    min-height: auto;
+  }
+
+  .source-lottery-stage {
+    min-height: 20rem;
+  }
+
+  .source-lottery-stage .source-arcade-machine {
+    width: min(20rem, 100%);
+  }
+
+  .source-lottery-stage .source-machine-body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "screen"
+      "controls";
+  }
+
+  .source-lottery-stage .source-arcade-lever {
+    display: none;
+  }
+
+  .source-lottery-stage .source-arcade-draw-btn {
+    display: grid;
+  }
+
+  .source-digit-card span {
+    font-size: 2.45rem;
+  }
+
+  .wallpaper-prize-card {
+    max-height: 86vh;
+    border-radius: 1.5rem;
+  }
+
+  .wallpaper-prize-card img {
+    aspect-ratio: 4 / 5;
+    max-height: 46vh;
+  }
+}
+
+@keyframes source-digit-flicker {
+  0% {
+    transform: translateY(-0.22rem);
+    opacity: 0.72;
+  }
+
+  100% {
+    transform: translateY(0.22rem);
+    opacity: 1;
+  }
+}
+
 .indicator-line {
   @apply h-1 w-px rounded-full bg-white transition-all duration-200 ease-in-out;
 }

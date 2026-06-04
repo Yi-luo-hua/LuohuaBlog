@@ -1,6 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { galleryAlbums } from "../data/galleryAlbums";
+
+const SOURCE_ASSET_BASE =
+  "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img";
 
 const prizes = [
   {
@@ -11,6 +14,7 @@ const prizes = [
     description:
       "The early homepage learned from Adrian Hajdin's award-winning website tutorial, then kept being reshaped into Taozhiyy's own visual language.",
     href: "https://github.com/adrianhajdin/award-winning-website#introduction",
+    visual: `${SOURCE_ASSET_BASE}/swordman.webp`,
     action: "Open reference",
   },
   {
@@ -21,6 +25,7 @@ const prizes = [
     description:
       "The blog subpage is based on Hexo and the Butterfly theme. For theme usage, configuration, and attribution details, please refer to Butterfly's official documentation.",
     href: "https://butterfly.js.org/",
+    visual: galleryAlbums[1]?.cover || galleryAlbums[0]?.cover || "",
     action: "Visit Butterfly",
   },
   {
@@ -53,48 +58,75 @@ const pickWallpaperGift = () => {
   return wallpaperPool[Math.floor(Math.random() * wallpaperPool.length)];
 };
 
+const getDrawDigits = (number) =>
+  String(number).padStart(3, "0").split("");
+
+const getPrizeByDrawNumber = (number) => {
+  if (number <= 332) return prizes[0];
+  if (number <= 665) return prizes[1];
+  return prizes[2];
+};
+
 const Contact = () => {
   const [activePrize, setActivePrize] = useState(prizes[0]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawCount, setDrawCount] = useState(0);
-  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const [drawNumber, setDrawNumber] = useState(0);
+  const [slotDigits, setSlotDigits] = useState(() => getDrawDigits(0));
+  const [resultOpen, setResultOpen] = useState(false);
   const [activeWallpaper, setActiveWallpaper] = useState(() =>
     pickWallpaperGift()
-  );
-
-  const reelItems = useMemo(
-    () => [
-      prizes[drawCount % prizes.length],
-      activePrize,
-      prizes[(drawCount + 1) % prizes.length],
-    ],
-    [activePrize, drawCount]
   );
 
   const drawPrize = () => {
     if (isDrawing) return;
     setIsDrawing(true);
-    const nextPrize = prizes[Math.floor(Math.random() * prizes.length)];
+    setResultOpen(false);
+    const nextNumber = Math.floor(Math.random() * 1000);
+    const nextPrize = getPrizeByDrawNumber(nextNumber);
+    const spinTimer = window.setInterval(() => {
+      setSlotDigits(getDrawDigits(Math.floor(Math.random() * 1000)));
+    }, 90);
 
     window.setTimeout(() => {
+      window.clearInterval(spinTimer);
       if (nextPrize.id === "wallpaper") {
         setActiveWallpaper(pickWallpaperGift());
       }
+      setDrawNumber(nextNumber);
+      setSlotDigits(getDrawDigits(nextNumber));
       setActivePrize(nextPrize);
       setDrawCount((count) => count + 1);
       setIsDrawing(false);
-      if (nextPrize.id === "wallpaper") setWallpaperOpen(true);
+      setResultOpen(true);
     }, 1100);
   };
 
   const openPrize = () => {
     if (activePrize.id === "wallpaper") {
-      if (!activeWallpaper) setActiveWallpaper(pickWallpaperGift());
-      setWallpaperOpen(true);
+      window.open(
+        activeWallpaper?.url || fallbackWallpaper.url,
+        "_blank",
+        "noopener,noreferrer"
+      );
       return;
     }
     window.open(activePrize.href, "_blank", "noopener,noreferrer");
   };
+
+  const resultPoster =
+    activePrize.id === "wallpaper"
+      ? {
+          image: activeWallpaper?.url || fallbackWallpaper.url,
+          label: activeWallpaper?.label || fallbackWallpaper.label,
+          meta: activeWallpaper?.album || fallbackWallpaper.album,
+        }
+      : {
+          image: activePrize.visual || fallbackWallpaper.url,
+          label: activePrize.label,
+          meta: activePrize.title,
+        };
+  const drawCode = String(drawNumber).padStart(3, "0");
 
   return (
     <section id="end" className="my-20 min-h-96 w-screen px-4 md:px-10">
@@ -104,144 +136,107 @@ const Contact = () => {
           <p className="source-arcade-eyebrow">SOURCE LOTTERY</p>
           <h2>桃之夭夭 Source Gacha</h2>
           <p>
-            Insert a little curiosity, pull the lever, and let this mini arcade
-            machine reveal a source note or a random Gallery wallpaper.
+            Pull the lever to draw one poster card. The result will pop out at
+            the center of the screen as an independent wallpaper-style card.
           </p>
         </div>
 
-        <div className="source-arcade-machine">
-          <div className="source-machine-crown" aria-hidden="true" />
-          <div className="source-arcade-marquee">
-            <span />
-            <strong>SOURCE GACHA</strong>
-            <span />
-          </div>
+        <div className="source-lottery-stage">
+          <div className="source-arcade-machine">
+            <div className="source-machine-crown" aria-hidden="true" />
+            <div className="source-arcade-marquee">
+              <span />
+              <strong>SOURCE SLOT</strong>
+              <span />
+            </div>
 
-          <div className="source-machine-body">
-            <div className="source-screen-bay">
-              <div className="source-arcade-screen">
-                <div className="source-screen-glass" aria-hidden="true" />
-                <div
-                  className={
-                    isDrawing ? "source-reels is-spinning" : "source-reels"
-                  }
-                >
-                  {reelItems.map((item, index) => (
-                    <div
-                      className="source-reel-card"
-                      key={`${item.id}-${index}-${drawCount}`}
-                    >
-                      <span>{item.icon}</span>
-                      <strong>{item.label}</strong>
-                    </div>
-                  ))}
+            <div className="source-machine-body">
+              <div className="source-screen-bay">
+                <div className="source-arcade-screen">
+                  <div className="source-screen-glass" aria-hidden="true" />
+                  <div
+                    className={
+                      isDrawing ? "source-reels is-spinning" : "source-reels"
+                    }
+                  >
+                    {slotDigits.map((digit, index) => (
+                      <div
+                        className="source-reel-card source-digit-card"
+                        key={`${index}-${drawCount}`}
+                      >
+                        <span>{digit}</span>
+                        <strong>{["HUN", "TEN", "ONE"][index]}</strong>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="source-machine-controls">
-              <div
-                className={
-                  isDrawing
-                    ? "source-arcade-lever is-pulled"
-                    : "source-arcade-lever"
-                }
-              >
+              <div className="source-machine-controls">
+                <div
+                  className={
+                    isDrawing
+                      ? "source-arcade-lever is-pulled"
+                      : "source-arcade-lever"
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={drawPrize}
+                    aria-label="Pull to draw a source prize"
+                  >
+                    <span className="source-lever-stick" />
+                    <span className="source-lever-ball" />
+                  </button>
+                  <p>PULL</p>
+                </div>
+
                 <button
                   type="button"
+                  className="source-arcade-draw-btn"
                   onClick={drawPrize}
-                  aria-label="Pull to draw a source prize"
+                  disabled={isDrawing}
                 >
-                  <span className="source-lever-stick" />
-                  <span className="source-lever-ball" />
+                  {isDrawing ? "DRAWING" : "START"}
                 </button>
-                <p>PULL</p>
               </div>
-
-              <button
-                type="button"
-                className="source-arcade-draw-btn"
-                onClick={drawPrize}
-                disabled={isDrawing}
-              >
-                {isDrawing ? "DRAWING" : "START"}
-              </button>
-
-              <div className="source-coin-slot" aria-hidden="true">
-                <span />
-                <p>COIN</p>
-              </div>
-            </div>
-
-            <div className="source-prize-panel">
-              <p className="source-prize-label">Prize Ticket</p>
-              <h3>{isDrawing ? "Drawing..." : activePrize.title}</h3>
-              <p>
-                {isDrawing
-                  ? "The cabinet is spinning a new ticket for you."
-                  : activePrize.description}
-              </p>
-              {!isDrawing &&
-                activePrize.id === "wallpaper" &&
-                activeWallpaper && (
-                  <span className="source-wallpaper-hint">
-                    Gift pool: {activeWallpaper.album}
-                  </span>
-                )}
-              <button
-                type="button"
-                className="source-prize-action"
-                onClick={openPrize}
-                disabled={isDrawing}
-              >
-                {activePrize.action}
-              </button>
-            </div>
-
-            <div
-              className={
-                isDrawing
-                  ? "source-prize-dispenser is-drawing"
-                  : "source-prize-dispenser"
-              }
-              aria-hidden="true"
-            >
-              <span>{activePrize.icon}</span>
-              <strong>{isDrawing ? "..." : activePrize.label}</strong>
             </div>
           </div>
-
-          <div className="source-machine-base" aria-hidden="true" />
         </div>
       </div>
 
-      {wallpaperOpen && (
+      {resultOpen && (
         <div className="wallpaper-prize-modal" role="dialog" aria-modal="true">
           <button
             type="button"
             className="wallpaper-prize-backdrop"
-            aria-label="Close wallpaper preview"
-            onClick={() => setWallpaperOpen(false)}
+            aria-label="Close source result"
+            onClick={() => setResultOpen(false)}
           />
           <div className="wallpaper-prize-card">
             <button
               type="button"
               className="wallpaper-prize-close"
-              onClick={() => setWallpaperOpen(false)}
+              onClick={() => setResultOpen(false)}
             >
               Close
             </button>
-            <p>Wallpaper Gift</p>
-            <h3>{activeWallpaper.label}</h3>
-            <span>{activeWallpaper.album}</span>
-            <img src={activeWallpaper.url} alt="Taozhiyy gallery wallpaper" />
+            <p>Source Result</p>
+            <h3>{activePrize.title}</h3>
+            <span>
+              No. {drawCode} · {resultPoster.meta}
+            </span>
+            <img src={resultPoster.image} alt={`${resultPoster.label} poster`} />
+            <p className="wallpaper-prize-description">
+              {activePrize.description}
+            </p>
             <div className="wallpaper-prize-actions">
-              <a href={activeWallpaper.url} target="_blank" rel="noopener noreferrer">
-                View Full Size
-              </a>
-              <a href={activeWallpaper.url} download="taozhiyy-gallery-wallpaper.jpg">
-                Download Wallpaper
-              </a>
+              <button type="button" onClick={openPrize}>
+                {activePrize.action}
+              </button>
+              <button type="button" onClick={() => setResultOpen(false)}>
+                Keep Reading
+              </button>
             </div>
           </div>
         </div>
