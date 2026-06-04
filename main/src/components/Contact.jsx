@@ -102,83 +102,116 @@ const Contact = () => {
         <div className="source-arcade-bg-grid" aria-hidden="true" />
         <div className="source-arcade-head">
           <p className="source-arcade-eyebrow">SOURCE LOTTERY</p>
-          <h2>桃之夭夭 Arcade Draw</h2>
+          <h2>桃之夭夭 Source Gacha</h2>
           <p>
-            Pull the lever to reveal one transparent source note or a random
-            wallpaper gift from the Gallery archive.
+            Insert a little curiosity, pull the lever, and let this mini arcade
+            machine reveal a source note or a random Gallery wallpaper.
           </p>
         </div>
 
         <div className="source-arcade-machine">
+          <div className="source-machine-crown" aria-hidden="true" />
           <div className="source-arcade-marquee">
-            <span>LEARNING</span>
-            <span>REFERENCE</span>
-            <span>GIFT</span>
+            <span />
+            <strong>SOURCE GACHA</strong>
+            <span />
           </div>
 
-          <div className="source-arcade-screen">
-            <div
-              className={isDrawing ? "source-reels is-spinning" : "source-reels"}
-            >
-              {reelItems.map((item, index) => (
+          <div className="source-machine-body">
+            <div className="source-screen-bay">
+              <div className="source-arcade-screen">
+                <div className="source-screen-glass" aria-hidden="true" />
                 <div
-                  className="source-reel-card"
-                  key={`${item.id}-${index}-${drawCount}`}
+                  className={
+                    isDrawing ? "source-reels is-spinning" : "source-reels"
+                  }
                 >
-                  <span>{item.icon}</span>
-                  <strong>{item.label}</strong>
+                  {reelItems.map((item, index) => (
+                    <div
+                      className="source-reel-card"
+                      key={`${item.id}-${index}-${drawCount}`}
+                    >
+                      <span>{item.icon}</span>
+                      <strong>{item.label}</strong>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            </div>
+
+            <div className="source-machine-controls">
+              <div
+                className={
+                  isDrawing
+                    ? "source-arcade-lever is-pulled"
+                    : "source-arcade-lever"
+                }
+              >
+                <button
+                  type="button"
+                  onClick={drawPrize}
+                  aria-label="Pull to draw a source prize"
+                >
+                  <span className="source-lever-stick" />
+                  <span className="source-lever-ball" />
+                </button>
+                <p>PULL</p>
+              </div>
+
+              <button
+                type="button"
+                className="source-arcade-draw-btn"
+                onClick={drawPrize}
+                disabled={isDrawing}
+              >
+                {isDrawing ? "DRAWING" : "START"}
+              </button>
+
+              <div className="source-coin-slot" aria-hidden="true">
+                <span />
+                <p>COIN</p>
+              </div>
+            </div>
+
+            <div className="source-prize-panel">
+              <p className="source-prize-label">Prize Ticket</p>
+              <h3>{isDrawing ? "Drawing..." : activePrize.title}</h3>
+              <p>
+                {isDrawing
+                  ? "The cabinet is spinning a new ticket for you."
+                  : activePrize.description}
+              </p>
+              {!isDrawing &&
+                activePrize.id === "wallpaper" &&
+                activeWallpaper && (
+                  <span className="source-wallpaper-hint">
+                    Gift pool: {activeWallpaper.album}
+                  </span>
+                )}
+              <button
+                type="button"
+                className="source-prize-action"
+                onClick={openPrize}
+                disabled={isDrawing}
+              >
+                {activePrize.action}
+              </button>
+            </div>
+
+            <div
+              className={
+                isDrawing
+                  ? "source-prize-dispenser is-drawing"
+                  : "source-prize-dispenser"
+              }
+              aria-hidden="true"
+            >
+              <span>{activePrize.icon}</span>
+              <strong>{isDrawing ? "..." : activePrize.label}</strong>
             </div>
           </div>
 
-          <div className="source-prize-panel">
-            <p className="source-prize-label">Current Prize</p>
-            <h3>{isDrawing ? "Drawing..." : activePrize.title}</h3>
-            <p>
-              {isDrawing
-                ? "The arcade reels are choosing a note for you."
-                : activePrize.description}
-            </p>
-            {!isDrawing && activePrize.id === "wallpaper" && activeWallpaper && (
-              <span className="source-wallpaper-hint">
-                Next gift pool: {activeWallpaper.album}
-              </span>
-            )}
-            <button
-              type="button"
-              className="source-prize-action"
-              onClick={openPrize}
-              disabled={isDrawing}
-            >
-              {activePrize.action}
-            </button>
-          </div>
-
-          <div
-            className={
-              isDrawing ? "source-arcade-lever is-pulled" : "source-arcade-lever"
-            }
-          >
-            <button
-              type="button"
-              onClick={drawPrize}
-              aria-label="Pull to draw a source prize"
-            >
-              <span className="source-lever-stick" />
-              <span className="source-lever-ball" />
-            </button>
-            <p>PULL TO DRAW</p>
-          </div>
-
-          <button
-            type="button"
-            className="source-arcade-draw-btn"
-            onClick={drawPrize}
-            disabled={isDrawing}
-          >
-            {isDrawing ? "DRAWING" : "DRAW"}
-          </button>
+          <div className="source-machine-base" aria-hidden="true" />
         </div>
       </div>
 
