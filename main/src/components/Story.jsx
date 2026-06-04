@@ -109,16 +109,25 @@ const FloatingImage = () => {
         </div>
 
         <div className="relative z-30 -mt-48 flex w-full justify-center px-6 md:-mt-72 md:me-36 md:justify-end">
-          <div className="flex h-full w-fit max-w-xl flex-col items-center rounded-[1.75rem] border border-white/75 bg-[#fffaf3]/92 px-6 py-5 shadow-[0_24px_80px_rgba(183,110,121,0.18)] backdrop-blur-md md:items-start md:rounded-[2rem] md:px-9 md:py-7">
-            <p className="mt-1 max-w-xl text-center font-circular-web text-xl leading-8 text-[#4d3941] md:text-start md:text-3xl md:leading-[1.45]">
-              Thank you for watching. If there are any areas that need
-              correction, you are sincerely invited to provide feedback below.
-            </p>
+          <div className="story-envelope-cta">
+            <div className="story-envelope-stamp">T</div>
+            <div className="story-envelope-letter">
+              <span className="story-envelope-kicker">A LETTER TO VISITORS</span>
+              <p>
+                Thank you for watching. If there are any areas that need
+                correction, you are sincerely invited to provide feedback below.
+              </p>
+            </div>
+            <div className="story-envelope-fold story-envelope-fold-left" />
+            <div className="story-envelope-fold story-envelope-fold-right" />
+            <div className="story-envelope-seal" aria-hidden="true">
+              <span />
+            </div>
 
             <Button
               id="realm-btn"
               title="LEAVE A MESSAGE"
-              containerClass="mt-7 bg-[#241322] text-[#ffe7ef]"
+              containerClass="story-envelope-btn"
               to="/guestbook"
             />
           </div>
