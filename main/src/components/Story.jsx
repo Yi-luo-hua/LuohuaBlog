@@ -110,7 +110,8 @@ const FloatingImage = () => {
 
         <div className="relative z-30 -mt-48 flex w-full justify-center px-6 md:-mt-72 md:me-36 md:justify-end">
           <div className="story-envelope-cta">
-            <div className="story-envelope-stamp">T</div>
+            <div className="story-envelope-flap" aria-hidden="true" />
+            <div className="story-envelope-stamp">POST</div>
             <div className="story-envelope-letter">
               <span className="story-envelope-kicker">A LETTER TO VISITORS</span>
               <p>
@@ -118,10 +119,9 @@ const FloatingImage = () => {
                 correction, you are sincerely invited to provide feedback below.
               </p>
             </div>
-            <div className="story-envelope-fold story-envelope-fold-left" />
-            <div className="story-envelope-fold story-envelope-fold-right" />
-            <div className="story-envelope-seal" aria-hidden="true">
-              <span />
+            <div className="story-envelope-pocket" aria-hidden="true">
+              <span className="story-envelope-line story-envelope-line-1" />
+              <span className="story-envelope-line story-envelope-line-2" />
             </div>
 
             <Button
