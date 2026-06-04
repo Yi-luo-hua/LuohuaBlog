@@ -49,6 +49,16 @@ body {
     );
   }
 
+  .floating-nav-gallery {
+    @apply rounded-2xl border border-[#F2E6C9] shadow-[0_12px_30px_rgba(255,143,171,0.12)] backdrop-blur-sm;
+    background-image: linear-gradient(
+      135deg,
+      rgba(255, 248, 241, 0.95) 0%,
+      rgba(255, 238, 245, 0.95) 48%,
+      rgba(246, 251, 255, 0.95) 100%
+    );
+  }
+
   .nav-menu-btn {
     @apply relative flex h-10 w-10 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-black/40 text-blue-50;
   }
@@ -464,6 +474,10 @@ body {
   background: rgba(43, 43, 43, 0.22);
 }
 
+.nav-mobile-backdrop--gallery {
+  background: rgba(43, 43, 43, 0.22);
+}
+
 .nav-mobile-backdrop--bili {
   background: rgba(45, 42, 58, 0.28);
 }
@@ -513,6 +527,17 @@ body {
   box-shadow: -8px 0 32px rgba(255, 143, 171, 0.14);
 }
 
+.nav-mobile-drawer--gallery {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 248, 241, 0.96) 0%,
+    rgba(255, 238, 245, 0.96) 48%,
+    rgba(246, 251, 255, 0.96) 100%
+  );
+  border-left: 1px solid #f2e6c9;
+  box-shadow: -8px 0 32px rgba(255, 143, 171, 0.15);
+}
+
 .nav-mobile-drawer--bili {
   background: linear-gradient(
     180deg,
@@ -544,7 +569,8 @@ body {
 
 .nav-mobile-drawer--light .nav-mobile-drawer-head,
 .nav-mobile-drawer--ai .nav-mobile-drawer-head,
-.nav-mobile-drawer--guestbook .nav-mobile-drawer-head {
+.nav-mobile-drawer--guestbook .nav-mobile-drawer-head,
+.nav-mobile-drawer--gallery .nav-mobile-drawer-head {
   border-bottom: 1px solid rgba(242, 230, 201, 0.9);
 }
 
@@ -565,7 +591,8 @@ body {
 
 .nav-mobile-drawer--light .nav-mobile-drawer-title,
 .nav-mobile-drawer--ai .nav-mobile-drawer-title,
-.nav-mobile-drawer--guestbook .nav-mobile-drawer-title {
+.nav-mobile-drawer--guestbook .nav-mobile-drawer-title,
+.nav-mobile-drawer--gallery .nav-mobile-drawer-title {
   color: #6b7280;
 }
 
@@ -592,7 +619,8 @@ body {
 
 .nav-mobile-drawer--light .nav-mobile-close,
 .nav-mobile-drawer--ai .nav-mobile-close,
-.nav-mobile-drawer--guestbook .nav-mobile-close {
+.nav-mobile-drawer--guestbook .nav-mobile-close,
+.nav-mobile-drawer--gallery .nav-mobile-close {
   border: 1px solid #f2e6c9;
   background: rgba(255, 255, 255, 0.85);
   color: #2b2b2b;
@@ -603,7 +631,9 @@ body {
 .nav-mobile-drawer--ai .nav-mobile-close:hover,
 .nav-mobile-drawer--ai .nav-mobile-close:focus-visible,
 .nav-mobile-drawer--guestbook .nav-mobile-close:hover,
-.nav-mobile-drawer--guestbook .nav-mobile-close:focus-visible {
+.nav-mobile-drawer--guestbook .nav-mobile-close:focus-visible,
+.nav-mobile-drawer--gallery .nav-mobile-close:hover,
+.nav-mobile-drawer--gallery .nav-mobile-close:focus-visible {
   border-color: #ff8fab;
   background: #fff;
   outline: none;
@@ -678,6 +708,21 @@ body {
   color: #ff8fab;
 }
 
+/* Gallery - unified pastel album entrance */
+.nav-mobile-link--gallery {
+  color: #2b2b2b;
+}
+.nav-mobile-link--gallery:hover,
+.nav-mobile-link--gallery:focus-visible {
+  background: rgba(255, 255, 255, 0.85);
+  color: #ff8fab;
+  outline: none;
+}
+.nav-mobile-link--active-gallery {
+  background: #ffffff;
+  color: #ff8fab;
+}
+
 /* Bili Hub — Candy Sky */
 .nav-mobile-link--bili {
   color: #2d2a3a;
@@ -727,12 +772,14 @@ body {
    Outside @layer utilities so Tailwind purge cannot remove them.     */
 .nav-hover-btn-light,
 .nav-hover-btn--ai,
-.nav-hover-btn--guestbook {
+.nav-hover-btn--guestbook,
+.nav-hover-btn--gallery {
   color: #2b2b2b;
 }
 .nav-hover-btn-light::after,
 .nav-hover-btn--ai::after,
-.nav-hover-btn--guestbook::after {
+.nav-hover-btn--guestbook::after,
+.nav-hover-btn--gallery::after {
   background-color: #ff8fab;
 }
 .nav-hover-btn--bili {
@@ -746,7 +793,8 @@ body {
    Outside @layer utilities so Tailwind purge cannot remove them.     */
 .nav-menu-btn--light,
 .nav-menu-btn--ai,
-.nav-menu-btn--guestbook {
+.nav-menu-btn--guestbook,
+.nav-menu-btn--gallery {
   border-color: #f2e6c9;
   background: rgba(255, 255, 255, 0.9);
   color: #2b2b2b;

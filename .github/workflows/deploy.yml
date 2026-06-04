@@ -184,4 +184,6 @@ jobs:
           curl -fL --max-time 20 https://taozhiyy.top/blog/ > /dev/null
           curl -fL --max-time 20 https://taozhiyy.top/build/ > /dev/null
           curl -fL --max-time 20 https://taozhiyy.top/build/post/site-growth-04-homepage-originalization > /dev/null
+          curl -fL --max-time 20 https://taozhiyy.top/gallery > /dev/null
+          curl -fL --max-time 20 https://taozhiyy.top/gallery/misaka > /dev/null
           curl -fL --max-time 20 https://taozhiyy.top/bili > /dev/null

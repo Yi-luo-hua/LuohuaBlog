@@ -3,7 +3,6 @@
 @import '../site-mobile-nav.css';
 @import './styles/layout.css';
 @import './styles/home.css';
-@import './styles/gallery-album.css';
 
 body {
   display: block;

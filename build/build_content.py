@@ -36,7 +36,6 @@ NAV = """    <a href="{p}index.html" class="nav-item{home}"><span class="nav-ico
     <a href="{p}archives.html" class="nav-item{arc}"><span class="nav-icon">ARC</span><span class="nav-label" data-i18n="navArchive">归档</span></a>
     <a href="{p}articles.html" class="nav-item{art}"><span class="nav-icon">ART</span><span class="nav-label" data-i18n="navArticle">文章</span></a>
     <a href="{p}shuoshuo.html" class="nav-item{mom}"><span class="nav-icon">MOM</span><span class="nav-label" data-i18n="navShuo">说说</span></a>
-    <a href="{p}gallery.html" class="nav-item{gal}"><span class="nav-icon">ALB</span><span class="nav-label" data-i18n="navGallery">相册</span></a>
     <a href="{p}links.html" class="nav-item{lnk}"><span class="nav-icon">LNK</span><span class="nav-label" data-i18n="navLinks">友链</span></a>"""
 
 PAGE_STYLES = """
@@ -325,12 +324,11 @@ def nav_html(active: str, prefix: str = "") -> str:
         "archives": "arc",
         "articles": "art",
         "shuoshuo": "mom",
-        "gallery": "gal",
         "links": "lnk",
         "post": "art",
     }
     act = mapping.get(active, "")
-    fmt = {k: " active" if k == act else "" for k in ("home", "arc", "art", "mom", "gal", "lnk")}
+    fmt = {k: " active" if k == act else "" for k in ("home", "arc", "art", "mom", "lnk")}
     fmt["p"] = prefix
     return NAV.format(**fmt)
 

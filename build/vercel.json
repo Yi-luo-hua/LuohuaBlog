@@ -10,10 +10,8 @@
     { "source": "/articles.html", "destination": "/articles", "permanent": true },
     { "source": "/archives.html", "destination": "/archives", "permanent": true },
     { "source": "/shuoshuo.html", "destination": "/moments", "permanent": true },
-    { "source": "/gallery.html", "destination": "/gallery", "permanent": true },
     { "source": "/links.html", "destination": "/links", "permanent": true },
     { "source": "/message.html", "destination": "/message", "permanent": true },
-    { "source": "/post/:slug.html", "destination": "/post/:slug", "permanent": true },
-    { "source": "/gallery/:id.html", "destination": "/gallery/:id", "permanent": true }
+    { "source": "/post/:slug.html", "destination": "/post/:slug", "permanent": true }
   ]
 }

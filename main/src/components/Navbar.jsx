@@ -6,9 +6,8 @@ import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 
 const navLinks = [
-  { label: "About", to: "/#about" },
-  { label: "Contact", to: "/#contact" },
-  { label: "END", to: "/#end" },
+  { label: "HOME", to: "/", end: true },
+  { label: "Gallery", to: "/gallery", end: true },
   { label: "Bili Hub", to: "/bili", end: true },
   { label: "AI 流量", to: "/ai-traffic", end: true },
 ];
@@ -19,6 +18,7 @@ const getNavTheme = (pathname) => {
   if (pathname === "/bili" || pathname.startsWith("/bili/")) return "bili";
   if (pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/")) return "ai";
   if (pathname === "/guestbook" || pathname.startsWith("/guestbook/")) return "guestbook";
+  if (pathname === "/gallery" || pathname.startsWith("/gallery/")) return "gallery";
   return "dark";
 };
 
@@ -45,7 +45,9 @@ const NavBar = () => {
     pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/");
   const isGuestbookPage =
     pathname === "/guestbook" || pathname.startsWith("/guestbook/");
-  const isSubPage = isBiliPage || isAiTrafficPage || isGuestbookPage;
+  const isGalleryPage =
+    pathname === "/gallery" || pathname.startsWith("/gallery/");
+  const isSubPage = isBiliPage || isAiTrafficPage || isGuestbookPage || isGalleryPage;
   const navTheme = getNavTheme(pathname);
   const isLightNav = navTheme !== "dark";
 
@@ -117,7 +119,8 @@ const NavBar = () => {
         "floating-nav",
         "floating-nav-bili",
         "floating-nav-ai",
-        "floating-nav-guestbook"
+        "floating-nav-guestbook",
+        "floating-nav-gallery"
       );
     } else if (currentScrollY > lastScrollY) {
       setIsNavVisible(false);
@@ -125,7 +128,8 @@ const NavBar = () => {
         "floating-nav",
         "floating-nav-bili",
         "floating-nav-ai",
-        "floating-nav-guestbook"
+        "floating-nav-guestbook",
+        "floating-nav-gallery"
       );
       if (navTheme === "bili") {
         navContainerRef.current.classList.add("floating-nav-bili");
@@ -133,6 +137,8 @@ const NavBar = () => {
         navContainerRef.current.classList.add("floating-nav-ai");
       } else if (navTheme === "guestbook") {
         navContainerRef.current.classList.add("floating-nav-guestbook");
+      } else if (navTheme === "gallery") {
+        navContainerRef.current.classList.add("floating-nav-gallery");
       } else {
         navContainerRef.current.classList.add("floating-nav");
       }
@@ -142,7 +148,8 @@ const NavBar = () => {
         "floating-nav",
         "floating-nav-bili",
         "floating-nav-ai",
-        "floating-nav-guestbook"
+        "floating-nav-guestbook",
+        "floating-nav-gallery"
       );
       if (navTheme === "bili") {
         navContainerRef.current.classList.add("floating-nav-bili");
@@ -150,6 +157,8 @@ const NavBar = () => {
         navContainerRef.current.classList.add("floating-nav-ai");
       } else if (navTheme === "guestbook") {
         navContainerRef.current.classList.add("floating-nav-guestbook");
+      } else if (navTheme === "gallery") {
+        navContainerRef.current.classList.add("floating-nav-gallery");
       } else {
         navContainerRef.current.classList.add("floating-nav");
       }
@@ -169,20 +178,30 @@ const NavBar = () => {
   const desktopLinkClass = (active) =>
     clsx("nav-hover-btn", isLightNav && `nav-hover-btn--${navTheme}`, {
       "text-[#7C5CFF]": active && navTheme === "bili",
-      "text-[#FF8FAB]": active && (navTheme === "ai" || navTheme === "guestbook"),
+      "text-[#FF8FAB]":
+        active && (navTheme === "ai" || navTheme === "guestbook" || navTheme === "gallery"),
       "text-yellow-300": active && navTheme === "dark",
     });
 
   const isLinkActive = (item) =>
+    (item.to === "/" && pathname === "/") ||
+    (item.to === "/gallery" && isGalleryPage) ||
     (item.to === "/bili" && isBiliPage) ||
     (item.to === "/ai-traffic" && isAiTrafficPage) ||
     (item.to === "/guestbook" && isGuestbookPage);
+
+  const handleNavClick = (item) => {
+    if (item.to === "/" && pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const renderDesktopLink = (item) => (
     <Link
       key={item.label}
       to={item.to}
       className={desktopLinkClass(isLinkActive(item))}
+      onClick={() => handleNavClick(item)}
     >
       {item.label}
     </Link>
@@ -199,7 +218,10 @@ const NavBar = () => {
           `nav-mobile-link--${navTheme}`,
           active && `nav-mobile-link--active-${navTheme}`
         )}
-        onClick={closeMobile}
+        onClick={() => {
+          handleNavClick(item);
+          closeMobile();
+        }}
       >
         {item.label}
       </Link>
@@ -262,13 +284,19 @@ const NavBar = () => {
           "fixed inset-x-0 top-2 z-50 h-14 border-none transition-all duration-700 sm:inset-x-4 sm:top-4 sm:h-16 md:inset-x-6",
           navTheme === "bili" && currentScrollY === 0 && "floating-nav-bili",
           navTheme === "ai" && currentScrollY === 0 && "floating-nav-ai",
-          navTheme === "guestbook" && currentScrollY === 0 && "floating-nav-guestbook"
+          navTheme === "guestbook" && currentScrollY === 0 && "floating-nav-guestbook",
+          navTheme === "gallery" && currentScrollY === 0 && "floating-nav-gallery"
         )}
       >
         <header className="absolute top-1/2 w-full -translate-y-1/2">
           <nav className="flex size-full min-w-0 items-center justify-between gap-2 px-2 sm:gap-3 sm:p-4">
             <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-7">
-              <Link to="/" className="block shrink-0" aria-label="Home">
+              <Link
+                to="/"
+                className="block shrink-0"
+                aria-label="Home"
+                onClick={() => handleNavClick({ to: "/" })}
+              >
                 <img
                   src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/logo.png"
                   alt="logo"
@@ -331,7 +359,8 @@ const NavBar = () => {
                     className={clsx("indicator-line", {
                       active: isIndicatorActive,
                       "indicator-line-bili": navTheme === "bili",
-                      "indicator-line-ai": navTheme === "ai" || navTheme === "guestbook",
+                      "indicator-line-ai":
+                        navTheme === "ai" || navTheme === "guestbook" || navTheme === "gallery",
                     })}
                     style={{
                       animationDelay: `${bar * 0.1}s`,
