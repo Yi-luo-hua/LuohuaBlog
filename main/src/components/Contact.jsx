@@ -1,62 +1,219 @@
-import AnimatedTitle from "./AnimatedTitle";
-import Button from "./Button";
+import { useMemo, useState } from "react";
 
-const ImageClipBox = ({ src, clipClass }) => (
-  <div className={clipClass}>
-    <img src={src} />
-  </div>
+import { galleryAlbums } from "../data/galleryAlbums";
+
+const prizes = [
+  {
+    id: "homepage",
+    icon: "HP",
+    label: "Homepage Source",
+    title: "Homepage Learning Reference",
+    description:
+      "The early homepage learned from Adrian Hajdin's award-winning website tutorial, then kept being reshaped into Taozhiyy's own visual language.",
+    href: "https://github.com/adrianhajdin/award-winning-website#introduction",
+    action: "Open reference",
+  },
+  {
+    id: "blog",
+    icon: "BG",
+    label: "Blog Source",
+    title: "Blog Subpage Source",
+    description:
+      "The blog subpage is based on Hexo and the Butterfly theme. For theme usage, configuration, and attribution details, please refer to Butterfly's official documentation.",
+    href: "https://butterfly.js.org/",
+    action: "Visit Butterfly",
+  },
+  {
+    id: "wallpaper",
+    icon: "WP",
+    label: "Wallpaper Gift",
+    title: "A Gallery Wallpaper Gift",
+    description:
+      "You drew a random high-resolution image from the Gallery archive. Open it full size, download it, or simply keep it on screen for a moment.",
+    action: "Open wallpaper",
+  },
+];
+
+const wallpaperPool = galleryAlbums.flatMap((album) =>
+  album.images.map((url, index) => ({
+    url,
+    album: album.title,
+    label: `${album.eyebrow} #${String(index + 1).padStart(2, "0")}`,
+  }))
 );
 
+const fallbackWallpaper = {
+  url: galleryAlbums[0]?.cover || "",
+  album: galleryAlbums[0]?.title || "Gallery",
+  label: "Gallery Gift",
+};
+
+const pickWallpaperGift = () => {
+  if (!wallpaperPool.length) return fallbackWallpaper;
+  return wallpaperPool[Math.floor(Math.random() * wallpaperPool.length)];
+};
+
 const Contact = () => {
+  const [activePrize, setActivePrize] = useState(prizes[0]);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawCount, setDrawCount] = useState(0);
+  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const [activeWallpaper, setActiveWallpaper] = useState(() =>
+    pickWallpaperGift()
+  );
+
+  const reelItems = useMemo(
+    () => [
+      prizes[drawCount % prizes.length],
+      activePrize,
+      prizes[(drawCount + 1) % prizes.length],
+    ],
+    [activePrize, drawCount]
+  );
+
+  const drawPrize = () => {
+    if (isDrawing) return;
+    setIsDrawing(true);
+    const nextPrize = prizes[Math.floor(Math.random() * prizes.length)];
+
+    window.setTimeout(() => {
+      if (nextPrize.id === "wallpaper") {
+        setActiveWallpaper(pickWallpaperGift());
+      }
+      setActivePrize(nextPrize);
+      setDrawCount((count) => count + 1);
+      setIsDrawing(false);
+      if (nextPrize.id === "wallpaper") setWallpaperOpen(true);
+    }, 1100);
+  };
+
+  const openPrize = () => {
+    if (activePrize.id === "wallpaper") {
+      if (!activeWallpaper) setActiveWallpaper(pickWallpaperGift());
+      setWallpaperOpen(true);
+      return;
+    }
+    window.open(activePrize.href, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <div id="end" className="my-20 min-h-96 w-screen px-10">
-      <div className="relative rounded-lg bg-gray-700 py-24 text-white sm:overflow-hidden">
-        <div className="absolute -left-20 top-0 hidden h-full w-72 overflow-hidden sm:block lg:left-20 lg:w-96">
-          <ImageClipBox
-            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/contact-1.webp"
-            clipClass="contact-clip-path-1"
-          />
-          <ImageClipBox
-            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/contact-2.webp"
-            clipClass="contact-clip-path-2 lg:translate-y-40 translate-y-60"
-          />
-          <p className="absolute top-[45%] left-1/2 -translate-x-1/2 font-zentry text-xl uppercase text-white whitespace-nowrap">
-            本站参考来源
-            <span className="block text-center text-2xl mt-2">→</span>
+    <section id="end" className="my-20 min-h-96 w-screen px-4 md:px-10">
+      <div className="source-arcade-shell">
+        <div className="source-arcade-bg-grid" aria-hidden="true" />
+        <div className="source-arcade-head">
+          <p className="source-arcade-eyebrow">SOURCE LOTTERY</p>
+          <h2>桃之夭夭 Arcade Draw</h2>
+          <p>
+            Pull the lever to reveal one transparent source note or a random
+            wallpaper gift from the Gallery archive.
           </p>
         </div>
 
-        <div className="absolute -top-40 left-20 w-60 sm:top-1/2 md:left-auto md:right-10 lg:top-20 lg:w-80 hidden md:block">
-          <ImageClipBox
-            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/swordman-partial.webp"
-            clipClass="absolute md:scale-125"
-          />
-          <ImageClipBox
-            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/swordman.webp"
-            clipClass="sword-man-clip-path md:scale-125"
-          />
-        </div>
+        <div className="source-arcade-machine">
+          <div className="source-arcade-marquee">
+            <span>LEARNING</span>
+            <span>REFERENCE</span>
+            <span>GIFT</span>
+          </div>
 
-        <div className="flex flex-col items-center text-center">
-          <p className="mb-10 font-general text-[10px] uppercase">
-            Source of the design
-          </p>
+          <div className="source-arcade-screen">
+            <div
+              className={isDrawing ? "source-reels is-spinning" : "source-reels"}
+            >
+              {reelItems.map((item, index) => (
+                <div
+                  className="source-reel-card"
+                  key={`${item.id}-${index}-${drawCount}`}
+                >
+                  <span>{item.icon}</span>
+                  <strong>{item.label}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <AnimatedTitle
-            title="Adrian<b> </b>H<b>a</b>jdin"
-            className="special-font !md:text-[6.2rem] w-full font-zentry !text-5xl !font-black !leading-[.9]"
-          />
+          <div className="source-prize-panel">
+            <p className="source-prize-label">Current Prize</p>
+            <h3>{isDrawing ? "Drawing..." : activePrize.title}</h3>
+            <p>
+              {isDrawing
+                ? "The arcade reels are choosing a note for you."
+                : activePrize.description}
+            </p>
+            {!isDrawing && activePrize.id === "wallpaper" && activeWallpaper && (
+              <span className="source-wallpaper-hint">
+                Next gift pool: {activeWallpaper.album}
+              </span>
+            )}
+            <button
+              type="button"
+              className="source-prize-action"
+              onClick={openPrize}
+              disabled={isDrawing}
+            >
+              {activePrize.action}
+            </button>
+          </div>
 
-          <Button
-            title="Learn more"
-            containerClass="mt-10 cursor-pointer"
-            href="https://github.com/adrianhajdin/award-winning-website#introduction"
-            target="_blank"
-            rel="noopener noreferrer"
-          />
+          <div
+            className={
+              isDrawing ? "source-arcade-lever is-pulled" : "source-arcade-lever"
+            }
+          >
+            <button
+              type="button"
+              onClick={drawPrize}
+              aria-label="Pull to draw a source prize"
+            >
+              <span className="source-lever-stick" />
+              <span className="source-lever-ball" />
+            </button>
+            <p>PULL TO DRAW</p>
+          </div>
+
+          <button
+            type="button"
+            className="source-arcade-draw-btn"
+            onClick={drawPrize}
+            disabled={isDrawing}
+          >
+            {isDrawing ? "DRAWING" : "DRAW"}
+          </button>
         </div>
       </div>
-    </div>
+
+      {wallpaperOpen && (
+        <div className="wallpaper-prize-modal" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="wallpaper-prize-backdrop"
+            aria-label="Close wallpaper preview"
+            onClick={() => setWallpaperOpen(false)}
+          />
+          <div className="wallpaper-prize-card">
+            <button
+              type="button"
+              className="wallpaper-prize-close"
+              onClick={() => setWallpaperOpen(false)}
+            >
+              Close
+            </button>
+            <p>Wallpaper Gift</p>
+            <h3>{activeWallpaper.label}</h3>
+            <span>{activeWallpaper.album}</span>
+            <img src={activeWallpaper.url} alt="Taozhiyy gallery wallpaper" />
+            <div className="wallpaper-prize-actions">
+              <a href={activeWallpaper.url} target="_blank" rel="noopener noreferrer">
+                View Full Size
+              </a>
+              <a href={activeWallpaper.url} download="taozhiyy-gallery-wallpaper.jpg">
+                Download Wallpaper
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 };
 

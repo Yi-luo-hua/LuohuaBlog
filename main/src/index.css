@@ -376,6 +376,515 @@ body {
   }
 }
 
+.source-arcade-shell {
+  position: relative;
+  isolation: isolate;
+  margin: 0 auto;
+  min-height: 38rem;
+  max-width: 72rem;
+  overflow: hidden;
+  border: 1px solid rgba(222, 183, 145, 0.72);
+  border-radius: 2.4rem;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255, 209, 220, 0.72), transparent 28rem),
+    radial-gradient(circle at 88% 24%, rgba(255, 238, 188, 0.76), transparent 24rem),
+    linear-gradient(135deg, #fffaf0 0%, #fff5ec 48%, #eef8ff 100%);
+  padding: 1.5rem;
+  box-shadow:
+    0 28px 90px rgba(183, 110, 121, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.source-arcade-bg-grid {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(211, 154, 120, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(211, 154, 120, 0.12) 1px, transparent 1px);
+  background-size: 2rem 2rem;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.62), transparent 82%);
+}
+
+.source-arcade-head {
+  display: grid;
+  gap: 0.8rem;
+  max-width: 42rem;
+  padding: 0.25rem 0.25rem 1.4rem;
+  color: #543f43;
+}
+
+.source-arcade-eyebrow {
+  width: max-content;
+  border: 1px solid rgba(183, 110, 121, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  padding: 0.45rem 0.8rem;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: #b76e79;
+}
+
+.source-arcade-head h2 {
+  font-family: "Zentry", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: clamp(2.5rem, 8vw, 6.2rem);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -0.08em;
+  color: #4f363d;
+}
+
+.source-arcade-head p:not(.source-arcade-eyebrow) {
+  max-width: 34rem;
+  font-family: "Circular Web", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: rgba(79, 54, 61, 0.72);
+}
+
+.source-arcade-machine {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.1rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 2rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 247, 232, 0.78)),
+    linear-gradient(135deg, #ffe6ef 0%, #fff7de 52%, #eaf7ff 100%);
+  padding: 1rem;
+  box-shadow:
+    0 24px 70px rgba(140, 91, 75, 0.16),
+    inset 0 -10px 24px rgba(255, 212, 181, 0.34);
+}
+
+.source-arcade-marquee {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(183, 110, 121, 0.16);
+  background: #fffaf2;
+  padding: 0.45rem;
+  box-shadow: inset 0 0 0 0.35rem rgba(255, 221, 229, 0.36);
+}
+
+.source-arcade-marquee span {
+  display: grid;
+  min-height: 2.5rem;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 24% 28%, #fff 0 0.28rem, transparent 0.3rem),
+    linear-gradient(180deg, #ffe9b8, #ffd3df);
+  color: #6f4450;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+.source-arcade-screen {
+  overflow: hidden;
+  border: 0.55rem solid #fff8ea;
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(90deg, transparent 0 31%, rgba(255, 255, 255, 0.68) 31% 32%, transparent 32% 64%, rgba(255, 255, 255, 0.68) 64% 65%, transparent 65%),
+    linear-gradient(135deg, rgba(82, 54, 62, 0.88), rgba(103, 72, 79, 0.84));
+  padding: 0.75rem;
+  box-shadow:
+    inset 0 12px 30px rgba(32, 20, 24, 0.28),
+    0 16px 36px rgba(129, 87, 75, 0.16);
+}
+
+.source-reels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.source-reels.is-spinning .source-reel-card {
+  animation: source-reel-spin 0.18s linear infinite;
+}
+
+.source-reel-card {
+  display: grid;
+  min-height: 8.5rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 236, 194, 0.78), transparent 5rem),
+    linear-gradient(180deg, #fffdf6, #ffe3ed);
+  color: #593a42;
+  text-align: center;
+  box-shadow: inset 0 -10px 22px rgba(255, 194, 210, 0.32);
+}
+
+.source-reel-card span {
+  display: grid;
+  height: 3.4rem;
+  width: 3.4rem;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff6d7, #ffc6d8);
+  color: #8c4c58;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-weight: 900;
+  box-shadow: inset 0 6px 10px rgba(255, 255, 255, 0.62);
+}
+
+.source-reel-card strong {
+  max-width: 7rem;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.source-prize-panel {
+  position: relative;
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid rgba(222, 183, 145, 0.72);
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 235, 0.9)),
+    repeating-linear-gradient(0deg, transparent 0 1.75rem, rgba(183, 110, 121, 0.08) 1.75rem 1.8rem);
+  padding: 1.15rem;
+  color: #523a40;
+  box-shadow: 0 16px 34px rgba(139, 91, 75, 0.12);
+}
+
+.source-prize-label {
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #b76e79;
+}
+
+.source-prize-panel h3 {
+  font-family: "Circular Web", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: clamp(1.45rem, 4vw, 2.35rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.source-prize-panel p:not(.source-prize-label) {
+  max-width: 38rem;
+  color: rgba(82, 58, 64, 0.72);
+  line-height: 1.7;
+}
+
+.source-wallpaper-hint {
+  width: max-content;
+  max-width: 100%;
+  border-radius: 999px;
+  background: rgba(255, 216, 226, 0.62);
+  padding: 0.42rem 0.75rem;
+  color: #8d5360;
+  font-size: 0.78rem;
+}
+
+.source-prize-action,
+.source-arcade-draw-btn {
+  width: max-content;
+  border: 1px solid rgba(183, 110, 121, 0.24);
+  border-radius: 999px;
+  background: #fffaf2;
+  padding: 0.75rem 1rem;
+  color: #7b4b53;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: transform 240ms ease, box-shadow 240ms ease, background 240ms ease;
+}
+
+.source-prize-action:hover,
+.source-arcade-draw-btn:hover {
+  transform: translateY(-2px);
+  background: #fff3df;
+  box-shadow: 0 12px 28px rgba(183, 110, 121, 0.16);
+}
+
+.source-prize-action:disabled,
+.source-arcade-draw-btn:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.source-arcade-lever {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(222, 183, 145, 0.62);
+  background: rgba(255, 250, 242, 0.72);
+  padding: 1rem;
+}
+
+.source-arcade-lever button {
+  position: relative;
+  height: 7.2rem;
+  width: 5.2rem;
+  cursor: grab;
+  border: 0;
+  background: transparent;
+}
+
+.source-arcade-lever button:active {
+  cursor: grabbing;
+}
+
+.source-lever-stick {
+  position: absolute;
+  bottom: 1.15rem;
+  left: 50%;
+  height: 4.8rem;
+  width: 0.7rem;
+  transform: translateX(-50%) rotate(-13deg);
+  transform-origin: bottom center;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d99b73, #fff0c5 48%, #b76e79);
+  box-shadow: 0 9px 20px rgba(129, 87, 75, 0.18);
+  transition: transform 360ms cubic-bezier(0.2, 0.85, 0.25, 1.25);
+}
+
+.source-lever-ball {
+  position: absolute;
+  left: 50%;
+  top: 0.25rem;
+  height: 3.1rem;
+  width: 3.1rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, #fff 0 0.38rem, transparent 0.4rem),
+    linear-gradient(145deg, #ffbed3, #ffd36f);
+  box-shadow:
+    inset 0 -9px 16px rgba(177, 87, 95, 0.2),
+    0 12px 28px rgba(183, 110, 121, 0.22);
+  transition: transform 360ms cubic-bezier(0.2, 0.85, 0.25, 1.25);
+}
+
+.source-arcade-lever::after {
+  content: "";
+  height: 1.1rem;
+  width: 4.2rem;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(140, 91, 75, 0.16), transparent);
+}
+
+.source-arcade-lever.is-pulled .source-lever-stick {
+  transform: translateX(-50%) rotate(18deg);
+}
+
+.source-arcade-lever.is-pulled .source-lever-ball {
+  transform: translate(0.9rem, 1.3rem);
+}
+
+.source-arcade-lever p {
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  color: #9b5b66;
+}
+
+.source-arcade-draw-btn {
+  justify-self: center;
+  background: linear-gradient(135deg, #ffe0ea, #fff1bd);
+}
+
+.wallpaper-prize-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.wallpaper-prize-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(55, 38, 43, 0.56);
+  backdrop-filter: blur(14px);
+}
+
+.wallpaper-prize-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(58rem, 100%);
+  max-height: min(88vh, 54rem);
+  overflow: auto;
+  gap: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255, 210, 222, 0.62), transparent 18rem),
+    linear-gradient(135deg, #fffaf1, #eef8ff);
+  padding: 1rem;
+  color: #543f43;
+  box-shadow: 0 28px 110px rgba(28, 18, 22, 0.28);
+}
+
+.wallpaper-prize-close {
+  justify-self: end;
+  border: 1px solid rgba(183, 110, 121, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.55rem 0.9rem;
+  color: #7b4b53;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.wallpaper-prize-card p {
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #b76e79;
+}
+
+.wallpaper-prize-card h3 {
+  font-family: "Circular Web", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: clamp(1.6rem, 5vw, 3rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.wallpaper-prize-card > span {
+  width: max-content;
+  max-width: 100%;
+  border-radius: 999px;
+  background: rgba(255, 221, 229, 0.64);
+  padding: 0.45rem 0.8rem;
+  color: #8c5360;
+  font-size: 0.82rem;
+}
+
+.wallpaper-prize-card img {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-height: 58vh;
+  border-radius: 1.35rem;
+  object-fit: contain;
+  background: #fff8ec;
+  box-shadow: 0 18px 48px rgba(129, 87, 75, 0.16);
+}
+
+.wallpaper-prize-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.wallpaper-prize-actions a {
+  border-radius: 999px;
+  border: 1px solid rgba(183, 110, 121, 0.2);
+  background: #fffaf2;
+  padding: 0.72rem 1rem;
+  color: #7b4b53;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .source-arcade-shell {
+    padding: 2rem;
+  }
+
+  .source-arcade-machine {
+    grid-template-columns: minmax(0, 1fr) 9rem;
+    padding: 1.35rem;
+  }
+
+  .source-arcade-marquee,
+  .source-arcade-screen,
+  .source-prize-panel {
+    grid-column: 1;
+  }
+
+  .source-arcade-lever {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    align-content: center;
+  }
+
+  .source-arcade-draw-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .source-arcade-shell {
+    min-height: auto;
+    border-radius: 1.6rem;
+    padding: 1rem;
+  }
+
+  .source-reels {
+    grid-template-columns: 1fr;
+  }
+
+  .source-reel-card {
+    min-height: 5.8rem;
+  }
+
+  .source-reel-card:not(:nth-child(2)) {
+    display: none;
+  }
+
+  .source-arcade-lever {
+    display: none;
+  }
+
+  .source-prize-action,
+  .source-arcade-draw-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@keyframes source-reel-spin {
+  0% {
+    transform: translateY(-0.45rem);
+    filter: blur(0);
+  }
+
+  50% {
+    transform: translateY(0.45rem);
+    filter: blur(2px);
+  }
+
+  100% {
+    transform: translateY(-0.45rem);
+    filter: blur(0);
+  }
+}
+
 .indicator-line {
   @apply h-1 w-px rounded-full bg-white transition-all duration-200 ease-in-out;
 }
