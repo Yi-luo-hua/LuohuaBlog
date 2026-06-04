@@ -11,11 +11,13 @@ import { LinksPage } from './pages/LinksPage';
 import { MomentsPage } from './pages/MomentsPage';
 import { PostPage } from './pages/PostPage';
 
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined;
+
 export function App() {
   return (
     <I18nProvider>
       <WeatherProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={routerBasename}>
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
