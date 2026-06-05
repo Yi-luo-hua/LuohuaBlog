@@ -11,9 +11,11 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
         text = SCRIPT_PATH.read_text(encoding="utf-8")
 
         self.assertIn("wait_for_service_active()", text)
+        self.assertIn("wait_for_http_ready()", text)
         self.assertIn('state="$(run_sudo systemctl is-active "$service" || true)"', text)
         self.assertIn('"$service is $state; waiting..."', text)
         self.assertIn("wait_for_service_active acg-api 30 1", text)
+        self.assertIn("wait_for_http_ready http://127.0.0.1:8787/api/v1/health 30 1", text)
         self.assertNotIn("run_sudo systemctl is-active acg-api\n", text)
 
     def test_logs_acg_api_status_and_journal_when_wait_fails(self):
@@ -21,6 +23,7 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
 
         self.assertIn('systemctl --no-pager --full status "$service"', text)
         self.assertIn('journalctl -u "$service" -n 80 --no-pager', text)
+        self.assertIn("grep -E ':(8787)[[:space:]]' || true", text)
 
 
 class SyncAuthEnvTests(unittest.TestCase):
@@ -28,8 +31,10 @@ class SyncAuthEnvTests(unittest.TestCase):
         text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
 
         self.assertIn("wait_for_service_active()", text)
+        self.assertIn("wait_for_http_ready()", text)
         self.assertIn("if run_sudo systemctl restart acg-api", text)
         self.assertIn("wait_for_service_active acg-api 30 1", text)
+        self.assertIn("wait_for_http_ready http://127.0.0.1:8787/api/v1/health 30 1", text)
         self.assertIn('systemctl --no-pager --full status "$service"', text)
         self.assertIn('journalctl -u "$service" -n 80 --no-pager', text)
 

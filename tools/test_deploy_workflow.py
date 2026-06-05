@@ -27,6 +27,16 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("journalctl -u nginx -n 200 --no-pager || true", text)
         self.assertIn("dmesg 2>&1 | tail -50 || true", text)
 
+    def test_sync_trigger_logs_backend_diagnostics_on_failure(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("ERROR: Bilibili sync trigger failed", text)
+        self.assertIn("curl -i -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger || true", text)
+        self.assertIn("systemctl --no-pager --full status acg-api", text)
+        self.assertIn("journalctl -u acg-api -n 120 --no-pager", text)
+        self.assertIn("grep -E ':(8787)[[:space:]]' || true", text)
+        self.assertIn("curl -i --max-time 10 http://127.0.0.1:8787/api/v1/health || true", text)
+
 
 if __name__ == "__main__":
     unittest.main()

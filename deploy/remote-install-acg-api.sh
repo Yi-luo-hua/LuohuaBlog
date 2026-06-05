@@ -16,6 +16,17 @@ run_sudo() {
   fi
 }
 
+log_service_diagnostics() {
+  local service="${1:?service required}"
+
+  echo "=== $service status ===" >&2
+  run_sudo systemctl --no-pager --full status "$service" >&2 || true
+  echo "=== $service journal ===" >&2
+  run_sudo journalctl -u "$service" -n 80 --no-pager >&2 || true
+  echo "=== listening on 8787 ===" >&2
+  run_sudo sh -c 'if command -v ss >/dev/null 2>&1; then ss -tlnp; else netstat -tlnp; fi' | grep -E ':(8787)[[:space:]]' || true
+}
+
 wait_for_service_active() {
   local service="${1:?service required}"
   local attempts="${2:-30}"
@@ -31,8 +42,7 @@ wait_for_service_active() {
     fi
     if [ "$state" = "failed" ]; then
       echo "$service entered failed state; status:" >&2
-      run_sudo systemctl --no-pager --full status "$service" >&2 || true
-      run_sudo journalctl -u "$service" -n 80 --no-pager >&2 || true
+      log_service_diagnostics "$service"
       return 1
     fi
 
@@ -41,8 +51,28 @@ wait_for_service_active() {
   done
 
   echo "$service did not become active; status:" >&2
-  run_sudo systemctl --no-pager --full status "$service" >&2 || true
-  run_sudo journalctl -u "$service" -n 80 --no-pager >&2 || true
+  log_service_diagnostics "$service"
+  return 1
+}
+
+wait_for_http_ready() {
+  local url="${1:?url required}"
+  local attempts="${2:-30}"
+  local delay="${3:-1}"
+  local i
+
+  for i in $(seq 1 "$attempts"); do
+    if curl -fsS --max-time 2 "$url" >/dev/null; then
+      echo "$url is ready"
+      return 0
+    fi
+
+    echo "$url is not ready; waiting..." >&2
+    sleep "$delay"
+  done
+
+  echo "$url did not become ready; diagnostics:" >&2
+  log_service_diagnostics acg-api
   return 1
 }
 
@@ -86,6 +116,9 @@ if ! run_sudo systemctl restart acg-api; then
   exit 1
 fi
 if ! wait_for_service_active acg-api 30 1; then
+  exit 1
+fi
+if ! wait_for_http_ready http://127.0.0.1:8787/api/v1/health 30 1; then
   exit 1
 fi
 

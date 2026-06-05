@@ -196,7 +196,18 @@ jobs:
 
       - name: Trigger Bilibili sync (covers)
         run: |
-          curl -sf -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger
+          if ! curl -sf -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger; then
+            echo "ERROR: Bilibili sync trigger failed"
+            curl -i -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger || true
+            SSH_PORT="${UCLOUD_PORT:-22}"
+            ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl --no-pager --full status acg-api || true
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' journalctl -u acg-api -n 120 --no-pager || true
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' sh -c 'if command -v ss >/dev/null 2>&1; then ss -tlnp; else netstat -tlnp; fi' | grep -E ':(8787)[[:space:]]' || true
+              curl -i --max-time 10 http://127.0.0.1:8787/api/v1/health || true
+            "
+            exit 1
+          fi
           echo "sync queued, waiting for downloads..."
           sleep 45
           BODY=$(curl -sf --max-time 30 https://taozhiyy.top/api/v1/bangumi/list)
