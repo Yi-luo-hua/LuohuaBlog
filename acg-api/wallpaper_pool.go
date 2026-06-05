@@ -21,6 +21,30 @@ const (
 	wallpaperHTTPClientTimeout = 10 * time.Second
 )
 
+var animeWallpaperTerms = []string{
+	"anime",
+	"manga",
+	"illustration",
+	"digital art",
+	"digital-art",
+	"character",
+	"waifu",
+	"acg",
+}
+
+var sceneryWallpaperTerms = []string{
+	"nature",
+	"landscape",
+	"city",
+	"sky",
+	"beach",
+	"mountain",
+	"forest",
+	"lake",
+	"sunset",
+	"sunrise",
+}
+
 var fallbackWallpaperItems = []wallpaperItem{
 	{
 		ID:          "fallback-ai-blog-0e7e10e2acdb398941c10735a791918d",
@@ -115,7 +139,7 @@ func fetchLegalWallpaperItems(limit int) ([]wallpaperItem, error) {
 
 func fetchPexelsWallpapers(apiKey string, limit int) ([]wallpaperItem, error) {
 	page := rand.Intn(50) + 1
-	endpoint := fmt.Sprintf("https://api.pexels.com/v1/search?query=%s&orientation=landscape&per_page=%d&page=%d", url.QueryEscape("wallpaper nature city sky"), limit, page)
+	endpoint := buildPexelsWallpaperEndpoint(limit, page)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -148,6 +172,9 @@ func fetchPexelsWallpapers(apiKey string, limit int) ([]wallpaperItem, error) {
 		if imageURL == "" {
 			continue
 		}
+		if !looksAnimeWallpaper(photo.URL, imageURL, previewURL) {
+			continue
+		}
 		items = append(items, wallpaperItem{
 			ID:          stableWallpaperID("pexels", fmt.Sprint(photo.ID), imageURL),
 			URL:         imageURL,
@@ -166,7 +193,7 @@ func fetchPexelsWallpapers(apiKey string, limit int) ([]wallpaperItem, error) {
 
 func fetchPixabayWallpapers(apiKey string, limit int) ([]wallpaperItem, error) {
 	page := rand.Intn(50) + 1
-	endpoint := fmt.Sprintf("https://pixabay.com/api/?key=%s&q=%s&image_type=photo&orientation=horizontal&safesearch=true&per_page=%d&page=%d", url.QueryEscape(apiKey), url.QueryEscape("wallpaper landscape"), limit, page)
+	endpoint := buildPixabayWallpaperEndpoint(apiKey, limit, page)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -193,6 +220,9 @@ func fetchPixabayWallpapers(apiKey string, limit int) ([]wallpaperItem, error) {
 		if imageURL == "" {
 			continue
 		}
+		if !looksAnimeWallpaper(hit.PageURL, imageURL, hit.WebformatURL) {
+			continue
+		}
 		items = append(items, wallpaperItem{
 			ID:          stableWallpaperID("pixabay", fmt.Sprint(hit.ID), imageURL),
 			URL:         imageURL,
@@ -207,6 +237,40 @@ func fetchPixabayWallpapers(apiKey string, limit int) ([]wallpaperItem, error) {
 		})
 	}
 	return items, nil
+}
+
+func buildPexelsWallpaperEndpoint(limit, page int) string {
+	return fmt.Sprintf(
+		"https://api.pexels.com/v1/search?query=%s&orientation=landscape&per_page=%d&page=%d",
+		url.QueryEscape("anime wallpaper illustration"),
+		limit,
+		page,
+	)
+}
+
+func buildPixabayWallpaperEndpoint(apiKey string, limit, page int) string {
+	return fmt.Sprintf(
+		"https://pixabay.com/api/?key=%s&q=%s&image_type=illustration&orientation=horizontal&safesearch=true&per_page=%d&page=%d",
+		url.QueryEscape(apiKey),
+		url.QueryEscape("anime wallpaper"),
+		limit,
+		page,
+	)
+}
+
+func looksAnimeWallpaper(values ...string) bool {
+	text := strings.ToLower(strings.Join(values, " "))
+	for _, term := range animeWallpaperTerms {
+		if strings.Contains(text, term) {
+			return true
+		}
+	}
+	for _, term := range sceneryWallpaperTerms {
+		if strings.Contains(text, term) {
+			return false
+		}
+	}
+	return true
 }
 
 func doWallpaperJSON(req *http.Request, out any) error {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -169,5 +170,43 @@ func TestAPIFallbackWallpaperIsNotCOS(t *testing.T) {
 	}
 	if strings.Contains(item.URL, "myqcloud.com") {
 		t.Fatalf("expected non-COS fallback, got %s", item.URL)
+	}
+}
+
+func TestWallpaperProviderEndpointsPreferAnimeQueries(t *testing.T) {
+	pexelsURL, err := url.Parse(buildPexelsWallpaperEndpoint(8, 3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pexelsQuery := pexelsURL.Query().Get("query")
+	if !strings.Contains(pexelsQuery, "anime") {
+		t.Fatalf("expected pexels query to include anime, got %q", pexelsQuery)
+	}
+	if strings.Contains(pexelsQuery, "nature") || strings.Contains(pexelsQuery, "city") || strings.Contains(pexelsQuery, "sky") {
+		t.Fatalf("expected pexels query to drop scenery terms, got %q", pexelsQuery)
+	}
+
+	pixabayURL, err := url.Parse(buildPixabayWallpaperEndpoint("demo-key", 8, 3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pixabayQuery := pixabayURL.Query().Get("q")
+	if !strings.Contains(pixabayQuery, "anime") {
+		t.Fatalf("expected pixabay query to include anime, got %q", pixabayQuery)
+	}
+	if got := pixabayURL.Query().Get("image_type"); got != "illustration" {
+		t.Fatalf("expected pixabay image_type=illustration, got %q", got)
+	}
+}
+
+func TestLooksAnimeWallpaperFiltersSceneryMetadata(t *testing.T) {
+	if !looksAnimeWallpaper("https://www.pexels.com/photo/anime-girl-123/") {
+		t.Fatal("expected anime metadata to be accepted")
+	}
+	if looksAnimeWallpaper("https://pixabay.com/photos/mountain-sky-lake-wallpaper-123/") {
+		t.Fatal("expected scenery metadata to be rejected")
+	}
+	if !looksAnimeWallpaper("https://images.example.com/wallpaper-123.jpg") {
+		t.Fatal("expected neutral metadata to stay eligible")
 	}
 }
