@@ -181,6 +181,10 @@ jobs:
               echo \"ERROR: nginx reload-or-restart failed\"
               echo \"=== nginx status ===\"
               echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl --no-pager --full status nginx || true
+              echo \"=== nginx processes ===\"
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' ps aux | grep '[n]ginx' || true
+              echo \"=== listening ports ===\"
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' sh -c 'if command -v ss >/dev/null 2>&1; then ss -tlnp; else netstat -tlnp; fi' | grep -E ':(80|443)[[:space:]]' || true
               echo \"=== nginx journal ===\"
               echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' journalctl -u nginx -n 200 --no-pager || true
               echo \"=== recent kernel messages ===\"
