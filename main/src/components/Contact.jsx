@@ -90,16 +90,39 @@ const fetchWallpaperGift = async () => {
 const getDrawDigits = (number) =>
   String(number).padStart(3, "0").split("");
 
+const getRandomInt = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
 const getPrizeByDrawNumber = (number) => {
   if (number <= 332) return prizes[0];
   if (number <= 665) return prizes[1];
   return prizes[2];
 };
 
+const getNumberForPrize = (prize) => {
+  if (prize.id === "homepage") return getRandomInt(0, 332);
+  if (prize.id === "blog") return getRandomInt(333, 665);
+  return getRandomInt(666, 998);
+};
+
+const getWeightedPrize = () => {
+  const roll = Math.random() * 10;
+  if (roll < 0.5) return prizes[0];
+  if (roll < 1) return prizes[1];
+  return prizes[2];
+};
+
+const getPrizeForAutoDraw = (completedDraws) => {
+  if (completedDraws === 0) return prizes[0];
+  if (completedDraws === 1) return prizes[1];
+  return getWeightedPrize();
+};
+
 const Contact = () => {
   const [activePrize, setActivePrize] = useState(prizes[0]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawCount, setDrawCount] = useState(0);
+  const [autoDrawCount, setAutoDrawCount] = useState(0);
   const [drawNumber, setDrawNumber] = useState(0);
   const [slotDigits, setSlotDigits] = useState(() => getDrawDigits(0));
   const [resultOpen, setResultOpen] = useState(false);
@@ -117,11 +140,12 @@ const Contact = () => {
     if (isDrawing) return;
     setIsDrawing(true);
     setResultOpen(false);
-    const nextNumber =
-      typeof forcedNumber === "number"
-        ? forcedNumber
-        : Math.floor(Math.random() * 1000);
-    const nextPrize = getPrizeByDrawNumber(nextNumber);
+    const isForcedDraw = typeof forcedNumber === "number";
+    const forcedAPITest = forcedNumber === 999;
+    const nextPrize = isForcedDraw
+      ? getPrizeByDrawNumber(forcedNumber)
+      : getPrizeForAutoDraw(autoDrawCount);
+    const nextNumber = isForcedDraw ? forcedNumber : getNumberForPrize(nextPrize);
     const spinTimer = window.setInterval(() => {
       setSlotDigits(getDrawDigits(Math.floor(Math.random() * 1000)));
     }, 90);
@@ -131,6 +155,13 @@ const Contact = () => {
       let nextWallpaper = activeWallpaper;
       if (nextPrize.id === "wallpaper") {
         nextWallpaper = await fetchWallpaperGift();
+        if (forcedAPITest) {
+          nextWallpaper = {
+            ...nextWallpaper,
+            album: "后端接口图片",
+            label: "后端接口测试壁纸",
+          };
+        }
         setActiveWallpaper(nextWallpaper);
         setWallpaperLoadStatus("loading");
       }
@@ -138,6 +169,9 @@ const Contact = () => {
       setSlotDigits(getDrawDigits(nextNumber));
       setActivePrize(nextPrize);
       setDrawCount((count) => count + 1);
+      if (!isForcedDraw) {
+        setAutoDrawCount((count) => count + 1);
+      }
       setDrawHistory((history) =>
         [
           {
@@ -336,13 +370,13 @@ const Contact = () => {
               Close
             </button>
             <div className="source-manual-page">
-              <p>USER MANUAL</p>
-              <h3>How to use the source slot</h3>
-              <span>Pull the desktop lever, or tap START on mobile, to draw one three-digit number from 000 to 999.</span>
-              <span>000-332 opens a text card about the homepage learning reference.</span>
-              <span>333-665 opens a text card about the Hexo Butterfly blog source.</span>
-              <span>666-999 opens a pure gallery wallpaper card. Text results never include wallpapers.</span>
-              <span>History keeps your latest eight draws. Cheat mode lets you type a number directly when you want to test a specific result.</span>
+              <p>使用说明</p>
+              <h3>抽奖魔法书</h3>
+              <span>点击拉杆或开始按钮会抽出一个三位数，并打开对应奖品卡片。</span>
+              <span>第一次固定获得首页学习来源，第二次固定获得博客主题来源。</span>
+              <span>从第三次开始进入概率池：前两种文字奖品各占 0.5 份，壁纸奖品占 9 份。</span>
+              <span>壁纸奖品会优先向后端接口请求新图片，接口不可用时才使用本地相册兜底。</span>
+              <span>历史记录会保留最近八次抽奖，测试模式可输入三位数检查指定结果。</span>
             </div>
           </div>
         </div>
@@ -408,7 +442,7 @@ const Contact = () => {
             <div className="source-cheat-card">
               <p>Cheat Mode</p>
               <span className="source-cheat-note">
-                Type any number from 000 to 999 to open its mapped result.
+                输入任意三位数字，可直接检查它对应的奖品结果。
               </span>
               <input
                 type="text"
