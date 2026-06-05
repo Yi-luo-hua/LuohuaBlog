@@ -1,20 +1,13 @@
+import clsx from "clsx";
 import { useEffect, useState } from "react";
-import { FiMessageCircle, FiSend } from "react-icons/fi";
+import { Link } from "react-router-dom";
 
-import { getGuestbook, postGuestbook } from "../services/guestbookApi";
-
-const formatTime = (iso) => {
-  try {
-    return new Date(iso).toLocaleString("zh-CN", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-};
+import { asList } from "../lib/asList";
+import { authMe } from "../services/authApi";
+import {
+  fetchGuestbookMessages,
+  postGuestbookMessage,
+} from "../services/guestbookMessagesApi";
 
 const FRIEND_TEMPLATE = `站点名称：
 站点链接：
@@ -22,27 +15,83 @@ const FRIEND_TEMPLATE = `站点名称：
 头像链接：
 已添加本站友链：是`;
 
-const quickNotes = [
-  "留言会公开展示，请确认信息无误。",
-  "站点头像建议使用长期稳定外链。",
-  "通过审核后，会整理到上方小伙伴区域。",
-];
+const cardTone = (item) => {
+  if (item.isAdminUser) return "admin";
+  if (item.isLoginUser) return "login";
+  return "guest";
+};
+
+const nameFromUser = (user) => {
+  const displayName = user?.displayName?.trim();
+  if (displayName) return displayName;
+  return user?.email ? user.email.split("@")[0].slice(0, 12) : "";
+};
+
+const isFriendApplication = (item) => {
+  const text = item?.content || "";
+  return text.includes("站点名称") && text.includes("站点链接");
+};
+
+const formatTime = (value) => {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString("zh-CN", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return value;
+  }
+};
 
 const FriendsApplicationBoard = () => {
+  const [user, setUser] = useState(null);
   const [entries, setEntries] = useState([]);
-  const [name, setName] = useState("");
-  const [content, setContent] = useState(FRIEND_TEMPLATE);
   const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState(FRIEND_TEMPLATE);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    authMe().then(({ data }) => {
+      if (data?.loggedIn && data.user) {
+        setUser(data.user);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const onProfileUpdated = (event) => {
+      if (event.detail?.user) setUser(event.detail.user);
+    };
+    window.addEventListener("blog-auth-profile-updated", onProfileUpdated);
+    return () => {
+      window.removeEventListener("blog-auth-profile-updated", onProfileUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    getGuestbook(24).then((items) => {
+
+    const loadEntries = async () => {
+      setLoading(true);
+      const { ok, data } = await fetchGuestbookMessages(1, 20);
       if (cancelled) return;
-      setEntries(items);
+      if (!ok) {
+        setEntries([]);
+        setLoading(false);
+        return;
+      }
+      const list = asList(data).filter(isFriendApplication);
+      setEntries(list);
       setLoading(false);
-    });
+    };
+
+    loadEntries();
+
     return () => {
       cancelled = true;
     };
@@ -50,147 +99,152 @@ const FriendsApplicationBoard = () => {
 
   const onSubmit = async (event) => {
     event.preventDefault();
+    if (!user) {
+      setError("请先登录后再提交友链申请。");
+      return;
+    }
     if (!content.trim()) return;
+
     setSubmitting(true);
     setNotice("");
-    const row = await postGuestbook({
-      name: name.trim() || "friend-signal",
-      content,
+    setError("");
+
+    const { ok, data } = await postGuestbookMessage({
+      content: content.trim(),
     });
-    setEntries((prev) => [row, ...prev].slice(0, 24));
-    setContent(FRIEND_TEMPLATE);
-    setNotice(
-      row.offline ? "已本地保存，接口恢复后可再提交一次。" : "友链申请已送达。"
-    );
+
     setSubmitting(false);
+
+    if (!ok) {
+      if (data.error === "RATE_LIMITED") {
+        setError(data.message || "提交太频繁啦，稍后再来试试。");
+      } else if (data.message) {
+        setError(data.message);
+      } else {
+        setError("友链申请没有提交成功，请稍后再试。");
+      }
+      return;
+    }
+
+    setContent(FRIEND_TEMPLATE);
+    setNotice("友链申请已提交成功。");
+    if (data.item && isFriendApplication(data.item)) {
+      setEntries((prev) => [data.item, ...prev].slice(0, 20));
+    }
   };
 
+  const displayName = nameFromUser(user);
+
   return (
-    <section
-      id="friends-guestbook"
-      className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[rgba(17,20,38,0.56)] p-6 shadow-[0_30px_100px_rgba(6,8,18,0.34)] backdrop-blur-[24px] md:p-8"
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(100,86,255,0.18),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(95,224,255,0.12),transparent_28%)]" />
-      <div className="pointer-events-none absolute inset-[1px] rounded-[33px] border border-white/8" />
-
-      <div className="relative">
-        <div className="text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-white/42">
-            Terminal Guestbook
+    <section id="friends-guestbook" className="relative">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#74C0FC]">
+            Comment Style
           </p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl">
-            终端留言板
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#2B2B2B]">
+            留言申请
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-white/50">
-            在底部留言区填写站点信息即可申请友链。这里保留公开展示的留言流，方便后续核对与整理。
-          </p>
         </div>
+        <p className="max-w-xl text-sm leading-7 text-[#6B7280]">
+          这一部分沿用留言板接口，但提交友链申请时必须先登录。
+        </p>
+      </div>
 
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          {quickNotes.map((item) => (
-            <span
-              key={item}
-              className="inline-flex rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs leading-6 text-white/64"
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.94fr)]">
-          <form
-            onSubmit={onSubmit}
-            className="rounded-[30px] border border-white/10 bg-[rgba(10,13,27,0.72)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:p-6"
-          >
-            <label className="block text-xs font-semibold uppercase tracking-[0.22em] text-white/52">
-              申请署名
-            </label>
-            <input
-              type="text"
-              maxLength={32}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="例如：站长名 / 站点名"
-              className="mt-3 min-h-[50px] w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/24 focus:border-[#7c5cff]/60 focus:ring-2 focus:ring-[#7c5cff]/26"
-            />
-
-            <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.22em] text-white/52">
-              留言内容
-            </label>
-            <textarea
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              maxLength={500}
-              rows={10}
-              required
-              className="mt-3 w-full rounded-[24px] border border-white/10 bg-white/6 px-4 py-4 text-sm leading-7 text-white outline-none transition placeholder:text-white/24 focus:border-[#7c5cff]/60 focus:ring-2 focus:ring-[#7c5cff]/26"
-            />
-
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs leading-6 text-white/44">
-                留言会进入本站公开留言流，提交前请确认链接、头像与简介均为稳定可访问的地址。
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+        <form
+          onSubmit={onSubmit}
+          className="rounded-[22px] border border-[#F2E6C9] bg-white p-5 shadow-[0_12px_30px_rgba(255,143,171,0.12)] md:p-6"
+        >
+          {user ? (
+            <p className="mb-4 text-sm font-semibold text-[#74C0FC]">
+              以 {displayName} 身份提交友链申请
+            </p>
+          ) : (
+            <div className="mb-5 rounded-[16px] border border-dashed border-[#F2E6C9] bg-[#FFFDF8] px-4 py-4">
+              <p className="text-sm leading-7 text-[#6B7280]">
+                这里的友链申请需要登录后才能提交。
               </p>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#5768ff,#b85cff)] px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(92,94,255,0.28)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#96a0ff]"
+              <Link
+                to="/login"
+                className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full border-2 border-[#74C0FC] bg-white px-5 py-2.5 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(116,192,252,0.16)] transition hover:border-[#FF8FAB]"
               >
-                <FiSend className="h-4 w-4" aria-hidden />
-                {submitting ? "发送中..." : "提交申请"}
-              </button>
+                去登录 / 注册
+              </Link>
             </div>
+          )}
 
-            {notice && <p className="mt-4 text-sm font-medium text-[#92ffe2]">{notice}</p>}
-          </form>
+          <label className="mb-1 block text-xs font-semibold text-[#6B7280]">
+            申请内容
+          </label>
+          <textarea
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+            maxLength={500}
+            rows={8}
+            required
+            disabled={!user || submitting}
+            className="w-full resize-y rounded-xl border border-[#F2E6C9] bg-[#FFFBF5] px-4 py-3 text-base leading-relaxed text-[#2B2B2B] outline-none transition focus:border-[#FFD43B] disabled:cursor-not-allowed disabled:opacity-70"
+          />
 
-          <div className="rounded-[30px] border border-white/10 bg-[rgba(20,24,43,0.72)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.3em] text-white/42">
-                  Recent Messages
-                </p>
-                <h3 className="mt-2 text-2xl font-semibold text-white">最新留言</h3>
-              </div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-[#96a0ff]">
-                <FiMessageCircle className="h-3.5 w-3.5" aria-hidden />
-                Public
-              </span>
+          <button
+            type="submit"
+            disabled={!user || submitting}
+            className="mt-4 min-h-[44px] w-full rounded-full border-2 border-[#FFD43B] bg-gradient-to-r from-[#FFFDF5] to-[#FFF8E7] px-6 py-3 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(255,212,59,0.25)] transition hover:border-[#FF8FAB] hover:shadow-[0_10px_28px_rgba(255,143,171,0.2)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          >
+            {submitting ? "提交中…" : "提交友链申请"}
+          </button>
+
+          {notice && (
+            <p className="mt-3 text-sm font-semibold text-[#51CF66]">{notice}</p>
+          )}
+          {error && <p className="mt-3 text-sm text-[#E67700]">{error}</p>}
+        </form>
+
+        <div className="space-y-4">
+          {loading && <p className="text-sm text-[#6B7280]">加载申请留言中…</p>}
+
+          {!loading && entries.length === 0 && (
+            <div className="rounded-[18px] border border-dashed border-[#F2E6C9] bg-white/80 px-4 py-10 text-center text-sm text-[#6B7280]">
+              还没有友链申请留言，欢迎留下第一条。
             </div>
+          )}
 
-            <div className="mt-5 space-y-3">
-              {loading ? (
-                <div className="rounded-[22px] border border-white/10 bg-white/6 px-4 py-5 text-sm text-white/58">
-                  正在读取留言...
-                </div>
-              ) : entries.length === 0 ? (
-                <div className="rounded-[22px] border border-dashed border-white/14 bg-white/6 px-4 py-5 text-sm text-white/58">
-                  还没有新的申请记录，欢迎成为这里的第一条连接。
-                </div>
-              ) : (
-                entries.map((row) => (
-                  <article
-                    key={row.id}
-                    className="rounded-[22px] border border-white/10 bg-white/6 px-4 py-4 backdrop-blur-md"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-white">{row.name}</p>
-                        <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-[#96a0ff]">
-                          Friend Request
-                        </p>
-                      </div>
-                      <time className="shrink-0 text-[11px] text-white/36">
-                        {formatTime(row.createdAt)}
-                      </time>
-                    </div>
-                    <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-white/74">
-                      {row.content}
+          {entries.map((item) => {
+            const tone = cardTone(item);
+            const label =
+              item.isAdminUser ? "站长" : item.isLoginUser ? "已登录" : "访客";
+
+            return (
+              <article
+                key={item.id}
+                className={clsx(
+                  "relative rounded-[18px] border p-5 shadow-[0_8px_24px_rgba(255,143,171,0.1)]",
+                  tone === "guest" && "border-[#FFE066]/60 bg-[#FFF9DB]",
+                  tone === "login" && "border-[#A5D8FF]/60 bg-[#E7F5FF]",
+                  tone === "admin" && "border-[#FFC9C9]/70 bg-[#FFF0F6]"
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-base font-bold text-[#2B2B2B]">
+                      {item.nickname}
+                      <span className="ml-2 text-xs font-normal text-[#6B7280]">
+                        {label}
+                      </span>
                     </p>
-                  </article>
-                ))
-              )}
-            </div>
-          </div>
+                    <p className="mt-1 text-xs text-[#6B7280]">
+                      {item.ipRegion || "未知地区"} · {formatTime(item.createdAt)}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-[#2B2B2B]">
+                  {item.content}
+                </p>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>
