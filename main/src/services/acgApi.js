@@ -33,3 +33,8 @@ export async function getRadarFeed() {
     return mockRadarList;
   }
 }
+
+export async function getWallpaperGift() {
+  const data = await fetchJson("/api/v1/wallpapers/draw");
+  return data?.item || null;
+}

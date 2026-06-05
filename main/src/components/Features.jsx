@@ -348,26 +348,34 @@ const Features = () => {
 
           <button
             type="button"
-            className="archive-pass group relative w-full max-w-xs overflow-hidden rounded-[1.5rem] border border-pink-100/30 bg-[#ffe7ef] p-5 text-left text-[#241322] shadow-[0_18px_45px_rgba(255,143,171,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(255,143,171,0.24)] md:min-h-80 md:w-80 md:overflow-visible md:border-0 md:bg-transparent md:p-0 md:shadow-none"
+            className="archive-pass group relative w-full max-w-xs overflow-visible rounded-[1.5rem] border border-pink-100/30 bg-[#ffe7ef]/80 p-5 text-left text-[#241322] shadow-[0_18px_45px_rgba(255,143,171,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(255,143,171,0.24)] md:min-h-80 md:w-80 md:border-0 md:bg-transparent md:p-0 md:shadow-none"
             onClick={() => setArchiveOpen(true)}
           >
             <span className="archive-pass-bloom" aria-hidden="true">
-              <span className="archive-pass-petal archive-pass-petal-1" />
-              <span className="archive-pass-petal archive-pass-petal-2" />
-              <span className="archive-pass-petal archive-pass-petal-3" />
-              <span className="archive-pass-petal archive-pass-petal-4" />
-              <span className="archive-pass-petal archive-pass-petal-5" />
-              <span className="archive-pass-core" />
+              <span className="archive-pass-orbit" />
+              <span className="archive-pass-ticket">
+                <span className="archive-pass-spine" />
+                <span className="archive-pass-stamp">05</span>
+                <span className="archive-pass-rule archive-pass-rule-1" />
+                <span className="archive-pass-rule archive-pass-rule-2" />
+                <span className="archive-pass-rule archive-pass-rule-3" />
+              </span>
+              <span className="archive-pass-fragment archive-pass-fragment-1" />
+              <span className="archive-pass-fragment archive-pass-fragment-2" />
+              <span className="archive-pass-fragment archive-pass-fragment-3" />
+              <span className="archive-pass-fragment archive-pass-fragment-4" />
+              <span className="archive-pass-fragment archive-pass-fragment-5" />
+              <span className="archive-pass-thread" />
             </span>
             <span className="absolute -right-10 -top-10 size-28 rounded-full bg-white/55 blur-2xl md:hidden" />
             <span className="absolute inset-x-5 top-4 h-px bg-gradient-to-r from-transparent via-[#b76e79]/35 to-transparent md:hidden" />
-            <span className="archive-pass-content relative z-10 block font-general text-[10px] uppercase tracking-[0.35em] text-[#b76e79] md:absolute md:inset-x-8 md:top-16 md:text-center">
+            <span className="archive-pass-content relative z-10 block font-general text-[10px] uppercase tracking-[0.35em] text-[#b76e79] md:absolute md:inset-x-8 md:top-[4.2rem] md:text-center">
               Archive Pass
             </span>
-            <span className="relative z-10 mt-4 block text-3xl font-black leading-none md:absolute md:inset-x-8 md:top-[5.6rem] md:mt-0 md:text-center md:text-[2.4rem]">
+            <span className="relative z-10 mt-4 block text-3xl font-black leading-none tracking-[-0.04em] text-[#261320] md:absolute md:inset-x-8 md:top-[5.8rem] md:mt-0 md:text-center md:text-[2.35rem]">
               5 Fragments
             </span>
-            <span className="relative z-10 mt-2 block text-sm font-semibold text-[#5f4b52] md:absolute md:inset-x-10 md:top-[9.8rem] md:mt-0 md:text-center">
+            <span className="relative z-10 mt-2 block text-sm font-semibold leading-relaxed text-[#5f4b52] md:absolute md:inset-x-9 md:top-[9.45rem] md:mt-0 md:text-center">
               Open the archive book to revisit these visual fragments.
             </span>
             <span className="relative z-10 mt-5 inline-flex items-center gap-2 rounded-full bg-[#241322] px-4 py-2 text-xs font-bold uppercase text-[#ffe7ef] md:absolute md:bottom-9 md:left-1/2 md:mt-0 md:-translate-x-1/2">

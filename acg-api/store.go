@@ -106,6 +106,21 @@ func migrateAll(db *sql.DB) error {
 			expires_at TEXT NOT NULL,
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		);`,
+		`CREATE TABLE IF NOT EXISTS wallpaper_pool (
+			id TEXT PRIMARY KEY,
+			url TEXT NOT NULL,
+			preview_url TEXT NOT NULL DEFAULT '',
+			source TEXT NOT NULL,
+			author TEXT NOT NULL DEFAULT '',
+			source_url TEXT NOT NULL DEFAULT '',
+			license_note TEXT NOT NULL DEFAULT '',
+			kind TEXT NOT NULL DEFAULT 'api',
+			status TEXT NOT NULL DEFAULT 'active',
+			added_at TEXT NOT NULL,
+			last_drawn_at TEXT NOT NULL DEFAULT ''
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_wallpaper_pool_kind_added ON wallpaper_pool(kind, added_at);`,
+		`CREATE INDEX IF NOT EXISTS idx_wallpaper_pool_status ON wallpaper_pool(status);`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {

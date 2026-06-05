@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -43,6 +44,7 @@ func main() {
 	seedDefaultACGData(db)
 
 	startSyncLoops(db, cfg, cacheDir)
+	startWallpaperPoolLoop(db)
 
 	go func() {
 		t := time.NewTicker(24 * time.Hour)
@@ -59,6 +61,7 @@ func main() {
 	mux.HandleFunc("/api/v1/guestbook", guestbookHandler)
 	mux.HandleFunc("/api/v1/bangumi/list", bangumiListHandler)
 	mux.HandleFunc("/api/v1/radar/feed", radarFeedHandler)
+	mux.HandleFunc("/api/v1/wallpapers/draw", wallpaperDrawHandler)
 	mux.HandleFunc("/api/v1/acg/image/", imageHandler)
 	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, map[string]string{"status": "ok", "uid": cfg.BilibiliUID})
@@ -80,6 +83,23 @@ func main() {
 	deepseekReady := chatConfigured()
 	log.Printf("acg-api on %s | bilibili uid=%s | radar=%d creators | deepseek=%v\n", addr, cfg.BilibiliUID, len(cfg.RadarCreators), deepseekReady)
 	log.Fatal(http.ListenAndServe(addr, withCORS(mux)))
+}
+
+func wallpaperDrawHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	item, err := drawWallpaperItem(db)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "wallpaper pool is empty", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, map[string]any{"item": item})
 }
 
 func bangumiListHandler(w http.ResponseWriter, _ *http.Request) {

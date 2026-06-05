@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { galleryAlbums } from "../data/galleryAlbums";
+import { getWallpaperGift } from "../services/acgApi";
 
 const SOURCE_ASSET_BASE =
   "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img";
@@ -60,6 +61,32 @@ const pickWallpaperGift = () => {
   return wallpaperPool[Math.floor(Math.random() * wallpaperPool.length)];
 };
 
+const normalizeWallpaperGift = (item) => {
+  if (!item?.url) return null;
+  return {
+    url: item.url,
+    previewUrl: item.previewUrl || item.url,
+    album:
+      item.source === "pexels"
+        ? "Pexels Licensed Wallpaper"
+        : item.source === "pixabay"
+          ? "Pixabay Licensed Wallpaper"
+          : item.source || "Legal Wallpaper Pool",
+    label: item.author ? `Photo by ${item.author}` : "Legal Wallpaper Gift",
+    sourceUrl: item.sourceUrl || item.url,
+    licenseNote: item.licenseNote || "Licensed source wallpaper",
+  };
+};
+
+const fetchWallpaperGift = async () => {
+  try {
+    const item = await getWallpaperGift();
+    return normalizeWallpaperGift(item) || pickWallpaperGift();
+  } catch {
+    return pickWallpaperGift();
+  }
+};
+
 const getDrawDigits = (number) =>
   String(number).padStart(3, "0").split("");
 
@@ -99,11 +126,11 @@ const Contact = () => {
       setSlotDigits(getDrawDigits(Math.floor(Math.random() * 1000)));
     }, 90);
 
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       window.clearInterval(spinTimer);
       let nextWallpaper = activeWallpaper;
       if (nextPrize.id === "wallpaper") {
-        nextWallpaper = pickWallpaperGift();
+        nextWallpaper = await fetchWallpaperGift();
         setActiveWallpaper(nextWallpaper);
         setWallpaperLoadStatus("loading");
       }
@@ -169,7 +196,7 @@ const Contact = () => {
   const openPrize = () => {
     if (activePrize.id === "wallpaper") {
       window.open(
-        activeWallpaper?.url || fallbackWallpaper.url,
+        activeWallpaper?.sourceUrl || activeWallpaper?.url || fallbackWallpaper.url,
         "_blank",
         "noopener,noreferrer"
       );
@@ -453,7 +480,13 @@ const Contact = () => {
                       wallpaperLoadStatus === "loaded" ? "is-loaded" : ""
                     }
                     onLoad={() => setWallpaperLoadStatus("loaded")}
-                    onError={() => setWallpaperLoadStatus("loading")}
+                    onError={() => {
+                      const fallback = pickWallpaperGift();
+                      if (resultPoster.image !== fallback.url) {
+                        setActiveWallpaper(fallback);
+                      }
+                      setWallpaperLoadStatus("loading");
+                    }}
                   />
                 )}
               </div>
