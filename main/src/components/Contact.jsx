@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { galleryAlbums } from "../data/galleryAlbums";
 import { getWallpaperGift } from "../services/acgApi";
+import {
+  createSettledDrawState,
+  getDrawDigits,
+} from "./contactLotteryState";
+import { loadWallpaperGift } from "./wallpaperGiftLoader";
 
 const SOURCE_ASSET_BASE =
   "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img";
@@ -78,19 +83,17 @@ const normalizeWallpaperGift = (item) => {
   };
 };
 
-const fetchWallpaperGift = async ({ apiOnly = false } = {}) => {
-  try {
-    const item = await getWallpaperGift({ apiOnly });
-    const wallpaper = normalizeWallpaperGift(item);
-    if (wallpaper) return wallpaper;
-    return apiOnly ? null : pickWallpaperGift();
-  } catch {
-    return apiOnly ? null : pickWallpaperGift();
-  }
+const requestWallpaperGift = async ({ apiOnly = false, signal } = {}) => {
+  const item = await getWallpaperGift({ apiOnly, signal });
+  return normalizeWallpaperGift(item);
 };
 
-const getDrawDigits = (number) =>
-  String(number).padStart(3, "0").split("");
+const fetchWallpaperGift = ({ apiOnly = false } = {}) =>
+  loadWallpaperGift({
+    apiOnly,
+    requestWallpaper: requestWallpaperGift,
+    pickFallback: pickWallpaperGift,
+  });
 
 const getRandomInt = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -137,49 +140,61 @@ const Contact = () => {
     pickWallpaperGift()
   );
   const [wallpaperLoadStatus, setWallpaperLoadStatus] = useState("idle");
+  const drawingRef = useRef(false);
+  const drawRunIdRef = useRef(0);
+  const spinTimerRef = useRef(null);
+  const settleTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      drawRunIdRef.current += 1;
+      drawingRef.current = false;
+      if (spinTimerRef.current) window.clearInterval(spinTimerRef.current);
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+    };
+  }, []);
 
   const drawPrize = (forcedNumber) => {
-    if (isDrawing) return;
+    if (drawingRef.current) return;
+    drawingRef.current = true;
+    const drawRunId = drawRunIdRef.current + 1;
+    drawRunIdRef.current = drawRunId;
+    if (spinTimerRef.current) window.clearInterval(spinTimerRef.current);
+    if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+
     setIsDrawing(true);
     setResultOpen(false);
+    setWallpaperLoadStatus("idle");
     const isForcedDraw = typeof forcedNumber === "number";
     const forcedAPITest = forcedNumber === 999;
     const nextPrize = isForcedDraw
       ? getPrizeByDrawNumber(forcedNumber)
       : getPrizeForAutoDraw(autoDrawCount);
     const nextNumber = isForcedDraw ? forcedNumber : getNumberForPrize(nextPrize);
-    const spinTimer = window.setInterval(() => {
+    const recordId = `${Date.now()}-${nextNumber}`;
+
+    spinTimerRef.current = window.setInterval(() => {
       setSlotDigits(getDrawDigits(Math.floor(Math.random() * 1000)));
     }, 90);
 
-    window.setTimeout(async () => {
-      window.clearInterval(spinTimer);
-      let nextWallpaper = activeWallpaper;
-      if (nextPrize.id === "wallpaper") {
-        nextWallpaper = await fetchWallpaperGift({ apiOnly: forcedAPITest });
-        if (!nextWallpaper) {
-          nextWallpaper = {
-            url: "",
-            previewUrl: "",
-            album: "外部图片接口未配置",
-            label: "请配置 PEXELS_API_KEY 或 PIXABAY_API_KEY",
-            sourceUrl: "https://taozhiyy.top/api/v1/wallpapers/draw?source=api",
-            licenseNote: "外部图片接口暂无可用图片",
-          };
-        }
-        if (forcedAPITest) {
-          nextWallpaper = {
-            ...nextWallpaper,
-            album: nextWallpaper.album || "后端接口图片",
-            label: nextWallpaper.label || "后端接口测试壁纸",
-          };
-        }
-        setActiveWallpaper(nextWallpaper);
-        setWallpaperLoadStatus("loading");
-      }
-      setDrawNumber(nextNumber);
-      setSlotDigits(getDrawDigits(nextNumber));
+    settleTimerRef.current = window.setTimeout(() => {
+      if (drawRunIdRef.current !== drawRunId) return;
+      if (spinTimerRef.current) window.clearInterval(spinTimerRef.current);
+      spinTimerRef.current = null;
+      settleTimerRef.current = null;
+
+      const settledState = createSettledDrawState({
+        prize: nextPrize,
+        number: nextNumber,
+      });
+
+      setDrawNumber(settledState.drawNumber);
+      setSlotDigits(settledState.slotDigits);
       setActivePrize(nextPrize);
+      if (settledState.shouldLoadWallpaper) {
+        setActiveWallpaper(null);
+        setWallpaperLoadStatus(settledState.wallpaperLoadStatus);
+      }
       setDrawCount((count) => count + 1);
       if (!isForcedDraw) {
         setAutoDrawCount((count) => count + 1);
@@ -187,16 +202,41 @@ const Contact = () => {
       setDrawHistory((history) =>
         [
           {
-            id: `${Date.now()}-${nextNumber}`,
+            id: recordId,
             number: nextNumber,
             prize: nextPrize,
-            wallpaper: nextPrize.id === "wallpaper" ? nextWallpaper : null,
+            wallpaper: null,
           },
           ...history,
         ].slice(0, 8)
       );
-      setIsDrawing(false);
-      setResultOpen(true);
+
+      drawingRef.current = false;
+      setIsDrawing(settledState.isDrawing);
+      setResultOpen(settledState.resultOpen);
+
+      if (settledState.shouldLoadWallpaper) {
+        fetchWallpaperGift({ apiOnly: forcedAPITest }).then((wallpaper) => {
+          if (drawRunIdRef.current !== drawRunId) return;
+          const nextWallpaper = forcedAPITest
+            ? {
+                ...wallpaper,
+                album: wallpaper.album || "后端接口图片",
+                label: wallpaper.label || "后端接口测试壁纸",
+              }
+            : wallpaper;
+
+          setActiveWallpaper(nextWallpaper);
+          setWallpaperLoadStatus(nextWallpaper?.url ? "loading" : "unavailable");
+          setDrawHistory((history) =>
+            history.map((record) =>
+              record.id === recordId
+                ? { ...record, wallpaper: nextWallpaper }
+                : record
+            )
+          );
+        });
+      }
     }, 1100);
   };
 
@@ -212,9 +252,11 @@ const Contact = () => {
     setDrawNumber(record.number);
     setSlotDigits(getDrawDigits(record.number));
     setActivePrize(record.prize);
-    if (record.wallpaper) {
-      setActiveWallpaper(record.wallpaper);
-      setWallpaperLoadStatus("loading");
+    if (record.prize.id === "wallpaper") {
+      setActiveWallpaper(record.wallpaper || null);
+      setWallpaperLoadStatus(record.wallpaper?.url ? "loading" : "unavailable");
+    } else {
+      setWallpaperLoadStatus("idle");
     }
     setHistoryOpen(false);
     setResultOpen(true);
@@ -223,7 +265,7 @@ const Contact = () => {
   const resultPoster =
     activePrize.id === "wallpaper"
       ? {
-          image: activeWallpaper?.url || fallbackWallpaper.url,
+          image: activeWallpaper?.url || "",
           label: activeWallpaper?.label || fallbackWallpaper.label,
           meta: activeWallpaper?.album || fallbackWallpaper.album,
         }
@@ -234,7 +276,7 @@ const Contact = () => {
         };
 
   useEffect(() => {
-    if (resultOpen && activePrize.id === "wallpaper") {
+    if (resultOpen && activePrize.id === "wallpaper" && resultPoster.image) {
       setWallpaperLoadStatus("loading");
     }
   }, [activePrize.id, resultOpen, resultPoster.image]);
@@ -255,7 +297,17 @@ const Contact = () => {
   const wallpaperMediaClassName =
     wallpaperLoadStatus === "loaded"
       ? "wallpaper-prize-media is-loaded"
-      : "wallpaper-prize-media is-loading";
+      : wallpaperLoadStatus === "unavailable"
+        ? "wallpaper-prize-media is-unavailable"
+        : "wallpaper-prize-media is-loading";
+  const wallpaperStatusText =
+    wallpaperLoadStatus === "unavailable"
+      ? "暂时没有拿到高清壁纸"
+      : wallpaperLoadingText;
+  const wallpaperStatusDetail =
+    wallpaperLoadStatus === "unavailable"
+      ? activeWallpaper?.licenseNote || "可以稍后再试一次。"
+      : "Loading gallery wallpaper";
 
   return (
     <>
@@ -513,8 +565,8 @@ const Contact = () => {
               <div className={wallpaperMediaClassName}>
                 {wallpaperLoadStatus !== "loaded" && (
                   <div className="wallpaper-prize-loading" aria-live="polite">
-                    <span>{wallpaperLoadingText}</span>
-                    <small>Loading gallery wallpaper</small>
+                    <span>{wallpaperStatusText}</span>
+                    <small>{wallpaperStatusDetail}</small>
                   </div>
                 )}
                 {resultPoster.image && (
@@ -528,10 +580,12 @@ const Contact = () => {
                     onLoad={() => setWallpaperLoadStatus("loaded")}
                     onError={() => {
                       const fallback = pickWallpaperGift();
-                      if (resultPoster.image !== fallback.url) {
+                      if (fallback?.url && resultPoster.image !== fallback.url) {
                         setActiveWallpaper(fallback);
+                        setWallpaperLoadStatus("loading");
+                        return;
                       }
-                      setWallpaperLoadStatus("loading");
+                      setWallpaperLoadStatus("unavailable");
                     }}
                   />
                 )}

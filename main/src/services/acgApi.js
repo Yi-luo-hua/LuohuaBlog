@@ -2,9 +2,10 @@ import { mockBangumiList, mockRadarList } from "../data/acgMock";
 import { apiUrl } from "../lib/apiBase";
 import { asList } from "../lib/asList";
 
-async function fetchJson(path) {
+async function fetchJson(path, { signal } = {}) {
   const res = await fetch(apiUrl(path), {
     headers: { Accept: "application/json" },
+    signal,
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const ct = res.headers.get("content-type") || "";
@@ -34,9 +35,10 @@ export async function getRadarFeed() {
   }
 }
 
-export async function getWallpaperGift({ apiOnly = false } = {}) {
+export async function getWallpaperGift({ apiOnly = false, signal } = {}) {
   const data = await fetchJson(
-    apiOnly ? "/api/v1/wallpapers/draw?source=api" : "/api/v1/wallpapers/draw"
+    apiOnly ? "/api/v1/wallpapers/draw?source=api" : "/api/v1/wallpapers/draw",
+    { signal }
   );
   return data?.item || null;
 }
