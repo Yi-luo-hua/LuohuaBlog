@@ -3,6 +3,7 @@ import unittest
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "deploy" / "remote-install-acg-api.sh"
+SYNC_ENV_SCRIPT_PATH = Path(__file__).resolve().parents[1] / "deploy" / "sync-auth-env.sh"
 
 
 class RemoteInstallAcgApiTests(unittest.TestCase):
@@ -18,6 +19,17 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
     def test_logs_acg_api_status_and_journal_when_wait_fails(self):
         text = SCRIPT_PATH.read_text(encoding="utf-8")
 
+        self.assertIn('systemctl --no-pager --full status "$service"', text)
+        self.assertIn('journalctl -u "$service" -n 80 --no-pager', text)
+
+
+class SyncAuthEnvTests(unittest.TestCase):
+    def test_waits_for_acg_api_after_env_restart(self):
+        text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("wait_for_service_active()", text)
+        self.assertIn("if run_sudo systemctl restart acg-api", text)
+        self.assertIn("wait_for_service_active acg-api 30 1", text)
         self.assertIn('systemctl --no-pager --full status "$service"', text)
         self.assertIn('journalctl -u "$service" -n 80 --no-pager', text)
 

@@ -13,6 +13,36 @@ run_sudo() {
   fi
 }
 
+wait_for_service_active() {
+  local service="${1:?service required}"
+  local attempts="${2:-30}"
+  local delay="${3:-1}"
+  local state=""
+  local i
+
+  for i in $(seq 1 "$attempts"); do
+    state="$(run_sudo systemctl is-active "$service" || true)"
+    if [ "$state" = "active" ]; then
+      echo "$service is active"
+      return 0
+    fi
+    if [ "$state" = "failed" ]; then
+      echo "$service entered failed state; status:" >&2
+      run_sudo systemctl --no-pager --full status "$service" >&2 || true
+      run_sudo journalctl -u "$service" -n 80 --no-pager >&2 || true
+      return 1
+    fi
+
+    echo "$service is $state; waiting..." >&2
+    sleep "$delay"
+  done
+
+  echo "$service did not become active; status:" >&2
+  run_sudo systemctl --no-pager --full status "$service" >&2 || true
+  run_sudo journalctl -u "$service" -n 80 --no-pager >&2 || true
+  return 1
+}
+
 run_sudo mkdir -p "$(dirname "$ENV_FILE")"
 run_sudo touch "$ENV_FILE"
 run_sudo chmod 600 "$ENV_FILE"
@@ -84,9 +114,13 @@ fi
 merge_keys_python
 
 if run_sudo systemctl restart acg-api; then
-  echo "env synced; acg-api restarted"
+  echo "env synced; acg-api restart requested"
 else
   echo "error: acg-api restart failed" >&2
-  run_sudo systemctl status acg-api --no-pager >&2 || true
+  run_sudo systemctl --no-pager --full status acg-api >&2 || true
+  run_sudo journalctl -u acg-api -n 80 --no-pager >&2 || true
+  exit 1
+fi
+if ! wait_for_service_active acg-api 30 1; then
   exit 1
 fi
