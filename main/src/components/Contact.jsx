@@ -140,6 +140,7 @@ const Contact = () => {
     pickWallpaperGift()
   );
   const [wallpaperLoadStatus, setWallpaperLoadStatus] = useState("idle");
+  const [wallpaperOrientation, setWallpaperOrientation] = useState("landscape");
   const drawingRef = useRef(false);
   const drawRunIdRef = useRef(0);
   const spinTimerRef = useRef(null);
@@ -165,6 +166,7 @@ const Contact = () => {
     setIsDrawing(true);
     setResultOpen(false);
     setWallpaperLoadStatus("idle");
+    setWallpaperOrientation("landscape");
     const isForcedDraw = typeof forcedNumber === "number";
     const forcedAPITest = forcedNumber === 999;
     const nextPrize = isForcedDraw
@@ -193,6 +195,7 @@ const Contact = () => {
       setActivePrize(nextPrize);
       if (settledState.shouldLoadWallpaper) {
         setActiveWallpaper(null);
+        setWallpaperOrientation("landscape");
         setWallpaperLoadStatus(settledState.wallpaperLoadStatus);
       }
       setDrawCount((count) => count + 1);
@@ -254,8 +257,10 @@ const Contact = () => {
     setActivePrize(record.prize);
     if (record.prize.id === "wallpaper") {
       setActiveWallpaper(record.wallpaper || null);
+      setWallpaperOrientation("landscape");
       setWallpaperLoadStatus(record.wallpaper?.url ? "loading" : "unavailable");
     } else {
+      setWallpaperOrientation("landscape");
       setWallpaperLoadStatus("idle");
     }
     setHistoryOpen(false);
@@ -277,6 +282,7 @@ const Contact = () => {
 
   useEffect(() => {
     if (resultOpen && activePrize.id === "wallpaper" && resultPoster.image) {
+      setWallpaperOrientation("landscape");
       setWallpaperLoadStatus("loading");
     }
   }, [activePrize.id, resultOpen, resultPoster.image]);
@@ -294,12 +300,24 @@ const Contact = () => {
   };
 
   const drawCode = String(drawNumber).padStart(3, "0");
-  const wallpaperMediaClassName =
+  const wallpaperCardClassName =
+    activePrize.id === "wallpaper"
+      ? [
+          "wallpaper-prize-card is-wallpaper-result",
+          wallpaperOrientation === "portrait" ? "is-portrait-result" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : "wallpaper-prize-card is-text-result";
+  const wallpaperMediaClassName = [
+    "wallpaper-prize-media",
+    wallpaperOrientation === "portrait" ? "is-portrait" : "is-landscape",
     wallpaperLoadStatus === "loaded"
-      ? "wallpaper-prize-media is-loaded"
+      ? "is-loaded"
       : wallpaperLoadStatus === "unavailable"
-        ? "wallpaper-prize-media is-unavailable"
-        : "wallpaper-prize-media is-loading";
+        ? "is-unavailable"
+        : "is-loading",
+  ].join(" ");
   const wallpaperStatusText =
     wallpaperLoadStatus === "unavailable"
       ? "暂时没有拿到高清壁纸"
@@ -542,21 +560,17 @@ const Contact = () => {
             onClick={() => {
               setResultOpen(false);
               setWallpaperLoadStatus("idle");
+              setWallpaperOrientation("landscape");
             }}
           />
-          <div
-            className={
-              activePrize.id === "wallpaper"
-                ? "wallpaper-prize-card is-wallpaper-result"
-                : "wallpaper-prize-card is-text-result"
-            }
-          >
+          <div className={wallpaperCardClassName}>
             <button
               type="button"
               className="wallpaper-prize-close"
               onClick={() => {
                 setResultOpen(false);
                 setWallpaperLoadStatus("idle");
+                setWallpaperOrientation("landscape");
               }}
             >
               关闭
@@ -577,11 +591,23 @@ const Contact = () => {
                     className={
                       wallpaperLoadStatus === "loaded" ? "is-loaded" : ""
                     }
-                    onLoad={() => setWallpaperLoadStatus("loaded")}
+                    onLoad={(event) => {
+                      const { naturalWidth, naturalHeight } =
+                        event.currentTarget;
+                      setWallpaperOrientation(
+                        naturalWidth > 0 &&
+                          naturalHeight > 0 &&
+                          naturalWidth < naturalHeight
+                          ? "portrait"
+                          : "landscape"
+                      );
+                      setWallpaperLoadStatus("loaded");
+                    }}
                     onError={() => {
                       const fallback = pickWallpaperGift();
                       if (fallback?.url && resultPoster.image !== fallback.url) {
                         setActiveWallpaper(fallback);
+                        setWallpaperOrientation("landscape");
                         setWallpaperLoadStatus("loading");
                         return;
                       }

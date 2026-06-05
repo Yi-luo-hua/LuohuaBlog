@@ -4198,6 +4198,19 @@ body {
   box-shadow: 0 0.8rem 1.8rem rgba(62, 45, 54, 0.18);
 }
 
+@media (min-width: 768px) {
+  .wallpaper-prize-card.is-wallpaper-result.is-portrait-result {
+    width: min(94vw, 44rem);
+    max-width: min(94vw, 44rem);
+    max-height: 90vh;
+  }
+
+  .wallpaper-prize-card.is-wallpaper-result.is-portrait-result .wallpaper-prize-media {
+    height: min(82vh, 50rem);
+    min-height: min(62vh, 32rem);
+  }
+}
+
 @media (max-width: 767px) {
   .wallpaper-prize-card.is-wallpaper-result {
     max-width: 94vw;
