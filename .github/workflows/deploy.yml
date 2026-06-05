@@ -125,17 +125,30 @@ jobs:
         env:
           AUTH_OWNER_PASSWORD: ${{ secrets.AUTH_OWNER_PASSWORD }}
           AUTH_OWNER_SECURITY_ANSWER: ${{ secrets.AUTH_OWNER_SECURITY_ANSWER }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
         run: |
-          if [ -z "$AUTH_OWNER_PASSWORD" ] || [ -z "$AUTH_OWNER_SECURITY_ANSWER" ]; then
-            echo "Skip auth env sync: AUTH_OWNER_PASSWORD or AUTH_OWNER_SECURITY_ANSWER not set in repo secrets"
+          if [ -z "$AUTH_OWNER_PASSWORD" ] && [ -z "$AUTH_OWNER_SECURITY_ANSWER" ] && [ -z "$PEXELS_API_KEY" ] && [ -z "$PIXABAY_API_KEY" ]; then
+            echo "Skip env sync: no deployment-managed env secrets are set"
             exit 0
           fi
           SSH_PORT="${UCLOUD_PORT:-22}"
           REMOTE_FRAG="/tmp/taozhiyy-auth.env.frag"
           FRAG=$(mktemp)
           chmod 600 "$FRAG"
-          printf 'AUTH_OWNER_PASSWORD=%s\n' "$AUTH_OWNER_PASSWORD" > "$FRAG"
-          printf 'AUTH_OWNER_SECURITY_ANSWER=%s\n' "$AUTH_OWNER_SECURITY_ANSWER" >> "$FRAG"
+          : > "$FRAG"
+          if [ -n "$AUTH_OWNER_PASSWORD" ]; then
+            printf 'AUTH_OWNER_PASSWORD=%s\n' "$AUTH_OWNER_PASSWORD" >> "$FRAG"
+          fi
+          if [ -n "$AUTH_OWNER_SECURITY_ANSWER" ]; then
+            printf 'AUTH_OWNER_SECURITY_ANSWER=%s\n' "$AUTH_OWNER_SECURITY_ANSWER" >> "$FRAG"
+          fi
+          if [ -n "$PEXELS_API_KEY" ]; then
+            printf 'PEXELS_API_KEY=%s\n' "$PEXELS_API_KEY" >> "$FRAG"
+          fi
+          if [ -n "$PIXABAY_API_KEY" ]; then
+            printf 'PIXABAY_API_KEY=%s\n' "$PIXABAY_API_KEY" >> "$FRAG"
+          fi
           PW_Q=$(printf '%q' "$UCLOUD_SUDO_PASSWORD")
           scp -P "$SSH_PORT" deploy/sync-auth-env.sh \
             "$UCLOUD_USER@$UCLOUD_HOST:/tmp/sync-auth-env.sh"
@@ -180,6 +193,7 @@ jobs:
         run: |
           curl -sf --max-time 20 https://taozhiyy.top/api/v1/health | grep -q '"status":"ok"'
           curl -sf --max-time 20 https://taozhiyy.top/api/v1/wallpapers/draw | grep -q '"item"'
+          curl -sf --max-time 20 'https://taozhiyy.top/api/v1/wallpapers/draw?source=api' | grep -q '"apiOnly":true'
           curl -sf --max-time 20 https://taozhiyy.top/api/chat | grep -q '"remaining"'
           curl -fL --max-time 20 https://taozhiyy.top/ > /dev/null
           curl -fL --max-time 20 https://taozhiyy.top/blog/ > /dev/null

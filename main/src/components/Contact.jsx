@@ -78,12 +78,14 @@ const normalizeWallpaperGift = (item) => {
   };
 };
 
-const fetchWallpaperGift = async () => {
+const fetchWallpaperGift = async ({ apiOnly = false } = {}) => {
   try {
-    const item = await getWallpaperGift();
-    return normalizeWallpaperGift(item) || pickWallpaperGift();
+    const item = await getWallpaperGift({ apiOnly });
+    const wallpaper = normalizeWallpaperGift(item);
+    if (wallpaper) return wallpaper;
+    return apiOnly ? null : pickWallpaperGift();
   } catch {
-    return pickWallpaperGift();
+    return apiOnly ? null : pickWallpaperGift();
   }
 };
 
@@ -154,12 +156,22 @@ const Contact = () => {
       window.clearInterval(spinTimer);
       let nextWallpaper = activeWallpaper;
       if (nextPrize.id === "wallpaper") {
-        nextWallpaper = await fetchWallpaperGift();
+        nextWallpaper = await fetchWallpaperGift({ apiOnly: forcedAPITest });
+        if (!nextWallpaper) {
+          nextWallpaper = {
+            url: "",
+            previewUrl: "",
+            album: "外部图片接口未配置",
+            label: "请配置 PEXELS_API_KEY 或 PIXABAY_API_KEY",
+            sourceUrl: "https://taozhiyy.top/api/v1/wallpapers/draw?source=api",
+            licenseNote: "外部图片接口暂无可用图片",
+          };
+        }
         if (forcedAPITest) {
           nextWallpaper = {
             ...nextWallpaper,
-            album: "后端接口图片",
-            label: "后端接口测试壁纸",
+            album: nextWallpaper.album || "后端接口图片",
+            label: nextWallpaper.label || "后端接口测试壁纸",
           };
         }
         setActiveWallpaper(nextWallpaper);

@@ -301,10 +301,46 @@ func drawWallpaperItem(db *sql.DB) (wallpaperItem, error) {
 	return item, nil
 }
 
+func drawAPIWallpaperItem(db *sql.DB) (wallpaperItem, error) {
+	row := db.QueryRow(
+		`SELECT id, url, preview_url, source, author, source_url, license_note, kind, status, added_at
+		 FROM wallpaper_pool
+		 WHERE status='active' AND kind='api'
+		 ORDER BY RANDOM()
+		 LIMIT 1`,
+	)
+	var item wallpaperItem
+	var addedAt string
+	if err := row.Scan(&item.ID, &item.URL, &item.PreviewURL, &item.Source, &item.Author, &item.SourceURL, &item.LicenseNote, &item.Kind, &item.Status, &addedAt); err != nil {
+		return item, err
+	}
+	if parsed, err := time.Parse(time.RFC3339, addedAt); err == nil {
+		item.AddedAt = parsed
+	}
+	_, _ = db.Exec(`UPDATE wallpaper_pool SET last_drawn_at=? WHERE id=?`, time.Now().UTC().Format(time.RFC3339), item.ID)
+	return item, nil
+}
+
 func fallbackWallpaperItem() wallpaperItem {
 	item := fallbackWallpaperItems[rand.Intn(len(fallbackWallpaperItems))]
 	item.AddedAt = time.Now().UTC()
 	return item
+}
+
+func apiFallbackWallpaperItem() wallpaperItem {
+	seed := time.Now().UTC().Format("20060102150405")
+	return wallpaperItem{
+		ID:          "external-api-placeholder-" + seed,
+		URL:         "https://picsum.photos/seed/taozhiyy-" + seed + "/1920/1080",
+		PreviewURL:  "https://picsum.photos/seed/taozhiyy-" + seed + "/960/540",
+		Source:      "external-api-placeholder",
+		Author:      "Lorem Picsum",
+		SourceURL:   "https://picsum.photos/",
+		LicenseNote: "External API placeholder; configure PEXELS_API_KEY or PIXABAY_API_KEY for licensed provider images.",
+		Kind:        "api",
+		Status:      "active",
+		AddedAt:     time.Now().UTC(),
+	}
 }
 
 func stableWallpaperID(source, upstreamID, imageURL string) string {

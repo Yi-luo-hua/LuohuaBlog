@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Merge auth vars into /opt/acg-api/.env (run on server). Does not remove other keys.
+# Merge deployment-managed vars into /opt/acg-api/.env (run on server). Does not remove other keys.
 set -euo pipefail
 
 ENV_FILE="/opt/acg-api/.env"
@@ -26,7 +26,7 @@ load_fragment_to_env() {
     key="${line%%=*}"
     val="${line#*=}"
     case "$key" in
-      AUTH_OWNER_PASSWORD|AUTH_OWNER_SECURITY_ANSWER|AUTH_SESSION_DAYS)
+      AUTH_OWNER_PASSWORD|AUTH_OWNER_SECURITY_ANSWER|AUTH_SESSION_DAYS|PEXELS_API_KEY|PIXABAY_API_KEY)
         export "$key"="$val"
         ;;
     esac
@@ -36,7 +36,7 @@ load_fragment_to_env() {
 
 merge_keys_python() {
   if ! command -v python3 >/dev/null 2>&1; then
-    echo "error: python3 is required on the server to merge auth env" >&2
+    echo "error: python3 is required on the server to merge env" >&2
     exit 1
   fi
   local src merged
@@ -47,7 +47,7 @@ merge_keys_python() {
 import os, re, sys
 
 src_path, out_path = sys.argv[1], sys.argv[2]
-allowed = ("AUTH_OWNER_PASSWORD", "AUTH_OWNER_SECURITY_ANSWER", "AUTH_SESSION_DAYS")
+allowed = ("AUTH_OWNER_PASSWORD", "AUTH_OWNER_SECURITY_ANSWER", "AUTH_SESSION_DAYS", "PEXELS_API_KEY", "PIXABAY_API_KEY")
 updates = {k: os.environ.get(k, "").strip() for k in allowed}
 updates = {k: v for k, v in updates.items() if v}
 try:
@@ -83,15 +83,10 @@ fi
 
 merge_keys_python
 
-if run_sudo grep -q '^AUTH_OWNER_PASSWORD=' "$ENV_FILE" 2>/dev/null; then
-  if run_sudo systemctl restart acg-api; then
-    echo "auth env synced; acg-api restarted"
-  else
-    echo "error: acg-api restart failed" >&2
-    run_sudo systemctl status acg-api --no-pager >&2 || true
-    exit 1
-  fi
+if run_sudo systemctl restart acg-api; then
+  echo "env synced; acg-api restarted"
 else
-  echo "warn: AUTH_OWNER_PASSWORD not set in $ENV_FILE (skip restart)"
+  echo "error: acg-api restart failed" >&2
+  run_sudo systemctl status acg-api --no-pager >&2 || true
   exit 1
 fi

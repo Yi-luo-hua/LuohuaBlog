@@ -34,7 +34,9 @@ export async function getRadarFeed() {
   }
 }
 
-export async function getWallpaperGift() {
-  const data = await fetchJson("/api/v1/wallpapers/draw");
+export async function getWallpaperGift({ apiOnly = false } = {}) {
+  const data = await fetchJson(
+    apiOnly ? "/api/v1/wallpapers/draw?source=api" : "/api/v1/wallpapers/draw"
+  );
   return data?.item || null;
 }

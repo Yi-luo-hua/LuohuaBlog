@@ -90,6 +90,25 @@ func wallpaperDrawHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	apiOnly := r.URL.Query().Get("source") == "api" || r.URL.Query().Get("apiOnly") == "1"
+	if apiOnly {
+		item, err := drawAPIWallpaperItem(db)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				runWallpaperPoolSync(db)
+				if item, err = drawAPIWallpaperItem(db); err == nil {
+					writeJSON(w, map[string]any{"item": item, "apiOnly": true})
+					return
+				}
+				writeJSON(w, map[string]any{"item": apiFallbackWallpaperItem(), "fallback": true, "apiOnly": true})
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, map[string]any{"item": item, "apiOnly": true})
+		return
+	}
 	item, err := drawWallpaperItem(db)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
