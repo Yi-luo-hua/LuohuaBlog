@@ -54,4 +54,20 @@ func TestMigrateAllAddsParentIDBeforeParentIndexForLegacyGuestbookMessages(t *te
 	if parentIndexCount != 1 {
 		t.Fatalf("expected parent index to be created, got count %d", parentIndexCount)
 	}
+
+	var channelColumnCount int
+	if err := testDB.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('guestbook_messages') WHERE name = 'channel'`).Scan(&channelColumnCount); err != nil {
+		t.Fatal(err)
+	}
+	if channelColumnCount != 1 {
+		t.Fatalf("expected channel column to be added, got count %d", channelColumnCount)
+	}
+
+	var channelIndexCount int
+	if err := testDB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = 'idx_guestbook_messages_channel_status_parent_created'`).Scan(&channelIndexCount); err != nil {
+		t.Fatal(err)
+	}
+	if channelIndexCount != 1 {
+		t.Fatalf("expected channel index to be created, got count %d", channelIndexCount)
+	}
 }

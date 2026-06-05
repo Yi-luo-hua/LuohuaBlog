@@ -4058,6 +4058,7 @@ body {
 
 .wallpaper-prize-card.is-wallpaper-result {
   isolation: isolate;
+  --wallpaper-aspect-ratio: 1.7778;
   width: min(94vw, 76rem);
   max-width: 94vw;
   max-height: 88vh;
@@ -4105,7 +4106,7 @@ body {
   width: 100%;
   max-width: 100%;
   height: 100%;
-  max-height: none;
+  max-height: 100%;
   border-radius: clamp(0.9rem, 2.4vw, 1.45rem);
   object-fit: contain;
   background: rgba(255, 250, 241, 0.42);
@@ -4118,9 +4119,14 @@ body {
   position: relative;
   display: grid;
   place-items: center;
-  width: 100%;
-  height: min(76vh, 40.5rem);
-  min-height: min(54vh, 25rem);
+  width: min(
+    calc(min(82vh, 44rem) * var(--wallpaper-aspect-ratio)),
+    calc(94vw - clamp(1.2rem, 4vw, 3rem))
+  );
+  aspect-ratio: var(--wallpaper-aspect-ratio);
+  max-width: 100%;
+  height: auto;
+  max-height: min(82vh, 44rem);
   overflow: hidden;
   border-radius: clamp(0.9rem, 2.4vw, 1.45rem);
   background:
@@ -4200,14 +4206,19 @@ body {
 
 @media (min-width: 768px) {
   .wallpaper-prize-card.is-wallpaper-result.is-portrait-result {
-    width: min(94vw, 44rem);
-    max-width: min(94vw, 44rem);
+    width: min(94vw, 56rem);
+    max-width: min(94vw, 56rem);
     max-height: 90vh;
   }
 
   .wallpaper-prize-card.is-wallpaper-result.is-portrait-result .wallpaper-prize-media {
-    height: min(82vh, 50rem);
-    min-height: min(62vh, 32rem);
+    width: min(
+      calc(min(84vh, 52rem) * var(--wallpaper-aspect-ratio)),
+      calc(94vw - clamp(1.2rem, 4vw, 3rem))
+    );
+    aspect-ratio: var(--wallpaper-aspect-ratio);
+    height: auto;
+    max-height: min(84vh, 52rem);
   }
 }
 

@@ -15,33 +15,33 @@ const prizes = [
   {
     id: "homepage",
     icon: "HP",
-    label: "首页来源",
-    title: "首页学习来源",
+    label: "Homepage Source",
+    title: "Homepage Learning Reference",
     description:
-      "早期首页参考了 Adrian Hajdin 的获奖网站教程，随后不断调整成桃之夭夭自己的视觉语言。",
+      "The early homepage learned from Adrian Hajdin's award-winning website tutorial, then kept being reshaped into Taozhiyy's own visual language.",
     href: "https://github.com/adrianhajdin/award-winning-website#introduction",
     visual: `${SOURCE_ASSET_BASE}/swordman.webp`,
-    action: "打开参考",
+    action: "Open reference",
   },
   {
     id: "blog",
     icon: "BG",
-    label: "博客来源",
-    title: "博客子页来源",
+    label: "Blog Source",
+    title: "Blog Subpage Source",
     description:
-      "博客子页基于 Hexo 与 Butterfly 主题搭建，主题用法、配置和署名说明可查看 Butterfly 官方文档。",
+      "The blog subpage is based on Hexo and the Butterfly theme. For theme usage, configuration, and attribution details, please refer to Butterfly's official documentation.",
     href: "https://butterfly.js.org/",
     visual: galleryAlbums[1]?.cover || galleryAlbums[0]?.cover || "",
-    action: "查看 Butterfly",
+    action: "Visit Butterfly",
   },
   {
     id: "wallpaper",
     icon: "WP",
-    label: "高清壁纸",
-    title: "一张图库壁纸",
+    label: "Wallpaper Gift",
+    title: "A Gallery Wallpaper Gift",
     description:
-      "你抽到了一张来自图库档案的高清图片，可以打开原图、保存下来，或者让它在屏幕上停一会儿。",
-    action: "打开壁纸",
+      "You drew a random high-resolution image from the Gallery archive. Open it full size, download it, or simply keep it on screen for a moment.",
+    action: "Open wallpaper",
   },
 ];
 
@@ -55,10 +55,11 @@ const wallpaperPool = galleryAlbums.flatMap((album) =>
 
 const fallbackWallpaper = {
   url: galleryAlbums[0]?.cover || "",
-  album: galleryAlbums[0]?.title || "图库",
-  label: "图库壁纸",
+  album: galleryAlbums[0]?.title || "Gallery",
+  label: "Gallery Gift",
 };
 
+const DEFAULT_WALLPAPER_ASPECT_RATIO = 16 / 9;
 const wallpaperLoadingText = "\u9ad8\u6e05\u58c1\u7eb8\u6b63\u5728\u8def\u4e0a...";
 
 const pickWallpaperGift = () => {
@@ -73,13 +74,13 @@ const normalizeWallpaperGift = (item) => {
     previewUrl: item.previewUrl || item.url,
     album:
       item.source === "pexels"
-        ? "Pexels 授权壁纸"
+        ? "Pexels Licensed Wallpaper"
         : item.source === "pixabay"
-          ? "Pixabay 授权壁纸"
-          : item.source || "授权壁纸池",
-    label: item.author ? `作者 ${item.author}` : "授权壁纸",
+          ? "Pixabay Licensed Wallpaper"
+          : item.source || "Legal Wallpaper Pool",
+    label: item.author ? `Photo by ${item.author}` : "Legal Wallpaper Gift",
     sourceUrl: item.sourceUrl || item.url,
-    licenseNote: item.licenseNote || "授权来源壁纸",
+    licenseNote: item.licenseNote || "Licensed source wallpaper",
   };
 };
 
@@ -141,6 +142,9 @@ const Contact = () => {
   );
   const [wallpaperLoadStatus, setWallpaperLoadStatus] = useState("idle");
   const [wallpaperOrientation, setWallpaperOrientation] = useState("landscape");
+  const [wallpaperAspectRatio, setWallpaperAspectRatio] = useState(
+    DEFAULT_WALLPAPER_ASPECT_RATIO
+  );
   const drawingRef = useRef(false);
   const drawRunIdRef = useRef(0);
   const spinTimerRef = useRef(null);
@@ -167,6 +171,7 @@ const Contact = () => {
     setResultOpen(false);
     setWallpaperLoadStatus("idle");
     setWallpaperOrientation("landscape");
+    setWallpaperAspectRatio(DEFAULT_WALLPAPER_ASPECT_RATIO);
     const isForcedDraw = typeof forcedNumber === "number";
     const forcedAPITest = forcedNumber === 999;
     const nextPrize = isForcedDraw
@@ -196,6 +201,7 @@ const Contact = () => {
       if (settledState.shouldLoadWallpaper) {
         setActiveWallpaper(null);
         setWallpaperOrientation("landscape");
+        setWallpaperAspectRatio(DEFAULT_WALLPAPER_ASPECT_RATIO);
         setWallpaperLoadStatus(settledState.wallpaperLoadStatus);
       }
       setDrawCount((count) => count + 1);
@@ -258,9 +264,11 @@ const Contact = () => {
     if (record.prize.id === "wallpaper") {
       setActiveWallpaper(record.wallpaper || null);
       setWallpaperOrientation("landscape");
+      setWallpaperAspectRatio(DEFAULT_WALLPAPER_ASPECT_RATIO);
       setWallpaperLoadStatus(record.wallpaper?.url ? "loading" : "unavailable");
     } else {
       setWallpaperOrientation("landscape");
+      setWallpaperAspectRatio(DEFAULT_WALLPAPER_ASPECT_RATIO);
       setWallpaperLoadStatus("idle");
     }
     setHistoryOpen(false);
@@ -283,6 +291,7 @@ const Contact = () => {
   useEffect(() => {
     if (resultOpen && activePrize.id === "wallpaper" && resultPoster.image) {
       setWallpaperOrientation("landscape");
+      setWallpaperAspectRatio(DEFAULT_WALLPAPER_ASPECT_RATIO);
       setWallpaperLoadStatus("loading");
     }
   }, [activePrize.id, resultOpen, resultPoster.image]);
@@ -318,6 +327,9 @@ const Contact = () => {
         ? "is-unavailable"
         : "is-loading",
   ].join(" ");
+  const wallpaperFrameStyle = {
+    "--wallpaper-aspect-ratio": wallpaperAspectRatio,
+  };
   const wallpaperStatusText =
     wallpaperLoadStatus === "unavailable"
       ? "暂时没有拿到高清壁纸"
@@ -325,7 +337,7 @@ const Contact = () => {
   const wallpaperStatusDetail =
     wallpaperLoadStatus === "unavailable"
       ? activeWallpaper?.licenseNote || "可以稍后再试一次。"
-      : "正在加载图库壁纸";
+      : "Loading gallery wallpaper";
 
   return (
     <>
@@ -341,7 +353,7 @@ const Contact = () => {
             <div className="source-machine-crown" aria-hidden="true" />
             <div className="source-arcade-marquee">
               <span />
-              <strong>来源抽奖机</strong>
+              <strong>SOURCE SLOT</strong>
               <span />
             </div>
 
@@ -360,7 +372,7 @@ const Contact = () => {
                         key={`${index}-${drawCount}`}
                       >
                         <span>{digit}</span>
-                        <strong>{["百位", "十位", "个位"][index]}</strong>
+                        <strong>{["HUN", "TEN", "ONE"][index]}</strong>
                       </div>
                     ))}
                   </div>
@@ -378,12 +390,12 @@ const Contact = () => {
                   <button
                     type="button"
                     onClick={() => drawPrize()}
-                    aria-label="拉杆抽取来源奖品"
+                    aria-label="Pull to draw a source prize"
                   >
                     <span className="source-lever-stick" />
                     <span className="source-lever-ball" />
                   </button>
-                  <p>拉杆</p>
+                  <p>PULL</p>
                 </div>
 
                 <button
@@ -392,22 +404,22 @@ const Contact = () => {
                   onClick={() => drawPrize()}
                   disabled={isDrawing}
                 >
-                  {isDrawing ? "抽取中" : "开始"}
+                  {isDrawing ? "DRAWING" : "START"}
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="source-outer-tools" aria-label="来源抽奖工具">
+        <div className="source-outer-tools" aria-label="Source slot tools">
           <button
             type="button"
             className={manualOpen ? "source-manual-book is-open" : "source-manual-book"}
             onClick={() => setManualOpen((open) => !open)}
             aria-expanded={manualOpen}
           >
-            <span>使用</span>
-            <strong>说明</strong>
+            <span>USER</span>
+            <strong>MANUAL</strong>
           </button>
 
           <div className="source-tool-dock">
@@ -417,7 +429,7 @@ const Contact = () => {
               onClick={() => setHistoryOpen((open) => !open)}
               aria-expanded={historyOpen}
             >
-              <span>历史</span>
+              <span>History</span>
               <strong>{drawHistory.length}</strong>
             </button>
             <button
@@ -426,7 +438,7 @@ const Contact = () => {
               onClick={() => setCheatOpen((open) => !open)}
               aria-expanded={cheatOpen}
             >
-              <span>测试</span>
+              <span>Cheat</span>
               <strong>000</strong>
             </button>
           </div>
@@ -440,7 +452,7 @@ const Contact = () => {
           <button
             type="button"
             className="source-manual-backdrop"
-            aria-label="关闭使用说明"
+            aria-label="Close source manual"
             onClick={() => setManualOpen(false)}
           />
           <div className="source-manual-result-card">
@@ -449,7 +461,7 @@ const Contact = () => {
               className="source-tool-close"
               onClick={() => setManualOpen(false)}
             >
-              关闭
+              Close
             </button>
             <div className="source-manual-page">
               <p>使用说明</p>
@@ -469,7 +481,7 @@ const Contact = () => {
           <button
             type="button"
             className="source-tool-backdrop source-history-backdrop"
-            aria-label="关闭历史记录"
+            aria-label="Close history records"
             onClick={() => setHistoryOpen(false)}
           />
           <div className="source-tool-result-card source-history-result-card">
@@ -478,10 +490,10 @@ const Contact = () => {
               className="source-tool-close"
               onClick={() => setHistoryOpen(false)}
             >
-              关闭
+              Close
             </button>
             <div className="source-history-card">
-              <p>历史记录</p>
+              <p>History Records</p>
               {drawHistory.length ? (
                 <div className="source-history-list">
                   {drawHistory.map((record) => (
@@ -497,7 +509,7 @@ const Contact = () => {
                 </div>
               ) : (
                 <span className="source-history-empty">
-                  还没有抽奖记录。拉一次杆，编号就会存到这里。
+                  No draws yet. Pull the lever once and the number will be stored here.
                 </span>
               )}
             </div>
@@ -510,7 +522,7 @@ const Contact = () => {
           <button
             type="button"
             className="source-tool-backdrop source-cheat-backdrop"
-            aria-label="关闭测试模式"
+            aria-label="Close cheat mode"
             onClick={() => setCheatOpen(false)}
           />
           <div className="source-tool-result-card source-cheat-result-card">
@@ -519,10 +531,10 @@ const Contact = () => {
               className="source-tool-close"
               onClick={() => setCheatOpen(false)}
             >
-              关闭
+              Close
             </button>
             <div className="source-cheat-card">
-              <p>测试模式</p>
+              <p>Cheat Mode</p>
               <span className="source-cheat-note">
                 输入任意三位数字，可直接检查它对应的奖品结果。
               </span>
@@ -544,7 +556,7 @@ const Contact = () => {
                 }}
                 disabled={isDrawing || cheatCode.length === 0}
               >
-                设定数字
+                Set Number
               </button>
             </div>
           </div>
@@ -556,14 +568,14 @@ const Contact = () => {
           <button
             type="button"
             className="wallpaper-prize-backdrop"
-            aria-label="关闭抽奖结果"
+            aria-label="Close source result"
             onClick={() => {
               setResultOpen(false);
               setWallpaperLoadStatus("idle");
               setWallpaperOrientation("landscape");
             }}
           />
-          <div className={wallpaperCardClassName}>
+          <div className={wallpaperCardClassName} style={wallpaperFrameStyle}>
             <button
               type="button"
               className="wallpaper-prize-close"
@@ -573,7 +585,7 @@ const Contact = () => {
                 setWallpaperOrientation("landscape");
               }}
             >
-              关闭
+              Close
             </button>
             {activePrize.id === "wallpaper" ? (
               <div className={wallpaperMediaClassName}>
@@ -594,6 +606,11 @@ const Contact = () => {
                     onLoad={(event) => {
                       const { naturalWidth, naturalHeight } =
                         event.currentTarget;
+                      const nextAspectRatio =
+                        naturalWidth > 0 && naturalHeight > 0
+                          ? naturalWidth / naturalHeight
+                          : DEFAULT_WALLPAPER_ASPECT_RATIO;
+                      setWallpaperAspectRatio(nextAspectRatio);
                       setWallpaperOrientation(
                         naturalWidth > 0 &&
                           naturalHeight > 0 &&
@@ -608,6 +625,7 @@ const Contact = () => {
                       if (fallback?.url && resultPoster.image !== fallback.url) {
                         setActiveWallpaper(fallback);
                         setWallpaperOrientation("landscape");
+                        setWallpaperAspectRatio(DEFAULT_WALLPAPER_ASPECT_RATIO);
                         setWallpaperLoadStatus("loading");
                         return;
                       }
@@ -618,10 +636,10 @@ const Contact = () => {
               </div>
             ) : (
               <>
-                <p>抽奖结果</p>
+                <p>Source Result</p>
                 <h3>{activePrize.title}</h3>
                 <span>
-                  编号 {drawCode} · {resultPoster.meta}
+                  No. {drawCode} · {resultPoster.meta}
                 </span>
                 <p className="wallpaper-prize-description">
                   {activePrize.description}
@@ -631,7 +649,7 @@ const Contact = () => {
                     {activePrize.action}
                   </button>
                   <button type="button" onClick={() => setResultOpen(false)}>
-                    继续浏览
+                    Keep Reading
                   </button>
                 </div>
               </>

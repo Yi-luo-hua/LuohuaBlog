@@ -14,6 +14,8 @@ const (
 	guestbookNickMax    = 12
 	guestbookContentMax = 300
 	guestbookDupWindow  = 60 * time.Second
+	guestbookChannelMain = "guestbook"
+	guestbookChannelLink = "friends"
 )
 
 type guestbookMessageRow struct {
@@ -86,9 +88,25 @@ func writeGuestbookErr(w http.ResponseWriter, status int, code, msg string) {
 	writeJSONStatus(w, status, map[string]any{"error": code, "message": msg})
 }
 
+func normalizeGuestbookChannel(raw string) string {
+	switch strings.TrimSpace(raw) {
+	case "", guestbookChannelMain:
+		return guestbookChannelMain
+	case guestbookChannelLink:
+		return guestbookChannelLink
+	default:
+		return ""
+	}
+}
+
 func guestbookListHandler(w http.ResponseWriter, r *http.Request) {
 	page := 1
 	pageSize := 20
+	channel := normalizeGuestbookChannel(r.URL.Query().Get("channel"))
+	if channel == "" {
+		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_CHANNEL", "留言分区不正确")
+		return
+	}
 	if v := r.URL.Query().Get("page"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			page = n
@@ -104,19 +122,19 @@ func guestbookListHandler(w http.ResponseWriter, r *http.Request) {
 	admin := isAdminUser(cu)
 
 	var total int
-	countQ := `SELECT COUNT(*) FROM guestbook_messages WHERE parent_id = 0 AND status = 'visible'`
+	countQ := `SELECT COUNT(*) FROM guestbook_messages WHERE channel = ? AND parent_id = 0 AND status = 'visible'`
 	listQ := `SELECT id, parent_id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
-	          FROM guestbook_messages WHERE parent_id = 0 AND status = 'visible'`
+	          FROM guestbook_messages WHERE channel = ? AND parent_id = 0 AND status = 'visible'`
 	if admin {
-		countQ = `SELECT COUNT(*) FROM guestbook_messages WHERE parent_id = 0 AND status IN ('visible','hidden')`
+		countQ = `SELECT COUNT(*) FROM guestbook_messages WHERE channel = ? AND parent_id = 0 AND status IN ('visible','hidden')`
 		listQ = `SELECT id, parent_id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
-		         FROM guestbook_messages WHERE parent_id = 0 AND status IN ('visible','hidden')`
+		         FROM guestbook_messages WHERE channel = ? AND parent_id = 0 AND status IN ('visible','hidden')`
 	}
-	if err := db.QueryRow(countQ).Scan(&total); err != nil {
+	if err := db.QueryRow(countQ, channel).Scan(&total); err != nil {
 		writeGuestbookErr(w, http.StatusInternalServerError, "SERVER_ERROR", "加载留言失败")
 		return
 	}
-	rows, err := db.Query(listQ+` ORDER BY id DESC LIMIT ? OFFSET ?`, pageSize, offset)
+	rows, err := db.Query(listQ+` ORDER BY id DESC LIMIT ? OFFSET ?`, channel, pageSize, offset)
 	if err != nil {
 		writeGuestbookErr(w, http.StatusInternalServerError, "SERVER_ERROR", "加载留言失败")
 		return
@@ -135,7 +153,7 @@ func guestbookListHandler(w http.ResponseWriter, r *http.Request) {
 		parentIDs = append(parentIDs, item.ID)
 	}
 	if len(parentIDs) > 0 {
-		replies, err := loadGuestbookReplies(parentIDs, admin)
+		replies, err := loadGuestbookReplies(parentIDs, admin, channel)
 		if err != nil {
 			writeGuestbookErr(w, http.StatusInternalServerError, "SERVER_ERROR", "加载留言失败")
 			return
@@ -157,6 +175,7 @@ func guestbookListHandler(w http.ResponseWriter, r *http.Request) {
 		"page":     page,
 		"pageSize": pageSize,
 		"total":    total,
+		"channel":  channel,
 		"isAdmin":  admin,
 	})
 }
@@ -187,19 +206,20 @@ func scanGuestbookRow(rows *sql.Rows, admin bool) (guestbookMessageRow, error) {
 	return item, nil
 }
 
-func loadGuestbookReplies(parentIDs []int64, admin bool) ([]guestbookMessageRow, error) {
+func loadGuestbookReplies(parentIDs []int64, admin bool, channel string) ([]guestbookMessageRow, error) {
 	placeholders := make([]string, 0, len(parentIDs))
-	args := make([]any, 0, len(parentIDs))
+	args := make([]any, 0, len(parentIDs)+1)
+	args = append(args, channel)
 	for _, id := range parentIDs {
 		placeholders = append(placeholders, "?")
 		args = append(args, id)
 	}
 
 	listQ := `SELECT id, parent_id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
-	          FROM guestbook_messages WHERE parent_id IN (` + strings.Join(placeholders, ",") + `) AND status = 'visible'`
+	          FROM guestbook_messages WHERE channel = ? AND parent_id IN (` + strings.Join(placeholders, ",") + `) AND status = 'visible'`
 	if admin {
 		listQ = `SELECT id, parent_id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
-		         FROM guestbook_messages WHERE parent_id IN (` + strings.Join(placeholders, ",") + `) AND status IN ('visible','hidden')`
+		         FROM guestbook_messages WHERE channel = ? AND parent_id IN (` + strings.Join(placeholders, ",") + `) AND status IN ('visible','hidden')`
 	}
 
 	rows, err := db.Query(listQ+` ORDER BY id ASC`, args...)
@@ -225,9 +245,15 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		Nickname string `json:"nickname"`
 		Content  string `json:"content"`
 		ParentID int64  `json:"parentId"`
+		Channel  string `json:"channel"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_JSON", "请求格式不正确")
+		return
+	}
+	channel := normalizeGuestbookChannel(body.Channel)
+	if channel == "" {
+		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_CHANNEL", "留言分区不正确")
 		return
 	}
 	content := strings.TrimSpace(body.Content)
@@ -243,7 +269,7 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_PARENT", "回复楼层不正确")
 		return
 	}
-	if body.ParentID > 0 && !guestbookParentExists(body.ParentID, isAdminUser(cu)) {
+	if body.ParentID > 0 && !guestbookParentExists(body.ParentID, isAdminUser(cu), channel) {
 		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_PARENT", "要回复的留言不存在或不可见")
 		return
 	}
@@ -296,9 +322,9 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := db.Exec(
 		`INSERT INTO guestbook_messages
-		 (user_id, nickname, avatar, content, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'visible', ?, ?, ?, ?)`,
-		userID, nickname, avatar, content, contentHash, ipHash, ipRegion, ipMasked, uaHash,
+		 (user_id, nickname, avatar, channel, content, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'visible', ?, ?, ?, ?)`,
+		userID, nickname, avatar, channel, content, contentHash, ipHash, ipRegion, ipMasked, uaHash,
 		body.ParentID, isLogin, isAdminUser, now, now,
 	)
 	if err != nil {
@@ -324,16 +350,16 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func guestbookParentExists(parentID int64, admin bool) bool {
+func guestbookParentExists(parentID int64, admin bool, channel string) bool {
 	if parentID <= 0 {
 		return true
 	}
 	var count int
-	query := `SELECT COUNT(*) FROM guestbook_messages WHERE id = ? AND status = 'visible'`
+	query := `SELECT COUNT(*) FROM guestbook_messages WHERE id = ? AND channel = ? AND status = 'visible'`
 	if admin {
-		query = `SELECT COUNT(*) FROM guestbook_messages WHERE id = ? AND status IN ('visible','hidden')`
+		query = `SELECT COUNT(*) FROM guestbook_messages WHERE id = ? AND channel = ? AND status IN ('visible','hidden')`
 	}
-	_ = db.QueryRow(query, parentID).Scan(&count)
+	_ = db.QueryRow(query, parentID, channel).Scan(&count)
 	return count > 0
 }
 

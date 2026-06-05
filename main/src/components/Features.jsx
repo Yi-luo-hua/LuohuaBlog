@@ -40,10 +40,10 @@ const ARCHIVE_ITEMS = [
   },
   {
     index: "05",
-    title: "更多内容准备中",
-    subtitle: "片段五",
+    title: "More coming soon.",
+    subtitle: "Feature Five",
     src: `${COS}/videos/feature-5.mp4`,
-    note: "更多内容正在慢慢准备中。",
+    note: "More coming soon.",
   },
 ];
 
@@ -441,7 +441,7 @@ const Features = () => {
                 片段 05
               </p>
               <h1 className="bento-title max-w-72 text-3xl font-black leading-none md:text-5xl">
-                更多内容<br />准备中
+                M<b>o</b>re co<b>m</b>ing s<b>o</b>on.
               </h1>
               <TiLocationArrow className="m-5 scale-[5] self-end text-[#ff8fab]" />
             </div>

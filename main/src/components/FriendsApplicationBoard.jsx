@@ -12,6 +12,8 @@ import {
 } from "../services/guestbookMessagesApi";
 import { normalizeFriendsThreads } from "./friendsApplicationThreads";
 
+const FRIENDS_CHANNEL = "friends";
+
 const FRIEND_COMMENT_PLACEHOLDER =
   "写下你的留言、站点介绍，或者想对桃之夭夭说的话...";
 
@@ -109,7 +111,9 @@ const FriendsApplicationBoard = () => {
 
     const loadEntries = async () => {
       setLoading(true);
-      const { ok, data } = await fetchGuestbookMessages(1, 30);
+      const { ok, data } = await fetchGuestbookMessages(1, 30, {
+        channel: FRIENDS_CHANNEL,
+      });
       if (cancelled) return;
       if (!ok) {
         setEntries([]);
@@ -143,9 +147,12 @@ const FriendsApplicationBoard = () => {
     setNotice("");
     setError("");
 
-    const { ok, data } = await postGuestbookMessage({
-      content: content.trim(),
-    });
+    const { ok, data } = await postGuestbookMessage(
+      {
+        content: content.trim(),
+      },
+      { channel: FRIENDS_CHANNEL }
+    );
 
     setSubmitting(false);
 
@@ -180,7 +187,9 @@ const FriendsApplicationBoard = () => {
     setNotice("");
     setError("");
 
-    const { ok, data } = await postGuestbookReply(parentId, nextContent);
+    const { ok, data } = await postGuestbookReply(parentId, nextContent, {
+      channel: FRIENDS_CHANNEL,
+    });
 
     setReplySubmittingId(null);
 

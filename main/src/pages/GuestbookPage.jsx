@@ -10,6 +10,8 @@ import {
   postGuestbookMessage,
 } from "../services/guestbookMessagesApi";
 
+const GUESTBOOK_CHANNEL = "guestbook";
+
 const cardTone = (item) => {
   if (item.isAdminUser) return "admin";
   if (item.isLoginUser) return "login";
@@ -61,7 +63,9 @@ const GuestbookPage = () => {
     if (append) setLoadingMore(true);
     else setLoading(true);
     setError("");
-    const { ok, data } = await fetchGuestbookMessages(p, pageSize);
+    const { ok, data } = await fetchGuestbookMessages(p, pageSize, {
+      channel: GUESTBOOK_CHANNEL,
+    });
     if (!ok) {
       setError(data.message || "加载失败");
       setLoading(false);
@@ -89,7 +93,9 @@ const GuestbookPage = () => {
     const payload = user
       ? { content: content.trim() }
       : { nickname: nickname.trim(), content: content.trim() };
-    const { ok, status, data } = await postGuestbookMessage(payload);
+    const { ok, status, data } = await postGuestbookMessage(payload, {
+      channel: GUESTBOOK_CHANNEL,
+    });
     setSubmitting(false);
     if (!ok) {
       if (data.error === "RATE_LIMITED") {

@@ -51,14 +51,14 @@ const FriendsPage = () => {
       />
 
       <div className="relative mx-auto max-w-6xl px-4 md:px-6">
-        <header className="mx-auto max-w-3xl text-center">
+        <header className="mx-auto max-w-5xl text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#B76E79]">
             Friends Page
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-[#2B2B2B] md:text-6xl">
             友链
           </h1>
-          <p className="mt-5 text-base leading-8 text-[#6B7280] md:text-lg">
+          <p className="mt-5 text-sm leading-8 text-[#6B7280] md:text-base lg:text-lg lg:whitespace-nowrap">
             风会替信纸赶路，链接会替心意停留。若你也愿意把小屋的灯留给远方的人，这里便是交换名字的地方。
           </p>
         </header>

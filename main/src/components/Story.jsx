@@ -52,12 +52,12 @@ const FloatingImage = () => {
     >
       <div className="flex size-full flex-col items-center py-8 pb-20 md:py-10 md:pb-24">
         <p className="font-general text-sm uppercase tracking-[0.35em] text-[#b76e79] md:text-[10px]">
-          后续计划
+          FOLLOW-UP PLAN
         </p>
 
         <div className="relative size-full">
           <AnimatedTitle
-            title="敬<b>请</b>期待 <br /> 更多内容"
+            title="L<b>O</b>OK FORWARD <br /> TO IT TO THE F<b>U</b>LLEST"
             containerClass="mt-5 pointer-events-none relative z-10 !text-[#241322]"
           />
 
@@ -65,7 +65,7 @@ const FloatingImage = () => {
             <div className="story-note-tape story-note-tape-left" />
             <div className="story-note-tape story-note-tape-right" />
             <div className="story-img-mask">
-              <div className="story-note-label">后续便签</div>
+              <div className="story-note-label">FOLLOW-UP NOTE</div>
               <div className="story-img-content">
                 <img
                   ref={frameRef}
@@ -109,14 +109,14 @@ const FloatingImage = () => {
         </div>
 
         <div className="relative z-30 -mt-48 flex w-full justify-center px-6 md:-mt-72 md:me-36 md:justify-end">
-            <div className="story-envelope-cta">
-              <div className="story-envelope-flap" aria-hidden="true" />
-            <div className="story-envelope-stamp">信</div>
+          <div className="story-envelope-cta">
+            <div className="story-envelope-flap" aria-hidden="true" />
+            <div className="story-envelope-stamp">POST</div>
             <div className="story-envelope-letter">
-              <span className="story-envelope-kicker">给来访者的一封信</span>
+              <span className="story-envelope-kicker">A LETTER TO VISITORS</span>
               <p>
-                谢谢你看到这里。如果有想提醒、想纠正、或只是想打个招呼的话，
-                都欢迎去留言板留下小纸条。
+                Thank you for watching. If there are any areas that need
+                correction, you are sincerely invited to provide feedback below.
               </p>
             </div>
             <div className="story-envelope-pocket" aria-hidden="true">
@@ -126,7 +126,7 @@ const FloatingImage = () => {
 
             <Button
               id="realm-btn"
-              title="去留言"
+              title="LEAVE A MESSAGE"
               containerClass="story-envelope-btn"
               to="/guestbook"
             />
