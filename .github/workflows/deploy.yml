@@ -2,6 +2,8 @@ name: Deploy Taozhiyy To UCloud
 
 run-name: Deploy ${{ github.sha }}
 
+# Touch this workflow file when a manual push-triggered redeploy is needed.
+
 on:
   push:
     branches: [master]
