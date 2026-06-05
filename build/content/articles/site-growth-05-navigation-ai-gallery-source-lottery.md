@@ -340,6 +340,8 @@ minutes: 28
 | 图片加载完成 | 高清壁纸在卡片中淡入 |
 | 图片临时失败 | 保持加载提示，而不是显示空壳 |
 
+第一次补占位后，我又继续加固了一次：抽到壁纸结果的那一刻就同步把卡片状态重置为 `loading`，从历史记录重新打开壁纸时也重置为 `loading`，图片地址变化时强制重新挂载图片元素。这样就不会沿用上一张图的 `loaded` 状态，也不会因为图片地址为空而出现一个空 `<img>`。
+
 这也让我更确定一件事：  
 一个原创交互不只要有概念，还要照顾异常状态。否则越有设计感的组件，坏掉时反而越容易让人误解。
 
@@ -797,6 +799,8 @@ The logic is now more stable:
 | image loading | “高清壁纸正在路上...” is shown |
 | image loaded | the wallpaper fades into the card |
 | temporary image failure | the loading message remains instead of an empty shell |
+
+After the first placeholder attempt, I strengthened the logic again: the card is reset to `loading` at the exact moment a wallpaper result is drawn, history replay of a wallpaper result also resets to `loading`, and every new image URL remounts the image element. This prevents the modal from reusing a previous `loaded` state, and it also avoids rendering an empty `<img>` when the image URL is missing.
 
 This also makes one thing clearer to me:  
 an original interaction needs not only a concept, but also careful handling of edge states. Otherwise, the more designed a component is, the more confusing it becomes when something fails.

@@ -53,6 +53,8 @@ const fallbackWallpaper = {
   label: "Gallery Gift",
 };
 
+const wallpaperLoadingText = "\u9ad8\u6e05\u58c1\u7eb8\u6b63\u5728\u8def\u4e0a...";
+
 const pickWallpaperGift = () => {
   if (!wallpaperPool.length) return fallbackWallpaper;
   return wallpaperPool[Math.floor(Math.random() * wallpaperPool.length)];
@@ -103,6 +105,7 @@ const Contact = () => {
       if (nextPrize.id === "wallpaper") {
         nextWallpaper = pickWallpaperGift();
         setActiveWallpaper(nextWallpaper);
+        setWallpaperLoadStatus("loading");
       }
       setDrawNumber(nextNumber);
       setSlotDigits(getDrawDigits(nextNumber));
@@ -136,7 +139,10 @@ const Contact = () => {
     setDrawNumber(record.number);
     setSlotDigits(getDrawDigits(record.number));
     setActivePrize(record.prize);
-    if (record.wallpaper) setActiveWallpaper(record.wallpaper);
+    if (record.wallpaper) {
+      setActiveWallpaper(record.wallpaper);
+      setWallpaperLoadStatus("loading");
+    }
     setHistoryOpen(false);
     setResultOpen(true);
   };
@@ -173,6 +179,10 @@ const Contact = () => {
   };
 
   const drawCode = String(drawNumber).padStart(3, "0");
+  const wallpaperMediaClassName =
+    wallpaperLoadStatus === "loaded"
+      ? "wallpaper-prize-media is-loaded"
+      : "wallpaper-prize-media is-loading";
 
   return (
     <>
@@ -404,7 +414,10 @@ const Contact = () => {
             type="button"
             className="wallpaper-prize-backdrop"
             aria-label="Close source result"
-            onClick={() => setResultOpen(false)}
+            onClick={() => {
+              setResultOpen(false);
+              setWallpaperLoadStatus("idle");
+            }}
           />
           <div
             className={
@@ -416,29 +429,33 @@ const Contact = () => {
             <button
               type="button"
               className="wallpaper-prize-close"
-              onClick={() => setResultOpen(false)}
+              onClick={() => {
+                setResultOpen(false);
+                setWallpaperLoadStatus("idle");
+              }}
             >
               Close
             </button>
             {activePrize.id === "wallpaper" ? (
-              <div
-                className={`wallpaper-prize-media is-${wallpaperLoadStatus}`}
-              >
+              <div className={wallpaperMediaClassName}>
                 {wallpaperLoadStatus !== "loaded" && (
                   <div className="wallpaper-prize-loading" aria-live="polite">
-                    <span>高清壁纸正在路上...</span>
+                    <span>{wallpaperLoadingText}</span>
                     <small>Loading gallery wallpaper</small>
                   </div>
                 )}
-                <img
-                  src={resultPoster.image}
-                  alt={`${resultPoster.label} wallpaper`}
-                  className={
-                    wallpaperLoadStatus === "loaded" ? "is-loaded" : ""
-                  }
-                  onLoad={() => setWallpaperLoadStatus("loaded")}
-                  onError={() => setWallpaperLoadStatus("loading")}
-                />
+                {resultPoster.image && (
+                  <img
+                    key={resultPoster.image}
+                    src={resultPoster.image}
+                    alt={`${resultPoster.label} wallpaper`}
+                    className={
+                      wallpaperLoadStatus === "loaded" ? "is-loaded" : ""
+                    }
+                    onLoad={() => setWallpaperLoadStatus("loaded")}
+                    onError={() => setWallpaperLoadStatus("loading")}
+                  />
+                )}
               </div>
             ) : (
               <>
