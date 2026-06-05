@@ -177,7 +177,11 @@ jobs:
             echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a --delete $TMP_DIR/build/ $ROOT_DIR/build/
             echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a $TMP_DIR/ai-assistant/ $ROOT_DIR/ai-assistant/
             echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' nginx -t
-            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl reload nginx
+            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl reload-or-restart nginx || {
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl --no-pager --full status nginx
+              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' journalctl -u nginx -n 100 --no-pager
+              exit 1
+            }
             rm -rf $TMP_DIR
           "
 
