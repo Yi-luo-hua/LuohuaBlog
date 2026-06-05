@@ -89,10 +89,10 @@ func TestDrawWallpaperReturnsActiveItem(t *testing.T) {
 			ID:          "active-one",
 			URL:         "https://example.com/active.jpg",
 			PreviewURL:  "https://example.com/active-preview.jpg",
-			Source:      "pexels",
+			Source:      "waifu.im",
 			Author:      "tester",
 			SourceURL:   "https://example.com/source",
-			LicenseNote: "Pexels License",
+			LicenseNote: "Waifu.im Terms of Service",
 			Kind:        "api",
 			Status:      "active",
 			AddedAt:     now,
@@ -108,7 +108,7 @@ func TestDrawWallpaperReturnsActiveItem(t *testing.T) {
 	if item.URL != "https://example.com/active.jpg" {
 		t.Fatalf("unexpected drawn wallpaper url: %s", item.URL)
 	}
-	if item.Source != "pexels" {
+	if item.Source != "waifu.im" {
 		t.Fatalf("unexpected source: %s", item.Source)
 	}
 }
@@ -131,12 +131,12 @@ func TestDrawAPIWallpaperIgnoresLocalFallbackRows(t *testing.T) {
 		},
 		{
 			ID:          "api-one",
-			URL:         "https://images.pexels.com/photos/api.jpg",
-			PreviewURL:  "https://images.pexels.com/photos/api-preview.jpg",
-			Source:      "pexels",
+			URL:         "https://cdn.waifu.im/6321.png",
+			PreviewURL:  "https://cdn.waifu.im/6321.png",
+			Source:      "waifu.im",
 			Author:      "tester",
-			SourceURL:   "https://www.pexels.com/photo/api",
-			LicenseNote: "Pexels License",
+			SourceURL:   "https://www.pixiv.net/en/artworks/89217805",
+			LicenseNote: "Waifu.im Terms of Service",
 			Kind:        "api",
 			Status:      "active",
 			AddedAt:     now,
@@ -152,8 +152,8 @@ func TestDrawAPIWallpaperIgnoresLocalFallbackRows(t *testing.T) {
 	if item.Kind != "api" {
 		t.Fatalf("expected api item, got kind %q", item.Kind)
 	}
-	if item.Source != "pexels" {
-		t.Fatalf("expected pexels source, got %q", item.Source)
+	if item.Source != "waifu.im" {
+		t.Fatalf("expected waifu.im source, got %q", item.Source)
 	}
 	if strings.Contains(item.URL, "myqcloud.com") {
 		t.Fatalf("expected non-COS api wallpaper, got %s", item.URL)
@@ -173,40 +173,72 @@ func TestAPIFallbackWallpaperIsNotCOS(t *testing.T) {
 	}
 }
 
-func TestWallpaperProviderEndpointsPreferAnimeQueries(t *testing.T) {
-	pexelsURL, err := url.Parse(buildPexelsWallpaperEndpoint(8, 3))
+func TestWaifuWallpaperEndpointUsesLandscapeSFWFilters(t *testing.T) {
+	waifuURL, err := url.Parse(buildWaifuWallpaperEndpoint(3))
 	if err != nil {
 		t.Fatal(err)
 	}
-	pexelsQuery := pexelsURL.Query().Get("query")
-	if !strings.Contains(pexelsQuery, "anime") {
-		t.Fatalf("expected pexels query to include anime, got %q", pexelsQuery)
+	if got := waifuURL.Host; got != "api.waifu.im" {
+		t.Fatalf("expected waifu api host, got %q", got)
 	}
-	if strings.Contains(pexelsQuery, "nature") || strings.Contains(pexelsQuery, "city") || strings.Contains(pexelsQuery, "sky") {
-		t.Fatalf("expected pexels query to drop scenery terms, got %q", pexelsQuery)
+	query := waifuURL.Query()
+	if got := strings.ToLower(query.Get("IncludedTags")); !strings.Contains(got, "waifu") {
+		t.Fatalf("expected IncludedTags to include waifu, got %q", got)
 	}
-
-	pixabayURL, err := url.Parse(buildPixabayWallpaperEndpoint("demo-key", 8, 3))
-	if err != nil {
-		t.Fatal(err)
+	if got := strings.ToLower(query.Get("IsNsfw")); got != "false" {
+		t.Fatalf("expected IsNsfw=false, got %q", got)
 	}
-	pixabayQuery := pixabayURL.Query().Get("q")
-	if !strings.Contains(pixabayQuery, "anime") {
-		t.Fatalf("expected pixabay query to include anime, got %q", pixabayQuery)
+	if got := strings.ToLower(query.Get("IsAnimated")); got != "false" {
+		t.Fatalf("expected IsAnimated=false, got %q", got)
 	}
-	if got := pixabayURL.Query().Get("image_type"); got != "illustration" {
-		t.Fatalf("expected pixabay image_type=illustration, got %q", got)
+	if got := strings.ToLower(query.Get("Orientation")); got != "landscape" {
+		t.Fatalf("expected Orientation=Landscape, got %q", got)
+	}
+	if got := query.Get("PageSize"); got != "3" {
+		t.Fatalf("expected PageSize=3, got %q", got)
 	}
 }
 
-func TestLooksAnimeWallpaperFiltersSceneryMetadata(t *testing.T) {
-	if !looksAnimeWallpaper("https://www.pexels.com/photo/anime-girl-123/") {
-		t.Fatal("expected anime metadata to be accepted")
+func TestWaifuImageToWallpaperItemMapsLandscapeImage(t *testing.T) {
+	now := time.Date(2026, 6, 5, 8, 0, 0, 0, time.UTC)
+	item, ok := waifuImageToWallpaperItem(waifuImage{
+		ID:         6321,
+		URL:        "https://cdn.waifu.im/6321.png",
+		Source:     "https://www.pixiv.net/en/artworks/89217805",
+		IsNsfw:     false,
+		IsAnimated: false,
+		Width:      1926,
+		Height:     1233,
+		Artists: []waifuArtist{
+			{Name: "FALL"},
+		},
+	}, now)
+	if !ok {
+		t.Fatal("expected valid waifu image to map into wallpaper item")
 	}
-	if looksAnimeWallpaper("https://pixabay.com/photos/mountain-sky-lake-wallpaper-123/") {
-		t.Fatal("expected scenery metadata to be rejected")
+	if item.Source != "waifu.im" {
+		t.Fatalf("expected waifu.im source, got %q", item.Source)
 	}
-	if !looksAnimeWallpaper("https://images.example.com/wallpaper-123.jpg") {
-		t.Fatal("expected neutral metadata to stay eligible")
+	if item.Author != "FALL" {
+		t.Fatalf("expected first artist name, got %q", item.Author)
+	}
+	if item.URL != "https://cdn.waifu.im/6321.png" {
+		t.Fatalf("unexpected image url: %s", item.URL)
+	}
+	if item.Kind != "api" {
+		t.Fatalf("expected api kind, got %q", item.Kind)
+	}
+}
+
+func TestWaifuImageToWallpaperItemRejectsPortraitImage(t *testing.T) {
+	if _, ok := waifuImageToWallpaperItem(waifuImage{
+		ID:         9001,
+		URL:        "https://cdn.waifu.im/9001.png",
+		IsNsfw:     false,
+		IsAnimated: false,
+		Width:      1200,
+		Height:     2000,
+	}, time.Now().UTC()); ok {
+		t.Fatal("expected portrait image to be rejected for wallpaper usage")
 	}
 }

@@ -21,30 +21,6 @@ const (
 	wallpaperHTTPClientTimeout = 10 * time.Second
 )
 
-var animeWallpaperTerms = []string{
-	"anime",
-	"manga",
-	"illustration",
-	"digital art",
-	"digital-art",
-	"character",
-	"waifu",
-	"acg",
-}
-
-var sceneryWallpaperTerms = []string{
-	"nature",
-	"landscape",
-	"city",
-	"sky",
-	"beach",
-	"mountain",
-	"forest",
-	"lake",
-	"sunset",
-	"sunrise",
-}
-
 var fallbackWallpaperItems = []wallpaperItem{
 	{
 		ID:          "fallback-ai-blog-0e7e10e2acdb398941c10735a791918d",
@@ -111,166 +87,97 @@ func runWallpaperPoolSync(db *sql.DB) {
 }
 
 func fetchLegalWallpaperItems(limit int) ([]wallpaperItem, error) {
-	var combined []wallpaperItem
-	if pexelsKey := env("PEXELS_API_KEY", ""); pexelsKey != "" {
-		items, err := fetchPexelsWallpapers(pexelsKey, limit)
-		if err != nil {
-			log.Println("sync: pexels wallpaper error:", err)
-		}
-		combined = append(combined, items...)
-	}
-	if len(combined) < limit {
-		if pixabayKey := env("PIXABAY_API_KEY", ""); pixabayKey != "" {
-			items, err := fetchPixabayWallpapers(pixabayKey, limit-len(combined))
-			if err != nil {
-				log.Println("sync: pixabay wallpaper error:", err)
-			}
-			combined = append(combined, items...)
-		}
-	}
-	if len(combined) == 0 {
-		return nil, errors.New("PEXELS_API_KEY or PIXABAY_API_KEY is not configured")
-	}
-	if len(combined) > limit {
-		combined = combined[:limit]
-	}
-	return combined, nil
+	return fetchWaifuWallpapers(limit)
 }
 
-func fetchPexelsWallpapers(apiKey string, limit int) ([]wallpaperItem, error) {
-	page := rand.Intn(50) + 1
-	endpoint := buildPexelsWallpaperEndpoint(limit, page)
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", apiKey)
-	req.Header.Set("User-Agent", "taozhiyy-wallpaper-pool/1.0")
-
-	var body struct {
-		Photos []struct {
-			ID           int    `json:"id"`
-			URL          string `json:"url"`
-			Photographer string `json:"photographer"`
-			Src          struct {
-				Large2x   string `json:"large2x"`
-				Large     string `json:"large"`
-				Medium    string `json:"medium"`
-				Landscape string `json:"landscape"`
-			} `json:"src"`
-		} `json:"photos"`
-	}
-	if err := doWallpaperJSON(req, &body); err != nil {
-		return nil, err
-	}
-
-	now := time.Now().UTC()
-	items := make([]wallpaperItem, 0, len(body.Photos))
-	for _, photo := range body.Photos {
-		imageURL := firstWallpaperValue(photo.Src.Large2x, photo.Src.Large, photo.Src.Landscape)
-		previewURL := firstWallpaperValue(photo.Src.Medium, photo.Src.Landscape, imageURL)
-		if imageURL == "" {
-			continue
-		}
-		if !looksAnimeWallpaper(photo.URL, imageURL, previewURL) {
-			continue
-		}
-		items = append(items, wallpaperItem{
-			ID:          stableWallpaperID("pexels", fmt.Sprint(photo.ID), imageURL),
-			URL:         imageURL,
-			PreviewURL:  previewURL,
-			Source:      "pexels",
-			Author:      photo.Photographer,
-			SourceURL:   photo.URL,
-			LicenseNote: "Pexels License",
-			Kind:        "api",
-			Status:      "active",
-			AddedAt:     now,
-		})
-	}
-	return items, nil
+type waifuSearchResponse struct {
+	Items []waifuImage `json:"items"`
 }
 
-func fetchPixabayWallpapers(apiKey string, limit int) ([]wallpaperItem, error) {
-	page := rand.Intn(50) + 1
-	endpoint := buildPixabayWallpaperEndpoint(apiKey, limit, page)
+type waifuImage struct {
+	ID         int           `json:"id"`
+	URL        string        `json:"url"`
+	Source     string        `json:"source"`
+	IsNsfw     bool          `json:"isNsfw"`
+	IsAnimated bool          `json:"isAnimated"`
+	Width      int           `json:"width"`
+	Height     int           `json:"height"`
+	Artists    []waifuArtist `json:"artists"`
+}
+
+type waifuArtist struct {
+	Name string `json:"name"`
+}
+
+func fetchWaifuWallpapers(limit int) ([]wallpaperItem, error) {
+	endpoint := buildWaifuWallpaperEndpoint(limit)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "taozhiyy-wallpaper-pool/1.0")
+	req.Header.Set("Accept", "application/json")
 
-	var body struct {
-		Hits []struct {
-			ID           int    `json:"id"`
-			PageURL      string `json:"pageURL"`
-			User         string `json:"user"`
-			LargeURL     string `json:"largeImageURL"`
-			WebformatURL string `json:"webformatURL"`
-		} `json:"hits"`
-	}
+	var body waifuSearchResponse
 	if err := doWallpaperJSON(req, &body); err != nil {
 		return nil, err
 	}
 
 	now := time.Now().UTC()
-	items := make([]wallpaperItem, 0, len(body.Hits))
-	for _, hit := range body.Hits {
-		imageURL := firstWallpaperValue(hit.LargeURL, hit.WebformatURL)
-		if imageURL == "" {
+	items := make([]wallpaperItem, 0, len(body.Items))
+	for _, image := range body.Items {
+		item, ok := waifuImageToWallpaperItem(image, now)
+		if !ok {
 			continue
 		}
-		if !looksAnimeWallpaper(hit.PageURL, imageURL, hit.WebformatURL) {
-			continue
-		}
-		items = append(items, wallpaperItem{
-			ID:          stableWallpaperID("pixabay", fmt.Sprint(hit.ID), imageURL),
-			URL:         imageURL,
-			PreviewURL:  firstWallpaperValue(hit.WebformatURL, imageURL),
-			Source:      "pixabay",
-			Author:      hit.User,
-			SourceURL:   hit.PageURL,
-			LicenseNote: "Pixabay Content License",
-			Kind:        "api",
-			Status:      "active",
-			AddedAt:     now,
-		})
+		items = append(items, item)
+	}
+	if len(items) == 0 {
+		return nil, errors.New("waifu.im returned no eligible landscape images")
 	}
 	return items, nil
 }
 
-func buildPexelsWallpaperEndpoint(limit, page int) string {
-	return fmt.Sprintf(
-		"https://api.pexels.com/v1/search?query=%s&orientation=landscape&per_page=%d&page=%d",
-		url.QueryEscape("anime wallpaper illustration"),
-		limit,
-		page,
-	)
+func buildWaifuWallpaperEndpoint(limit int) string {
+	if limit <= 0 {
+		limit = 1
+	}
+	query := url.Values{}
+	query.Set("IncludedTags", "waifu")
+	query.Set("IsNsfw", "False")
+	query.Set("IsAnimated", "False")
+	query.Set("Orientation", "Landscape")
+	query.Set("PageSize", fmt.Sprint(limit))
+	query.Set("PageNumber", fmt.Sprint(rand.Intn(5)+1))
+	return "https://api.waifu.im/images?" + query.Encode()
 }
 
-func buildPixabayWallpaperEndpoint(apiKey string, limit, page int) string {
-	return fmt.Sprintf(
-		"https://pixabay.com/api/?key=%s&q=%s&image_type=illustration&orientation=horizontal&safesearch=true&per_page=%d&page=%d",
-		url.QueryEscape(apiKey),
-		url.QueryEscape("anime wallpaper"),
-		limit,
-		page,
-	)
-}
-
-func looksAnimeWallpaper(values ...string) bool {
-	text := strings.ToLower(strings.Join(values, " "))
-	for _, term := range animeWallpaperTerms {
-		if strings.Contains(text, term) {
-			return true
+func waifuImageToWallpaperItem(image waifuImage, now time.Time) (wallpaperItem, bool) {
+	if strings.TrimSpace(image.URL) == "" || image.IsNsfw || image.IsAnimated {
+		return wallpaperItem{}, false
+	}
+	if image.Width <= image.Height {
+		return wallpaperItem{}, false
+	}
+	author := "waifu.im"
+	for _, artist := range image.Artists {
+		if strings.TrimSpace(artist.Name) != "" {
+			author = artist.Name
+			break
 		}
 	}
-	for _, term := range sceneryWallpaperTerms {
-		if strings.Contains(text, term) {
-			return false
-		}
-	}
-	return true
+	return wallpaperItem{
+		ID:          stableWallpaperID("waifuim", fmt.Sprint(image.ID), image.URL),
+		URL:         image.URL,
+		PreviewURL:  image.URL,
+		Source:      "waifu.im",
+		Author:      author,
+		SourceURL:   firstWallpaperValue(image.Source, "https://www.waifu.im/"),
+		LicenseNote: "Waifu.im Terms of Service",
+		Kind:        "api",
+		Status:      "active",
+		AddedAt:     now,
+	}, true
 }
 
 func doWallpaperJSON(req *http.Request, out any) error {
