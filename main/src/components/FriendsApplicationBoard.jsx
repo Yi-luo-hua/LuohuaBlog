@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { FiMessageCircle, FiSend } from "react-icons/fi";
+
 import { getGuestbook, postGuestbook } from "../services/guestbookApi";
 
 const formatTime = (iso) => {
@@ -21,9 +23,9 @@ const FRIEND_TEMPLATE = `站点名称：
 已添加本站友链：是`;
 
 const quickNotes = [
-  "留言会公开展示，提交前请确认信息无误。",
-  "头像建议使用长期稳定的外链地址。",
-  "申请通过后，会同步出现在上方小伙伴区域。",
+  "留言会公开展示，请确认信息无误。",
+  "站点头像建议使用长期稳定外链。",
+  "通过审核后，会整理到上方小伙伴区域。",
 ];
 
 const FriendsApplicationBoard = () => {
@@ -64,46 +66,43 @@ const FriendsApplicationBoard = () => {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-[34px] border border-[#102a24]/10 bg-white/72 p-6 shadow-[0_24px_80px_rgba(16,42,36,0.08)] backdrop-blur-xl md:p-8">
-      <div
-        className="pointer-events-none absolute -right-16 top-4 h-40 w-40 rounded-full bg-[#e6b85c]/16 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -left-14 bottom-8 h-36 w-36 rounded-full bg-[#6fae9b]/16 blur-3xl"
-        aria-hidden
-      />
+    <section
+      id="friends-guestbook"
+      className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[rgba(17,20,38,0.56)] p-6 shadow-[0_30px_100px_rgba(6,8,18,0.34)] backdrop-blur-[24px] md:p-8"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(100,86,255,0.18),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(95,224,255,0.12),transparent_28%)]" />
+      <div className="pointer-events-none absolute inset-[1px] rounded-[33px] border border-white/8" />
 
       <div className="relative">
-        <div className="max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#8f6d2f]">
-            Guestbook
+        <div className="text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-white/42">
+            Terminal Guestbook
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#102a24]">
-            申请友链留言区
+          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl">
+            终端留言板
           </h2>
-          <p className="mt-4 text-sm leading-8 text-[#1f221d]/68">
-            最下面保留留言申请区，方便直接在同一个页面完成申请。按模板填写后提交即可，审核通过后会整理到上方的小伙伴卡片里。
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-white/50">
+            在底部留言区填写站点信息即可申请友链。这里保留公开展示的留言流，方便后续核对与整理。
           </p>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           {quickNotes.map((item) => (
             <span
               key={item}
-              className="inline-flex rounded-full border border-[#102a24]/10 bg-[#f6efe2] px-4 py-2 text-xs leading-6 text-[#1f221d]/70"
+              className="inline-flex rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs leading-6 text-white/64"
             >
               {item}
             </span>
           ))}
         </div>
 
-        <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
+        <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.94fr)]">
           <form
             onSubmit={onSubmit}
-            className="rounded-[30px] border border-[#102a24]/10 bg-[#fffdf8]/92 p-5 shadow-[0_18px_48px_rgba(16,42,36,0.06)] md:p-6"
+            className="rounded-[30px] border border-white/10 bg-[rgba(10,13,27,0.72)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:p-6"
           >
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#102a24]/64">
+            <label className="block text-xs font-semibold uppercase tracking-[0.22em] text-white/52">
               申请署名
             </label>
             <input
@@ -112,10 +111,10 @@ const FriendsApplicationBoard = () => {
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="例如：站长名 / 站点名"
-              className="mt-3 min-h-[48px] w-full rounded-2xl border border-[#102a24]/10 bg-white px-4 py-3 text-sm text-[#1f221d] outline-none transition focus:border-[#6fae9b] focus:ring-2 focus:ring-[#6fae9b]/20"
+              className="mt-3 min-h-[50px] w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/24 focus:border-[#7c5cff]/60 focus:ring-2 focus:ring-[#7c5cff]/26"
             />
 
-            <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.2em] text-[#102a24]/64">
+            <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.22em] text-white/52">
               留言内容
             </label>
             <textarea
@@ -124,71 +123,67 @@ const FriendsApplicationBoard = () => {
               maxLength={500}
               rows={10}
               required
-              className="mt-3 w-full rounded-[24px] border border-[#102a24]/10 bg-white px-4 py-4 text-sm leading-7 text-[#1f221d] outline-none transition focus:border-[#6fae9b] focus:ring-2 focus:ring-[#6fae9b]/20"
+              className="mt-3 w-full rounded-[24px] border border-white/10 bg-white/6 px-4 py-4 text-sm leading-7 text-white outline-none transition placeholder:text-white/24 focus:border-[#7c5cff]/60 focus:ring-2 focus:ring-[#7c5cff]/26"
             />
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs leading-6 text-[#1f221d]/55">
+              <p className="text-xs leading-6 text-white/44">
                 留言会进入本站公开留言流，提交前请确认链接、头像与简介均为稳定可访问的地址。
               </p>
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#102a24] px-6 py-3 text-sm font-semibold text-[#f8f5ee] transition hover:bg-[#15382f] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#5768ff,#b85cff)] px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(92,94,255,0.28)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#96a0ff]"
               >
+                <FiSend className="h-4 w-4" aria-hidden />
                 {submitting ? "发送中..." : "提交申请"}
               </button>
             </div>
 
-            {notice && (
-              <p className="mt-4 text-sm font-medium text-[#2b7a67]">{notice}</p>
-            )}
+            {notice && <p className="mt-4 text-sm font-medium text-[#92ffe2]">{notice}</p>}
           </form>
 
-          <div className="rounded-[30px] border border-[#102a24]/10 bg-[#f8f1e3] p-5 shadow-[0_18px_48px_rgba(16,42,36,0.05)] md:p-6">
+          <div className="rounded-[30px] border border-white/10 bg-[rgba(20,24,43,0.72)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.3em] text-[#8f6d2f]">
-                  Recent Notes
+                <p className="text-[11px] uppercase tracking-[0.3em] text-white/42">
+                  Recent Messages
                 </p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#102a24]">
-                  最新留言
-                </h3>
+                <h3 className="mt-2 text-2xl font-semibold text-white">最新留言</h3>
               </div>
-              <span className="rounded-full border border-[#102a24]/10 bg-white/75 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-[#6b9f8f]">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-[#96a0ff]">
+                <FiMessageCircle className="h-3.5 w-3.5" aria-hidden />
                 Public
               </span>
             </div>
 
             <div className="mt-5 space-y-3">
               {loading ? (
-                <div className="rounded-[22px] border border-[#102a24]/10 bg-white/70 px-4 py-5 text-sm text-[#1f221d]/62">
+                <div className="rounded-[22px] border border-white/10 bg-white/6 px-4 py-5 text-sm text-white/58">
                   正在读取留言...
                 </div>
               ) : entries.length === 0 ? (
-                <div className="rounded-[22px] border border-dashed border-[#102a24]/14 bg-white/70 px-4 py-5 text-sm text-[#1f221d]/62">
-                  还没有新的申请记录，欢迎成为第一页的第一条留言。
+                <div className="rounded-[22px] border border-dashed border-white/14 bg-white/6 px-4 py-5 text-sm text-white/58">
+                  还没有新的申请记录，欢迎成为这里的第一条连接。
                 </div>
               ) : (
                 entries.map((row) => (
                   <article
                     key={row.id}
-                    className="rounded-[22px] border border-[#102a24]/10 bg-white/78 px-4 py-4"
+                    className="rounded-[22px] border border-white/10 bg-white/6 px-4 py-4 backdrop-blur-md"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-[#102a24]">
-                          {row.name}
-                        </p>
-                        <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-[#6b9f8f]">
+                        <p className="text-sm font-semibold text-white">{row.name}</p>
+                        <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-[#96a0ff]">
                           Friend Request
                         </p>
                       </div>
-                      <time className="shrink-0 text-[11px] text-[#1f221d]/42">
+                      <time className="shrink-0 text-[11px] text-white/36">
                         {formatTime(row.createdAt)}
                       </time>
                     </div>
-                    <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-[#1f221d]/74">
+                    <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-white/74">
                       {row.content}
                     </p>
                   </article>

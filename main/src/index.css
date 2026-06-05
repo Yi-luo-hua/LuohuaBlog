@@ -40,12 +40,12 @@ body {
   }
 
   .floating-nav-friends {
-    @apply rounded-2xl border border-[#CFE4DB] shadow-[0_14px_34px_rgba(16,42,36,0.12)] backdrop-blur-md;
+    @apply rounded-2xl border border-white/10 shadow-[0_18px_40px_rgba(5,8,20,0.28)] backdrop-blur-md;
     background-image: linear-gradient(
       135deg,
-      rgba(248, 245, 238, 0.96) 0%,
-      rgba(240, 247, 242, 0.96) 52%,
-      rgba(234, 243, 239, 0.96) 100%
+      rgba(12, 14, 28, 0.92) 0%,
+      rgba(24, 26, 46, 0.9) 52%,
+      rgba(18, 21, 38, 0.92) 100%
     );
   }
 
@@ -2348,7 +2348,7 @@ body {
 }
 
 .indicator-line-friends {
-  @apply bg-[#102A24]/70;
+  @apply bg-[#96A0FF];
 }
 
 .indicator-line.active {
@@ -2768,19 +2768,19 @@ body {
   color: #ff8fab;
 }
 
-/* Friends - calm signal station */
+/* Friends - dark glass dreamscape */
 .nav-mobile-link--friends {
-  color: #102a24;
+  color: rgba(255, 255, 255, 0.9);
 }
 .nav-mobile-link--friends:hover,
 .nav-mobile-link--friends:focus-visible {
-  background: rgba(255, 255, 255, 0.88);
-  color: #102a24;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
   outline: none;
 }
 .nav-mobile-link--active-friends {
-  background: rgba(255, 255, 255, 0.96);
-  color: #102a24;
+  background: rgba(124, 92, 255, 0.2);
+  color: #ffffff;
 }
 
 /* Bili Hub — Candy Sky */
@@ -2843,10 +2843,10 @@ body {
   background-color: #ff8fab;
 }
 .nav-hover-btn--friends {
-  color: #102a24;
+  color: rgba(255, 255, 255, 0.88);
 }
 .nav-hover-btn--friends::after {
-  background-color: #6fae9b;
+  background-color: #7c5cff;
 }
 .nav-hover-btn--bili {
   color: #2d2a3a;
@@ -2866,9 +2866,9 @@ body {
   color: #2b2b2b;
 }
 .nav-menu-btn--friends {
-  border-color: #cfe4db;
-  background: rgba(255, 255, 255, 0.92);
-  color: #102a24;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(17, 20, 38, 0.76);
+  color: rgba(255, 255, 255, 0.9);
 }
 .nav-menu-btn--bili {
   border-color: #e8dffb;
