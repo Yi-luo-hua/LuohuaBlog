@@ -15,33 +15,33 @@ const prizes = [
   {
     id: "homepage",
     icon: "HP",
-    label: "Homepage Source",
-    title: "Homepage Learning Reference",
+    label: "首页来源",
+    title: "首页学习来源",
     description:
-      "The early homepage learned from Adrian Hajdin's award-winning website tutorial, then kept being reshaped into Taozhiyy's own visual language.",
+      "早期首页参考了 Adrian Hajdin 的获奖网站教程，随后不断调整成桃之夭夭自己的视觉语言。",
     href: "https://github.com/adrianhajdin/award-winning-website#introduction",
     visual: `${SOURCE_ASSET_BASE}/swordman.webp`,
-    action: "Open reference",
+    action: "打开参考",
   },
   {
     id: "blog",
     icon: "BG",
-    label: "Blog Source",
-    title: "Blog Subpage Source",
+    label: "博客来源",
+    title: "博客子页来源",
     description:
-      "The blog subpage is based on Hexo and the Butterfly theme. For theme usage, configuration, and attribution details, please refer to Butterfly's official documentation.",
+      "博客子页基于 Hexo 与 Butterfly 主题搭建，主题用法、配置和署名说明可查看 Butterfly 官方文档。",
     href: "https://butterfly.js.org/",
     visual: galleryAlbums[1]?.cover || galleryAlbums[0]?.cover || "",
-    action: "Visit Butterfly",
+    action: "查看 Butterfly",
   },
   {
     id: "wallpaper",
     icon: "WP",
-    label: "Wallpaper Gift",
-    title: "A Gallery Wallpaper Gift",
+    label: "高清壁纸",
+    title: "一张图库壁纸",
     description:
-      "You drew a random high-resolution image from the Gallery archive. Open it full size, download it, or simply keep it on screen for a moment.",
-    action: "Open wallpaper",
+      "你抽到了一张来自图库档案的高清图片，可以打开原图、保存下来，或者让它在屏幕上停一会儿。",
+    action: "打开壁纸",
   },
 ];
 
@@ -55,8 +55,8 @@ const wallpaperPool = galleryAlbums.flatMap((album) =>
 
 const fallbackWallpaper = {
   url: galleryAlbums[0]?.cover || "",
-  album: galleryAlbums[0]?.title || "Gallery",
-  label: "Gallery Gift",
+  album: galleryAlbums[0]?.title || "图库",
+  label: "图库壁纸",
 };
 
 const wallpaperLoadingText = "\u9ad8\u6e05\u58c1\u7eb8\u6b63\u5728\u8def\u4e0a...";
@@ -73,13 +73,13 @@ const normalizeWallpaperGift = (item) => {
     previewUrl: item.previewUrl || item.url,
     album:
       item.source === "pexels"
-        ? "Pexels Licensed Wallpaper"
+        ? "Pexels 授权壁纸"
         : item.source === "pixabay"
-          ? "Pixabay Licensed Wallpaper"
-          : item.source || "Legal Wallpaper Pool",
-    label: item.author ? `Photo by ${item.author}` : "Legal Wallpaper Gift",
+          ? "Pixabay 授权壁纸"
+          : item.source || "授权壁纸池",
+    label: item.author ? `作者 ${item.author}` : "授权壁纸",
     sourceUrl: item.sourceUrl || item.url,
-    licenseNote: item.licenseNote || "Licensed source wallpaper",
+    licenseNote: item.licenseNote || "授权来源壁纸",
   };
 };
 
@@ -307,7 +307,7 @@ const Contact = () => {
   const wallpaperStatusDetail =
     wallpaperLoadStatus === "unavailable"
       ? activeWallpaper?.licenseNote || "可以稍后再试一次。"
-      : "Loading gallery wallpaper";
+      : "正在加载图库壁纸";
 
   return (
     <>
@@ -323,7 +323,7 @@ const Contact = () => {
             <div className="source-machine-crown" aria-hidden="true" />
             <div className="source-arcade-marquee">
               <span />
-              <strong>SOURCE SLOT</strong>
+              <strong>来源抽奖机</strong>
               <span />
             </div>
 
@@ -342,7 +342,7 @@ const Contact = () => {
                         key={`${index}-${drawCount}`}
                       >
                         <span>{digit}</span>
-                        <strong>{["HUN", "TEN", "ONE"][index]}</strong>
+                        <strong>{["百位", "十位", "个位"][index]}</strong>
                       </div>
                     ))}
                   </div>
@@ -360,12 +360,12 @@ const Contact = () => {
                   <button
                     type="button"
                     onClick={() => drawPrize()}
-                    aria-label="Pull to draw a source prize"
+                    aria-label="拉杆抽取来源奖品"
                   >
                     <span className="source-lever-stick" />
                     <span className="source-lever-ball" />
                   </button>
-                  <p>PULL</p>
+                  <p>拉杆</p>
                 </div>
 
                 <button
@@ -374,22 +374,22 @@ const Contact = () => {
                   onClick={() => drawPrize()}
                   disabled={isDrawing}
                 >
-                  {isDrawing ? "DRAWING" : "START"}
+                  {isDrawing ? "抽取中" : "开始"}
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="source-outer-tools" aria-label="Source slot tools">
+        <div className="source-outer-tools" aria-label="来源抽奖工具">
           <button
             type="button"
             className={manualOpen ? "source-manual-book is-open" : "source-manual-book"}
             onClick={() => setManualOpen((open) => !open)}
             aria-expanded={manualOpen}
           >
-            <span>USER</span>
-            <strong>MANUAL</strong>
+            <span>使用</span>
+            <strong>说明</strong>
           </button>
 
           <div className="source-tool-dock">
@@ -399,7 +399,7 @@ const Contact = () => {
               onClick={() => setHistoryOpen((open) => !open)}
               aria-expanded={historyOpen}
             >
-              <span>History</span>
+              <span>历史</span>
               <strong>{drawHistory.length}</strong>
             </button>
             <button
@@ -408,7 +408,7 @@ const Contact = () => {
               onClick={() => setCheatOpen((open) => !open)}
               aria-expanded={cheatOpen}
             >
-              <span>Cheat</span>
+              <span>测试</span>
               <strong>000</strong>
             </button>
           </div>
@@ -422,7 +422,7 @@ const Contact = () => {
           <button
             type="button"
             className="source-manual-backdrop"
-            aria-label="Close source manual"
+            aria-label="关闭使用说明"
             onClick={() => setManualOpen(false)}
           />
           <div className="source-manual-result-card">
@@ -431,7 +431,7 @@ const Contact = () => {
               className="source-tool-close"
               onClick={() => setManualOpen(false)}
             >
-              Close
+              关闭
             </button>
             <div className="source-manual-page">
               <p>使用说明</p>
@@ -451,7 +451,7 @@ const Contact = () => {
           <button
             type="button"
             className="source-tool-backdrop source-history-backdrop"
-            aria-label="Close history records"
+            aria-label="关闭历史记录"
             onClick={() => setHistoryOpen(false)}
           />
           <div className="source-tool-result-card source-history-result-card">
@@ -460,10 +460,10 @@ const Contact = () => {
               className="source-tool-close"
               onClick={() => setHistoryOpen(false)}
             >
-              Close
+              关闭
             </button>
             <div className="source-history-card">
-              <p>History Records</p>
+              <p>历史记录</p>
               {drawHistory.length ? (
                 <div className="source-history-list">
                   {drawHistory.map((record) => (
@@ -479,7 +479,7 @@ const Contact = () => {
                 </div>
               ) : (
                 <span className="source-history-empty">
-                  No draws yet. Pull the lever once and the number will be stored here.
+                  还没有抽奖记录。拉一次杆，编号就会存到这里。
                 </span>
               )}
             </div>
@@ -492,7 +492,7 @@ const Contact = () => {
           <button
             type="button"
             className="source-tool-backdrop source-cheat-backdrop"
-            aria-label="Close cheat mode"
+            aria-label="关闭测试模式"
             onClick={() => setCheatOpen(false)}
           />
           <div className="source-tool-result-card source-cheat-result-card">
@@ -501,10 +501,10 @@ const Contact = () => {
               className="source-tool-close"
               onClick={() => setCheatOpen(false)}
             >
-              Close
+              关闭
             </button>
             <div className="source-cheat-card">
-              <p>Cheat Mode</p>
+              <p>测试模式</p>
               <span className="source-cheat-note">
                 输入任意三位数字，可直接检查它对应的奖品结果。
               </span>
@@ -526,7 +526,7 @@ const Contact = () => {
                 }}
                 disabled={isDrawing || cheatCode.length === 0}
               >
-                Set Number
+                设定数字
               </button>
             </div>
           </div>
@@ -538,7 +538,7 @@ const Contact = () => {
           <button
             type="button"
             className="wallpaper-prize-backdrop"
-            aria-label="Close source result"
+            aria-label="关闭抽奖结果"
             onClick={() => {
               setResultOpen(false);
               setWallpaperLoadStatus("idle");
@@ -559,7 +559,7 @@ const Contact = () => {
                 setWallpaperLoadStatus("idle");
               }}
             >
-              Close
+              关闭
             </button>
             {activePrize.id === "wallpaper" ? (
               <div className={wallpaperMediaClassName}>
@@ -592,10 +592,10 @@ const Contact = () => {
               </div>
             ) : (
               <>
-                <p>Source Result</p>
+                <p>抽奖结果</p>
                 <h3>{activePrize.title}</h3>
                 <span>
-                  No. {drawCode} · {resultPoster.meta}
+                  编号 {drawCode} · {resultPoster.meta}
                 </span>
                 <p className="wallpaper-prize-description">
                   {activePrize.description}
@@ -605,7 +605,7 @@ const Contact = () => {
                     {activePrize.action}
                   </button>
                   <button type="button" onClick={() => setResultOpen(false)}>
-                    Keep Reading
+                    继续浏览
                   </button>
                 </div>
               </>

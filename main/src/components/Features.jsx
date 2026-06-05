@@ -8,42 +8,42 @@ const COS =
 const ARCHIVE_ITEMS = [
   {
     index: "01",
-    title: "Opening Visual",
-    subtitle: "Feature One",
+    title: "开场影像",
+    subtitle: "片段一",
     src: `${COS}/videos/feature-1.mp4`,
-    note: "The first visual fragment in this gallery, kept as a quiet opening scene.",
+    note: "这一组影像里的第一枚碎片，被安静地留作开场。",
   },
   {
     index: "02",
-    title: "Fragmented Solitude",
-    subtitle: "Enter Garden",
+    title: "碎片独处",
+    subtitle: "进入花园",
     src: `${COS}/videos/feature-2.mp4`,
-    note: "A gentle corner dedicated to casual thoughts, everyday whims, and transient sparks of inspiration.",
+    note: "一个收纳日常念头、随手灵感与短暂心绪的温柔角落。",
     linkUrl: "/blog/",
-    linkText: "Enter Garden",
+    linkText: "进入花园",
   },
   {
     index: "03",
-    title: "The Chronicles of Creation",
-    subtitle: "Access Lab",
+    title: "创造纪事",
+    subtitle: "进入实验室",
     src: `${COS}/videos/feature-3.mp4`,
-    note: "A minimalist sanctuary detailing full-stack engineering milestones, digital circuit layouts, and the architecture of hardware logic.",
+    note: "记录全栈工程、数字电路与硬件逻辑架构的极简实验室。",
     linkUrl: "/build/",
-    linkText: "Access Lab",
+    linkText: "进入实验室",
   },
   {
     index: "04",
-    title: "Quiet Visual",
-    subtitle: "Feature Four",
+    title: "安静影像",
+    subtitle: "片段四",
     src: `${COS}/videos/feature-4.mp4`,
-    note: "A quiet visual fragment kept for watching and staying for a moment.",
+    note: "一枚适合停下来多看一会儿的安静影像碎片。",
   },
   {
     index: "05",
-    title: "More coming soon.",
-    subtitle: "Feature Five",
+    title: "更多内容准备中",
+    subtitle: "片段五",
     src: `${COS}/videos/feature-5.mp4`,
-    note: "More coming soon.",
+    note: "更多内容正在慢慢准备中。",
   },
 ];
 
@@ -110,7 +110,7 @@ export const ExhibitCard = ({
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10" />
         {index && (
           <div className="pointer-events-none absolute left-5 top-5 rounded-full border border-white/20 bg-white/12 px-4 py-2 font-general text-[10px] uppercase tracking-[0.35em] text-blue-50/80 backdrop-blur-md">
-            Fragment {index}
+            片段 {index}
           </div>
         )}
       </div>
@@ -130,7 +130,7 @@ export const ExhibitCard = ({
       <div className="absolute inset-0 z-20 flex flex-col justify-between p-4 text-blue-50 md:p-5">
         <div className="max-w-full rounded-2xl border border-white/15 bg-black/42 px-4 py-3 shadow-[0_18px_58px_rgba(0,0,0,0.25)] backdrop-blur-md">
           <p className="font-general text-[10px] uppercase tracking-[0.35em] text-pink-100/80">
-            Fragment {index}
+            片段 {index}
           </p>
           <h1 className="bento-title mt-2 break-words text-2xl font-black leading-none text-[#ffe7ef] md:text-4xl">
             {title}
@@ -194,21 +194,21 @@ const ArchiveBook = ({ open, onClose }) => {
       <button
         type="button"
         className="absolute inset-0 cursor-default"
-        aria-label="Close archive book"
+        aria-label="关闭影像档案"
         onClick={onClose}
       />
 
       <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col justify-center">
         <div className="mb-5 flex items-center justify-between text-blue-50">
           <p className="font-general text-xs uppercase tracking-[0.45em] text-pink-100/75">
-            Archive Book
+            影像档案
           </p>
           <button
             type="button"
             className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-blue-50 backdrop-blur-md"
             onClick={onClose}
           >
-            Close
+            关闭
           </button>
         </div>
 
@@ -246,7 +246,7 @@ const ArchiveBook = ({ open, onClose }) => {
                       <LazyVideo src={item.src} priority={isActive} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/10 to-white/10" />
                       <div className="absolute left-5 top-5 rounded-full border border-white/20 bg-white/14 px-4 py-2 font-general text-[10px] uppercase tracking-[0.32em] text-blue-50/85 backdrop-blur-md">
-                        Archive Card {item.index}
+                        档案卡 {item.index}
                       </div>
                       <div className="absolute bottom-5 left-5 right-5 text-blue-50">
                         <p className="font-general text-[10px] uppercase tracking-[0.32em] text-pink-100/80">
@@ -266,20 +266,20 @@ const ArchiveBook = ({ open, onClose }) => {
                 className="absolute bottom-6 left-6 rounded-full border border-[#ead4bf] bg-white/75 px-5 py-2 text-sm font-bold text-[#241322] shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
                 onClick={() => turnPage(-1)}
               >
-                Previous
+                上一页
               </button>
               <button
                 type="button"
                 className="absolute bottom-6 right-6 rounded-full border border-[#ead4bf] bg-white/75 px-5 py-2 text-sm font-bold text-[#241322] shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
                 onClick={() => turnPage(1)}
               >
-                Next
+                下一页
               </button>
             </div>
 
             <div className="relative flex flex-col justify-center border-t border-[#ead4bf] bg-white/46 p-5 md:border-l md:border-t-0 md:p-5">
               <p className="font-general text-[10px] uppercase tracking-[0.35em] text-[#b76e79]">
-                Current Collection
+                当前片段
               </p>
               <h3 className="mt-4 text-4xl font-black leading-none text-[#241322] md:text-5xl">
                 {activeItem.index}
@@ -339,10 +339,10 @@ const Features = () => {
         <div className="flex flex-col gap-8 px-5 py-32 text-[#241322] md:flex-row md:items-end md:justify-between">
           <div>
             <p className="font-general text-xs uppercase tracking-[0.45em] text-[#b76e79]">
-              There will be three hidden surprises here
+              这里会藏着三份慢慢出现的小惊喜
             </p>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#5f4b52]">
-              There will be three hidden surprises here
+              继续往下看，会遇见博客、构建记录、影像碎片和一些还在路上的新计划。
             </p>
           </div>
 
@@ -370,16 +370,16 @@ const Features = () => {
             <span className="absolute -right-10 -top-10 size-28 rounded-full bg-white/55 blur-2xl md:hidden" />
             <span className="absolute inset-x-5 top-4 h-px bg-gradient-to-r from-transparent via-[#b76e79]/35 to-transparent md:hidden" />
             <span className="archive-pass-content relative z-10 block font-general text-[10px] uppercase tracking-[0.35em] text-[#b76e79] md:absolute md:inset-x-8 md:top-[4.2rem] md:text-center">
-              Archive Pass
+              档案通行证
             </span>
             <span className="relative z-10 mt-4 block text-3xl font-black leading-none tracking-[-0.04em] text-[#261320] md:absolute md:inset-x-8 md:top-[5.8rem] md:mt-0 md:text-center md:text-[2.35rem]">
-              5 Fragments
+              5 个片段
             </span>
             <span className="relative z-10 mt-2 block text-sm font-semibold leading-relaxed text-[#5f4b52] md:absolute md:inset-x-9 md:top-[9.45rem] md:mt-0 md:text-center">
-              Open the archive book to revisit these visual fragments.
+              打开档案册，重新翻看这些影像碎片。
             </span>
             <span className="relative z-10 mt-5 inline-flex items-center gap-2 rounded-full bg-[#241322] px-4 py-2 text-xs font-bold uppercase text-[#ffe7ef] md:absolute md:bottom-9 md:left-1/2 md:mt-0 md:-translate-x-1/2">
-              View Archive
+              查看档案
               <TiLocationArrow />
             </span>
             <span className="absolute inset-y-0 -left-1/2 w-1/2 skew-x-[-18deg] bg-white/45 blur-md transition duration-700 group-hover:left-full md:hidden" />
@@ -402,12 +402,12 @@ const Features = () => {
               index="02"
               title={
                 <>
-                  Frag<b>m</b>ented Solitude
+                  碎片独处
                 </>
               }
-              description="A gentle corner dedicated to casual thoughts, everyday whims, and transient sparks of inspiration. Whispering stories to the wind, captured in the warmth of passing days."
+              description="一个收纳日常念头、随手灵感与短暂心绪的温柔角落，把路过的故事轻轻写下来。"
               linkUrl="/blog/"
-              linkText="Enter Garden"
+              linkText="进入花园"
             />
           </ExhibitTilt>
 
@@ -417,12 +417,12 @@ const Features = () => {
               index="03"
               title={
                 <>
-                  The Chr<b>o</b>nicles of Creation
+                  创造纪事
                 </>
               }
-              description="A minimalist sanctuary detailing full-stack engineering milestones, digital circuit layouts, and the architecture of hardware logic. Where wild ideas shape into reality, code by code."
+              description="记录全栈工程、数字电路与硬件逻辑架构的实验室，让野生想法一点点落成现实。"
               linkUrl="/build/"
-              linkText="Access Lab"
+              linkText="进入实验室"
             />
           </ExhibitTilt>
 
@@ -438,10 +438,10 @@ const Features = () => {
             <div className="relative flex size-full flex-col justify-between overflow-hidden bg-[#ffe7ef] p-5 text-[#241322]">
               <div className="absolute -right-14 -top-14 size-40 rounded-full bg-white/55 blur-2xl" />
               <p className="font-general text-[10px] uppercase tracking-[0.35em] text-[#b76e79]">
-                Fragment 05
+                片段 05
               </p>
               <h1 className="bento-title max-w-72 text-3xl font-black leading-none md:text-5xl">
-                M<b>o</b>re co<b>m</b>ing s<b>o</b>on.
+                更多内容<br />准备中
               </h1>
               <TiLocationArrow className="m-5 scale-[5] self-end text-[#ff8fab]" />
             </div>
