@@ -272,7 +272,10 @@ func listBangumiFromDB(db *sql.DB) ([]bangumiItem, error) {
 
 func listRadarFromDB(db *sql.DB) ([]radarItem, error) {
 	rows, err := db.Query(
-		`SELECT id, creator_name, latest_text, is_new, link_url, cover_path FROM radar_feed ORDER BY published_at DESC`,
+		`SELECT id, creator_name, latest_text, is_new, link_url, cover_path
+		 FROM radar_feed
+		 WHERE up_uid NOT LIKE 'seed_%'
+		 ORDER BY published_at DESC`,
 	)
 	if err != nil {
 		return nil, err

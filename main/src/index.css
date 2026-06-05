@@ -4057,9 +4057,12 @@ body {
 }
 
 .wallpaper-prize-card.is-wallpaper-result {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   isolation: isolate;
   --wallpaper-aspect-ratio: 1.7778;
-  width: min(94vw, 76rem);
+  width: fit-content;
   max-width: 94vw;
   max-height: 88vh;
   overflow: visible;
@@ -4206,8 +4209,6 @@ body {
 
 @media (min-width: 768px) {
   .wallpaper-prize-card.is-wallpaper-result.is-portrait-result {
-    width: min(94vw, 56rem);
-    max-width: min(94vw, 56rem);
     max-height: 90vh;
   }
 

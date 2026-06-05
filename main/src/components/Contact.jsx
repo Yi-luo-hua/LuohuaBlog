@@ -6,6 +6,10 @@ import {
   createSettledDrawState,
   getDrawDigits,
 } from "./contactLotteryState";
+import {
+  DEFAULT_WALLPAPER_ASPECT_RATIO,
+  getWallpaperCardStyle,
+} from "./wallpaperFrameLayout";
 import { loadWallpaperGift } from "./wallpaperGiftLoader";
 
 const SOURCE_ASSET_BASE =
@@ -59,7 +63,6 @@ const fallbackWallpaper = {
   label: "Gallery Gift",
 };
 
-const DEFAULT_WALLPAPER_ASPECT_RATIO = 16 / 9;
 const wallpaperLoadingText = "\u9ad8\u6e05\u58c1\u7eb8\u6b63\u5728\u8def\u4e0a...";
 
 const pickWallpaperGift = () => {
@@ -327,9 +330,7 @@ const Contact = () => {
         ? "is-unavailable"
         : "is-loading",
   ].join(" ");
-  const wallpaperFrameStyle = {
-    "--wallpaper-aspect-ratio": wallpaperAspectRatio,
-  };
+  const wallpaperFrameStyle = getWallpaperCardStyle(wallpaperAspectRatio);
   const wallpaperStatusText =
     wallpaperLoadStatus === "unavailable"
       ? "暂时没有拿到高清壁纸"

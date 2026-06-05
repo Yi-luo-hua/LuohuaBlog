@@ -1,6 +1,6 @@
-import { mockBangumiList, mockRadarList } from "../data/acgMock";
-import { apiUrl } from "../lib/apiBase";
-import { asList } from "../lib/asList";
+import { mockBangumiList } from "../data/acgMock.js";
+import { apiUrl } from "../lib/apiBase.js";
+import { asList } from "../lib/asList.js";
 
 async function fetchJson(path, { signal } = {}) {
   const res = await fetch(apiUrl(path), {
@@ -29,9 +29,9 @@ export async function getRadarFeed() {
   try {
     const data = await fetchJson("/api/v1/radar/feed");
     const items = asList(data);
-    return items.length > 0 ? items : mockRadarList;
+    return items;
   } catch {
-    return mockRadarList;
+    return [];
   }
 }
 

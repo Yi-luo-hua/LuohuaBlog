@@ -309,9 +309,29 @@ const AcgNavigation = () => {
             <div className="px-1">
               <SectionTitle accent="#FF6BAA">作者再看</SectionTitle>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {radarList.map((item) => (
-                  <RadarCard key={item.id} item={item} />
-                ))}
+                {radarList.length ? (
+                  radarList.map((item) => <RadarCard key={item.id} item={item} />)
+                ) : (
+                  <article className="col-span-full overflow-hidden rounded-2xl border border-[#FF6BAA]/20 bg-white/68 p-5 shadow-[0_10px_30px_rgba(255,107,170,0.08)] backdrop-blur-xl">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#FF6BAA]/78">
+                      Creator radar
+                    </p>
+                    <h3 className="mt-2 text-base font-bold text-[#2D2A3A] sm:text-lg">
+                      暂未同步到新的 UP 动态
+                    </h3>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-[#2D2A3A]/65">
+                      这里现在不会再拿英文假卡片冒充更新了。等雷达同步恢复后，会直接显示真实的 B 站创作者内容。
+                    </p>
+                    <a
+                      href="https://space.bilibili.com/1061280173"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${CANDY_BTN} mt-4 border-[#FF6BAA]/45 text-[#FF6BAA] hover:border-[#FF6BAA] hover:bg-[#FF6BAA] hover:text-white`}
+                    >
+                      Open Bilibili
+                    </a>
+                  </article>
+                )}
               </div>
             </div>
           </>
