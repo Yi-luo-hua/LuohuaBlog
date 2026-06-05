@@ -11,7 +11,7 @@ export function isFriendApplicationContent(content = "") {
 
 export function normalizeFriendsThreads(items = []) {
   return items
-    .filter((item) => item.parentId === 0 && isFriendApplicationContent(item.content))
+    .filter((item) => item.parentId === 0)
     .map((item) => ({
       ...item,
       replies: Array.isArray(item.replies) ? item.replies : [],

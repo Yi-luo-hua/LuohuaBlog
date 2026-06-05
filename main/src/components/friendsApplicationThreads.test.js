@@ -16,7 +16,7 @@ test("detects valid friend application content", () => {
   );
 });
 
-test("filters non-application top-level items but keeps replies", () => {
+test("keeps freeform top-level items and their replies", () => {
   const rows = [
     {
       id: 1,
@@ -31,9 +31,10 @@ test("filters non-application top-level items but keeps replies", () => {
 
   const threads = normalizeFriendsThreads(rows);
 
-  assert.equal(threads.length, 1);
+  assert.equal(threads.length, 2);
   assert.equal(threads[0].replies.length, 1);
   assert.equal(threads[0].replyCount, 1);
+  assert.equal(threads[1].id, 3);
 });
 
 test("flattens threaded guestbook rows for generic guestbook page usage", () => {

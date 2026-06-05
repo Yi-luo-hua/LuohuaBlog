@@ -11,11 +11,8 @@ import {
 } from "../services/guestbookMessagesApi";
 import { normalizeFriendsThreads } from "./friendsApplicationThreads";
 
-const FRIEND_TEMPLATE = `站点名称：
-站点链接：
-站点描述：
-头像链接：
-已添加本站友链：是`;
+const FRIEND_COMMENT_PLACEHOLDER =
+  "写下你的友链申请、站点介绍，或者想对桃之夭夭说的话...";
 
 const cardTone = (item) => {
   if (item.isAdminUser) return "admin";
@@ -53,7 +50,7 @@ const FriendsApplicationBoard = () => {
   const [user, setUser] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [content, setContent] = useState(FRIEND_TEMPLATE);
+  const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [replyDrafts, setReplyDrafts] = useState({});
   const [replyTargetId, setReplyTargetId] = useState(null);
@@ -136,7 +133,7 @@ const FriendsApplicationBoard = () => {
       return;
     }
 
-    setContent(FRIEND_TEMPLATE);
+    setContent("");
     setNotice("友链申请已经提交成功。");
     if (data.item) {
       setEntries((prev) => [{ ...data.item, replies: [], replyCount: 0 }, ...prev].slice(0, 30));
@@ -223,16 +220,14 @@ const FriendsApplicationBoard = () => {
             </div>
           )}
 
-          <label className="mb-1 block text-xs font-semibold text-[#6B7280]">
-            申请内容
-          </label>
           <textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}
             maxLength={500}
-            rows={8}
+            rows={6}
             required
             disabled={!user || submitting}
+            placeholder={FRIEND_COMMENT_PLACEHOLDER}
             className="w-full resize-y rounded-2xl border border-[#F2E6C9] bg-[#FFFBF5] px-4 py-3 text-base leading-relaxed text-[#2B2B2B] outline-none transition focus:border-[#FFD43B] disabled:cursor-not-allowed disabled:opacity-70"
           />
 
