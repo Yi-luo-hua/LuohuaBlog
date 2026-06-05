@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import BiliHubPage from "./pages/BiliHubPage";
 import LoginPage from "./pages/LoginPage";
 import AiTrafficPage from "./pages/AiTrafficPage";
+import FriendsPage from "./pages/FriendsPage";
 import GuestbookPage from "./pages/GuestbookPage";
 import GalleryAlbumPage from "./pages/GalleryAlbumPage";
 import GalleryPage from "./pages/GalleryPage";
@@ -16,6 +17,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="bili" element={<BiliHubPage />} />
           <Route path="ai-traffic" element={<AiTrafficPage />} />
+          <Route path="friends" element={<FriendsPage />} />
           <Route path="guestbook" element={<GuestbookPage />} />
           <Route path="gallery" element={<GalleryPage />} />
           <Route path="gallery/:albumId" element={<GalleryAlbumPage />} />

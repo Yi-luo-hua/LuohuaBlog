@@ -12,7 +12,6 @@
       navArticle: '文章',
       navShuo: '说说',
       navGallery: '相册',
-      navLinks: '友链',
       navMsg: '留言墙',
       footerLine: '桃之夭夭 © 2026',
       dmPlaceholder: '发条弹幕…',
@@ -71,15 +70,6 @@
       gallerySubStill: '静物',
       gallerySubNap: '打盹',
       gallerySubPlay: '玩耍',
-      linksTitle: '友链',
-      linksLead: '欢迎互换友链，请先阅读说明。',
-      linksSiteH: '本站信息',
-      linksExchangeH: '申请友链',
-      linksFriendsH: '小伙伴们',
-      linksVisit: '访问 →',
-      linksExL1: '添加本站链接后，通过 GitHub Issues、B 站私信或邮件联系。',
-      linksExL2: '请提供：站点名称、链接、一句话简介、头像图 URL。',
-      linksExL3: '邮箱：173236231@qq.com',
       tagDone: '完成'
     },
     en: {
@@ -89,7 +79,6 @@
       navArticle: 'Posts',
       navShuo: 'Moments',
       navGallery: 'Album',
-      navLinks: 'Friends',
       navMsg: 'Guestbook',
       footerLine: 'Taozhiyaoyao © 2026',
       dmPlaceholder: 'Send a danmaku…',
@@ -148,15 +137,6 @@
       gallerySubStill: 'Still life',
       gallerySubNap: 'Naps',
       gallerySubPlay: 'Play',
-      linksTitle: 'Friends',
-      linksLead: 'Read the notes below before requesting a link exchange.',
-      linksSiteH: 'About this site',
-      linksExchangeH: 'Link exchange',
-      linksFriendsH: 'Friends',
-      linksVisit: 'Visit →',
-      linksExL1: 'Add this site first, then reach out via GitHub Issues, Bilibili DM, or email.',
-      linksExL2: 'Please send: site name, URL, one-line bio, avatar image URL.',
-      linksExL3: 'Email: 173236231@qq.com',
       tagDone: 'Done'
     }
   };

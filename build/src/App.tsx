@@ -6,7 +6,6 @@ import { WeatherProvider } from './weather/WeatherContext';
 import { ArchivesPage } from './pages/ArchivesPage';
 import { ArticlesPage } from './pages/ArticlesPage';
 import { HomePage } from './pages/HomePage';
-import { LinksPage } from './pages/LinksPage';
 import { MomentsPage } from './pages/MomentsPage';
 import { PostPage } from './pages/PostPage';
 
@@ -33,7 +32,6 @@ export function App() {
               <Route path="/post/:slug" element={<PostPage />} />
               <Route path="/moments" element={<MomentsPage />} />
               <Route path="/gallery/*" element={<ExternalRedirect to="/gallery" />} />
-              <Route path="/links" element={<LinksPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

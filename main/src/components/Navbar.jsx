@@ -1,15 +1,16 @@
 import clsx from "clsx";
 import gsap from "gsap";
-import { useWindowScroll } from "react-use";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useWindowScroll } from "react-use";
 
 const navLinks = [
   { label: "HOME", to: "/", end: true },
   { label: "Gallery", to: "/gallery", end: true },
   { label: "Bili Hub", to: "/bili", end: true },
   { label: "AI 流量", to: "/ai-traffic", end: true },
+  { label: "Friends", to: "/friends", end: true },
 ];
 
 const DRAWER_MS = 220;
@@ -17,6 +18,7 @@ const DRAWER_MS = 220;
 const getNavTheme = (pathname) => {
   if (pathname === "/bili" || pathname.startsWith("/bili/")) return "bili";
   if (pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/")) return "ai";
+  if (pathname === "/friends" || pathname.startsWith("/friends/")) return "friends";
   if (pathname === "/guestbook" || pathname.startsWith("/guestbook/")) return "guestbook";
   if (pathname === "/gallery" || pathname.startsWith("/gallery/")) return "gallery";
   return "dark";
@@ -34,7 +36,6 @@ const NavBar = () => {
   const navContainerRef = useRef(null);
   const menuBtnRef = useRef(null);
   const closeBtnRef = useRef(null);
-  const drawerRef = useRef(null);
 
   const { y: currentScrollY } = useWindowScroll();
   const [isNavVisible, setIsNavVisible] = useState(true);
@@ -43,11 +44,14 @@ const NavBar = () => {
   const isBiliPage = pathname === "/bili" || pathname.startsWith("/bili/");
   const isAiTrafficPage =
     pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/");
+  const isFriendsPage =
+    pathname === "/friends" || pathname.startsWith("/friends/");
   const isGuestbookPage =
     pathname === "/guestbook" || pathname.startsWith("/guestbook/");
   const isGalleryPage =
     pathname === "/gallery" || pathname.startsWith("/gallery/");
-  const isSubPage = isBiliPage || isAiTrafficPage || isGuestbookPage || isGalleryPage;
+  const isSubPage =
+    isBiliPage || isAiTrafficPage || isFriendsPage || isGuestbookPage || isGalleryPage;
   const navTheme = getNavTheme(pathname);
   const isLightNav = navTheme !== "dark";
 
@@ -83,16 +87,16 @@ const NavBar = () => {
   }, [pathname]);
 
   useEffect(() => {
-    if (!drawerMounted) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") closeMobile();
+    if (!drawerMounted) return undefined;
+    const onKey = (event) => {
+      if (event.key === "Escape") closeMobile();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [drawerMounted, closeMobile]);
 
   useEffect(() => {
-    if (!drawerVisible) return;
+    if (!drawerVisible) return undefined;
     const id = window.setTimeout(() => closeBtnRef.current?.focus(), 40);
     return () => window.clearTimeout(id);
   }, [drawerVisible]);
@@ -113,61 +117,52 @@ const NavBar = () => {
 
   useEffect(() => {
     if (!navContainerRef.current) return;
+
+    const removeClasses = () => {
+      navContainerRef.current.classList.remove(
+        "floating-nav",
+        "floating-nav-bili",
+        "floating-nav-ai",
+        "floating-nav-friends",
+        "floating-nav-guestbook",
+        "floating-nav-gallery"
+      );
+    };
+
+    const addThemeClass = () => {
+      if (navTheme === "bili") {
+        navContainerRef.current.classList.add("floating-nav-bili");
+      } else if (navTheme === "ai") {
+        navContainerRef.current.classList.add("floating-nav-ai");
+      } else if (navTheme === "friends") {
+        navContainerRef.current.classList.add("floating-nav-friends");
+      } else if (navTheme === "guestbook") {
+        navContainerRef.current.classList.add("floating-nav-guestbook");
+      } else if (navTheme === "gallery") {
+        navContainerRef.current.classList.add("floating-nav-gallery");
+      } else {
+        navContainerRef.current.classList.add("floating-nav");
+      }
+    };
+
     if (currentScrollY === 0) {
       setIsNavVisible(true);
-      navContainerRef.current.classList.remove(
-        "floating-nav",
-        "floating-nav-bili",
-        "floating-nav-ai",
-        "floating-nav-guestbook",
-        "floating-nav-gallery"
-      );
+      removeClasses();
     } else if (currentScrollY > lastScrollY) {
       setIsNavVisible(false);
-      navContainerRef.current.classList.remove(
-        "floating-nav",
-        "floating-nav-bili",
-        "floating-nav-ai",
-        "floating-nav-guestbook",
-        "floating-nav-gallery"
-      );
-      if (navTheme === "bili") {
-        navContainerRef.current.classList.add("floating-nav-bili");
-      } else if (navTheme === "ai") {
-        navContainerRef.current.classList.add("floating-nav-ai");
-      } else if (navTheme === "guestbook") {
-        navContainerRef.current.classList.add("floating-nav-guestbook");
-      } else if (navTheme === "gallery") {
-        navContainerRef.current.classList.add("floating-nav-gallery");
-      } else {
-        navContainerRef.current.classList.add("floating-nav");
-      }
+      removeClasses();
+      addThemeClass();
     } else if (currentScrollY < lastScrollY) {
       setIsNavVisible(true);
-      navContainerRef.current.classList.remove(
-        "floating-nav",
-        "floating-nav-bili",
-        "floating-nav-ai",
-        "floating-nav-guestbook",
-        "floating-nav-gallery"
-      );
-      if (navTheme === "bili") {
-        navContainerRef.current.classList.add("floating-nav-bili");
-      } else if (navTheme === "ai") {
-        navContainerRef.current.classList.add("floating-nav-ai");
-      } else if (navTheme === "guestbook") {
-        navContainerRef.current.classList.add("floating-nav-guestbook");
-      } else if (navTheme === "gallery") {
-        navContainerRef.current.classList.add("floating-nav-gallery");
-      } else {
-        navContainerRef.current.classList.add("floating-nav");
-      }
+      removeClasses();
+      addThemeClass();
     }
 
     setLastScrollY(currentScrollY);
   }, [currentScrollY, lastScrollY, navTheme]);
 
   useEffect(() => {
+    if (!navContainerRef.current) return;
     gsap.to(navContainerRef.current, {
       y: isNavVisible ? 0 : -100,
       opacity: isNavVisible ? 1 : 0,
@@ -180,6 +175,7 @@ const NavBar = () => {
       "text-[#7C5CFF]": active && navTheme === "bili",
       "text-[#FF8FAB]":
         active && (navTheme === "ai" || navTheme === "guestbook" || navTheme === "gallery"),
+      "text-[#102A24]": active && navTheme === "friends",
       "text-yellow-300": active && navTheme === "dark",
     });
 
@@ -188,6 +184,7 @@ const NavBar = () => {
     (item.to === "/gallery" && isGalleryPage) ||
     (item.to === "/bili" && isBiliPage) ||
     (item.to === "/ai-traffic" && isAiTrafficPage) ||
+    (item.to === "/friends" && isFriendsPage) ||
     (item.to === "/guestbook" && isGuestbookPage);
 
   const handleNavClick = (item) => {
@@ -244,7 +241,6 @@ const NavBar = () => {
           onClick={closeMobile}
         />
         <div
-          ref={drawerRef}
           id="site-mobile-nav"
           role="dialog"
           aria-modal="true"
@@ -265,12 +261,10 @@ const NavBar = () => {
               aria-label="关闭菜单"
               onClick={closeMobile}
             >
-              <span aria-hidden>×</span>
+              <span aria-hidden>x</span>
             </button>
           </div>
-          <nav className="nav-mobile-links">
-            {navLinks.map((item) => renderMobileLink(item))}
-          </nav>
+          <nav className="nav-mobile-links">{navLinks.map((item) => renderMobileLink(item))}</nav>
         </div>
       </div>,
       document.body
@@ -284,6 +278,7 @@ const NavBar = () => {
           "fixed inset-x-0 top-2 z-50 h-14 border-none transition-all duration-700 sm:inset-x-4 sm:top-4 sm:h-16 md:inset-x-6",
           navTheme === "bili" && currentScrollY === 0 && "floating-nav-bili",
           navTheme === "ai" && currentScrollY === 0 && "floating-nav-ai",
+          navTheme === "friends" && currentScrollY === 0 && "floating-nav-friends",
           navTheme === "guestbook" && currentScrollY === 0 && "floating-nav-guestbook",
           navTheme === "gallery" && currentScrollY === 0 && "floating-nav-gallery"
         )}
@@ -306,9 +301,7 @@ const NavBar = () => {
               {currentScrollY === 0 && !isSubPage && (
                 <button
                   type="button"
-                  onClick={() =>
-                    window.dispatchEvent(new CustomEvent("showHeroPreview"))
-                  }
+                  onClick={() => window.dispatchEvent(new CustomEvent("showHeroPreview"))}
                   className={clsx(
                     "nav-hover-btn hidden md:inline",
                     isLightNav && `nav-hover-btn--${navTheme}`
@@ -359,8 +352,11 @@ const NavBar = () => {
                     className={clsx("indicator-line", {
                       active: isIndicatorActive,
                       "indicator-line-bili": navTheme === "bili",
+                      "indicator-line-friends": navTheme === "friends",
                       "indicator-line-ai":
-                        navTheme === "ai" || navTheme === "guestbook" || navTheme === "gallery",
+                        navTheme === "ai" ||
+                        navTheme === "guestbook" ||
+                        navTheme === "gallery",
                     })}
                     style={{
                       animationDelay: `${bar * 0.1}s`,

@@ -39,6 +39,16 @@ body {
     );
   }
 
+  .floating-nav-friends {
+    @apply rounded-2xl border border-[#CFE4DB] shadow-[0_14px_34px_rgba(16,42,36,0.12)] backdrop-blur-md;
+    background-image: linear-gradient(
+      135deg,
+      rgba(248, 245, 238, 0.96) 0%,
+      rgba(240, 247, 242, 0.96) 52%,
+      rgba(234, 243, 239, 0.96) 100%
+    );
+  }
+
   .floating-nav-guestbook {
     @apply rounded-2xl border border-[#F2E6C9] shadow-[0_12px_30px_rgba(255,143,171,0.12)] backdrop-blur-sm;
     background-image: linear-gradient(
@@ -2337,6 +2347,10 @@ body {
   @apply bg-[#2D2A3A]/65;
 }
 
+.indicator-line-friends {
+  @apply bg-[#102A24]/70;
+}
+
 .indicator-line.active {
   animation: indicator-line 0.5s ease infinite;
   animation-delay: calc(var(--animation-order) * 0.1s);
@@ -2754,6 +2768,21 @@ body {
   color: #ff8fab;
 }
 
+/* Friends - calm signal station */
+.nav-mobile-link--friends {
+  color: #102a24;
+}
+.nav-mobile-link--friends:hover,
+.nav-mobile-link--friends:focus-visible {
+  background: rgba(255, 255, 255, 0.88);
+  color: #102a24;
+  outline: none;
+}
+.nav-mobile-link--active-friends {
+  background: rgba(255, 255, 255, 0.96);
+  color: #102a24;
+}
+
 /* Bili Hub — Candy Sky */
 .nav-mobile-link--bili {
   color: #2d2a3a;
@@ -2813,6 +2842,12 @@ body {
 .nav-hover-btn--gallery::after {
   background-color: #ff8fab;
 }
+.nav-hover-btn--friends {
+  color: #102a24;
+}
+.nav-hover-btn--friends::after {
+  background-color: #6fae9b;
+}
 .nav-hover-btn--bili {
   color: #2d2a3a;
 }
@@ -2829,6 +2864,11 @@ body {
   border-color: #f2e6c9;
   background: rgba(255, 255, 255, 0.9);
   color: #2b2b2b;
+}
+.nav-menu-btn--friends {
+  border-color: #cfe4db;
+  background: rgba(255, 255, 255, 0.92);
+  color: #102a24;
 }
 .nav-menu-btn--bili {
   border-color: #e8dffb;

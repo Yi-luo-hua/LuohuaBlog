@@ -10,7 +10,6 @@ const NAV = [
   { to: '/archives', icon: '📂', key: 'navArchive' as const },
   { to: '/articles', icon: '📝', key: 'navArticle' as const },
   { to: '/moments', icon: '💬', key: 'navShuo' as const },
-  { to: '/links', icon: '🔗', key: 'navLinks' as const },
 ];
 
 export function Sidebar() {

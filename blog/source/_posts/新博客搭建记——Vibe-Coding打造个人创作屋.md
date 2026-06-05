@@ -124,7 +124,7 @@ homepage-project/
 │   │   ├── ArchivesPage.tsx  # 归档
 │   │   ├── GalleryPage.tsx   # 相册列表
 │   │   ├── GalleryAlbumPage.tsx  # 相册详情
-│   │   ├── LinksPage.tsx     # 友链
+│   │   ├── FriendsPage.tsx   # 友链申请
 │   │   ├── MessagePage.tsx   # 留言墙
 │   │   └── BangumiPage.tsx   # B 站追番
 │   ├── i18n/                 # 国际化 Context
