@@ -23,6 +23,10 @@ export async function postGuestbookMessage(body) {
   return parseJson(res);
 }
 
+export function postGuestbookReply(parentId, content) {
+  return postGuestbookMessage({ parentId, content });
+}
+
 export async function hideGuestbookMessage(id) {
   const res = await fetch(`/api/guestbook/messages/${id}`, {
     method: "PATCH",

@@ -25,6 +25,7 @@ func migrateAll(db *sql.DB) error {
 			ip_region TEXT NOT NULL DEFAULT '',
 			ip_masked TEXT NOT NULL DEFAULT '',
 			user_agent_hash TEXT NOT NULL DEFAULT '',
+			parent_id INTEGER NOT NULL DEFAULT 0,
 			status TEXT NOT NULL DEFAULT 'visible',
 			is_login_user INTEGER NOT NULL DEFAULT 0,
 			is_admin_user INTEGER NOT NULL DEFAULT 0,
@@ -33,6 +34,7 @@ func migrateAll(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_status_created ON guestbook_messages(status, created_at DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_user_created ON guestbook_messages(user_id, created_at DESC);`,
+		`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_parent_created ON guestbook_messages(parent_id, created_at ASC);`,
 		`CREATE TABLE IF NOT EXISTS guestbook_ip_cache (
 			ip_hash TEXT PRIMARY KEY,
 			ip_region TEXT NOT NULL,
@@ -127,6 +129,7 @@ func migrateAll(db *sql.DB) error {
 			return err
 		}
 	}
+	ensureColumn(db, "guestbook_messages", "parent_id", "INTEGER NOT NULL DEFAULT 0")
 	ensureColumn(db, "users", "is_owner", "INTEGER NOT NULL DEFAULT 0")
 	ensureColumn(db, "users", "display_name", "TEXT NOT NULL DEFAULT ''")
 	ensureColumn(db, "sessions", "unlimited", "INTEGER NOT NULL DEFAULT 0")

@@ -1,258 +1,327 @@
-# Friends Hub Design
+# Friends Page + Threaded Application Board Design
 
 ## Goal
 
-Create a single new `Friends` hub inside the main site, entered from the main navigation like `Bili Hub` and `AI 流量`, while removing friend-link entry points and dedicated friend-link content from `blog` and `build`.
+Refresh `/friends` into a quieter, more poetic page that keeps only the three sections the user wants, while upgrading the reused guestbook message system into a real threaded reply model for friend-link applications.
+
+This iteration replaces the earlier friends-hub scope. The active scope is now:
+
+1. `小伙伴卡片`
+2. `我的友链`
+3. `申请友链的留言区`
 
 ## Product Scope
 
-### Main Site
+### In Scope
 
-- Add a new top-level navigation entry in the main site navbar:
-  - Label: `Friends`
-  - Routing style: same level as `/bili` and `/ai-traffic`
-- Add a new dedicated route:
-  - `/friends`
-- The new `/friends` page becomes the only active friend-link center across the project.
+- Keep `/friends` as a three-section page only.
+- Rewrite the top copy and section framing so it feels like `桃之夭夭`'s own in-site voice, with more poetic wording and less product-description tone.
+- Replace placeholder friend cards with a real first featured friend card:
+  - Name: `XingHuiSamaの宝藏之地`
+  - Desc: `今天我也要学习吗`
+  - URL: `https://www.xinghuisama.top`
+  - Avatar: `https://bu.dusays.com/2026/03/24/69c1e38ac1846.jpg`
+- Preserve `桃之夭夭`'s own friend-link information in the middle section.
+- Keep the application board on the existing message system path, but require login before posting friend-link applications.
+- Upgrade the message system to support real replies under a parent message.
+- Make the application board feel like a free-form comment area with expandable replies, not a plain form list.
 
-### Page Content
+### Out of Scope
 
-The new `/friends` page contains exactly three functional sections in this first version:
+- No new separate friend-link moderation panel.
+- No multi-level deep nesting beyond one visible reply level in the UI for this pass.
+- No changes to unrelated pages outside the shared guestbook message capability.
+- No migration of old friend-link data from blog or build in this pass.
 
-1. `本站信息`
-2. `申请友链说明`
-3. `申请友链留言区`
+## User Experience
 
-This first version does **not** include any existing or migrated friend cards / partner list.
+### 1. Page Tone
 
-### Blog
+The page should feel soft, airy, and literary rather than technical. The current structural simplicity is correct, but the copy should shift from explanatory UI language into short poetic phrases and warm guidance.
 
-- Remove the friend-link menu entry from the Hexo blog navigation.
-- Stop using the blog `link` page as a friend-link destination.
-- Do not preserve a migration notice page in the blog for this iteration.
+The hero area should:
 
-### Build
+- Keep the page anchored as `/friends`
+- Use a quieter, poetic title and supporting line
+- Introduce the page as a place where links are exchanged slowly and intentionally
 
-- Remove the `links` entry from the `build` navigation.
-- Remove the `LinksPage` route from the `build` app.
-- Do not preserve the old `links` page as an active destination.
+### 2. 小伙伴卡片
 
-## Information Architecture
+This section becomes a curated friends area rather than a placeholder board.
 
-### Main Navigation
+Requirements:
 
-- `Friends` appears in the main site navbar beside the existing main-site product pages.
-- The route follows the main site shell and existing routing conventions used by `Bili Hub`, `AI 流量`, `Gallery`, and `Guestbook`.
+- The first visible card must be `XingHuiSamaの宝藏之地`
+- The card should include avatar, name, short intro, and clickable site link
+- The layout should feel like a warm scrapbook / stationery card that still matches the site
+- Additional placeholder cards may remain only if they still feel intentional and not empty-demo-like
 
-### Friends Page Structure
+### 3. 我的友链
 
-#### 1. Hero / Title Area
+This section stays lightweight and copy-friendly.
 
-Purpose:
-- Introduce the page as a dedicated signal station for exchanging friend links.
-- Make the page feel like a standalone destination rather than a generic form page.
+Content remains the same canonical four-line friend-link info for `桃之夭夭`.
 
-Contents:
-- Small eyebrow label
-- Main title
-- Short supporting paragraph
+Presentation requirements:
 
-Recommended content direction:
-- Eyebrow: signal / network / channel themed
-- Title: friend-link themed but more polished than simply `友情链接`
-- Supporting copy: explain that this is the unified place to view site info and submit applications
+- Preserve the four-line structure
+- Keep it easy to copy
+- Visually soften it so it feels closer to a calm note card or polished code snippet window, not a harsh dev block
 
-#### 2. Site Information Card
+Canonical content:
 
-Purpose:
-- Provide the canonical information other site owners need for adding this site.
+```yaml
+name: 桃之夭夭
+desc: 桃之夭夭的小屋
+url: https://taozhiyy.top
+avatar: https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/1.png
+```
 
-Contents:
-- Site name
-- Site URL
-- Short description
-- Avatar / logo image
+### 4. 申请友链留言区
 
-Optional enhancement:
-- Copy-friendly formatting block for fast manual reuse
+This area should look like a real comment wall.
 
-#### 3. Friend-Link Application Guide Card
+Requirements:
 
-Purpose:
-- Tell users how to apply and what format to use.
+- Eyebrow / label direction can use `Comment Style`
+- Title direction can use `留言申请`
+- Intro copy must clearly say the section reuses the guestbook interface, but applications require login
+- Logged-in users see the application template prefilled
+- Logged-out users see a login prompt and disabled submission
+- Empty state remains:
+  - `还没有友链申请留言，欢迎留下第一条。`
 
-Contents:
-- Short application rules
-- Required fields
-- A copyable template
+The default application content should follow this structure:
 
-Suggested required fields:
-- Site name
-- Site URL
-- Short description
-- Avatar image URL
+```text
+站点名称：
+站点链接：
+站点描述：
+头像链接：
+已添加本站友链：是
+```
 
-Suggested messaging:
-- Add this site first, then leave a message in the application area below
-- Keep the description short and clear
-- Use a stable avatar image URL
+When the current logged-in identity is `桃之夭夭`, the UI should explicitly surface the identity framing:
 
-#### 4. Application Message Area
+- `以 桃之夭夭 身份提交友链申请`
 
-Purpose:
-- Provide a real interactive application channel, directly on the page
+## Reply Model
 
-Behavior:
-- Reuse the existing main-site guestbook / message submission capability
-- The UI wording should be adapted for friend-link application use
-- The section should visually feel embedded into the Friends page, not pasted from the guestbook page
+### Recommendation
 
-Non-goal:
-- No new backend schema
-- No separate moderation system in this iteration
+Use real persisted replies, not fake `@someone` formatting.
 
-## Visual Direction
+### Backend Behavior
 
-### Design Theme
+Each guestbook message may optionally point to a parent message.
 
-Page identity:
-- `静谧通信站`
-- A calm network/signal exchange atmosphere
-- Distinct from the candy palette of `Bili Hub`
-- Distinct from the creamy dashboard feel of `AI 流量`
+Rules:
 
-### Color System
+- Top-level friend-link applications have no parent
+- Replies must point to an existing visible-or-manageable parent message
+- Reply creation also requires login for the friends page flow
+- For this iteration, replies can themselves be stored as messages, but the UI will present one visible nested level under top-level application items
 
-Primary palette:
-- Background: `#F8F5EE`
-- Deep ink green: `#102A24`
-- Mist teal: `#6FAE9B`
-- Amber gold: `#E6B85C`
-- Main text: `#1A1D1A`
+### Frontend Behavior
 
-Usage:
-- Background and large surfaces use warm off-white
-- Titles and strong UI anchors use deep green
-- Secondary accents use mist teal
-- Highlights, badges, and action emphasis use amber gold
+Each top-level application card should support:
 
-### Surface Style
+- `回复` action
+- Expand / collapse replies when replies exist
+- Inline reply editor beneath the parent message
+- Reply submission state and error feedback
 
-- Soft gradients in the page background
-- Blurred light blobs or atmospheric halos
-- Frosted or semi-translucent cards
-- Refined border treatment instead of heavy shadows
+Displayed structure:
 
-### Motion
+- Top-level application card
+- Its replies listed beneath it with lighter visual weight
+- Reply input shown only for the active target
 
-Keep motion restrained:
-- Light entrance reveals
-- Gentle hover glow / elevation
-- Smooth button transitions
+This should feel like a drop-down conversational stack rather than a flat list.
 
-Avoid:
-- Heavy parallax
-- Over-animated decorative systems
-- Motion that competes with text readability
+## Data Design
 
-### Responsive Intent
+### Current Limitation
 
-Desktop:
-- Cards can sit in a composed editorial grid
+The existing `guestbook_messages` table and API support only flat messages. There is no current `parent_id` or reply relation.
 
-Mobile:
-- Stack vertically with comfortable spacing
-- Preserve headline clarity and touch target size
+### Required Schema Extension
 
-## Interaction Design
+Extend `guestbook_messages` with reply metadata.
 
-### Navigation
+Minimum addition:
 
-- Clicking `Friends` opens `/friends`
-- The page stays within the main-site experience and layout conventions
+- `parent_id INTEGER NOT NULL DEFAULT 0`
 
-### Friend-Link Submission
+Interpretation:
 
-- Users read site info and application rules first
-- Users then scroll to the message area and submit their application there
-- The message area copy should explicitly frame the input as a friend-link application
+- `0` means top-level message
+- Positive value means reply to that message
 
-### Copy Clarity
+Recommended DB support:
 
-The new page should clearly communicate:
-- This is now the canonical friend-link page
-- Site information is provided here
-- Applications are left here
+- Index on `(parent_id, created_at)`
 
-## Content Strategy
+This is enough for a first real threaded model without introducing a separate replies table.
 
-### Keep
+## API Design
 
-- `本站信息`
-- `申请说明`
-- `留言区`
+### Existing Endpoints to Reuse
 
-### Remove
+- `GET /api/guestbook/messages`
+- `POST /api/guestbook/messages`
 
-- Existing friend-link card list from the first version
-- Old friend-link entry points in `blog`
-- Old friend-link entry points in `build`
+### GET Response Shape
 
-### Do Not Add Yet
+The list endpoint should return enough information for the friends page to build a threaded view.
 
-- Friend categories
-- Approval states
-- Auto-generated link cards
-- Search / filter
-- Dedicated backend workflow
+Recommended response strategy:
 
-## Technical Plan Shape
+- Return only top-level items in the main list
+- Attach their replies as a nested `replies` array
+- Include `replyCount` for UI display
 
-### Main
+This keeps the frontend simpler than flattening and re-grouping everything manually.
 
-Expected change areas:
-- Main navbar definition
-- Main routing
-- New `Friends` page component
-- New styling for the page
-- Reuse of the existing message / guestbook capability
+### POST Request Shape
 
-### Build
+Keep the current payload compatible and extend it.
 
-Expected change areas:
-- Navigation definition
-- App route definition
-- Existing `LinksPage` removal from active app flow
+Top-level application:
 
-### Blog
+```json
+{ "content": "..." }
+```
 
-Expected change areas:
-- Butterfly menu configuration
-- Link page source content / active usage
+Reply:
 
-## Testing Expectations
+```json
+{ "content": "...", "parentId": 123 }
+```
 
-### Main Site
+Validation:
 
-- `Friends` appears in the navbar
-- Clicking it routes to `/friends`
-- The new page renders correctly on desktop and mobile
-- The message area works with the reused existing submission path
+- `parentId` must be absent or a positive integer
+- If `parentId` is provided, the parent message must exist and not be deleted
+- Friends-page posting should still enforce login on the frontend
+- Backend should remain robust if other clients call the endpoint directly
 
-### Build
+## UI Composition
 
-- No `links` entry remains in navigation
-- No active `LinksPage` route remains in user-facing flow
+### FriendsPage.jsx
 
-### Blog
+Responsibilities:
 
-- No `Link` menu entry remains in navigation
-- The blog no longer acts as a friend-link destination
+- Hero copy refresh
+- Render the three required sections only
+- Inject updated friend card data
+- Keep the own-link section centered and copy-friendly
+- Host the threaded application board beneath the other sections
 
-## Non-Goals
+### FriendsApplicationBoard.jsx
 
-- No preservation banner or redirect page inside `blog`
-- No preservation banner or redirect page inside `build`
-- No old-friends card migration in the first iteration
-- No backend redesign
-- No moderation dashboard
+Responsibilities:
+
+- Fetch threaded application entries
+- Filter or frame content so the board remains friend-link oriented
+- Gate top-level submission behind login
+- Render top-level items and nested replies
+- Handle reply target state
+- Submit top-level applications and replies through the same API
+
+### index.css
+
+Responsibilities:
+
+- Add or refine supporting visual tokens for the poetic friends page
+- Add comment-wall details if utility classes alone become noisy
+- Keep the style consistent with the main site instead of introducing a foreign system
+
+## Content Filtering
+
+The current board filters visible messages to application-like content. That behavior should remain, but it must also account for replies.
+
+Recommended logic:
+
+- Top-level items shown on the friends page must match the application template pattern
+- Replies should be shown if their parent is an included top-level application
+- Replies themselves do not need to match the application template
+
+This prevents ordinary guestbook chatter from polluting the board while still allowing real conversation under valid applications.
+
+## Error Handling
+
+### Submission Errors
+
+- Keep current rate-limit and generic error handling
+- Add a clear invalid-parent failure path for replies
+- If login expires mid-session, prompt the user to log in again and keep the draft content if practical
+
+### Loading States
+
+- Keep the current loading state, but make it read like comment loading rather than raw data fetch
+- Reply areas should have local submitting indicators so one reply does not block the entire board more than necessary
+
+## Testing Plan
+
+### Backend
+
+Add tests before implementation for:
+
+- Creating a top-level message
+- Creating a reply with valid `parentId`
+- Rejecting reply creation when parent does not exist
+- Listing top-level messages with nested replies
+- Preserving current flat-message behavior for non-reply callers
+
+### Frontend
+
+At minimum verify:
+
+- `/friends` renders the new three-section layout
+- The new featured friend card appears correctly
+- Logged-out users cannot submit applications or replies
+- Logged-in users can open a reply editor under a message
+- Reply submission updates the visible thread correctly
+
+### Build Verification
+
+- `main`: `npm run build`
+- `acg-api`: relevant Go test command for guestbook reply logic
+
+## Risks and Mitigations
+
+### Risk: Existing guestbook consumers expect a flat list
+
+Mitigation:
+
+- Keep response compatibility carefully, or confine nested reply rendering to additive fields
+- Avoid removing existing top-level fields used elsewhere
+
+### Risk: Thread rendering gets noisy on mobile
+
+Mitigation:
+
+- Limit visible nesting depth
+- Use lighter reply cards, tighter spacing, and collapsible reply groups
+
+### Risk: Friends-page login rule differs from general guestbook behavior
+
+Mitigation:
+
+- Enforce login in the friends-page UI
+- Keep backend validation generic and safe
+- Do not silently allow unauthenticated submission from this page
+
+## Acceptance Criteria
+
+The work is done when:
+
+- `/friends` contains only `小伙伴卡片`、`我的友链`、`申请友链的留言区`
+- The page copy and visual framing feel more poetic and site-native
+- `XingHuiSamaの宝藏之地` is the first real friend card shown
+- `我的友链` presents `桃之夭夭`'s four-line info in a copy-friendly card
+- The application board requires login for submission
+- Users can reply beneath an existing friend-link application
+- Replies persist after refresh
+- The board still excludes unrelated non-application top-level guestbook messages

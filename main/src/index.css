@@ -3752,6 +3752,31 @@ body {
     radial-gradient(circle, rgba(255, 232, 165, 0.44), transparent 64%);
 }
 
+.friends-verse-panel {
+  box-shadow:
+    0 18px 48px rgba(95, 75, 82, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  background:
+    radial-gradient(circle at top right, rgba(255, 224, 205, 0.32), transparent 30%),
+    linear-gradient(180deg, rgba(255, 253, 248, 0.95), rgba(255, 247, 240, 0.94));
+}
+
+.friends-verse-panel__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(242, 230, 201, 0.9);
+  background: linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(255, 246, 238, 0.92));
+  padding: 0.9rem 1rem;
+}
+
+@media (max-width: 767px) {
+  .friends-verse-panel__chrome {
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 767px) {
   .source-lottery-section {
     padding-top: 3.5rem;

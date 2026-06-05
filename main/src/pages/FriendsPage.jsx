@@ -1,23 +1,15 @@
 import { useState } from "react";
-import { FiCopy } from "react-icons/fi";
+import { FiCopy, FiExternalLink } from "react-icons/fi";
 
 import FriendsApplicationBoard from "../components/FriendsApplicationBoard";
 
 const friendCards = [
   {
-    name: "等待新的小伙伴",
-    desc: "通过审核后，会作为卡片展示在这里。",
-    note: "OPEN",
-  },
-  {
-    name: "长期更新优先",
-    desc: "更欢迎稳定创作、内容清晰的个人小屋。",
-    note: "ACTIVE",
-  },
-  {
-    name: "欢迎来交换友链",
-    desc: "在下方留言区提交申请，我们会慢慢把这里填满。",
-    note: "READY",
+    name: "XingHuiSamaの宝藏之地",
+    desc: "今天我也要学习吗",
+    url: "https://www.xinghuisama.top",
+    avatar: "https://bu.dusays.com/2026/03/24/69c1e38ac1846.jpg",
+    note: "FIRST FRIEND",
   },
 ];
 
@@ -46,7 +38,7 @@ const FriendsPage = () => {
         aria-hidden
         style={{
           background:
-            "radial-gradient(circle at 12% 16%, rgba(255, 214, 184, 0.3), transparent 22rem), radial-gradient(circle at 88% 14%, rgba(165, 216, 255, 0.24), transparent 24rem), linear-gradient(180deg, #fffaf2 0%, #fffdf7 48%, #f7fbff 100%)",
+            "radial-gradient(circle at 12% 16%, rgba(255, 214, 184, 0.34), transparent 22rem), radial-gradient(circle at 88% 14%, rgba(165, 216, 255, 0.25), transparent 24rem), linear-gradient(180deg, #fffaf2 0%, #fffdf7 48%, #f6fbff 100%)",
         }}
       />
       <div
@@ -67,7 +59,7 @@ const FriendsPage = () => {
             友链
           </h1>
           <p className="mt-5 text-base leading-8 text-[#6B7280] md:text-lg">
-            这里保留最需要的三部分：小伙伴卡片、我的友链，以及申请友链的留言区。
+            风会替信纸赶路，链接会替心意停留。若你也愿意把小屋的灯留给远方的人，这里便是交换名字的地方。
           </p>
         </header>
 
@@ -82,21 +74,26 @@ const FriendsPage = () => {
               </h2>
             </div>
             <p className="max-w-xl text-sm leading-7 text-[#6B7280]">
-              这里会逐渐收进通过审核的小屋。现在先留出位置，等新的连接慢慢长出来。
+              这里先把第一张认真交换过的名字收好。后面若有新的小屋慢慢靠岸，也会在这里一点点亮起来。
             </p>
           </div>
 
           <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {friendCards.map((friend) => (
-              <article
+              <a
                 key={friend.name}
-                className="rounded-[24px] border border-[#F2E6C9] bg-white/90 p-5 shadow-[0_14px_34px_rgba(255,143,171,0.12)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(255,143,171,0.16)]"
+                href={friend.url}
+                target="_blank"
+                rel="noreferrer"
+                className="group block rounded-[28px] border border-[#F0E3D8] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,241,0.94))] p-5 shadow-[0_18px_44px_rgba(95,75,82,0.10)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_56px_rgba(95,75,82,0.14)]"
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#FFE6EC,#FFF5C8)] text-lg font-semibold text-[#B76E79] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
-                      友
-                    </div>
+                    <img
+                      src={friend.avatar}
+                      alt={friend.name}
+                      className="h-16 w-16 rounded-[20px] object-cover shadow-[0_10px_24px_rgba(95,75,82,0.16)]"
+                    />
                     <div>
                       <p className="text-lg font-semibold text-[#2B2B2B]">{friend.name}</p>
                       <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#74C0FC]">
@@ -104,9 +101,13 @@ const FriendsPage = () => {
                       </p>
                     </div>
                   </div>
+                  <FiExternalLink
+                    className="mt-1 h-4 w-4 text-[#B76E79] transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    aria-hidden
+                  />
                 </div>
                 <p className="mt-5 text-sm leading-7 text-[#6B7280]">{friend.desc}</p>
-              </article>
+              </a>
             ))}
           </div>
         </section>
@@ -122,12 +123,12 @@ const FriendsPage = () => {
               </h2>
             </div>
             <p className="max-w-xl text-sm leading-7 text-[#6B7280]">
-              这里只放标准四行信息，方便直接复制使用。
+              留下四行刚刚好的自我介绍，方便被复制，也方便在别人的页面里安静落下。
             </p>
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-[28px] border border-[#F2E6C9] bg-white/92 shadow-[0_18px_48px_rgba(255,143,171,0.12)]">
-            <div className="flex items-center justify-between border-b border-[#F7EBDD] bg-[linear-gradient(180deg,#FFFDF8,#FFF6EE)] px-4 py-3">
+          <div className="friends-verse-panel mt-6 overflow-hidden rounded-[28px] border border-[#F2E6C9] bg-white/92">
+            <div className="friends-verse-panel__chrome">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-[#FF8FAB]" />
                 <span className="h-3 w-3 rounded-full bg-[#FFD43B]" />
@@ -146,7 +147,7 @@ const FriendsPage = () => {
               </button>
             </div>
 
-            <pre className="overflow-x-auto bg-[#FFFDFC] px-5 py-5 text-sm leading-8 text-[#2B2B2B] md:px-6 md:py-6">
+            <pre className="overflow-x-auto px-5 py-5 text-sm leading-8 text-[#2B2B2B] md:px-6 md:py-6">
               {copyBlock}
             </pre>
           </div>

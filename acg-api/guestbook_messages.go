@@ -17,17 +17,20 @@ const (
 )
 
 type guestbookMessageRow struct {
-	ID            int64   `json:"id"`
-	Nickname      string  `json:"nickname"`
-	Avatar        string  `json:"avatar"`
-	Content       string  `json:"content"`
-	IPRegion      string  `json:"ipRegion"`
-	CreatedAt     string  `json:"createdAt"`
-	IsLoginUser   bool    `json:"isLoginUser"`
-	IsAdminUser   bool    `json:"isAdminUser,omitempty"`
-	Status        string  `json:"status,omitempty"`
-	IPMasked      string  `json:"ipMasked,omitempty"`
-	UserAgentHash string  `json:"userAgentHash,omitempty"`
+	ID            int64                 `json:"id"`
+	ParentID      int64                 `json:"parentId"`
+	Nickname      string                `json:"nickname"`
+	Avatar        string                `json:"avatar"`
+	Content       string                `json:"content"`
+	IPRegion      string                `json:"ipRegion"`
+	CreatedAt     string                `json:"createdAt"`
+	IsLoginUser   bool                  `json:"isLoginUser"`
+	IsAdminUser   bool                  `json:"isAdminUser,omitempty"`
+	Status        string                `json:"status,omitempty"`
+	IPMasked      string                `json:"ipMasked,omitempty"`
+	UserAgentHash string                `json:"userAgentHash,omitempty"`
+	ReplyCount    int                   `json:"replyCount,omitempty"`
+	Replies       []guestbookMessageRow `json:"replies,omitempty"`
 }
 
 func guestbookRouter(w http.ResponseWriter, r *http.Request) {
@@ -101,13 +104,13 @@ func guestbookListHandler(w http.ResponseWriter, r *http.Request) {
 	admin := isAdminUser(cu)
 
 	var total int
-	countQ := `SELECT COUNT(*) FROM guestbook_messages WHERE status = 'visible'`
-	listQ := `SELECT id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
-	          FROM guestbook_messages WHERE status = 'visible'`
+	countQ := `SELECT COUNT(*) FROM guestbook_messages WHERE parent_id = 0 AND status = 'visible'`
+	listQ := `SELECT id, parent_id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
+	          FROM guestbook_messages WHERE parent_id = 0 AND status = 'visible'`
 	if admin {
-		countQ = `SELECT COUNT(*) FROM guestbook_messages WHERE status IN ('visible','hidden')`
-		listQ = `SELECT id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
-		         FROM guestbook_messages WHERE status IN ('visible','hidden')`
+		countQ = `SELECT COUNT(*) FROM guestbook_messages WHERE parent_id = 0 AND status IN ('visible','hidden')`
+		listQ = `SELECT id, parent_id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
+		         FROM guestbook_messages WHERE parent_id = 0 AND status IN ('visible','hidden')`
 	}
 	if err := db.QueryRow(countQ).Scan(&total); err != nil {
 		writeGuestbookErr(w, http.StatusInternalServerError, "SERVER_ERROR", "加载留言失败")
@@ -121,6 +124,7 @@ func guestbookListHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	items := make([]guestbookMessageRow, 0)
+	parentIDs := make([]int64, 0, pageSize)
 	for rows.Next() {
 		item, err := scanGuestbookRow(rows, admin)
 		if err != nil {
@@ -128,7 +132,26 @@ func guestbookListHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		items = append(items, item)
+		parentIDs = append(parentIDs, item.ID)
 	}
+	if len(parentIDs) > 0 {
+		replies, err := loadGuestbookReplies(parentIDs, admin)
+		if err != nil {
+			writeGuestbookErr(w, http.StatusInternalServerError, "SERVER_ERROR", "加载留言失败")
+			return
+		}
+		replyMap := make(map[int64][]guestbookMessageRow, len(replies))
+		for _, reply := range replies {
+			replyMap[reply.ParentID] = append(replyMap[reply.ParentID], reply)
+		}
+		for i := range items {
+			if nested := replyMap[items[i].ID]; len(nested) > 0 {
+				items[i].Replies = nested
+				items[i].ReplyCount = len(nested)
+			}
+		}
+	}
+
 	writeJSON(w, map[string]any{
 		"items":    items,
 		"page":     page,
@@ -146,7 +169,7 @@ func scanGuestbookRow(rows *sql.Rows, admin bool) (guestbookMessageRow, error) {
 	var status string
 	var created string
 	err := rows.Scan(
-		&item.ID, &userID, &item.Nickname, &avatar, &item.Content, &item.IPRegion,
+		&item.ID, &item.ParentID, &userID, &item.Nickname, &avatar, &item.Content, &item.IPRegion,
 		&isLogin, &isAdmin, &status, &ipMasked, &uaHash, &created,
 	)
 	if err != nil {
@@ -164,11 +187,44 @@ func scanGuestbookRow(rows *sql.Rows, admin bool) (guestbookMessageRow, error) {
 	return item, nil
 }
 
+func loadGuestbookReplies(parentIDs []int64, admin bool) ([]guestbookMessageRow, error) {
+	placeholders := make([]string, 0, len(parentIDs))
+	args := make([]any, 0, len(parentIDs))
+	for _, id := range parentIDs {
+		placeholders = append(placeholders, "?")
+		args = append(args, id)
+	}
+
+	listQ := `SELECT id, parent_id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
+	          FROM guestbook_messages WHERE parent_id IN (` + strings.Join(placeholders, ",") + `) AND status = 'visible'`
+	if admin {
+		listQ = `SELECT id, parent_id, user_id, nickname, avatar, content, ip_region, is_login_user, is_admin_user, status, ip_masked, user_agent_hash, created_at
+		         FROM guestbook_messages WHERE parent_id IN (` + strings.Join(placeholders, ",") + `) AND status IN ('visible','hidden')`
+	}
+
+	rows, err := db.Query(listQ+` ORDER BY id ASC`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	replies := make([]guestbookMessageRow, 0)
+	for rows.Next() {
+		item, err := scanGuestbookRow(rows, admin)
+		if err != nil {
+			return nil, err
+		}
+		replies = append(replies, item)
+	}
+	return replies, nil
+}
+
 func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	cu := getCurrentUserFromRequest(r)
 	var body struct {
 		Nickname string `json:"nickname"`
 		Content  string `json:"content"`
+		ParentID int64  `json:"parentId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_JSON", "请求格式不正确")
@@ -183,6 +239,14 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_CONTENT", "留言最多 300 字哦")
 		return
 	}
+	if body.ParentID < 0 {
+		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_PARENT", "回复楼层不正确")
+		return
+	}
+	if body.ParentID > 0 && !guestbookParentExists(body.ParentID, isAdminUser(cu)) {
+		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_PARENT", "要回复的留言不存在或不可见")
+		return
+	}
 
 	var (
 		nickname    string
@@ -194,7 +258,7 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if cu == nil {
 		nickname = strings.TrimSpace(body.Nickname)
 		if nickname == "" {
-			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_NICKNAME", "请给自己取个名字吧")
+			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_NICKNAME", "请给自己取个名字呀")
 			return
 		}
 		if utf8.RuneCountInString(nickname) > guestbookNickMax {
@@ -222,7 +286,7 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if guestbookIsDuplicate(cu, ipHash, contentHash, time.Now().UTC().Add(-guestbookDupWindow).Format(time.RFC3339)) {
-		writeGuestbookErr(w, http.StatusTooManyRequests, "RATE_LIMITED", "相同内容提交太快啦，稍后再试～")
+		writeGuestbookErr(w, http.StatusTooManyRequests, "RATE_LIMITED", "相同内容提交太快啦，稍后再试试～")
 		return
 	}
 
@@ -232,18 +296,19 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := db.Exec(
 		`INSERT INTO guestbook_messages
-		 (user_id, nickname, avatar, content, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, status, is_login_user, is_admin_user, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'visible', ?, ?, ?, ?)`,
+		 (user_id, nickname, avatar, content, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'visible', ?, ?, ?, ?)`,
 		userID, nickname, avatar, content, contentHash, ipHash, ipRegion, ipMasked, uaHash,
-		isLogin, isAdminUser, now, now,
+		body.ParentID, isLogin, isAdminUser, now, now,
 	)
 	if err != nil {
-		writeGuestbookErr(w, http.StatusInternalServerError, "SERVER_ERROR", "小纸条没有贴上，请稍后再试～")
+		writeGuestbookErr(w, http.StatusInternalServerError, "SERVER_ERROR", "小纸条没有贴上，请稍后再试哦")
 		return
 	}
 	id, _ := res.LastInsertId()
 	item := guestbookMessageRow{
 		ID:          id,
+		ParentID:    body.ParentID,
 		Nickname:    nickname,
 		Avatar:      avatar,
 		Content:     content,
@@ -257,6 +322,19 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		"message": "留言成功",
 		"item":    item,
 	})
+}
+
+func guestbookParentExists(parentID int64, admin bool) bool {
+	if parentID <= 0 {
+		return true
+	}
+	var count int
+	query := `SELECT COUNT(*) FROM guestbook_messages WHERE id = ? AND status = 'visible'`
+	if admin {
+		query = `SELECT COUNT(*) FROM guestbook_messages WHERE id = ? AND status IN ('visible','hidden')`
+	}
+	_ = db.QueryRow(query, parentID).Scan(&count)
+	return count > 0
 }
 
 func guestbookCheckRateLimit(cu *currentUser, ipHash, uaHash string) error {

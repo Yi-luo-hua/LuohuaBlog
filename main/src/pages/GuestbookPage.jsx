@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
+import { flattenGuestbookThreads } from "../components/friendsApplicationThreads";
 import { asList } from "../lib/asList";
 import { authMe } from "../services/authApi";
 import {
@@ -36,7 +37,7 @@ const GuestbookPage = () => {
   const [error, setError] = useState("");
 
   const pageSize = 20;
-  const hasMore = items.length < total;
+  const hasMore = page * pageSize < total;
 
   useEffect(() => {
     authMe().then(({ data }) => {
@@ -69,7 +70,7 @@ const GuestbookPage = () => {
     }
     setTotal(data.total ?? 0);
     setIsAdmin(!!data.isAdmin);
-    const list = asList(data);
+    const list = flattenGuestbookThreads(asList(data));
     setItems((prev) => (append ? [...prev, ...list] : list));
     setPage(p);
     setLoading(false);
