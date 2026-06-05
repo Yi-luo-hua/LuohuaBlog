@@ -21,6 +21,31 @@ const (
 	wallpaperHTTPClientTimeout = 10 * time.Second
 )
 
+var fallbackWallpaperItems = []wallpaperItem{
+	{
+		ID:          "fallback-ai-blog-0e7e10e2acdb398941c10735a791918d",
+		URL:         "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/0e7e10e2acdb398941c10735a791918d.jpg",
+		PreviewURL:  "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/0e7e10e2acdb398941c10735a791918d.jpg",
+		Source:      "local-gallery",
+		Author:      "taozhiyy",
+		SourceURL:   "https://taozhiyy.top/gallery",
+		LicenseNote: "Local gallery fallback",
+		Kind:        "fallback",
+		Status:      "active",
+	},
+	{
+		ID:          "fallback-misaka-915cdb4184d77e9d06e789755f30f792",
+		URL:         "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/915cdb4184d77e9d06e789755f30f792.jpg",
+		PreviewURL:  "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/915cdb4184d77e9d06e789755f30f792.jpg",
+		Source:      "local-gallery",
+		Author:      "taozhiyy",
+		SourceURL:   "https://taozhiyy.top/gallery/misaka",
+		LicenseNote: "Local gallery fallback",
+		Kind:        "fallback",
+		Status:      "active",
+	},
+}
+
 type wallpaperItem struct {
 	ID          string    `json:"id"`
 	URL         string    `json:"url"`
@@ -274,6 +299,12 @@ func drawWallpaperItem(db *sql.DB) (wallpaperItem, error) {
 	}
 	_, _ = db.Exec(`UPDATE wallpaper_pool SET last_drawn_at=? WHERE id=?`, time.Now().UTC().Format(time.RFC3339), item.ID)
 	return item, nil
+}
+
+func fallbackWallpaperItem() wallpaperItem {
+	item := fallbackWallpaperItems[rand.Intn(len(fallbackWallpaperItems))]
+	item.AddedAt = time.Now().UTC()
+	return item
 }
 
 func stableWallpaperID(source, upstreamID, imageURL string) string {

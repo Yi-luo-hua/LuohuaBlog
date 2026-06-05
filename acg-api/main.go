@@ -93,7 +93,7 @@ func wallpaperDrawHandler(w http.ResponseWriter, r *http.Request) {
 	item, err := drawWallpaperItem(db)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, "wallpaper pool is empty", http.StatusNotFound)
+			writeJSON(w, map[string]any{"item": fallbackWallpaperItem(), "fallback": true})
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
