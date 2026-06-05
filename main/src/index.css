@@ -3940,6 +3940,75 @@ body {
     inset 0 0 0 1px rgba(255, 255, 255, 0.45);
 }
 
+.wallpaper-prize-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: min(86vw, 34rem);
+  min-height: min(54vh, 25rem);
+  overflow: hidden;
+  border-radius: clamp(0.9rem, 2.4vw, 1.45rem);
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.72), transparent 9rem),
+    linear-gradient(135deg, rgba(255, 246, 232, 0.82), rgba(232, 246, 255, 0.78));
+}
+
+.wallpaper-prize-media img {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity 360ms ease;
+}
+
+.wallpaper-prize-media img.is-loaded {
+  opacity: 1;
+}
+
+.wallpaper-prize-loading {
+  grid-area: 1 / 1;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  gap: 0.45rem;
+  padding: 2rem;
+  color: rgba(107, 71, 82, 0.84);
+  font-family: "General Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  text-align: center;
+}
+
+.wallpaper-prize-loading::before {
+  content: "";
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  background:
+    conic-gradient(from 90deg, rgba(255, 143, 171, 0.24), rgba(132, 216, 255, 0.62), rgba(255, 231, 154, 0.58), rgba(255, 143, 171, 0.24));
+  box-shadow:
+    0 0.8rem 1.8rem rgba(255, 143, 171, 0.2),
+    inset 0 0 0 0.72rem rgba(255, 255, 255, 0.58);
+  animation: wallpaperLoadingSpin 1.8s linear infinite;
+}
+
+.wallpaper-prize-loading span {
+  font-size: clamp(1rem, 3.2vw, 1.35rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.wallpaper-prize-loading small {
+  color: rgba(107, 71, 82, 0.58);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.wallpaper-prize-media.is-loaded {
+  min-width: 0;
+  min-height: 0;
+  background: transparent;
+}
+
 .wallpaper-prize-card.is-wallpaper-result .wallpaper-prize-close {
   right: clamp(0.8rem, 2vw, 1.15rem);
   top: clamp(0.8rem, 2vw, 1.15rem);
@@ -3968,5 +4037,17 @@ body {
     max-width: 88vw;
     max-height: 72vh;
     border-radius: 0.82rem;
+  }
+
+  .wallpaper-prize-media {
+    min-width: min(88vw, 19rem);
+    min-height: min(48vh, 21rem);
+    border-radius: 0.82rem;
+  }
+}
+
+@keyframes wallpaperLoadingSpin {
+  to {
+    transform: rotate(360deg);
   }
 }

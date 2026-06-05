@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { galleryAlbums } from "../data/galleryAlbums";
 
@@ -82,6 +82,7 @@ const Contact = () => {
   const [activeWallpaper, setActiveWallpaper] = useState(() =>
     pickWallpaperGift()
   );
+  const [wallpaperLoadStatus, setWallpaperLoadStatus] = useState("idle");
 
   const drawPrize = (forcedNumber) => {
     if (isDrawing) return;
@@ -140,18 +141,6 @@ const Contact = () => {
     setResultOpen(true);
   };
 
-  const openPrize = () => {
-    if (activePrize.id === "wallpaper") {
-      window.open(
-        activeWallpaper?.url || fallbackWallpaper.url,
-        "_blank",
-        "noopener,noreferrer"
-      );
-      return;
-    }
-    window.open(activePrize.href, "_blank", "noopener,noreferrer");
-  };
-
   const resultPoster =
     activePrize.id === "wallpaper"
       ? {
@@ -164,6 +153,25 @@ const Contact = () => {
           label: activePrize.label,
           meta: activePrize.title,
         };
+
+  useEffect(() => {
+    if (resultOpen && activePrize.id === "wallpaper") {
+      setWallpaperLoadStatus("loading");
+    }
+  }, [activePrize.id, resultOpen, resultPoster.image]);
+
+  const openPrize = () => {
+    if (activePrize.id === "wallpaper") {
+      window.open(
+        activeWallpaper?.url || fallbackWallpaper.url,
+        "_blank",
+        "noopener,noreferrer"
+      );
+      return;
+    }
+    window.open(activePrize.href, "_blank", "noopener,noreferrer");
+  };
+
   const drawCode = String(drawNumber).padStart(3, "0");
 
   return (
@@ -413,10 +421,25 @@ const Contact = () => {
               Close
             </button>
             {activePrize.id === "wallpaper" ? (
-              <img
-                src={resultPoster.image}
-                alt={`${resultPoster.label} wallpaper`}
-              />
+              <div
+                className={`wallpaper-prize-media is-${wallpaperLoadStatus}`}
+              >
+                {wallpaperLoadStatus !== "loaded" && (
+                  <div className="wallpaper-prize-loading" aria-live="polite">
+                    <span>高清壁纸正在路上...</span>
+                    <small>Loading gallery wallpaper</small>
+                  </div>
+                )}
+                <img
+                  src={resultPoster.image}
+                  alt={`${resultPoster.label} wallpaper`}
+                  className={
+                    wallpaperLoadStatus === "loaded" ? "is-loaded" : ""
+                  }
+                  onLoad={() => setWallpaperLoadStatus("loaded")}
+                  onError={() => setWallpaperLoadStatus("loading")}
+                />
+              </div>
             ) : (
               <>
                 <p>Source Result</p>
