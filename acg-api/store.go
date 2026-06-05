@@ -34,7 +34,6 @@ func migrateAll(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_status_created ON guestbook_messages(status, created_at DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_user_created ON guestbook_messages(user_id, created_at DESC);`,
-		`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_parent_created ON guestbook_messages(parent_id, created_at ASC);`,
 		`CREATE TABLE IF NOT EXISTS guestbook_ip_cache (
 			ip_hash TEXT PRIMARY KEY,
 			ip_region TEXT NOT NULL,
@@ -129,19 +128,34 @@ func migrateAll(db *sql.DB) error {
 			return err
 		}
 	}
-	ensureColumn(db, "guestbook_messages", "parent_id", "INTEGER NOT NULL DEFAULT 0")
-	ensureColumn(db, "users", "is_owner", "INTEGER NOT NULL DEFAULT 0")
-	ensureColumn(db, "users", "display_name", "TEXT NOT NULL DEFAULT ''")
-	ensureColumn(db, "sessions", "unlimited", "INTEGER NOT NULL DEFAULT 0")
-	ensureColumn(db, "ai_chat_hourly", "owner_calls", "INTEGER NOT NULL DEFAULT 0")
-	ensureColumn(db, "ai_chat_hourly", "owner_tokens", "INTEGER NOT NULL DEFAULT 0")
+	if err := ensureColumn(db, "guestbook_messages", "parent_id", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_parent_created ON guestbook_messages(parent_id, created_at ASC);`); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "users", "is_owner", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "users", "display_name", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "sessions", "unlimited", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "ai_chat_hourly", "owner_calls", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "ai_chat_hourly", "owner_tokens", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
 	return nil
 }
 
-func ensureColumn(db *sql.DB, table, column, colDef string) {
+func ensureColumn(db *sql.DB, table, column, colDef string) error {
 	rows, err := db.Query(`PRAGMA table_info(` + table + `)`)
 	if err != nil {
-		return
+		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -150,13 +164,17 @@ func ensureColumn(db *sql.DB, table, column, colDef string) {
 		var notnull, pk int
 		var dflt sql.NullString
 		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
-			return
+			return err
 		}
 		if name == column {
-			return
+			return nil
 		}
 	}
-	_, _ = db.Exec(`ALTER TABLE ` + table + ` ADD COLUMN ` + column + ` ` + colDef)
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	_, err = db.Exec(`ALTER TABLE ` + table + ` ADD COLUMN ` + column + ` ` + colDef)
+	return err
 }
 
 func upsertRadarCreators(db *sql.DB, creators []RadarCreator) error {
