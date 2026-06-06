@@ -21,7 +21,7 @@ test("manifest describes an installable personal app", async () => {
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 
   assert.equal(manifest.name, "桃之夭夭");
-  assert.equal(manifest.start_url, "/");
+  assert.equal(manifest.start_url, "/app");
   assert.equal(manifest.scope, "/");
   assert.equal(manifest.display, "standalone");
   assert.ok(
@@ -40,4 +40,13 @@ test("service worker leaves live API traffic online-first", async () => {
 
   assert.match(workerSource, /url\.pathname\.startsWith\("\/api\/"\)/);
   assert.match(workerSource, /return;/);
+});
+
+test("service worker uses the app console as the install shell", async () => {
+  const workerPath = resolve(publicDir, "sw.js");
+  const workerSource = await readFile(workerPath, "utf8");
+
+  assert.match(workerSource, /const APP_START_URL = "\/app";/);
+  assert.match(workerSource, /caches\.match\(APP_START_URL\)/);
+  assert.doesNotMatch(workerSource, /const APP_SHELL = \["\/",/);
 });

@@ -337,6 +337,9 @@
     closeAuthModal();
     updateAuthBar();
     refreshQuota();
+    window.dispatchEvent(new CustomEvent("blog-auth-state-changed", {
+      detail: { user: state.user, isLogin: state.isLogin, unlimited: state.unlimited },
+    }));
     if (message && ui.messages) appendMsg(ui.messages, "bot", message);
   }
 
@@ -455,6 +458,9 @@
       state.isLogin = false;
       state.unlimited = false;
       updateAuthBar();
+      window.dispatchEvent(new CustomEvent("blog-auth-state-changed", {
+        detail: { user: null, isLogin: false, unlimited: false },
+      }));
       refreshQuota();
       appendMsg(ui.messages, "system", "已退出登录");
     });

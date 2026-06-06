@@ -2,7 +2,7 @@
   "name": "桃之夭夭",
   "short_name": "桃之夭夭",
   "description": "A personal site app for 桃之夭夭.",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0b1020",

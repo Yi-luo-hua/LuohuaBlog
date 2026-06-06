@@ -1,5 +1,6 @@
-const CACHE_NAME = "taozhiyy-pwa-v1";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/pwa-icon.svg", "/img/logo.png"];
+const CACHE_NAME = "taozhiyy-pwa-v2";
+const APP_START_URL = "/app";
+const APP_SHELL = [APP_START_URL, "/manifest.webmanifest", "/pwa-icon.svg", "/img/logo.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -32,7 +33,7 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("/")));
+    event.respondWith(fetch(request).catch(() => caches.match(APP_START_URL)));
     return;
   }
 

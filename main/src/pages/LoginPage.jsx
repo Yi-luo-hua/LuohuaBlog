@@ -6,7 +6,9 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent("blog-ai-open", { detail: {} }));
+    window.dispatchEvent(
+      new CustomEvent("blog-ai-open", { detail: { openAuth: true, mode: "login" } }),
+    );
     navigate("/", { replace: true });
   }, [navigate]);
 
