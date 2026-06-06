@@ -1,6 +1,11 @@
 node_modules/
 dist/
 public/
+!main/public/
+main/public/**
+!main/public/manifest.webmanifest
+!main/public/pwa-icon.svg
+!main/public/sw.js
 **/node_modules/
 **/.cache/
 cos_upload.py

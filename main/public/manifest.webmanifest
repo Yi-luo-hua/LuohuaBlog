@@ -1,0 +1,39 @@
+{
+  "name": "桃之夭夭",
+  "short_name": "桃之夭夭",
+  "description": "A personal site app for 桃之夭夭.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#f472b6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/logo.png",
+      "sizes": "80x80",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "留言板",
+      "short_name": "留言",
+      "url": "/guestbook",
+      "description": "Open the guestbook"
+    },
+    {
+      "name": "Bili Hub",
+      "short_name": "Bili",
+      "url": "/bili",
+      "description": "Open Bili Hub"
+    }
+  ]
+}
