@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   PWA_AUTH_HOSTNAME,
   getAppAccessState,
+  shouldShowOwnerLoginActions,
   shouldExposeAppConsole,
   shouldOpenAppConsoleAtRoot,
   shouldRequireOwnerLogin,
@@ -69,6 +70,23 @@ test("reports loading while checking PWA app auth", () => {
     }),
     "loading",
   );
+});
+
+test("keeps the app visible while an allowed owner session is rechecked", () => {
+  assert.equal(
+    getAppAccessState({
+      hostname: PWA_AUTH_HOSTNAME,
+      auth: { loggedIn: true, unlimited: true, user: { isOwner: true } },
+      isLoading: true,
+    }),
+    "allowed",
+  );
+});
+
+test("shows login actions only after auth check blocks access", () => {
+  assert.equal(shouldShowOwnerLoginActions("loading"), false);
+  assert.equal(shouldShowOwnerLoginActions("allowed"), false);
+  assert.equal(shouldShowOwnerLoginActions("blocked"), true);
 });
 
 test("opens the app console from the PWA host root only", () => {

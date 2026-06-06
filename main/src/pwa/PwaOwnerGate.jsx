@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { authMe } from "../services/authApi";
-import { getAppAccessState, shouldRequireOwnerLogin } from "./appAccessGate";
+import {
+  getAppAccessState,
+  shouldRequireOwnerLogin,
+  shouldShowOwnerLoginActions,
+  userHasOwnerAppAccess,
+} from "./appAccessGate";
 
 const openOwnerLogin = () => {
   window.dispatchEvent(
@@ -27,7 +32,9 @@ const PwaOwnerGate = ({ children }) => {
       setAuth(result.ok ? result.data : { loggedIn: false });
       if (!result.ok) setError("Could not confirm the owner session. Try again.");
     } catch {
-      setAuth({ loggedIn: false });
+      setAuth((current) =>
+        userHasOwnerAppAccess(current) ? current : { loggedIn: false },
+      );
       setError("The API is not reachable right now. Check /api and retry.");
     } finally {
       setIsLoading(false);
@@ -58,15 +65,20 @@ const PwaOwnerGate = ({ children }) => {
 
   if (accessState === "allowed") return children;
 
+  const showLoginActions = shouldShowOwnerLoginActions(accessState);
+
   return (
     <main className="app-owner-gate" aria-busy={accessState === "loading"}>
       <section className="app-owner-gate-panel" aria-labelledby="app-owner-gate-title">
         <div className="app-owner-gate-mark">T</div>
         <p className="app-owner-gate-kicker">Personal PWA</p>
-        <h1 id="app-owner-gate-title">Owner login required</h1>
+        <h1 id="app-owner-gate-title">
+          {accessState === "loading" ? "Checking owner session" : "Owner login required"}
+        </h1>
         <p className="app-owner-gate-copy">
-          This installed app opens only after the owner account is logged in and the
-          security check is complete.
+          {accessState === "loading"
+            ? "The app is confirming your existing owner session before opening the console."
+            : "This installed app opens only after the owner account is logged in and the security check is complete."}
         </p>
         {auth?.loggedIn && !auth?.user?.isOwner ? (
           <p className="app-owner-gate-warning">
@@ -79,14 +91,16 @@ const PwaOwnerGate = ({ children }) => {
           </p>
         ) : null}
         {error ? <p className="app-owner-gate-warning">{error}</p> : null}
-        <div className="app-owner-gate-actions">
-          <button type="button" onClick={openOwnerLogin} className="app-owner-gate-primary">
-            Open AI login
-          </button>
-          <button type="button" onClick={refreshAuth} className="app-owner-gate-secondary">
-            Recheck session
-          </button>
-        </div>
+        {showLoginActions ? (
+          <div className="app-owner-gate-actions">
+            <button type="button" onClick={openOwnerLogin} className="app-owner-gate-primary">
+              Open AI login
+            </button>
+            <button type="button" onClick={refreshAuth} className="app-owner-gate-secondary">
+              Recheck session
+            </button>
+          </div>
+        ) : null}
       </section>
     </main>
   );

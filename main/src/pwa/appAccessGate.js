@@ -22,6 +22,11 @@ export function userHasOwnerAppAccess(auth) {
 
 export function getAppAccessState({ hostname = "", auth, isLoading = false } = {}) {
   if (!shouldRequireOwnerLogin({ hostname })) return "allowed";
+  if (userHasOwnerAppAccess(auth)) return "allowed";
   if (isLoading) return "loading";
-  return userHasOwnerAppAccess(auth) ? "allowed" : "blocked";
+  return "blocked";
+}
+
+export function shouldShowOwnerLoginActions(accessState) {
+  return accessState === "blocked";
 }
