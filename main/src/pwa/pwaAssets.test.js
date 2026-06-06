@@ -8,6 +8,14 @@ const pwaDir = dirname(fileURLToPath(import.meta.url));
 const mainDir = resolve(pwaDir, "..", "..");
 const publicDir = resolve(mainDir, "public");
 
+test("root HTML does not expose PWA install metadata before host gating", async () => {
+  const html = await readFile(resolve(mainDir, "index.html"), "utf8");
+
+  assert.doesNotMatch(html, /rel="manifest"/);
+  assert.doesNotMatch(html, /name="theme-color"/);
+  assert.doesNotMatch(html, /apple-mobile-web-app/);
+});
+
 test("manifest describes an installable personal app", async () => {
   const manifestPath = resolve(publicDir, "manifest.webmanifest");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
