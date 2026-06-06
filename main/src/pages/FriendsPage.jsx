@@ -2,16 +2,7 @@ import { useState } from "react";
 import { FiCopy, FiExternalLink } from "react-icons/fi";
 
 import FriendsApplicationBoard from "../components/FriendsApplicationBoard";
-
-const friendCards = [
-  {
-    name: "XingHuiSamaの宝藏之地",
-    desc: "今天我也要学习吗",
-    url: "https://www.xinghuisama.top",
-    avatar: "https://bu.dusays.com/2026/03/24/69c1e38ac1846.jpg",
-    note: "FIRST FRIEND",
-  },
-];
+import { friendCards } from "../data/friendCards";
 
 const copyBlock = `name: 桃之夭夭
 desc: 桃之夭夭的小屋
