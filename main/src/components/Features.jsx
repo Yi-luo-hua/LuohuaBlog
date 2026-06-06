@@ -27,7 +27,7 @@ const ARCHIVE_ITEMS = [
     title: "创造纪事",
     subtitle: "进入实验室",
     src: `${COS}/videos/feature-3.mp4`,
-    note: "记录全栈工程、数字电路与硬件逻辑架构的极简实验室。",
+    note: "记录这个网站从想法到落地的搭建过程，也把一路上的调整与打磨慢慢收进来。",
     linkUrl: "/build/",
     linkText: "进入实验室",
   },
@@ -420,7 +420,7 @@ const Features = () => {
                   创造纪事
                 </>
               }
-              description="记录全栈工程、数字电路与硬件逻辑架构的实验室，让野生想法一点点落成现实。"
+              description="这里收着这个网站一路搭起来的过程，页面怎么改、交互怎么调、细节怎么慢慢磨出来，都会安静记在这里。"
               linkUrl="/build/"
               linkText="进入实验室"
             />

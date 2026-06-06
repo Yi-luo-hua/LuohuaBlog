@@ -317,10 +317,10 @@ const AcgNavigation = () => {
                       Creator radar
                     </p>
                     <h3 className="mt-2 text-base font-bold text-[#2D2A3A] sm:text-lg">
-                      暂未同步到新的 UP 动态
+                      创作者动态正在整理中
                     </h3>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-[#2D2A3A]/65">
-                      这里现在不会再拿英文假卡片冒充更新了。等雷达同步恢复后，会直接显示真实的 B 站创作者内容。
+                      先把这一格留给下一次想认真点开的更新。等有新的视频和近况落下来，会慢慢记在这里。
                     </p>
                     <a
                       href="https://space.bilibili.com/1061280173"

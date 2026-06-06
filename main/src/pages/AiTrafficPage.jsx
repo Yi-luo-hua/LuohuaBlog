@@ -167,11 +167,7 @@ const AiTrafficPage = () => {
           <span className="text-[#FF8FAB]">✦</span> AI 调用流量
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#6B7280]">
-          全站小精灵经后端温柔转发至{" "}
-          <span className="font-semibold text-[#74C0FC]">
-            {stats?.model || "deepseek-v4-flash"}
-          </span>
-          。游客、登录用户与站长提问均计入总数；历史用量会从额度记录自动补齐。
+          这里把问问博客一路来往的流量痕迹慢慢记下来，留给此刻看看，也留给以后回头翻阅。
         </p>
 
         {loading && (
