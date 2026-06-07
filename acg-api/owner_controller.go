@@ -110,7 +110,7 @@ func requireOwnerSession(w http.ResponseWriter, r *http.Request) (ownerAuthedSes
 	if !ok {
 		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
 			"error":   "UNAUTHORIZED",
-			"message": "Please log in first.",
+			"message": "请先登录。",
 		})
 		return ownerAuthedSession{}, false
 	}
@@ -127,7 +127,7 @@ func requireOwnerSession(w http.ResponseWriter, r *http.Request) (ownerAuthedSes
 	if err == sql.ErrNoRows {
 		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
 			"error":   "UNAUTHORIZED",
-			"message": "Session user was not found.",
+			"message": "登录会话对应的用户不存在。",
 		})
 		return ownerAuthedSession{}, false
 	}
@@ -138,7 +138,7 @@ func requireOwnerSession(w http.ResponseWriter, r *http.Request) (ownerAuthedSes
 	if isOwner != 1 || !sess.Unlimited {
 		writeJSONStatus(w, http.StatusForbidden, map[string]any{
 			"error":   "FORBIDDEN",
-			"message": "Owner access required.",
+			"message": "需要站长权限。",
 		})
 		return ownerAuthedSession{}, false
 	}
@@ -238,7 +238,7 @@ func ownerDraftCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_JSON",
-			"message": "Invalid request body.",
+			"message": "请求内容格式不正确。",
 		})
 		return
 	}
@@ -251,21 +251,21 @@ func ownerDraftCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if title == "" {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_TITLE",
-			"message": "Draft title is required.",
+			"message": "草稿标题不能为空。",
 		})
 		return
 	}
 	if len([]rune(title)) > ownerDraftTitleMax {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_TITLE",
-			"message": "Draft title is too long.",
+			"message": "草稿标题太长。",
 		})
 		return
 	}
 	if len(body.Body) > ownerDraftBodyMax {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_BODY",
-			"message": "Draft body is too large.",
+			"message": "草稿正文太大。",
 		})
 		return
 	}
@@ -325,7 +325,7 @@ func ownerUploadCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(ownerUploadMaxBytes + 1024*1024); err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_UPLOAD",
-			"message": "Unable to parse upload form.",
+			"message": "上传表单解析失败。",
 		})
 		return
 	}
@@ -334,7 +334,7 @@ func ownerUploadCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "MISSING_FILE",
-			"message": "Upload file is required.",
+			"message": "请选择要上传的文件。",
 		})
 		return
 	}
@@ -343,7 +343,7 @@ func ownerUploadCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if header.Size > ownerUploadMaxBytes {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "FILE_TOO_LARGE",
-			"message": "Upload exceeds the 8 MiB limit.",
+			"message": "上传文件超过 8 MiB 限制。",
 		})
 		return
 	}
@@ -352,7 +352,7 @@ func ownerUploadCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if !ownerUploadExtAllowed(ext) {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_FILE_TYPE",
-			"message": "Only image uploads are supported.",
+			"message": "当前只支持上传图片。",
 		})
 		return
 	}
@@ -365,14 +365,14 @@ func ownerUploadCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if int64(len(buf)) > ownerUploadMaxBytes {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "FILE_TOO_LARGE",
-			"message": "Upload exceeds the 8 MiB limit.",
+			"message": "上传文件超过 8 MiB 限制。",
 		})
 		return
 	}
 	if !strings.HasPrefix(http.DetectContentType(buf), "image/") {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_FILE_TYPE",
-			"message": "Only image uploads are supported.",
+			"message": "当前只支持上传图片。",
 		})
 		return
 	}
@@ -404,7 +404,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(ownerUploadMaxBytes + 1024*1024); err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_UPLOAD",
-			"message": "Unable to parse upload form.",
+			"message": "上传表单解析失败。",
 		})
 		return
 	}
@@ -413,7 +413,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if kind != "gallery" && kind != "article" {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_ASSET_KIND",
-			"message": "Asset kind must be gallery or article.",
+			"message": "资源类型必须是相册或文章。",
 		})
 		return
 	}
@@ -422,7 +422,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if kind == "gallery" && album == "" {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_ALBUM",
-			"message": "Gallery uploads require an album.",
+			"message": "相册上传必须选择相册。",
 		})
 		return
 	}
@@ -431,7 +431,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "MISSING_FILE",
-			"message": "Upload file is required.",
+			"message": "请选择要上传的文件。",
 		})
 		return
 	}
@@ -441,7 +441,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if !ownerUploadExtAllowed(ext) {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_FILE_TYPE",
-			"message": "Only image uploads are supported.",
+			"message": "当前只支持上传图片。",
 		})
 		return
 	}
@@ -454,7 +454,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if int64(len(buf)) > ownerUploadMaxBytes {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "FILE_TOO_LARGE",
-			"message": "Upload exceeds the 8 MiB limit.",
+			"message": "上传文件超过 8 MiB 限制。",
 		})
 		return
 	}
@@ -463,7 +463,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(mimeType, "image/") {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_FILE_TYPE",
-			"message": "Only image uploads are supported.",
+			"message": "当前只支持上传图片。",
 		})
 		return
 	}
@@ -472,7 +472,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":   "ASSET_UPLOAD_NOT_CONFIGURED",
-			"message": "Tencent COS upload is not configured.",
+			"message": "腾讯 COS 上传尚未配置。",
 		})
 		return
 	}
@@ -482,7 +482,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSONStatus(w, http.StatusBadGateway, map[string]any{
 			"error":   "ASSET_UPLOAD_FAILED",
-			"message": "Unable to upload asset to Tencent COS.",
+			"message": "无法上传资源到腾讯 COS。",
 		})
 		return
 	}
@@ -585,22 +585,22 @@ func ownerNotificationSummary() (map[string]any, error) {
 func ownerNotificationTitle(channel string) string {
 	switch channel {
 	case guestbookChannelLink:
-		return "Friends messages"
+		return "朋友页消息"
 	case guestbookChannelMain:
-		return "Guestbook messages"
+		return "留言板消息"
 	default:
-		return "Owner notifications"
+		return "站长提醒"
 	}
 }
 
 func ownerNotificationDetail(channel string, count int) string {
 	switch channel {
 	case guestbookChannelLink:
-		return "Pending messages from the friends channel: " + strconv.Itoa(count)
+		return "朋友页有 " + strconv.Itoa(count) + " 条待处理消息"
 	case guestbookChannelMain:
-		return "Pending messages from the guestbook: " + strconv.Itoa(count)
+		return "留言板有 " + strconv.Itoa(count) + " 条待处理消息"
 	default:
-		return "Pending owner messages: " + strconv.Itoa(count)
+		return "站长控制器有 " + strconv.Itoa(count) + " 条待处理消息"
 	}
 }
 

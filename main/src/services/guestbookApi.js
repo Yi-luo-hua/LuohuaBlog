@@ -1,44 +1,48 @@
-import { mockGuestbookEntries } from "../data/acgMock";
-import { apiUrl } from "../lib/apiBase";
-import { asList } from "../lib/asList";
+import { asList } from "../lib/asList.js";
+
+const DEFAULT_CHANNEL = "guestbook";
+const JSON_HEADERS = { Accept: "application/json", "Content-Type": "application/json" };
+
+async function readPayload(res) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || data.error || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+function toLegacyRow(item) {
+  return {
+    id: item.id,
+    name: item.name || item.nickname || "匿名",
+    content: item.content || "",
+    createdAt: item.createdAt,
+  };
+}
 
 export async function getGuestbook(limit = 50) {
-  try {
-    const res = await fetch(apiUrl(`/api/v1/guestbook?limit=${limit}`), {
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return asList(data, [...mockGuestbookEntries]);
-  } catch {
-    return [...mockGuestbookEntries];
-  }
+  const pageSize = Math.max(1, Math.min(Number(limit) || 50, 100));
+  const res = await fetch(
+    `/api/guestbook/messages?page=1&pageSize=${pageSize}&channel=${DEFAULT_CHANNEL}`,
+    { credentials: "include", headers: { Accept: "application/json" } },
+  );
+  const data = await readPayload(res);
+  return asList(data).map(toLegacyRow);
 }
 
 export async function postGuestbook({ name, content }) {
-  const body = JSON.stringify({
-    name: name.trim().slice(0, 32),
-    content: content.trim().slice(0, 500),
+  const nickname = (name || "").trim().slice(0, 12) || "匿名";
+  const message = (content || "").trim().slice(0, 300);
+  const res = await fetch("/api/guestbook/messages", {
+    method: "POST",
+    credentials: "include",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({
+      nickname,
+      content: message,
+      channel: DEFAULT_CHANNEL,
+    }),
   });
-
-  try {
-    const res = await fetch(apiUrl("/api/v1/guestbook"), {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body,
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-  } catch {
-    return {
-      id: Date.now(),
-      name: name.trim(),
-      content: content.trim(),
-      createdAt: new Date().toISOString(),
-      offline: true,
-    };
-  }
+  const data = await readPayload(res);
+  return toLegacyRow(data.item || data);
 }

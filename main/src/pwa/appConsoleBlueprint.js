@@ -11,7 +11,7 @@ export const ownerConsoleScreens = [
     navLabel: "发文章",
     icon: "W",
     title: "发布文章",
-    subtitle: "写 Blog 或 Build 记录，体验一键发布流程。",
+    subtitle: "写博客或建站记录，提交到真实发布接口。",
   },
   {
     id: "drafts",
@@ -24,8 +24,8 @@ export const ownerConsoleScreens = [
     id: "gallery",
     navLabel: "传相册",
     icon: "G",
-    title: "Gallery 图片",
-    subtitle: "批量上传图片并模拟更新相册。",
+    title: "相册图片",
+    subtitle: "上传图片到 COS，并把图片发布到站内相册。",
   },
   {
     id: "friend",
@@ -54,15 +54,15 @@ export const ownerConsoleModules = [
   {
     id: "article",
     title: "发布文章",
-    description: "Blog 文章与 Build 记录统一向导，写完一键发布。",
+    description: "博客文章与建站记录统一向导，写完提交真实发布接口。",
     icon: "W",
     tone: "blue",
     status: "草稿 2",
   },
   {
     id: "gallery",
-    title: "Gallery 图片",
-    description: "批量拖图、选择相册、模拟上传和发布流程。",
+    title: "相册图片",
+    description: "选择相册、上传 COS，并发布到站内相册数据。",
     icon: "G",
     tone: "green",
     status: "待上传 0",
@@ -78,7 +78,7 @@ export const ownerConsoleModules = [
   {
     id: "inbox",
     title: "留言收件箱",
-    description: "guestbook、friends、友链申请提醒集中处理。",
+    description: "留言板、朋友页评论、友链申请提醒集中处理。",
     icon: "M",
     tone: "sun",
     status: "新消息 3",
@@ -89,13 +89,13 @@ export const ownerConsoleNotifications = [
   {
     title: "留言板新留言",
     source: "guestbook",
-    detail: "有人在 guestbook 留了小纸条。",
+    detail: "有人在留言板留了小纸条。",
     count: 1,
   },
   {
     title: "朋友页新评论",
     source: "friends",
-    detail: "friends 区有新问候。",
+    detail: "朋友页有新问候。",
     count: 1,
   },
   {
@@ -109,7 +109,7 @@ export const ownerConsoleNotifications = [
 export const ownerConsoleAvatars = [
   {
     id: "tc",
-    label: "Taozhiyy Control",
+    label: "桃之夭夭控制器",
     initial: "TC",
     gradient: "linear-gradient(135deg, #7bb7ff, #83d7cf)",
   },
@@ -127,13 +127,13 @@ export const ownerConsoleAvatars = [
   },
   {
     id: "gallery",
-    label: "Gallery",
+    label: "相册",
     initial: "G",
     gradient: "linear-gradient(135deg, #83d899, #83d7cf)",
   },
   {
     id: "build",
-    label: "Build",
+    label: "建站记录",
     initial: "B",
     gradient: "linear-gradient(135deg, #6faeff, #ffb985)",
   },

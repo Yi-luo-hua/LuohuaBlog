@@ -231,6 +231,17 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		if got := int(notifications["total"].(float64)); got != 1 {
 			t.Fatalf("expected notifications.total 1, got %d", got)
 		}
+		items := notifications["items"].([]any)
+		if len(items) != 1 {
+			t.Fatalf("expected one notification item, got %d", len(items))
+		}
+		item := items[0].(map[string]any)
+		if item["title"] != "留言板消息" {
+			t.Fatalf("expected Chinese notification title, got %#v", item["title"])
+		}
+		if item["detail"] != "留言板有 1 条待处理消息" {
+			t.Fatalf("expected Chinese notification detail, got %#v", item["detail"])
+		}
 		if got := int(ai["today"].(float64)); got != 3 {
 			t.Fatalf("expected ai.today 3, got %d", got)
 		}

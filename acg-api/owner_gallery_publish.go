@@ -41,7 +41,7 @@ func ownerGalleryPublishHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_JSON",
-			"message": "Invalid gallery publish request body.",
+			"message": "相册发布请求格式不正确。",
 		})
 		return
 	}
@@ -50,7 +50,7 @@ func ownerGalleryPublishHandler(w http.ResponseWriter, r *http.Request) {
 	if !publisher.configured() {
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":   "PUBLISH_NOT_CONFIGURED",
-			"message": "Owner publish is not configured on the server yet.",
+			"message": "站长发布尚未在服务器配置。",
 		})
 		return
 	}
@@ -168,7 +168,7 @@ func (p *ownerGitHubPublisher) getGitHubFile(path string) (ownerGitHubFile, erro
 		return ownerGitHubFile{}, err
 	}
 	if payload.SHA == "" {
-		return ownerGitHubFile{}, errors.New("github content response missing sha")
+		return ownerGitHubFile{}, errors.New("GitHub 文件响应缺少 sha")
 	}
 	rawContent := strings.ReplaceAll(payload.Content, "\n", "")
 	decoded, err := base64.StdEncoding.DecodeString(rawContent)
@@ -245,7 +245,7 @@ func (p *ownerGitHubPublisher) putGitHubFile(path, message, content, sha string)
 func buildOwnerGalleryDataUpdate(source string, req ownerGalleryPublishRequest) (string, ownerGalleryPublishResult, error) {
 	imageURL := strings.TrimSpace(req.ImageURL)
 	if !ownerIsPublicImageURL(imageURL) {
-		return "", ownerGalleryPublishResult{}, errors.New("gallery image URL must be a public http or https URL")
+		return "", ownerGalleryPublishResult{}, errors.New("相册图片 URL 必须是公开的 http 或 https 地址")
 	}
 
 	albumID := strings.TrimSpace(req.AlbumID)
@@ -257,7 +257,7 @@ func buildOwnerGalleryDataUpdate(source string, req ownerGalleryPublishRequest) 
 		albumTitle = albumID
 	}
 	if albumID == "" || albumID == "default" {
-		return "", ownerGalleryPublishResult{}, errors.New("gallery album is required")
+		return "", ownerGalleryPublishResult{}, errors.New("请选择相册或填写自定义相册名")
 	}
 
 	updated, found, changed, err := appendImageToGalleryAlbum(source, albumID, imageURL)
@@ -292,12 +292,12 @@ func appendImageToGalleryAlbum(source, albumID, imageURL string) (string, bool, 
 
 	imagesRel := strings.Index(object, "images: [")
 	if imagesRel < 0 {
-		return "", true, false, fmt.Errorf("album %q is missing images array", albumID)
+		return "", true, false, fmt.Errorf("相册 %q 缺少 images 数组", albumID)
 	}
 	arrayOpen := albumStart + imagesRel + strings.Index(object[imagesRel:], "[")
 	arrayClose, ok := findMatchingJS(source, arrayOpen, '[', ']')
 	if !ok || arrayClose > albumEnd {
-		return "", true, false, fmt.Errorf("album %q has an invalid images array", albumID)
+		return "", true, false, fmt.Errorf("相册 %q 的 images 数组无效", albumID)
 	}
 
 	return insertGalleryImageBeforeArrayClose(source, arrayOpen, arrayClose, imageURL), true, true, nil
@@ -306,12 +306,12 @@ func appendImageToGalleryAlbum(source, albumID, imageURL string) (string, bool, 
 func appendNewGalleryAlbum(source, albumID, albumTitle, imageURL string) (string, error) {
 	arrayOpen := strings.Index(source, "export const galleryAlbums = [")
 	if arrayOpen < 0 {
-		return "", errors.New("galleryAlbums export was not found")
+		return "", errors.New("未找到 galleryAlbums 导出")
 	}
 	arrayOpen += strings.Index(source[arrayOpen:], "[")
 	arrayClose, ok := findMatchingJS(source, arrayOpen, '[', ']')
 	if !ok {
-		return "", errors.New("galleryAlbums array is invalid")
+		return "", errors.New("galleryAlbums 数组无效")
 	}
 
 	closeLineStart := strings.LastIndex(source[:arrayClose], "\n") + 1
@@ -360,8 +360,8 @@ func newGalleryAlbumLiteral(albumID, albumTitle, imageURL string) string {
 		"  {",
 		"    id: " + jsStringLiteral(albumID) + ",",
 		"    title: " + jsStringLiteral(albumTitle) + ",",
-		"    eyebrow: \"Owner Upload\",",
-		"    description: \"Uploaded from owner console.\",",
+		"    eyebrow: \"站长上传\",",
+		"    description: \"由站长控制器上传。\",",
 		"    tone: \"from-[#F6FBFF] via-[#FFF8F1] to-[#FFEAF4]\",",
 		"    accent: \"#FF8FAB\",",
 		"    cover: " + jsStringLiteral(imageURL) + ",",

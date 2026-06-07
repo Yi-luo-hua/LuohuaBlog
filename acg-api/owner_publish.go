@@ -93,7 +93,7 @@ func ownerPublishHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_JSON",
-			"message": "Invalid publish request body.",
+			"message": "发布请求格式不正确。",
 		})
 		return
 	}
@@ -102,14 +102,14 @@ func ownerPublishHandler(w http.ResponseWriter, r *http.Request) {
 	if title == "" {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_TITLE",
-			"message": "Publish title is required.",
+			"message": "发布标题不能为空。",
 		})
 		return
 	}
 	if len([]rune(title)) > ownerDraftTitleMax {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_TITLE",
-			"message": "Publish title is too long.",
+			"message": "发布标题太长。",
 		})
 		return
 	}
@@ -118,14 +118,14 @@ func ownerPublishHandler(w http.ResponseWriter, r *http.Request) {
 	if rawBody == "" {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_BODY",
-			"message": "Publish body is required.",
+			"message": "发布正文不能为空。",
 		})
 		return
 	}
 	if len(body.Body) > ownerDraftBodyMax {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_BODY",
-			"message": "Publish body is too large.",
+			"message": "发布正文太大。",
 		})
 		return
 	}
@@ -134,7 +134,7 @@ func ownerPublishHandler(w http.ResponseWriter, r *http.Request) {
 	if !publisher.configured() {
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":   "PUBLISH_NOT_CONFIGURED",
-			"message": "Owner publish is not configured on the server yet.",
+			"message": "站长发布尚未在服务器配置。",
 		})
 		return
 	}
@@ -438,7 +438,7 @@ func ownerPublishAPIMessage(body []byte, statusCode int) string {
 	if trimmed := strings.TrimSpace(string(body)); trimmed != "" {
 		return trimmed
 	}
-	return fmt.Sprintf("GitHub publish failed with HTTP %d", statusCode)
+	return fmt.Sprintf("GitHub 发布失败，HTTP %d", statusCode)
 }
 
 func escapeGitHubContentPath(path string) string {

@@ -28,20 +28,20 @@ test("describes an owner session for the app console", () => {
 });
 
 test("falls back when the owner session is not confirmed", () => {
-  assert.equal(getOwnerSessionLabel({ loggedIn: false }), "Owner not confirmed");
+  assert.equal(getOwnerSessionLabel({ loggedIn: false }), "站长未确认");
   assert.equal(
     getOwnerSessionLabel({
       loggedIn: true,
       unlimited: false,
       user: { isOwner: true, email: "owner@example.test" },
     }),
-    "Owner security pending",
+    "站长安全验证待完成",
   );
 });
 
 test("summarizes backend health responses", () => {
   assert.equal(getBackendHealthLabel({ status: "ok", uid: "1061280173" }), "ok");
-  assert.equal(getBackendHealthLabel(null), "checking");
+  assert.equal(getBackendHealthLabel(null), "检查中");
   assert.equal(getBackendHealthLabel({ status: "down" }), "down");
 });
 

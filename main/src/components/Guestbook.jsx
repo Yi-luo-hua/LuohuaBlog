@@ -23,9 +23,16 @@ const Guestbook = ({ theme = "dark" }) => {
 
   const load = async () => {
     setLoading(true);
-    const items = await getGuestbook(50);
-    setEntries(items);
-    setLoading(false);
+    setNotice("");
+    try {
+      const items = await getGuestbook(50);
+      setEntries(items);
+    } catch (e) {
+      setEntries([]);
+      setNotice(e.message || "留言加载失败，请稍后再试。");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -37,14 +44,19 @@ const Guestbook = ({ theme = "dark" }) => {
     if (!content.trim()) return;
     setSubmitting(true);
     setNotice("");
-    const row = await postGuestbook({
-      name: name.trim() || "anonymous",
-      content,
-    });
-    setEntries((prev) => [row, ...prev].slice(0, 50));
-    setContent("");
-    setNotice(row.offline ? "Saved locally (API offline)." : "Posted.");
-    setSubmitting(false);
+    try {
+      const row = await postGuestbook({
+        name: name.trim() || "匿名",
+        content,
+      });
+      setEntries((prev) => [row, ...prev].slice(0, 50));
+      setContent("");
+      setNotice("留言已发布。");
+    } catch (e) {
+      setNotice(e.message || "留言发布失败，请稍后再试。");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -61,7 +73,7 @@ const Guestbook = ({ theme = "dark" }) => {
                 : "font-circular-web text-xs uppercase tracking-[0.35em] text-blue-200/80"
             }
           >
-            Guestbook
+            留言板
           </p>
           <h2
             className={
@@ -70,7 +82,7 @@ const Guestbook = ({ theme = "dark" }) => {
                 : "mt-2 font-zentry text-3xl font-black uppercase text-blue-50 md:text-5xl"
             }
           >
-            Leave a Signal
+            留下一张小纸条
           </h2>
           <p
             className={
@@ -79,7 +91,7 @@ const Guestbook = ({ theme = "dark" }) => {
                 : "mt-3 max-w-xl text-sm leading-relaxed text-blue-50/80"
             }
           >
-            English-only geek board. Text only — minimal memory, no embeds.
+            写下你的来访痕迹，我会在这里认真收下。
           </p>
         </header>
 
@@ -98,14 +110,14 @@ const Guestbook = ({ theme = "dark" }) => {
                 : "block text-xs font-bold uppercase tracking-wider text-blue-50/70"
             }
           >
-            Name
+            昵称
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={32}
-            placeholder="anonymous"
+            placeholder="匿名"
             className={
               candy
                 ? "mt-2 w-full rounded-lg border border-[#7C5CFF]/15 bg-white/70 px-3 py-2 text-sm text-[#2D2A3A] outline-none focus:border-[#7C5CFF]"
@@ -119,7 +131,7 @@ const Guestbook = ({ theme = "dark" }) => {
                 : "mt-4 block text-xs font-bold uppercase tracking-wider text-blue-50/70"
             }
           >
-            Message
+            留言
           </label>
           <textarea
             value={content}
@@ -127,7 +139,7 @@ const Guestbook = ({ theme = "dark" }) => {
             maxLength={500}
             rows={4}
             required
-            placeholder="Write something calm and precise…"
+            placeholder="写点想说的话吧…"
             className={
               candy
                 ? "mt-2 w-full resize-y rounded-lg border border-[#7C5CFF]/15 bg-white/70 px-3 py-2 text-sm text-[#2D2A3A] outline-none focus:border-[#7C5CFF]"
@@ -143,7 +155,7 @@ const Guestbook = ({ theme = "dark" }) => {
                 : "mt-4 rounded-full bg-yellow-400 px-6 py-2 text-xs font-bold uppercase text-black disabled:opacity-60"
             }
           >
-            {submitting ? "Sending…" : "Post"}
+            {submitting ? "发布中…" : "发布留言"}
           </button>
           {notice && (
             <p className={`mt-3 text-xs ${candy ? "text-[#7C5CFF]" : "text-yellow-200"}`}>
@@ -155,7 +167,7 @@ const Guestbook = ({ theme = "dark" }) => {
         <div className="grid grid-cols-1 gap-4 p-2 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
             <p className={`text-sm ${candy ? "text-[#2D2A3A]/50" : "text-white/50"}`}>
-              Loading entries…
+              正在加载留言…
             </p>
           ) : (
             entries.map((row) => (
