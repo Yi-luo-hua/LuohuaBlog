@@ -3,6 +3,7 @@ name: Deploy Taozhiyy To UCloud
 run-name: Deploy ${{ github.sha }}
 
 # Touch this workflow file when a manual push-triggered redeploy is needed.
+# Last docs-only redeploy trigger: README backend/authorship notes.
 
 on:
   push:
