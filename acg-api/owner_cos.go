@@ -41,11 +41,11 @@ type ownerTencentCOSUploader struct {
 
 func loadOwnerCOSConfig() (ownerCOSConfig, error) {
 	cfg := ownerCOSConfig{
-		secretID:  strings.TrimSpace(env("TENCENT_COS_SECRET_ID", "")),
-		secretKey: strings.TrimSpace(env("TENCENT_COS_SECRET_KEY", "")),
-		bucket:    strings.TrimSpace(env("TENCENT_COS_BUCKET", "")),
-		region:    strings.TrimSpace(env("TENCENT_COS_REGION", "")),
-		baseURL:   strings.TrimRight(strings.TrimSpace(env("TENCENT_COS_BASE_URL", "")), "/"),
+		secretID:  ownerCOSEnv("TENCENT_COS_SECRET_ID", "COS_SECRET_ID"),
+		secretKey: ownerCOSEnv("TENCENT_COS_SECRET_KEY", "COS_SECRET_KEY"),
+		bucket:    ownerCOSEnv("TENCENT_COS_BUCKET", "COS_BUCKET"),
+		region:    ownerCOSEnv("TENCENT_COS_REGION", "COS_REGION"),
+		baseURL:   strings.TrimRight(ownerCOSEnv("TENCENT_COS_BASE_URL", "COS_BASE_URL"), "/"),
 	}
 	if cfg.secretID == "" || cfg.secretKey == "" || cfg.bucket == "" || cfg.region == "" {
 		return ownerCOSConfig{}, errors.New("cos upload not configured")
@@ -54,6 +54,14 @@ func loadOwnerCOSConfig() (ownerCOSConfig, error) {
 		cfg.baseURL = fmt.Sprintf("https://%s.cos.%s.myqcloud.com", cfg.bucket, cfg.region)
 	}
 	return cfg, nil
+}
+
+func ownerCOSEnv(primary, legacy string) string {
+	value := strings.TrimSpace(env(primary, ""))
+	if value != "" {
+		return value
+	}
+	return strings.TrimSpace(env(legacy, ""))
 }
 
 func newOwnerAssetUploader() (ownerAssetUploader, error) {
