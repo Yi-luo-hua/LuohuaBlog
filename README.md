@@ -74,9 +74,51 @@ This page is an original/customized page created during my personal learning and
 
 The backend and API calling logic were mainly completed with the help of **vibecoding**, including guestbook, AI assistant context, Bili Hub data cache sync, and related functions.
 
-Concretely, `acg-api` is the Go service layer behind the site's `/api` routes. It handles public features such as guestbook submissions, AI assistant context/statistics, Bili Hub cache sync, and health checks, plus owner-only workflows such as owner authentication/session checks, unread message inbox and read markers, AI registered-user inspection, publishing build/blog content, friend links/gallery URLs, and COS-backed image uploads.
+Concretely, `acg-api` is the Go service layer behind the site's `/api` routes. It is a standard `net/http` service bootstrapped from `acg-api/main.go`: it loads `/opt/acg-api/.env` and local `.env`, opens SQLite at `ACG_DATA_DIR/acg.db`, runs database migrations, reserves the owner account, starts Bilibili/radar/wallpaper sync loops, and is normally exposed by Nginx as `/api`.
 
-Data is persisted mainly through SQLite and server runtime files. Write actions that touch GitHub, COS, or AI services require private environment variables on the deployment machine. This repository may expose route names, source code structure, and environment variable names, but it is not intended to include my owner login password, verification answer, GitHub token, COS secret, AI key, server credentials, or private database. Anyone cloning this project must provide their own credentials, verification information, database, deployment host, and external service configuration.
+Backend controller map:
+
+| Controller / file | Main routes | Access | Responsibility |
+| --- | --- | --- | --- |
+| `main.go` public controllers | `GET /api/v1/health`, `GET /api/v1/bangumi/list`, `GET /api/v1/radar/feed`, `GET /api/v1/wallpapers/draw`, `GET /api/v1/acg/image/:name`, `POST /api/v1/sync/trigger` | Public | Health check, Bili bangumi cache, radar feed, wallpaper draw pool, cached cover/image serving, and manual sync trigger. |
+| `main.go` legacy guestbook | `GET/POST /api/v1/guestbook` | Public | Older simple guestbook API using `name` and `content`. Kept for compatibility with earlier frontend code. |
+| `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | Public/login/owner challenge | Email registration, login, session cookie management, display-name updates, and owner second-step verification. |
+| `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | Public/login/owner quota tiers | AI assistant quota status, chat requests, DeepSeek proxying, hourly/daily usage statistics, guest/user/owner quota handling. |
+| `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | Public for visible messages; owner/admin for moderation | Current guestbook and friend-page message controller, including channels, replies, anonymous/login users, rate limits, duplicate checks, IP masking, and soft moderation. |
+| `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | Owner only | Owner console status, registered-user list, unread message inbox, draft storage, local temporary image uploads, and COS asset uploads. |
+| `owner_publish.go` | `POST /api/owner/publish` | Owner only + GitHub token | Publishes Markdown through the GitHub Contents API into `blog/source/_posts/`, merges front matter, handles filename conflicts, and returns commit information. |
+| `owner_friend_publish.go` | `POST /api/owner/friends` | Owner only + GitHub token | Adds a friend link to `main/src/data/friendCards.js`, with duplicate URL detection so an existing link is not written twice. |
+| `owner_gallery_publish.go` | `POST /api/owner/gallery/images` | Owner only + GitHub token | Adds a public image URL to `main/src/data/galleryAlbums.js`, creates a new album when needed, and avoids duplicate image entries. |
+| `owner_cos.go` | Used by `POST /api/owner/assets` | Owner only + COS credentials | Uploads article/gallery images to Tencent COS using server-side credentials and returns a public URL/object key. |
+
+Important request shapes:
+
+| Route | Body/query | Notes |
+| --- | --- | --- |
+| `POST /api/auth/register` | `{ "email": "...", "password": "..." }` | Public users only; the owner email is reserved. |
+| `POST /api/auth/login` | `{ "email": "...", "password": "..." }` | Owner login returns a `challengeToken` and requires `/api/auth/verify-security`. |
+| `POST /api/auth/verify-security` | `{ "challengeToken": "...", "answer": "..." }` | Creates an owner session with unlimited AI quota after the private answer matches. |
+| `GET /api/guestbook/messages?page=1&pageSize=20&channel=guestbook` | `channel` is `guestbook` or `friends` | Public users see visible messages; owner/admin can see hidden messages. |
+| `POST /api/guestbook/messages` | `{ "nickname": "...", "content": "...", "parentId": 0, "channel": "guestbook" }` | Anonymous users must provide `nickname`; logged-in users use their profile name. |
+| `PATCH /api/guestbook/messages/:id` | `{ "status": "visible" \| "hidden" \| "deleted" }` | Owner/admin moderation only. |
+| `POST /api/owner/uploads` | `multipart/form-data` with `file` | Stores a temporary local image under `ACG_DATA_DIR/owner-uploads`, max 8 MiB. |
+| `POST /api/owner/assets` | `multipart/form-data` with `file`, `kind` as `gallery` or `article`, optional `album` | Uploads to Tencent COS. Gallery uploads require an album. |
+| `POST /api/owner/publish` | `{ "draftId": 1, "title": "...", "body": "...", "coverUrl": "..." }` | Writes a real GitHub commit through the configured token. |
+| `POST /api/owner/friends` | `{ "name": "...", "desc": "...", "url": "...", "avatar": "..." }` | `url` and `avatar` must be public `http`/`https` URLs. |
+| `POST /api/owner/gallery/images` | `{ "albumId": "...", "albumTitle": "...", "imageUrl": "..." }` | `imageUrl` must be a public `http`/`https` URL. |
+
+Clone/deploy environment checklist:
+
+- Runtime: `ACG_API_ADDR` defaults to `:8787`; `ACG_DATA_DIR` defaults to `./data`.
+- Owner login: set `AUTH_OWNER_PASSWORD` and `AUTH_OWNER_SECURITY_ANSWER`; optionally tune `AUTH_SESSION_DAYS` and `AUTH_COOKIE_SECURE`.
+- Important source-level identity note: `owner.go` currently reserves the owner email and displays the security-question text for this site's deployment. Anyone reusing the backend should replace those constants or move them to environment variables for their own deployment.
+- AI assistant: set `DEEPSEEK_API_KEY`; optionally set `DEEPSEEK_BASE_URL` and `DEEPSEEK_MODEL`.
+- GitHub owner publishing: set `OWNER_PUBLISH_GITHUB_TOKEN`; optionally set `OWNER_PUBLISH_GITHUB_API_BASE`, `OWNER_PUBLISH_GITHUB_OWNER`, `OWNER_PUBLISH_GITHUB_REPO`, and `OWNER_PUBLISH_GITHUB_BRANCH`. The token must have permission to write repository contents.
+- Tencent COS upload: set `TENCENT_COS_SECRET_ID`, `TENCENT_COS_SECRET_KEY`, `TENCENT_COS_BUCKET`, `TENCENT_COS_REGION`, and optionally `TENCENT_COS_BASE_URL`. Legacy `COS_SECRET_ID`, `COS_SECRET_KEY`, `COS_BUCKET`, `COS_REGION`, and `COS_BASE_URL` are also supported as fallbacks.
+- Bili sync: `BILIBILI_UID` can override the default UID; the radar creator list is defined in `acg-api/config.go`.
+- Frontend API base: production builds should point `VITE_API_BASE` to the deployed site origin, such as `https://taozhiyy.top`.
+
+Security boundary: this repository may expose route names, controller structure, environment variable names, owner-account source constants, and deployment workflow shape, but it is not intended to include my owner login password, verification answer, GitHub token, COS secret, AI key, server credentials, runtime SQLite database, or private `.env`. Backend upload/publish features are safe to expose only when the real credentials stay on the server or in GitHub Actions secrets. Anyone cloning this project must provide their own credentials, verification information, database, deployment host, and external service configuration.
 
 If you want to reference or reuse the backend logic, please read, verify, and test it first to make sure it fits your own use case.
 
