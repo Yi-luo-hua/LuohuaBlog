@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -101,10 +102,10 @@ func seedOwnerControllerSession(t *testing.T, userID int64, unlimited bool) stri
 	return token
 }
 
-func seedOwnerNotificationMessage(t *testing.T, nickname, channel, content string) {
+func seedOwnerNotificationMessage(t *testing.T, nickname, channel, content string) int64 {
 	t.Helper()
 	now := time.Now().UTC().Format(time.RFC3339)
-	if _, err := db.Exec(
+	res, err := db.Exec(
 		`INSERT INTO guestbook_messages
 		 (nickname, avatar, channel, content, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
 		 VALUES (?, '', ?, ?, 'content-hash', 'ip-hash', '', '', '', 0, 'visible', 0, 0, ?, ?)`,
@@ -113,9 +114,15 @@ func seedOwnerNotificationMessage(t *testing.T, nickname, channel, content strin
 		content,
 		now,
 		now,
-	); err != nil {
+	)
+	if err != nil {
 		t.Fatalf("insert guestbook message: %v", err)
 	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		t.Fatalf("message last insert id: %v", err)
+	}
+	return id
 }
 
 func seedOwnerChatHourlySuccess(t *testing.T, count int) {
@@ -239,14 +246,67 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		if item["title"] != "留言板消息" {
 			t.Fatalf("expected Chinese notification title, got %#v", item["title"])
 		}
-		if item["detail"] != "留言板有 1 条待处理消息" {
+		detail := item["detail"].(string)
+		if !strings.Contains(detail, "留言板 · guest · ") {
 			t.Fatalf("expected Chinese notification detail, got %#v", item["detail"])
+		}
+		if item["content"] != "hello from guestbook" {
+			t.Fatalf("expected notification content, got %#v", item["content"])
+		}
+		if item["nickname"] != "guest" {
+			t.Fatalf("expected notification nickname, got %#v", item["nickname"])
+		}
+		registered := users["registered"].([]any)
+		if len(registered) != 1 {
+			t.Fatalf("expected one registered user, got %d", len(registered))
+		}
+		reader := registered[0].(map[string]any)
+		if reader["email"] != "reader@example.com" {
+			t.Fatalf("expected registered user email, got %#v", reader["email"])
+		}
+		if reader["createdAt"] == "" {
+			t.Fatalf("expected registered user createdAt")
 		}
 		if got := int(ai["today"].(float64)); got != 3 {
 			t.Fatalf("expected ai.today 3, got %d", got)
 		}
 		if got := int64(uploads["maxBytes"].(float64)); got != 8*1024*1024 {
 			t.Fatalf("expected uploads.maxBytes 8388608, got %d", got)
+		}
+	})
+}
+
+func TestOwnerNotificationReadMarksMessageWithoutHidingIt(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		token := seedUnlimitedOwnerSession(t)
+		messageID := seedOwnerNotificationMessage(t, "guest", guestbookChannelMain, "please read me")
+
+		req := httptest.NewRequest(
+			http.MethodPatch,
+			"/api/owner/notifications/"+strconv.FormatInt(messageID, 10)+"/read",
+			nil,
+		)
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+
+		var status, ownerReadAt string
+		if err := db.QueryRow(
+			`SELECT status, owner_read_at FROM guestbook_messages WHERE id = ?`,
+			messageID,
+		).Scan(&status, &ownerReadAt); err != nil {
+			t.Fatalf("read message status: %v", err)
+		}
+		if status != "visible" {
+			t.Fatalf("expected public status to remain visible, got %q", status)
+		}
+		if ownerReadAt == "" {
+			t.Fatalf("expected owner_read_at to be set after read")
 		}
 	})
 }
@@ -830,6 +890,116 @@ func TestOwnerGalleryPublishWritesGalleryDataViaGitHubContentsAPI(t *testing.T) 
 			t.Fatalf("unexpected publish path: %#v", item["path"])
 		}
 		if item["commitSha"] != "gallery-commit-sha" {
+			t.Fatalf("unexpected commit sha: %#v", item["commitSha"])
+		}
+	})
+}
+
+func TestOwnerFriendPublishWritesFriendCardsViaGitHubContentsAPI(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		token := seedUnlimitedOwnerSession(t)
+		var (
+			gotMethods []string
+			gotPaths   []string
+			gotPutBody map[string]any
+		)
+		github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotMethods = append(gotMethods, r.Method)
+			gotPaths = append(gotPaths, r.URL.RequestURI())
+			defer r.Body.Close()
+
+			switch r.Method {
+			case http.MethodGet:
+				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/friendCards.js" {
+					t.Fatalf("unexpected github GET path: %q", r.URL.RequestURI())
+				}
+				writeJSON(w, map[string]any{
+					"path":     "main/src/data/friendCards.js",
+					"sha":      "friends-sha",
+					"encoding": "base64",
+					"content": base64.StdEncoding.EncodeToString([]byte(`export const friendCards = [
+  {
+    name: "KoBariDev",
+    desc: "Ciallo",
+    url: "https://hub.131714.xyz/",
+    avatar: "https://cdn.example/kobari.png",
+    note: "FRIEND",
+  },
+];
+`)),
+				})
+			case http.MethodPut:
+				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/friendCards.js" {
+					t.Fatalf("unexpected github PUT path: %q", r.URL.RequestURI())
+				}
+				if err := json.NewDecoder(r.Body).Decode(&gotPutBody); err != nil {
+					t.Fatalf("decode github put request: %v", err)
+				}
+				writeJSON(w, map[string]any{
+					"content": map[string]any{
+						"path": "main/src/data/friendCards.js",
+						"sha":  "new-friends-sha",
+					},
+					"commit": map[string]any{
+						"sha": "friend-commit-sha",
+					},
+				})
+			default:
+				t.Fatalf("unexpected github method: %s", r.Method)
+			}
+		}))
+		defer github.Close()
+
+		t.Setenv("OWNER_PUBLISH_GITHUB_API_BASE", github.URL)
+		t.Setenv("OWNER_PUBLISH_GITHUB_OWNER", "octo")
+		t.Setenv("OWNER_PUBLISH_GITHUB_REPO", "taozhiyy")
+		t.Setenv("OWNER_PUBLISH_GITHUB_BRANCH", "master")
+		t.Setenv("OWNER_PUBLISH_GITHUB_TOKEN", "secret-token")
+
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/api/owner/friends",
+			bytes.NewBufferString(`{"name":"Example Friend","desc":"A readable friend card","url":"https://friend.example","avatar":"https://friend.example/avatar.png"}`),
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		if strings.Join(gotMethods, ",") != "GET,PUT" {
+			t.Fatalf("expected github GET then PUT, got methods=%v paths=%v", gotMethods, gotPaths)
+		}
+		if gotPutBody["branch"] != "master" {
+			t.Fatalf("expected master branch, got %#v", gotPutBody["branch"])
+		}
+		if gotPutBody["sha"] != "friends-sha" {
+			t.Fatalf("expected existing file sha, got %#v", gotPutBody["sha"])
+		}
+		contentRaw, ok := gotPutBody["content"].(string)
+		if !ok || contentRaw == "" {
+			t.Fatalf("expected base64 content payload, got %#v", gotPutBody["content"])
+		}
+		updated, err := decodeBase64String(contentRaw)
+		if err != nil {
+			t.Fatalf("decode base64 friend data: %v", err)
+		}
+		if !strings.Contains(updated, `name: "Example Friend"`) {
+			t.Fatalf("expected friend name in updated data, got %q", updated)
+		}
+		if !strings.Contains(updated, `url: "https://friend.example"`) {
+			t.Fatalf("expected friend url in updated data, got %q", updated)
+		}
+
+		payload := decodeOwnerJSONMap(t, rr)
+		item := payload["item"].(map[string]any)
+		if item["path"] != "main/src/data/friendCards.js" {
+			t.Fatalf("unexpected publish path: %#v", item["path"])
+		}
+		if item["commitSha"] != "friend-commit-sha" {
 			t.Fatalf("unexpected commit sha: %#v", item["commitSha"])
 		}
 	})

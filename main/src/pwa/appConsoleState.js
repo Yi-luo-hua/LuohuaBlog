@@ -18,3 +18,7 @@ export function getStatsSnapshot(stats) {
     successRate: summary.successRateText || "0%",
   };
 }
+
+export function getOwnerRegisteredUsers(ownerStatus) {
+  return ownerStatus?.users?.registered || [];
+}

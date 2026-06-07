@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   getBackendHealthLabel,
   getOwnerSessionLabel,
+  getOwnerRegisteredUsers,
   getStatsSnapshot,
 } from "./appConsoleState.js";
 
@@ -68,4 +69,24 @@ test("normalizes AI stats for the app console", () => {
   );
 
   assert.equal(getStatsSnapshot(null).today, "0 / 0");
+});
+
+test("uses the complete registered user list for AI registration review", () => {
+  const users = getOwnerRegisteredUsers({
+    users: {
+      latest: [{ email: "latest@example.test", createdAt: "2026-06-07T10:00:00Z" }],
+      registered: [
+        { email: "reader@example.test", displayName: "Reader", createdAt: "2026-06-07T09:00:00Z" },
+        { email: "friend@example.test", displayName: "", createdAt: "2026-06-06T09:00:00Z" },
+      ],
+    },
+  });
+
+  assert.deepEqual(
+    users.map((user) => [user.email, user.displayName, user.createdAt]),
+    [
+      ["reader@example.test", "Reader", "2026-06-07T09:00:00Z"],
+      ["friend@example.test", "", "2026-06-06T09:00:00Z"],
+    ],
+  );
 });

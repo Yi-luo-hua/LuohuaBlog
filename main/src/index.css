@@ -5304,6 +5304,14 @@ body {
   font-size: 13px;
 }
 
+.owner-user-row span:nth-child(2) {
+  min-width: 0;
+}
+
+.owner-user-row small {
+  overflow-wrap: anywhere;
+}
+
 .owner-user-avatar {
   width: 40px;
   height: 40px;
@@ -5382,6 +5390,14 @@ body {
 .owner-primary:hover,
 .owner-secondary:hover {
   transform: translateY(-1px);
+}
+
+.owner-primary:disabled,
+.owner-secondary:disabled,
+.owner-secondary--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
 }
 
 .owner-small-button {
@@ -5677,6 +5693,33 @@ body {
   padding: 15px;
   display: grid;
   gap: 8px;
+}
+
+.owner-message-content {
+  margin: 0;
+  border-left: 3px solid rgba(123, 183, 255, 0.55);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.56);
+  color: #354a61;
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.owner-message-meta,
+.owner-empty-row {
+  color: var(--owner-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.owner-empty-row {
+  border-radius: 18px;
+  padding: 13px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.66);
 }
 
 .owner-table-wrap {

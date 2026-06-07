@@ -28,6 +28,7 @@ func migrateAll(db *sql.DB) error {
 			user_agent_hash TEXT NOT NULL DEFAULT '',
 			parent_id INTEGER NOT NULL DEFAULT 0,
 			status TEXT NOT NULL DEFAULT 'visible',
+			owner_read_at TEXT NOT NULL DEFAULT '',
 			is_login_user INTEGER NOT NULL DEFAULT 0,
 			is_admin_user INTEGER NOT NULL DEFAULT 0,
 			created_at TEXT NOT NULL,
@@ -144,6 +145,9 @@ func migrateAll(db *sql.DB) error {
 		return err
 	}
 	if err := ensureColumn(db, "guestbook_messages", "channel", "TEXT NOT NULL DEFAULT 'guestbook'"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "guestbook_messages", "owner_read_at", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
 	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_parent_created ON guestbook_messages(parent_id, created_at ASC);`); err != nil {

@@ -65,6 +65,29 @@ func ownerRouter(w http.ResponseWriter, r *http.Request) {
 			methodNotAllowed(w)
 		}
 		return
+	case path == "friends":
+		if r.Method != http.MethodPost {
+			methodNotAllowed(w)
+			return
+		}
+		ownerFriendPublishHandler(w, r)
+		return
+	case strings.HasPrefix(path, "notifications/") && strings.HasSuffix(path, "/read"):
+		if r.Method != http.MethodPatch {
+			methodNotAllowed(w)
+			return
+		}
+		idText := strings.TrimSuffix(strings.TrimPrefix(path, "notifications/"), "/read")
+		id, err := strconv.ParseInt(strings.Trim(idText, "/"), 10, 64)
+		if err != nil || id <= 0 {
+			writeJSONStatus(w, http.StatusNotFound, map[string]any{
+				"error":   "NOT_FOUND",
+				"message": "提醒不存在。",
+			})
+			return
+		}
+		ownerNotificationReadHandler(w, r, id)
+		return
 	case path == "uploads":
 		if r.Method != http.MethodPost {
 			methodNotAllowed(w)
@@ -167,6 +190,11 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	registeredUsers, err := ownerRegisteredUsers()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	notifications, err := ownerNotificationSummary()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -190,8 +218,10 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 			"displayName": ownerSess.DisplayName,
 		},
 		"users": map[string]any{
-			"total":  totalUsers,
-			"latest": latestUsers,
+			"total":           totalUsers,
+			"latest":          latestUsers,
+			"registered":      registeredUsers,
+			"registeredTotal": len(registeredUsers),
 		},
 		"notifications": notifications,
 		"ai": map[string]any{
@@ -308,6 +338,38 @@ func ownerDraftCreateHandler(w http.ResponseWriter, r *http.Request) {
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
+	})
+}
+
+func ownerNotificationReadHandler(w http.ResponseWriter, r *http.Request, id int64) {
+	if _, ok := requireOwnerSession(w, r); !ok {
+		return
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+	res, err := db.Exec(
+		`UPDATE guestbook_messages
+		 SET owner_read_at = ?, updated_at = ?
+		 WHERE id = ? AND status = 'visible'`,
+		now,
+		now,
+		id,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeJSONStatus(w, http.StatusNotFound, map[string]any{
+			"error":   "NOT_FOUND",
+			"message": "提醒不存在。",
+		})
+		return
+	}
+	writeJSON(w, map[string]any{
+		"ok":          true,
+		"id":          id,
+		"ownerReadAt": now,
 	})
 }
 
@@ -544,12 +606,42 @@ func ownerLatestUsers(limit int) ([]map[string]any, error) {
 	return latest, rows.Err()
 }
 
+func ownerRegisteredUsers() ([]map[string]any, error) {
+	rows, err := db.Query(
+		`SELECT id, email, display_name, created_at
+		 FROM users
+		 WHERE is_owner = 0
+		 ORDER BY id DESC`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]map[string]any, 0)
+	for rows.Next() {
+		var id int64
+		var email, displayName, createdAt string
+		if err := rows.Scan(&id, &email, &displayName, &createdAt); err != nil {
+			return nil, err
+		}
+		items = append(items, map[string]any{
+			"id":          id,
+			"email":       email,
+			"displayName": displayNameOrEmail(email, displayName),
+			"createdAt":   createdAt,
+		})
+	}
+	return items, rows.Err()
+}
+
 func ownerNotificationSummary() (map[string]any, error) {
 	rows, err := db.Query(
-		`SELECT channel, COUNT(*)
+		`SELECT id, channel, nickname, content, created_at
 		 FROM guestbook_messages
-		 WHERE status = 'visible'
-		 GROUP BY channel`,
+		 WHERE status = 'visible' AND owner_read_at = ''
+		 ORDER BY id DESC
+		 LIMIT 30`,
 	)
 	if err != nil {
 		return nil, err
@@ -559,17 +651,21 @@ func ownerNotificationSummary() (map[string]any, error) {
 	items := make([]map[string]any, 0, 4)
 	total := 0
 	for rows.Next() {
-		var channel string
-		var count int
-		if err := rows.Scan(&channel, &count); err != nil {
+		var id int64
+		var channel, nickname, content, createdAt string
+		if err := rows.Scan(&id, &channel, &nickname, &content, &createdAt); err != nil {
 			return nil, err
 		}
-		total += count
+		total += 1
 		items = append(items, map[string]any{
-			"source": channel,
-			"title":  ownerNotificationTitle(channel),
-			"detail": ownerNotificationDetail(channel, count),
-			"count":  count,
+			"id":        id,
+			"source":    channel,
+			"title":     ownerNotificationTitle(channel),
+			"detail":    ownerNotificationMessageDetail(channel, nickname, createdAt),
+			"count":     1,
+			"nickname":  nickname,
+			"content":   content,
+			"createdAt": formatGuestbookTime(createdAt),
 		})
 	}
 	if err := rows.Err(); err != nil {
@@ -601,6 +697,27 @@ func ownerNotificationDetail(channel string, count int) string {
 		return "留言板有 " + strconv.Itoa(count) + " 条待处理消息"
 	default:
 		return "站长控制器有 " + strconv.Itoa(count) + " 条待处理消息"
+	}
+}
+
+func ownerNotificationMessageDetail(channel, nickname, createdAt string) string {
+	source := notificationSourceLabel(channel)
+	name := strings.TrimSpace(nickname)
+	if name == "" {
+		name = "访客"
+	}
+	when := formatGuestbookTime(createdAt)
+	return source + " · " + name + " · " + when
+}
+
+func notificationSourceLabel(channel string) string {
+	switch channel {
+	case guestbookChannelLink:
+		return "朋友页"
+	case guestbookChannelMain:
+		return "留言板"
+	default:
+		return "站长提醒"
 	}
 }
 

@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 
 import {
   isPublicImageURL,
+  markOwnerNotificationRead,
   publishOwnerArticle,
+  publishOwnerFriend,
   publishOwnerGalleryImage,
   uploadOwnerAsset,
 } from "./ownerApi.js";
@@ -119,6 +121,74 @@ test("publishOwnerGalleryImage posts to the real gallery publish endpoint", asyn
   assert.equal(requestOptions.headers["Content-Type"], "application/json");
   assert.deepEqual(JSON.parse(requestOptions.body), payload);
   assert.equal(result.item.commitSha, "commit-sha");
+});
+
+test("markOwnerNotificationRead patches the real owner notification endpoint", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  let requestURL = "";
+  let requestOptions = null;
+  globalThis.fetch = async (url, options = {}) => {
+    requestURL = url;
+    requestOptions = options;
+    return {
+      ok: true,
+      async json() {
+        return { ok: true, id: 42, ownerReadAt: "2026-06-07T12:00:00Z" };
+      },
+    };
+  };
+
+  const result = await markOwnerNotificationRead(42);
+
+  assert.equal(requestURL, "/api/owner/notifications/42/read");
+  assert.equal(requestOptions.method, "PATCH");
+  assert.equal(requestOptions.credentials, "include");
+  assert.equal(result.ownerReadAt, "2026-06-07T12:00:00Z");
+});
+
+test("publishOwnerFriend posts to the real friend publish endpoint", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  let requestURL = "";
+  let requestOptions = null;
+  globalThis.fetch = async (url, options = {}) => {
+    requestURL = url;
+    requestOptions = options;
+    return {
+      ok: true,
+      async json() {
+        return {
+          ok: true,
+          item: {
+            path: "main/src/data/friendCards.js",
+            commitSha: "friend-commit-sha",
+          },
+        };
+      },
+    };
+  };
+
+  const payload = {
+    name: "Example Friend",
+    desc: "A readable friend card",
+    url: "https://friend.example",
+    avatar: "https://friend.example/avatar.png",
+  };
+  const result = await publishOwnerFriend(payload);
+
+  assert.equal(requestURL, "/api/owner/friends");
+  assert.equal(requestOptions.method, "POST");
+  assert.equal(requestOptions.credentials, "include");
+  assert.equal(requestOptions.headers["Content-Type"], "application/json");
+  assert.deepEqual(JSON.parse(requestOptions.body), payload);
+  assert.equal(result.item.commitSha, "friend-commit-sha");
 });
 
 test("isPublicImageURL accepts http and https urls", () => {

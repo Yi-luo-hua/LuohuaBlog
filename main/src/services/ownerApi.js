@@ -63,6 +63,28 @@ export async function publishOwnerGalleryImage(payload) {
   return parseResponse(res);
 }
 
+export async function markOwnerNotificationRead(id) {
+  const res = await fetch(`/api/owner/notifications/${encodeURIComponent(id)}/read`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: JSON_HEADERS,
+  });
+  return parseResponse(res);
+}
+
+export async function publishOwnerFriend(payload) {
+  const res = await fetch("/api/owner/friends", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...JSON_HEADERS,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  return parseResponse(res);
+}
+
 export function isPublicImageURL(value) {
   try {
     const url = new URL(value);

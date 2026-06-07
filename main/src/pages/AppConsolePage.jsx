@@ -6,7 +6,9 @@ import {
   createOwnerDraft,
   fetchOwnerStatus,
   isPublicImageURL,
+  markOwnerNotificationRead,
   publishOwnerArticle,
+  publishOwnerFriend,
   publishOwnerGalleryImage,
   uploadOwnerAsset,
 } from "../services/ownerApi";
@@ -22,6 +24,7 @@ import {
 import {
   getBackendHealthLabel,
   getOwnerSessionLabel,
+  getOwnerRegisteredUsers,
   getStatsSnapshot,
 } from "../pwa/appConsoleState";
 import {
@@ -159,6 +162,8 @@ const AppConsolePage = () => {
   const [articleUploadBusy, setArticleUploadBusy] = useState(false);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [galleryPublishBusy, setGalleryPublishBusy] = useState(false);
+  const [friendPublishBusy, setFriendPublishBusy] = useState(false);
+  const [readingNotificationId, setReadingNotificationId] = useState(null);
   const [publishState, setPublishState] = useState({
     open: false,
     title: "发布任务",
@@ -208,6 +213,7 @@ const AppConsolePage = () => {
   const notificationTotal =
     ownerStatus?.notifications?.total ?? getNotificationTotal(ownerConsoleNotifications);
   const liveUsers = ownerStatus?.users?.latest || [];
+  const registeredUsers = getOwnerRegisteredUsers(ownerStatus);
   const liveDrafts = ownerStatus?.drafts?.items || [];
   const draftCount = ownerStatus?.drafts?.total ?? liveDrafts.length;
   const previewBody = useMemo(
@@ -520,6 +526,87 @@ const AppConsolePage = () => {
       });
     } finally {
       setGalleryPublishBusy(false);
+    }
+  };
+
+  const handlePublishFriend = async () => {
+    const name = friendName.trim();
+    const desc = friendDesc.trim();
+    const url = friendUrl.trim();
+    if (!name || !desc || !url) {
+      setError("请填写站点名称、站点描述和站点 URL。");
+      return;
+    }
+    if (!isPublicImageURL(url)) {
+      setError("友链 URL 必须是公开的 http 或 https 地址。");
+      return;
+    }
+
+    setFriendPublishBusy(true);
+    clearPublishTimer();
+    setError("");
+    setPublishState({
+      open: true,
+      title: "发布友链",
+      activeIndex: 3,
+      failIndex: null,
+      simulated: false,
+      toast: "正在提交到真实友链发布接口...",
+    });
+
+    try {
+      const data = await publishOwnerFriend({ name, desc, url });
+      const item = data.item || {};
+      const commitSha = item.commitSha ? `（commit ${item.commitSha.slice(0, 7)}）` : "";
+      setPublishState({
+        open: true,
+        title: "发布友链",
+        activeIndex: publishSteps.length,
+        failIndex: null,
+        simulated: false,
+        toast: item.changed === false
+          ? `这条友链已经存在于 ${item.path || "友链数据"}。`
+          : `已写入 ${item.path || "友链数据"}${commitSha}，GitHub Actions 会从 ${item.branch || "master"} 部署。`,
+      });
+      await loadConsole();
+    } catch (e) {
+      const message = e.message || "友链发布失败";
+      setError(message);
+      setPublishState({
+        open: true,
+        title: "发布友链",
+        activeIndex: 3,
+        failIndex: 3,
+        simulated: false,
+        toast: message,
+      });
+    } finally {
+      setFriendPublishBusy(false);
+    }
+  };
+
+  const handleMarkNotificationRead = async (item) => {
+    if (!item?.id) {
+      setError("这条提醒没有可标记的留言 ID，请刷新后再试。");
+      return;
+    }
+    setReadingNotificationId(item.id);
+    setError("");
+    try {
+      await markOwnerNotificationRead(item.id);
+      await loadConsole();
+      setPublishState({
+        open: true,
+        title: "提醒已读",
+        activeIndex: -1,
+        failIndex: null,
+        simulated: false,
+        toast: "已从站长收件箱移除这条未读提醒，公开留言内容不会被隐藏。",
+      });
+    } catch (e) {
+      setError(e.message || "标记已读失败");
+    } finally {
+      setReadingNotificationId(null);
     }
   };
 
@@ -1204,15 +1291,34 @@ const AppConsolePage = () => {
                   />
                 </div>
                 <div className="owner-quick-line">
-                  <button type="button" className="owner-secondary">
+                  <button
+                    type="button"
+                    className="owner-secondary"
+                    onClick={() => {
+                      if (!isPublicImageURL(friendUrl.trim())) {
+                        setError("友链 URL 必须是公开的 http 或 https 地址。");
+                        return;
+                      }
+                      setError("");
+                      setPublishState({
+                        open: true,
+                        title: "友链校验通过",
+                        activeIndex: -1,
+                        failIndex: null,
+                        simulated: false,
+                        toast: "站点 URL 格式有效，可以提交到真实友链数据。",
+                      });
+                    }}
+                  >
                     校验链接
                   </button>
                   <button
                     type="button"
                     className="owner-primary"
-                    onClick={() => startPublish("友链写入流程")}
+                    onClick={handlePublishFriend}
+                    disabled={friendPublishBusy}
                   >
-                    稍后接入写库
+                    {friendPublishBusy ? "发布中..." : "发布友链"}
                   </button>
                 </div>
               </div>
@@ -1238,18 +1344,31 @@ const AppConsolePage = () => {
               </div>
               <div className="owner-inbox-list">
                 {liveNotifications.map((item) => (
-                  <article className="owner-message" key={`${item.source}-${item.title}-inbox`}>
+                  <article className="owner-message" key={item.id || `${item.source}-${item.title}-inbox`}>
                     <div className="owner-message-head">
                       <strong>{item.title}</strong>
                       <StatusTag>{notificationSourceLabel(item.source)}</StatusTag>
                     </div>
                     <p>{item.detail}</p>
+                    {item.content ? (
+                      <blockquote className="owner-message-content">{item.content}</blockquote>
+                    ) : null}
+                    {item.nickname || item.createdAt ? (
+                      <small className="owner-message-meta">
+                        {item.nickname || "访客"} · {item.createdAt || "时间未知"}
+                      </small>
+                    ) : null}
                     <div className="owner-quick-line">
                       <button type="button" className="owner-secondary">
                         稍后回复
                       </button>
-                      <button type="button" className="owner-secondary">
-                        稍后标记已读
+                      <button
+                        type="button"
+                        className="owner-secondary"
+                        onClick={() => handleMarkNotificationRead(item)}
+                        disabled={readingNotificationId === item.id}
+                      >
+                        {readingNotificationId === item.id ? "处理中..." : "标记已读"}
                       </button>
                       {item.source === "friends" ? (
                         <button
@@ -1348,6 +1467,27 @@ const AppConsolePage = () => {
 
               <aside className="owner-debug-box owner-glass">
                 <div className="owner-panel-title">
+                  <h2>AI 注册用户</h2>
+                  <StatusTag>{registeredUsers.length}</StatusTag>
+                </div>
+                <div className="owner-user-list">
+                  {registeredUsers.length ? (
+                    registeredUsers.map((user) => (
+                      <article className="owner-user-row" key={`${user.email}-${user.createdAt}`}>
+                        <span className="owner-user-avatar">{userInitial(user.displayName || user.email)}</span>
+                        <span>
+                          <strong>{user.displayName || "未设置昵称"}</strong>
+                          <small>{user.email}</small>
+                          <small>注册时间：{user.createdAt || "未知"}</small>
+                        </span>
+                        <StatusTag>用户</StatusTag>
+                      </article>
+                    ))
+                  ) : (
+                    <article className="owner-empty-row">暂无注册用户</article>
+                  )}
+                </div>
+                <div className="owner-panel-title owner-panel-title--spaced">
                   <h2>已保存答案</h2>
                   <StatusTag>本地原型</StatusTag>
                 </div>
