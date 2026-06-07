@@ -37,6 +37,32 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("grep -E ':(8787)[[:space:]]' || true", text)
         self.assertIn("curl -i --max-time 10 http://127.0.0.1:8787/api/v1/health || true", text)
 
+    def test_sync_step_includes_owner_publish_github_secrets(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("OWNER_PUBLISH_GITHUB_TOKEN: ${{ secrets.OWNER_PUBLISH_GITHUB_TOKEN }}", text)
+        self.assertIn("OWNER_PUBLISH_GITHUB_OWNER: ${{ secrets.OWNER_PUBLISH_GITHUB_OWNER }}", text)
+        self.assertIn("OWNER_PUBLISH_GITHUB_REPO: ${{ secrets.OWNER_PUBLISH_GITHUB_REPO }}", text)
+        self.assertIn("OWNER_PUBLISH_GITHUB_BRANCH: ${{ secrets.OWNER_PUBLISH_GITHUB_BRANCH }}", text)
+        self.assertIn("printf 'OWNER_PUBLISH_GITHUB_TOKEN=%s\\n' \"$OWNER_PUBLISH_GITHUB_TOKEN\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'OWNER_PUBLISH_GITHUB_OWNER=%s\\n' \"$OWNER_PUBLISH_GITHUB_OWNER\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'OWNER_PUBLISH_GITHUB_REPO=%s\\n' \"$OWNER_PUBLISH_GITHUB_REPO\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'OWNER_PUBLISH_GITHUB_BRANCH=%s\\n' \"$OWNER_PUBLISH_GITHUB_BRANCH\" >> \"$FRAG\"", text)
+
+    def test_sync_step_includes_cos_secrets(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("TENCENT_COS_SECRET_ID: ${{ secrets.TENCENT_COS_SECRET_ID }}", text)
+        self.assertIn("TENCENT_COS_SECRET_KEY: ${{ secrets.TENCENT_COS_SECRET_KEY }}", text)
+        self.assertIn("TENCENT_COS_BUCKET: ${{ secrets.TENCENT_COS_BUCKET }}", text)
+        self.assertIn("TENCENT_COS_REGION: ${{ secrets.TENCENT_COS_REGION }}", text)
+        self.assertIn("TENCENT_COS_BASE_URL: ${{ secrets.TENCENT_COS_BASE_URL }}", text)
+        self.assertIn("printf 'TENCENT_COS_SECRET_ID=%s\\n' \"$TENCENT_COS_SECRET_ID\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'TENCENT_COS_SECRET_KEY=%s\\n' \"$TENCENT_COS_SECRET_KEY\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'TENCENT_COS_BUCKET=%s\\n' \"$TENCENT_COS_BUCKET\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'TENCENT_COS_REGION=%s\\n' \"$TENCENT_COS_REGION\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'TENCENT_COS_BASE_URL=%s\\n' \"$TENCENT_COS_BASE_URL\" >> \"$FRAG\"", text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -38,6 +38,23 @@ class SyncAuthEnvTests(unittest.TestCase):
         self.assertIn('systemctl --no-pager --full status "$service"', text)
         self.assertIn('journalctl -u "$service" -n 80 --no-pager', text)
 
+    def test_syncs_owner_publish_github_env_keys(self):
+        text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("OWNER_PUBLISH_GITHUB_TOKEN", text)
+        self.assertIn("OWNER_PUBLISH_GITHUB_OWNER", text)
+        self.assertIn("OWNER_PUBLISH_GITHUB_REPO", text)
+        self.assertIn("OWNER_PUBLISH_GITHUB_BRANCH", text)
+
+    def test_syncs_cos_env_keys(self):
+        text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("TENCENT_COS_SECRET_ID", text)
+        self.assertIn("TENCENT_COS_SECRET_KEY", text)
+        self.assertIn("TENCENT_COS_BUCKET", text)
+        self.assertIn("TENCENT_COS_REGION", text)
+        self.assertIn("TENCENT_COS_BASE_URL", text)
+
 
 if __name__ == "__main__":
     unittest.main()

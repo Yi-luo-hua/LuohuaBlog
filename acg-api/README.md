@@ -57,7 +57,15 @@ IP：仅存 `ip_hash`、`ip_masked`；公开展示 `ipRegion`（依赖 `ip-api.c
 
 前端页面：`main/` 路由 `/guestbook`，首页 Story「LEAVE A MESSAGE」入口。
 
-Copy `.env.example` → `/opt/acg-api/.env` with `DEEPSEEK_API_KEY`, `AUTH_OWNER_PASSWORD`, `AUTH_OWNER_SECURITY_ANSWER`（站长 `173236231@qq.com` 学号二次验证）。
+Copy `.env.example` → `/opt/acg-api/.env` with `DEEPSEEK_API_KEY`, `AUTH_OWNER_PASSWORD`, `AUTH_OWNER_SECURITY_ANSWER`, and owner publish GitHub settings: `OWNER_PUBLISH_GITHUB_TOKEN` (required), `OWNER_PUBLISH_GITHUB_OWNER`, `OWNER_PUBLISH_GITHUB_REPO`, `OWNER_PUBLISH_GITHUB_BRANCH`（站长 `173236231@qq.com` 学号二次验证）。
+
+For owner asset uploads to Tencent COS, also set:
+
+- `TENCENT_COS_SECRET_ID`
+- `TENCENT_COS_SECRET_KEY`
+- `TENCENT_COS_BUCKET`
+- `TENCENT_COS_REGION`
+- optional `TENCENT_COS_BASE_URL`
 
 ## Frontend
 
