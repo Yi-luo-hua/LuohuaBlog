@@ -108,6 +108,17 @@ func migrateAll(db *sql.DB) error {
 			expires_at TEXT NOT NULL,
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		);`,
+		`CREATE TABLE IF NOT EXISTS owner_drafts (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			kind TEXT NOT NULL DEFAULT 'article',
+			title TEXT NOT NULL,
+			body TEXT NOT NULL DEFAULT '',
+			cover_url TEXT NOT NULL DEFAULT '',
+			status TEXT NOT NULL DEFAULT 'draft',
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_owner_drafts_updated ON owner_drafts(updated_at DESC, id DESC);`,
 		`CREATE TABLE IF NOT EXISTS wallpaper_pool (
 			id TEXT PRIMARY KEY,
 			url TEXT NOT NULL,

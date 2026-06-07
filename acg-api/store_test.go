@@ -115,3 +115,25 @@ func TestListRadarFromDBSkipsSeedRows(t *testing.T) {
 		t.Fatalf("expected real radar item to remain, got %q", items[0].CreatorName)
 	}
 }
+
+func TestMigrateAllCreatesOwnerDraftsTable(t *testing.T) {
+	testDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testDB.Close()
+
+	if err := migrateAll(testDB); err != nil {
+		t.Fatalf("migrateAll failed: %v", err)
+	}
+
+	var tableCount int
+	if err := testDB.QueryRow(
+		`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'owner_drafts'`,
+	).Scan(&tableCount); err != nil {
+		t.Fatal(err)
+	}
+	if tableCount != 1 {
+		t.Fatalf("expected owner_drafts table to exist, got count %d", tableCount)
+	}
+}

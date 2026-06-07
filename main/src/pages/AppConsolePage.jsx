@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiBell, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiBell, FiRefreshCw, FiUpload, FiX } from "react-icons/fi";
 import { authMe } from "../services/authApi";
 import { fetchChatStats } from "../services/chatStatsApi";
+import {
+  createOwnerDraft,
+  fetchOwnerStatus,
+  isPublicImageURL,
+  publishOwnerArticle,
+  uploadOwnerAsset,
+} from "../services/ownerApi";
 import {
   buildMobileArticleDraft,
   getNotificationTotal,
@@ -20,43 +27,35 @@ import {
 const screenMap = Object.fromEntries(ownerConsoleScreens.map((screen) => [screen.id, screen]));
 
 const articleSeed = `---
-title: 站点控制器外观确认记录
-date: 2026-06-06 19:20:00
-tags: [网站, 控制器]
+title: 站长控制器第一阶段接站记录
+date: 2026-06-07 01:10:00
+tags: [网站, 控制台]
 categories: [建站]
 ---
 
-# 站点控制器外观确认记录
+# 站长控制器第一阶段接站记录
 
-今天先把站长控制器的外观做出来。
+这一版开始把 App 控制台接到真实站点数据：
 
-- 浅色系
-- 高级透明磨砂质感
-- 支持文章、相册、友链、留言、AI 状态
-
-图片可以直接拖入编辑器，正式版会自动上传并替换为 COS 链接。`;
+- 真实 owner 状态
+- 真实图片上传
+- 真实 Markdown 草稿
+- 真实留言提醒与 AI 统计
+`;
 
 const defaultMobileMaterial =
-  "今天调整了站长控制器：电脑端保留 Markdown，手机端交给 AI 代理写文章，还能审核后发布。";
+  "今天把手机端 AI 发文流程接到真实草稿接口，图片和文字都能先保存到站长控制台。";
 
 const initialCandidateAnswers = [
-  "这是站长预设的 AI 助手，会优先读取固定答案库；没有命中时才进入待处理区。",
-  "这个网站助手由站长后台维护，常见问题会被整理成固定答案，保证回复稳定。",
-  "你可以把它理解为网站的问答控制器：先调试，再把满意回答发布给用户。",
+  "这是站长控制台里的 AI 调试区，当前仍是本地原型回答区，后续再接真实固定问答库。",
+  "这块功能的目标是先调试满意答案，再决定是否发布给用户使用，目前先保留原型交互。",
+  "第一阶段先把数据接通，AI 固定回答库会放到后续阶段继续做。",
 ];
 
 const initialFixedAnswers = [
   {
     question: "如何交换友链？",
-    answer: "请在朋友页留言站点名称、链接、头像和描述，站长审核后会加入友链。",
-  },
-  {
-    question: "网站 AI 助手怎么做？",
-    answer: "站长会先在后台调试答案，保存后用户看到的是固定回复。",
-  },
-  {
-    question: "相册图片从哪里来？",
-    answer: "图片由站长上传到对象存储，再同步到 Gallery 页面展示。",
+    answer: "可以先在友链页留言申请，控制台会在后续阶段接入真实审批和写库流程。",
   },
 ];
 
@@ -88,26 +87,37 @@ const moduleToneClass = {
 
 const StatusTag = ({ children }) => <span className="owner-tag">{children}</span>;
 
+const draftDetail = (item) => {
+  const kind = item.kind || "article";
+  const updatedAt = item.updatedAt || item.createdAt || "";
+  const bodyBytes = new TextEncoder().encode(item.body || "").length;
+  return `${kind} · ${updatedAt || "just now"} · ${bodyBytes} bytes`;
+};
+
+const userInitial = (name) => (name || "?").slice(0, 1).toUpperCase();
+
 const AppConsolePage = () => {
   const [activeScreen, setActiveScreen] = useState("home");
   const [auth, setAuth] = useState(null);
   const [health, setHealth] = useState(null);
   const [stats, setStats] = useState(null);
+  const [ownerStatus, setOwnerStatus] = useState(null);
   const [error, setError] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [avatar, setAvatar] = useState(ownerConsoleAvatars[0]);
-  const [articleTitle, setArticleTitle] = useState("站点控制器外观确认记录");
+  const [articleTitle, setArticleTitle] = useState("站长控制器第一阶段接站记录");
   const [articleBody, setArticleBody] = useState(articleSeed);
+  const [articleImageURL, setArticleImageURL] = useState("");
   const [friendName, setFriendName] = useState("KoBariDev");
-  const [friendDesc, setFriendDesc] = useState("Ciallo～");
+  const [friendDesc, setFriendDesc] = useState("Ciallo");
   const [mobileMaterial, setMobileMaterial] = useState(defaultMobileMaterial);
   const [mobileDraft, setMobileDraft] = useState({
     title: "待生成文章",
-    body: "点击“让 AI 写草稿”后，这里会出现标题、摘要和正文结构。",
+    body: "点击“让 AI 写草稿”后，这里会出现移动端文章草稿。",
   });
   const [mobileToast, setMobileToast] = useState(
-    "把图片和文字交给 AI，它会先生成一篇待审核文章。",
+    "把图片和文字交给 AI 后，第一阶段会先保存为真实草稿，不直接发线上。",
   );
   const [aiQuestion, setAiQuestion] = useState("网站 AI 助手是怎么做出来的？");
   const [candidateAnswers, setCandidateAnswers] = useState(initialCandidateAnswers);
@@ -115,21 +125,30 @@ const AppConsolePage = () => {
   const [manualAnswer, setManualAnswer] = useState("");
   const [fixedAnswers, setFixedAnswers] = useState(initialFixedAnswers);
   const [answerToast, setAnswerToast] = useState("");
+  const [galleryAlbum, setGalleryAlbum] = useState("Default Gallery");
+  const [galleryURLInput, setGalleryURLInput] = useState("");
+  const [galleryUploads, setGalleryUploads] = useState([]);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [publishBusy, setPublishBusy] = useState(false);
+  const [articleUploadBusy, setArticleUploadBusy] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
   const [publishState, setPublishState] = useState({
     open: false,
-    title: "发布任务",
+    title: "Publish Task",
     activeIndex: -1,
     failIndex: null,
-    toast: "点击发布后，这里会显示每一步状态。失败不会影响线上旧版本。",
+    simulated: false,
+    toast: "第一阶段主要提供真实上传和真实草稿，不直接改线上正式内容。",
   });
   const publishTimerRef = useRef(null);
 
   const loadConsole = useCallback(async () => {
     setError("");
-    const [authResult, healthResult, statsResult] = await Promise.allSettled([
+    const [authResult, healthResult, statsResult, ownerStatusResult] = await Promise.allSettled([
       authMe(),
       fetchBackendHealth(),
       fetchChatStats(14),
+      fetchOwnerStatus(),
     ]);
 
     if (authResult.status === "fulfilled") {
@@ -137,11 +156,14 @@ const AppConsolePage = () => {
     }
     if (healthResult.status === "fulfilled") setHealth(healthResult.value);
     if (statsResult.status === "fulfilled") setStats(statsResult.value);
+    if (ownerStatusResult.status === "fulfilled") setOwnerStatus(ownerStatusResult.value);
 
-    const failed = [authResult, healthResult, statsResult].some(
+    const requiredFailures = [authResult, healthResult, statsResult].some(
       (result) => result.status === "rejected",
     );
-    if (failed) setError("部分后端信号暂时不可用，检查 /api 后可以重试。");
+    if (requiredFailures) {
+      setError("部分后端信号暂时不可用，可以继续操作草稿与原型区。");
+    }
   }, []);
 
   useEffect(() => {
@@ -155,9 +177,14 @@ const AppConsolePage = () => {
   const ownerLabel = getOwnerSessionLabel(auth);
   const healthLabel = getBackendHealthLabel(health);
   const statsSnapshot = useMemo(() => getStatsSnapshot(stats), [stats]);
-  const notificationTotal = getNotificationTotal(ownerConsoleNotifications);
+  const liveNotifications = ownerStatus?.notifications?.items || ownerConsoleNotifications;
+  const notificationTotal =
+    ownerStatus?.notifications?.total ?? getNotificationTotal(ownerConsoleNotifications);
+  const liveUsers = ownerStatus?.users?.latest || [];
+  const liveDrafts = ownerStatus?.drafts?.items || [];
+  const draftCount = ownerStatus?.drafts?.total ?? liveDrafts.length;
   const previewBody = useMemo(
-    () => articleBody.replaceAll("---", "").trim().slice(0, 420) || "Markdown 预览",
+    () => articleBody.replaceAll("---", "").trim().slice(0, 420) || "Markdown preview",
     [articleBody],
   );
 
@@ -181,7 +208,8 @@ const AppConsolePage = () => {
       title,
       activeIndex: 0,
       failIndex: null,
-      toast: "任务已开始。失败时不会影响线上旧版本。",
+      simulated: true,
+      toast: "这里只模拟发布流程；第一阶段真实完成的是草稿和上传。",
     });
 
     let step = 0;
@@ -193,11 +221,12 @@ const AppConsolePage = () => {
           ...current,
           activeIndex: publishSteps.length,
           failIndex: null,
-          toast: "发布模拟完成：线上链接已生成，可以复制或继续发布。",
+          simulated: true,
+          toast: "模拟发布完成。正式一键发布会放到后续阶段。",
         }));
         return;
       }
-      setPublishState((current) => ({ ...current, activeIndex: step, failIndex: null }));
+      setPublishState((current) => ({ ...current, activeIndex: step, failIndex: null, simulated: true }));
     }, 760);
   };
 
@@ -208,7 +237,8 @@ const AppConsolePage = () => {
       open: true,
       activeIndex: 2,
       failIndex: 2,
-      toast: "模拟失败：生成页面失败。线上网站保持上一版，可以修改草稿后重试。",
+      simulated: true,
+      toast: "这里模拟失败提示；当前不会影响线上旧版本。",
     }));
   };
 
@@ -217,37 +247,198 @@ const AppConsolePage = () => {
     setPublishState((current) => ({ ...current, open: false }));
   };
 
-  const fakeSave = () => {
+  const saveArticleDraft = async ({ title, body, toastTitle, toastMessage }) => {
+    setSaveBusy(true);
     clearPublishTimer();
+    try {
+      await createOwnerDraft({
+        kind: "article",
+        title,
+        body,
+        coverUrl: articleImageURL.trim(),
+        status: "draft",
+      });
+      setPublishState({
+        open: true,
+        title: toastTitle,
+        activeIndex: -1,
+        failIndex: null,
+        simulated: false,
+        toast: toastMessage,
+      });
+      await loadConsole();
+    } catch (e) {
+      setError(e.message || "草稿保存失败");
+    } finally {
+      setSaveBusy(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    await saveArticleDraft({
+      title: articleTitle,
+      body: articleBody,
+      toastTitle: "草稿已保存",
+      toastMessage: "桌面端 Markdown 草稿已保存到真实后端，后续可以继续编辑。",
+    });
+  };
+
+  const handlePublishArticle = async ({
+    draftId,
+    title,
+    body,
+    coverUrl = "",
+    publishTitle = "Publish article",
+  }) => {
+    setPublishBusy(true);
+    clearPublishTimer();
+    setError("");
     setPublishState({
       open: true,
-      title: "保存草稿",
-      activeIndex: -1,
+      title: publishTitle,
+      activeIndex: 3,
       failIndex: null,
-      toast: "草稿已保存。",
+      simulated: false,
+      toast: "Submitting the article to the real publish pipeline...",
     });
+
+    try {
+      const data = await publishOwnerArticle({
+        ...(draftId ? { draftId } : {}),
+        title,
+        body,
+        coverUrl,
+      });
+      const item = data.item || {};
+      const commitSha = item.commitSha ? ` (commit ${item.commitSha.slice(0, 7)})` : "";
+      setPublishState({
+        open: true,
+        title: publishTitle,
+        activeIndex: publishSteps.length,
+        failIndex: null,
+        simulated: false,
+        toast: item.path
+          ? `Published to ${item.path}${commitSha}. GitHub Actions will deploy from ${item.branch || "master"}.`
+          : "Article publish submitted successfully.",
+      });
+      await loadConsole();
+    } catch (e) {
+      const message = e.message || "Article publish failed";
+      setError(message);
+      setPublishState({
+        open: true,
+        title: publishTitle,
+        activeIndex: 3,
+        failIndex: 3,
+        simulated: false,
+        toast: message,
+      });
+    } finally {
+      setPublishBusy(false);
+    }
   };
 
   const generateMobileArticle = () => {
     const draft = buildMobileArticleDraft(mobileMaterial);
     setMobileDraft(draft);
-    setMobileToast("AI 已生成待审核草稿，可以修改素材后重写，也可以审核通过并发布。");
+    setMobileToast("AI 已生成待审核草稿，确认后会保存到真实草稿箱。");
   };
 
-  const approveMobileArticle = () => {
-    if (mobileDraft.title === "待生成文章") {
-      setMobileDraft(buildMobileArticleDraft(mobileMaterial));
+  const approveMobileArticle = async () => {
+    const nextDraft =
+      mobileDraft.title === "待生成文章" ? buildMobileArticleDraft(mobileMaterial) : mobileDraft;
+    if (nextDraft !== mobileDraft) setMobileDraft(nextDraft);
+    await saveArticleDraft({
+      title: nextDraft.title,
+      body: nextDraft.body,
+      toastTitle: "移动端 AI 草稿已保存",
+      toastMessage: "移动端 AI 文章已经保存为真实草稿，当前阶段不会直接发布到网站。",
+    });
+    setMobileToast("AI 草稿已保存到真实草稿箱，可以在草稿页继续处理。");
+  };
+
+  const handleGalleryUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadBusy(true);
+    setError("");
+    try {
+      const data = await uploadOwnerAsset(file, { kind: "gallery", album: galleryAlbum });
+      const item = data.item || {};
+      setGalleryUploads((current) => [
+        {
+          name: item.path || item.name || file.name,
+          url: item.url || "",
+        },
+        ...current,
+      ]);
+      setPublishState({
+        open: true,
+        title: "图片已上传",
+        activeIndex: -1,
+        failIndex: null,
+        toast: `图片已上传到真实后端：${item.url || file.name}`,
+      });
+      await loadConsole();
+    } catch (e) {
+      setError(e.message || "图片上传失败");
+    } finally {
+      event.target.value = "";
+      setUploadBusy(false);
     }
-    setMobileToast("已审核通过，正在交给自动化发布流程。");
-    startPublish("手机 AI 代理发布文章");
+  };
+
+  const handleAddGalleryURL = () => {
+    const next = galleryURLInput.trim();
+    if (!isPublicImageURL(next)) {
+      setError("Please enter a valid public image URL.");
+      return;
+    }
+    setError("");
+    setGalleryUploads((current) => [{ name: "PicGo URL", url: next }, ...current]);
+    setGalleryURLInput("");
+    setPublishState({
+      open: true,
+      title: "Gallery link added",
+      activeIndex: -1,
+      failIndex: null,
+      simulated: false,
+      toast: `Gallery image will use ${next}`,
+    });
+  };
+
+  const handleArticleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setArticleUploadBusy(true);
+    setError("");
+    try {
+      const data = await uploadOwnerAsset(file, { kind: "article" });
+      const item = data.item || {};
+      const nextURL = item.url || "";
+      setArticleImageURL(nextURL);
+      setPublishState({
+        open: true,
+        title: "Article cover uploaded",
+        activeIndex: -1,
+        failIndex: null,
+        simulated: false,
+        toast: nextURL || file.name,
+      });
+    } catch (e) {
+      setError(e.message || "Article image upload failed");
+    } finally {
+      event.target.value = "";
+      setArticleUploadBusy(false);
+    }
   };
 
   const testAiQuestion = () => {
     const question = aiQuestion.trim() || "用户问题";
     setCandidateAnswers([
-      `关于“${question}”，建议使用站长已经确认过的固定答案；用户侧会优先展示这条回复。`,
-      "这个问题可以沉淀为固定问答：先由站长调试答案，再保存到答案库，之后稳定输出给用户。",
-      "如果当前没有满意答案，就在手动答案区补一条，保存后下次同类问题直接命中。",
+      `关于“${question}”，目前建议先在控制台内调试回答，固定问答库还在后续阶段。`,
+      "这块功能先保留原型交互，等真实内容链路稳定后再接固定回答入库。",
+      "第一阶段重点是真实上传和真实草稿，AI 固定答案区先继续本地演示。",
     ]);
     setSelectedAnswerIndex(0);
     setAnswerToast("已生成 3 条候选答案。");
@@ -257,12 +448,12 @@ const AppConsolePage = () => {
     const question = aiQuestion.trim() || "未命名问题";
     const answer = manualAnswer.trim() || candidateAnswers[selectedAnswerIndex] || "";
     if (!answer) {
-      setAnswerToast("请先选择候选答案，或手动填写最终答案。");
+      setAnswerToast("请先选一条候选答案，或手动填写最终答案。");
       return;
     }
     setFixedAnswers((current) => [{ question, answer }, ...current]);
     setManualAnswer("");
-    setAnswerToast("已保存。用户再问相似问题时，将优先输出这条固定答案。");
+    setAnswerToast("已保存到当前原型会话。");
   };
 
   const handleSync = async () => {
@@ -275,6 +466,19 @@ const AppConsolePage = () => {
     }
   };
 
+  const visibleDrafts = liveDrafts.length
+    ? liveDrafts
+    : [
+        {
+          id: "seed-1",
+          title: articleTitle,
+          kind: "article",
+          body: articleBody,
+          updatedAt: "local prototype",
+          status: "draft",
+        },
+      ];
+
   return (
     <main className="owner-console">
       <div className="owner-console-app">
@@ -283,12 +487,12 @@ const AppConsolePage = () => {
             type="button"
             className="owner-brand"
             onClick={() => openScreen("home")}
-            aria-label="打开站长工作台"
+            aria-label="Open owner console"
           >
             <span className="owner-brand-mark">TC</span>
             <span>
               <strong>Taozhiyy Control</strong>
-              <small>站长创作工作台</small>
+              <small>Owner workspace</small>
             </span>
           </button>
           <nav className="owner-nav">
@@ -315,7 +519,7 @@ const AppConsolePage = () => {
             <div className="owner-top-actions">
               <span className="owner-pill">
                 <span className="owner-status-dot" />
-                最近发布：等待任务
+                Latest deployment: waiting for publish stage
               </span>
               <div className="owner-notify-wrap">
                 <button
@@ -325,7 +529,7 @@ const AppConsolePage = () => {
                     setNotificationsOpen((open) => !open);
                     setAvatarOpen(false);
                   }}
-                  aria-label="消息提醒"
+                  aria-label="Notifications"
                 >
                   <FiBell aria-hidden />
                   <span className="owner-badge">{notificationTotal}</span>
@@ -333,14 +537,14 @@ const AppConsolePage = () => {
                 {notificationsOpen ? (
                   <div className="owner-popover owner-glass">
                     <div className="owner-panel-title">
-                      <h2>消息提醒</h2>
+                      <h2>Notifications</h2>
                       <StatusTag>{notificationTotal}</StatusTag>
                     </div>
                     <div className="owner-notice-list">
-                      {ownerConsoleNotifications.map((item) => (
+                      {liveNotifications.map((item) => (
                         <button
                           type="button"
-                          key={item.title}
+                          key={`${item.source}-${item.title}`}
                           className="owner-notice"
                           onClick={() => openScreen("inbox")}
                         >
@@ -363,7 +567,7 @@ const AppConsolePage = () => {
                     setAvatarOpen((open) => !open);
                     setNotificationsOpen(false);
                   }}
-                  aria-label="切换头像"
+                  aria-label="Switch avatar"
                 >
                   <span className="owner-avatar-face" style={{ background: avatar.gradient }}>
                     {avatar.initial}
@@ -372,34 +576,26 @@ const AppConsolePage = () => {
                 {avatarOpen ? (
                   <div className="owner-avatar-switcher owner-glass">
                     <div className="owner-panel-title">
-                      <h2>切换头像</h2>
-                      <StatusTag>本地预览</StatusTag>
+                      <h2>Avatar Preview</h2>
+                      <StatusTag>local</StatusTag>
                     </div>
                     <div className="owner-avatar-grid">
                       {ownerConsoleAvatars.map((item) => (
                         <button
                           type="button"
                           key={item.id}
-                          className={`owner-avatar-option ${
-                            item.id === avatar.id ? "active" : ""
-                          }`}
+                          className={`owner-avatar-option ${item.id === avatar.id ? "active" : ""}`}
                           onClick={() => {
                             setAvatar(item);
                             setAvatarOpen(false);
                           }}
                         >
-                          <span
-                            className="owner-avatar-face"
-                            style={{ background: item.gradient }}
-                          >
+                          <span className="owner-avatar-face" style={{ background: item.gradient }}>
                             {item.initial}
                           </span>
                           <span>{item.label}</span>
                         </button>
                       ))}
-                      <button type="button" className="owner-avatar-option owner-avatar-upload">
-                        上传头像
-                      </button>
                     </div>
                   </div>
                 ) : null}
@@ -414,10 +610,10 @@ const AppConsolePage = () => {
               <div className="owner-home-main">
                 <div className="owner-section-title">
                   <div>
-                    <h2>常用操作</h2>
-                    <p>直接进入日常维护任务。</p>
+                    <h2>Quick Modules</h2>
+                    <p>First phase focuses on real data, uploads, and drafts.</p>
                   </div>
-                  <StatusTag>Today</StatusTag>
+                  <StatusTag>Phase 1</StatusTag>
                 </div>
                 <div className="owner-module-grid">
                   {ownerConsoleModules.map((module) => (
@@ -441,27 +637,27 @@ const AppConsolePage = () => {
 
                 <section className="owner-panel owner-glass">
                   <div className="owner-panel-title">
-                    <h2>访问与用户</h2>
-                    <StatusTag>模拟数据</StatusTag>
+                    <h2>Users And Traffic</h2>
+                    <StatusTag>{ownerStatus ? "live" : "fallback"}</StatusTag>
                   </div>
                   <div className="owner-stats-grid">
                     <article className="owner-stat-card">
-                      <span>今日访问</span>
-                      <strong>1,284</strong>
-                      <em>+12%</em>
+                      <span>Registered users</span>
+                      <strong>{ownerStatus?.users?.total ?? liveUsers.length ?? 0}</strong>
+                      <em>real data</em>
                     </article>
                     <article className="owner-stat-card">
-                      <span>总访问量</span>
-                      <strong>86.3k</strong>
-                      <em>稳定</em>
+                      <span>Owner session</span>
+                      <strong>{ownerLabel}</strong>
+                      <em>{healthLabel}</em>
                     </article>
                     <article className="owner-stat-card">
-                      <span>注册用户</span>
-                      <strong>27</strong>
-                      <em>+1 新增</em>
+                      <span>Message reminders</span>
+                      <strong>{notificationTotal}</strong>
+                      <em>guestbook + friends</em>
                     </article>
                     <article className="owner-stat-card">
-                      <span>AI 调用</span>
+                      <span>AI today</span>
                       <strong>{statsSnapshot.today}</strong>
                       <em>{statsSnapshot.model}</em>
                     </article>
@@ -470,36 +666,30 @@ const AppConsolePage = () => {
 
                 <section className="owner-panel owner-glass">
                   <div className="owner-panel-title">
-                    <h2>注册用户</h2>
+                    <h2>Latest Users</h2>
                     <button type="button" className="owner-secondary owner-small-button">
-                      查看全部
+                      live list
                     </button>
                   </div>
                   <div className="owner-user-list">
                     <div className="owner-user-row">
-                      <span className="owner-user-avatar">O</span>
+                      <span className="owner-user-avatar">{userInitial(ownerLabel)}</span>
                       <span>
                         <strong>{ownerLabel}</strong>
                         <small>Owner session · {healthLabel}</small>
                       </span>
                       <StatusTag>Owner</StatusTag>
                     </div>
-                    <div className="owner-user-row">
-                      <span className="owner-user-avatar">M</span>
-                      <span>
-                        <strong>MisakaFan</strong>
-                        <small>最近登录：今天 14:22</small>
-                      </span>
-                      <StatusTag>User</StatusTag>
-                    </div>
-                    <div className="owner-user-row">
-                      <span className="owner-user-avatar">K</span>
-                      <span>
-                        <strong>KoBariDev</strong>
-                        <small>最近登录：昨天 21:08</small>
-                      </span>
-                      <StatusTag>User</StatusTag>
-                    </div>
+                    {liveUsers.map((user) => (
+                      <div className="owner-user-row" key={`${user.email}-${user.createdAt}`}>
+                        <span className="owner-user-avatar">{userInitial(user.displayName)}</span>
+                        <span>
+                          <strong>{user.displayName}</strong>
+                          <small>{user.email}</small>
+                        </span>
+                        <StatusTag>{user.isOwner ? "Owner" : "User"}</StatusTag>
+                      </div>
+                    ))}
                   </div>
                 </section>
               </div>
@@ -507,14 +697,14 @@ const AppConsolePage = () => {
               <aside className="owner-side-stack">
                 <section className="owner-panel owner-glass">
                   <div className="owner-panel-title">
-                    <h2>消息提醒</h2>
+                    <h2>Notifications</h2>
                     <StatusTag>{notificationTotal}</StatusTag>
                   </div>
                   <div className="owner-notice-list">
-                    {ownerConsoleNotifications.map((item) => (
+                    {liveNotifications.map((item) => (
                       <button
                         type="button"
-                        key={item.title}
+                        key={`${item.source}-${item.title}-panel`}
                         className="owner-notice"
                         onClick={() => openScreen("inbox")}
                       >
@@ -530,25 +720,25 @@ const AppConsolePage = () => {
 
                 <section className="owner-panel owner-glass">
                   <div className="owner-panel-title">
-                    <h2>发布任务</h2>
-                    <StatusTag>模拟</StatusTag>
+                    <h2>Publish Tasks</h2>
+                    <StatusTag>phase 1</StatusTag>
                   </div>
                   <div className="owner-task-list">
                     <div className="owner-task-row">
-                      <span>上一版线上状态</span>
-                      <strong>正常</strong>
+                      <span>Current drafts</span>
+                      <strong>{draftCount}</strong>
                     </div>
                     <div className="owner-task-row">
-                      <span>当前草稿</span>
-                      <strong>2</strong>
+                      <span>Uploaded images</span>
+                      <strong>{galleryUploads.length}</strong>
                     </div>
                     <div className="owner-task-row">
-                      <span>诊断中心</span>
-                      <strong>可查看</strong>
+                      <span>Deployment</span>
+                      <strong>later stage</strong>
                     </div>
                   </div>
                   <button type="button" className="owner-secondary" onClick={handleSync}>
-                    <FiRefreshCw aria-hidden /> 刷新后端信号
+                    <FiRefreshCw aria-hidden /> Refresh backend status
                   </button>
                 </section>
               </aside>
@@ -559,14 +749,14 @@ const AppConsolePage = () => {
             <div className="owner-form-shell owner-glass owner-desktop-article">
               <div>
                 <div className="owner-field">
-                  <label htmlFor="articleType">文章模块</label>
+                  <label htmlFor="articleType">Article type</label>
                   <select id="articleType">
-                    <option>Blog 文章</option>
-                    <option>Build 记录</option>
+                    <option>Blog</option>
+                    <option>Build Notes</option>
                   </select>
                 </div>
                 <div className="owner-field">
-                  <label htmlFor="articleTitle">标题</label>
+                  <label htmlFor="articleTitle">Title</label>
                   <input
                     id="articleTitle"
                     value={articleTitle}
@@ -574,9 +764,35 @@ const AppConsolePage = () => {
                   />
                 </div>
                 <p className="owner-frontmatter-hint">
-                  Markdown 模式：正式版会自动生成 frontmatter，你也可以手动编辑 tags、
-                  categories、cover 等字段。
+                  This phase saves real Markdown drafts to the backend, and article publish now
+                  submits through the real owner API.
                 </p>
+                <div className="owner-field">
+                  <label htmlFor="articleCoverUrl">Cover image URL</label>
+                  <input
+                    id="articleCoverUrl"
+                    value={articleImageURL}
+                    placeholder="https://cdn.example/article-cover.png"
+                    onChange={(e) => setArticleImageURL(e.target.value)}
+                  />
+                </div>
+                <div className="owner-quick-line">
+                  <label className="owner-secondary" htmlFor="articleImageUpload">
+                    <FiUpload aria-hidden /> {articleUploadBusy ? "Uploading..." : "Upload cover to COS"}
+                  </label>
+                  <input
+                    id="articleImageUpload"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={handleArticleImageUpload}
+                    hidden
+                  />
+                  <span className="owner-pill">
+                    {articleImageURL
+                      ? "Cover ready for publish"
+                      : "Paste a PicGo URL or upload a cover image"}
+                  </span>
+                </div>
                 <div className="owner-md-editor">
                   <div className="owner-md-toolbar">
                     {["H1", "B", "I", "Link", "Img", "Code"].map((tool) => (
@@ -589,52 +805,70 @@ const AppConsolePage = () => {
                   <textarea value={articleBody} onChange={(e) => setArticleBody(e.target.value)} />
                 </div>
                 <div className="owner-quick-line">
-                  <button type="button" className="owner-secondary" onClick={fakeSave}>
-                    保存草稿
+                  <button
+                    type="button"
+                    className="owner-secondary"
+                    onClick={handleSaveDraft}
+                    disabled={saveBusy}
+                  >
+                    {saveBusy ? "Saving..." : "Save draft"}
                   </button>
                   <button
                     type="button"
                     className="owner-primary"
-                    onClick={() => startPublish("发布文章")}
+                    onClick={() =>
+                      handlePublishArticle({
+                        title: articleTitle,
+                        body: articleBody,
+                        coverUrl: articleImageURL.trim(),
+                        publishTitle: "Publish article",
+                      })
+                    }
+                    disabled={publishBusy}
                   >
-                    发布到网站
+                    {publishBusy ? "Publishing..." : "Publish article"}
                   </button>
                 </div>
               </div>
               <aside className="owner-md-preview">
                 <div className="owner-kicker">Markdown Preview</div>
-                <div className="owner-cover">封面预览</div>
-                <h2>{articleTitle || "未命名文章"}</h2>
+                <div className="owner-cover">{articleImageURL ? "cover linked" : "cover preview"}</div>
+                <h2>{articleTitle || "Untitled article"}</h2>
                 <pre>{previewBody}</pre>
+                <p>
+                  {articleImageURL
+                    ? `Cover URL: ${articleImageURL}`
+                    : "Add a public cover URL or upload one to COS."}
+                </p>
               </aside>
             </div>
 
             <div className="owner-mobile-article">
               <section className="owner-agent-card owner-glass">
                 <div className="owner-panel-title">
-                  <h2>手机 AI 代理发文章</h2>
-                  <StatusTag>移动端</StatusTag>
+                  <h2>Mobile AI Draft</h2>
+                  <StatusTag>shared draft API</StatusTag>
                 </div>
                 <div className="owner-agent-steps">
                   <div>
-                    <b>1. 交素材</b>
-                    <span>把图片和零散文字交给 AI。</span>
+                    <b>1. Add material</b>
+                    <span>Write rough points or mobile notes.</span>
                   </div>
                   <div>
-                    <b>2. AI 成文</b>
-                    <span>自动整理标题、正文和发布摘要。</span>
+                    <b>2. Generate AI draft</b>
+                    <span>Keep the current prototype generation flow.</span>
                   </div>
                   <div>
-                    <b>3. 审核发布</b>
-                    <span>你确认后进入自动化发布流程。</span>
+                    <b>3. Save real draft</b>
+                    <span>Approval now stores into the same backend draft box.</span>
                   </div>
                 </div>
                 <div className="owner-agent-dropzone">
-                  <strong>添加图片</strong>
-                  <span>原型中用占位素材；正式版会上传图片并交给 AI 组织内容。</span>
+                  <strong>Phase 1 note</strong>
+                  <span>Mobile content is real at the draft layer, not real at publish layer yet.</span>
                 </div>
                 <div className="owner-field">
-                  <label htmlFor="mobileArticleInput">给 AI 的文字素材</label>
+                  <label htmlFor="mobileArticleInput">Material for AI</label>
                   <textarea
                     id="mobileArticleInput"
                     value={mobileMaterial}
@@ -643,17 +877,17 @@ const AppConsolePage = () => {
                 </div>
                 <div className="owner-quick-line">
                   <button type="button" className="owner-secondary" onClick={generateMobileArticle}>
-                    让 AI 写草稿
+                    Generate AI draft
                   </button>
                   <button type="button" className="owner-primary" onClick={approveMobileArticle}>
-                    审核通过并发布
+                    Save approved draft
                   </button>
                 </div>
                 <p className="owner-agent-toast">{mobileToast}</p>
               </section>
               <aside className="owner-agent-preview owner-glass">
                 <div className="owner-kicker">AI Draft Preview</div>
-                <div className="owner-cover">素材封面</div>
+                <div className="owner-cover">material cover</div>
                 <h2>{mobileDraft.title}</h2>
                 <pre>{mobileDraft.body}</pre>
               </aside>
@@ -663,57 +897,68 @@ const AppConsolePage = () => {
           <section className={`owner-screen ${activeScreen === "drafts" ? "active" : ""}`}>
             <div className="owner-panel owner-glass">
               <div className="owner-panel-title">
-                <h2>草稿箱</h2>
+                <h2>Draft Box</h2>
                 <button
                   type="button"
                   className="owner-primary owner-small-button"
                   onClick={() => openScreen("article")}
                 >
-                  新建文章
+                  New article
                 </button>
               </div>
               <div className="owner-mini-metrics">
                 <div>
-                  <span>文章草稿</span>
-                  <b>2</b>
+                  <span>Article drafts</span>
+                  <b>{draftCount}</b>
                 </div>
                 <div>
-                  <span>图片草稿</span>
-                  <b>0</b>
+                  <span>Uploaded images</span>
+                  <b>{galleryUploads.length}</b>
                 </div>
                 <div>
-                  <span>待补封面</span>
-                  <b>1</b>
+                  <span>Needs cover</span>
+                  <b>{visibleDrafts.filter((item) => !item.coverUrl).length}</b>
                 </div>
                 <div>
-                  <span>可发布</span>
-                  <b>1</b>
+                  <span>Ready later</span>
+                  <b>{visibleDrafts.length}</b>
                 </div>
               </div>
               <div className="owner-draft-list">
-                {[
-                  ["站点控制器外观确认记录", "Blog 文章 · 保存于今天 19:20 · 已有 Markdown 正文"],
-                  ["AI 固定答案配置说明", "Build 记录 · 保存于昨天 23:14 · 缺少封面图"],
-                ].map(([title, detail], index) => (
-                  <article className="owner-draft-item" key={title}>
+                {visibleDrafts.map((item, index) => (
+                  <article className="owner-draft-item" key={item.id || `${item.title}-${index}`}>
                     <span>
-                      <strong>{title}</strong>
-                      <small>{detail}</small>
+                      <strong>{item.title}</strong>
+                      <small>{draftDetail(item)}</small>
                     </span>
                     <span className="owner-quick-line">
                       <button
                         type="button"
                         className="owner-secondary"
-                        onClick={() => openScreen("article")}
+                        onClick={() => {
+                          setArticleTitle(item.title || "");
+                          setArticleBody(item.body || "");
+                          setArticleImageURL(item.coverUrl || "");
+                          openScreen("article");
+                        }}
                       >
-                        继续编辑
+                        Continue
                       </button>
                       <button
                         type="button"
-                        className={index === 0 ? "owner-primary" : "owner-secondary"}
-                        onClick={() => startPublish(index === 0 ? "发布草稿" : "归档草稿")}
+                        className="owner-primary"
+                        onClick={() =>
+                          handlePublishArticle({
+                            draftId: item.id,
+                            title: item.title || articleTitle,
+                            body: item.body || articleBody,
+                            coverUrl: item.coverUrl || "",
+                            publishTitle: "Draft publish flow",
+                          })
+                        }
+                        disabled={publishBusy}
                       >
-                        {index === 0 ? "发布" : "归档"}
+                        {publishBusy ? "Publishing..." : "Publish now"}
                       </button>
                     </span>
                   </article>
@@ -726,41 +971,73 @@ const AppConsolePage = () => {
             <div className="owner-form-shell owner-glass">
               <div>
                 <div className="owner-field">
-                  <label htmlFor="galleryAlbum">选择相册</label>
-                  <select id="galleryAlbum">
-                    <option>御坂美琴</option>
-                    <option>春物</option>
-                    <option>唐舞麟</option>
-                    <option>新建相册</option>
+                  <label htmlFor="galleryAlbum">Album</label>
+                  <select
+                    id="galleryAlbum"
+                    value={galleryAlbum}
+                    onChange={(e) => setGalleryAlbum(e.target.value)}
+                  >
+                    <option>Default Gallery</option>
+                    <option>Spring Album</option>
+                    <option>New Album Later</option>
                   </select>
                 </div>
-                <div className="owner-dropzone">
-                  <strong>拖入图片或点击选择</strong>
-                  <span>原型中先展示模拟缩略图；正式版会上传到 COS 并更新 Gallery 数据。</span>
+                <label className="owner-dropzone" htmlFor="galleryUpload">
+                  <strong>Choose an image to upload</strong>
+                  <span>
+                    Upload the image to COS, or paste a public PicGo image URL below.
+                  </span>
+                </label>
+                <input
+                  id="galleryUpload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={handleGalleryUpload}
+                  hidden
+                />
+                <div className="owner-field owner-field--spaced">
+                  <label htmlFor="galleryURLInput">Public image URL</label>
+                  <input
+                    id="galleryURLInput"
+                    value={galleryURLInput}
+                    placeholder="https://cdn.example/gallery/demo.png"
+                    onChange={(e) => setGalleryURLInput(e.target.value)}
+                  />
                 </div>
                 <div className="owner-thumb-grid">
-                  <span>IMG 01</span>
-                  <span>IMG 02</span>
-                  <span>IMG 03</span>
+                  {(galleryUploads.length ? galleryUploads : [{ name: "No uploads yet" }]).map((item) => (
+                    <span key={item.url || item.name}>{item.name}</span>
+                  ))}
                 </div>
                 <div className="owner-quick-line">
-                  <button type="button" className="owner-secondary">
-                    仅上传为草稿
+                  <label
+                    className={`owner-secondary ${uploadBusy ? "owner-secondary--disabled" : ""}`}
+                    htmlFor="galleryUpload"
+                    aria-disabled={uploadBusy}
+                  >
+                    <FiUpload aria-hidden /> {uploadBusy ? "Uploading..." : "Upload to COS"}
+                  </label>
+                  <button type="button" className="owner-secondary" onClick={handleAddGalleryURL}>
+                    Add PicGo URL
                   </button>
                   <button
                     type="button"
                     className="owner-primary"
-                    onClick={() => startPublish("上传 Gallery 图片")}
+                    onClick={() => startPublish("Gallery publish flow")}
                   >
-                    上传并发布
+                    Open publish flow
                   </button>
                 </div>
               </div>
               <aside className="owner-preview-card">
-                <div className="owner-kicker">Album Preview</div>
-                <div className="owner-cover">相册封面</div>
-                <h2>将新增 3 张图片</h2>
-                <p>发布后会自动上传图片、写入相册数据，并触发构建部署。</p>
+                <div className="owner-kicker">Upload Preview</div>
+                <div className="owner-cover">album cover</div>
+                <h2>{galleryUploads[0]?.name || "No uploaded image yet"}</h2>
+                <p>
+                  {galleryUploads[0]?.url
+                    ? `Real upload URL: ${galleryUploads[0].url}`
+                    : "Upload an image to COS or add a public image URL."}
+                </p>
               </aside>
             </div>
           </section>
@@ -769,7 +1046,7 @@ const AppConsolePage = () => {
             <div className="owner-form-shell owner-glass">
               <div>
                 <div className="owner-field">
-                  <label htmlFor="friendName">站点名称</label>
+                  <label htmlFor="friendName">Site name</label>
                   <input
                     id="friendName"
                     value={friendName}
@@ -777,11 +1054,11 @@ const AppConsolePage = () => {
                   />
                 </div>
                 <div className="owner-field">
-                  <label htmlFor="friendUrl">站点链接</label>
+                  <label htmlFor="friendUrl">Site URL</label>
                   <input id="friendUrl" defaultValue="https://hub.131714.xyz/" />
                 </div>
                 <div className="owner-field">
-                  <label htmlFor="friendDesc">描述</label>
+                  <label htmlFor="friendDesc">Description</label>
                   <textarea
                     id="friendDesc"
                     value={friendDesc}
@@ -790,27 +1067,27 @@ const AppConsolePage = () => {
                 </div>
                 <div className="owner-quick-line">
                   <button type="button" className="owner-secondary">
-                    校验链接
+                    Validate later
                   </button>
                   <button
                     type="button"
                     className="owner-primary"
-                    onClick={() => startPublish("增加友链")}
+                    onClick={() => startPublish("Friend link flow")}
                   >
-                    发布友链
+                    Prototype only
                   </button>
                 </div>
               </div>
               <aside className="owner-preview-card">
                 <div className="owner-kicker">Friend Card</div>
                 <div className="owner-friend-preview">
-                  <span>K</span>
+                  <span>{userInitial(friendName)}</span>
                   <div>
-                    <h2>{friendName || "站点名称"}</h2>
-                    <p>{friendDesc || "站点描述"}</p>
+                    <h2>{friendName || "Site name"}</h2>
+                    <p>{friendDesc || "Site description"}</p>
                   </div>
                 </div>
-                <p>正式版会校验头像、链接和必填字段。</p>
+                <p>This area stays as a prototype in phase 1.</p>
               </aside>
             </div>
           </section>
@@ -818,12 +1095,12 @@ const AppConsolePage = () => {
           <section className={`owner-screen ${activeScreen === "inbox" ? "active" : ""}`}>
             <div className="owner-panel owner-glass">
               <div className="owner-panel-title">
-                <h2>统一留言收件箱</h2>
-                <StatusTag>{notificationTotal} 条提醒</StatusTag>
+                <h2>Unified Inbox</h2>
+                <StatusTag>{notificationTotal} reminders</StatusTag>
               </div>
               <div className="owner-inbox-list">
-                {ownerConsoleNotifications.map((item) => (
-                  <article className="owner-message" key={item.title}>
+                {liveNotifications.map((item) => (
+                  <article className="owner-message" key={`${item.source}-${item.title}-inbox`}>
                     <div className="owner-message-head">
                       <strong>{item.title}</strong>
                       <StatusTag>{item.source}</StatusTag>
@@ -831,18 +1108,18 @@ const AppConsolePage = () => {
                     <p>{item.detail}</p>
                     <div className="owner-quick-line">
                       <button type="button" className="owner-secondary">
-                        回复
+                        Reply later
                       </button>
                       <button type="button" className="owner-secondary">
-                        标记已读
+                        Mark read later
                       </button>
-                      {item.source === "申请" ? (
+                      {item.source === "friends" ? (
                         <button
                           type="button"
                           className="owner-primary"
                           onClick={() => openScreen("friend")}
                         >
-                          带入友链
+                          Open friend flow
                         </button>
                       ) : null}
                     </div>
@@ -855,79 +1132,37 @@ const AppConsolePage = () => {
           <section className={`owner-screen ${activeScreen === "ai" ? "active" : ""}`}>
             <div className="owner-panel owner-glass">
               <div className="owner-panel-title">
-                <h2>用户统计表</h2>
-                <StatusTag>今日 AI 使用</StatusTag>
+                <h2>AI Usage</h2>
+                <StatusTag>today</StatusTag>
               </div>
               <div className="owner-mini-metrics">
                 <div>
-                  <span>今日提问</span>
+                  <span>Today</span>
                   <b>{statsSnapshot.today}</b>
                 </div>
                 <div>
-                  <span>固定命中</span>
-                  <b>31</b>
+                  <span>Period</span>
+                  <b>{statsSnapshot.period}</b>
                 </div>
                 <div>
-                  <span>待补答案</span>
-                  <b>5</b>
+                  <span>Success rate</span>
+                  <b>{statsSnapshot.successRate}</b>
                 </div>
                 <div>
-                  <span>异常反馈</span>
-                  <b>0</b>
+                  <span>Configured</span>
+                  <b>{statsSnapshot.configured ? "yes" : "no"}</b>
                 </div>
-              </div>
-              <div className="owner-table-wrap">
-                <table className="owner-data-table">
-                  <thead>
-                    <tr>
-                      <th>用户</th>
-                      <th>最近问题</th>
-                      <th>提问</th>
-                      <th>固定命中</th>
-                      <th>状态</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>MisakaFan</td>
-                      <td>网站 AI 助手怎么做？</td>
-                      <td>12</td>
-                      <td>9</td>
-                      <td>
-                        <StatusTag>正常</StatusTag>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>KoBariDev</td>
-                      <td>如何交换友链？</td>
-                      <td>7</td>
-                      <td>7</td>
-                      <td>
-                        <StatusTag>高命中</StatusTag>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Guest-1024</td>
-                      <td>站点控制器是什么？</td>
-                      <td>4</td>
-                      <td>1</td>
-                      <td>
-                        <StatusTag>待补</StatusTag>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
               </div>
             </div>
 
             <div className="owner-ai-workbench">
               <section className="owner-debug-box owner-glass">
                 <div className="owner-panel-title">
-                  <h2>AI 调试区</h2>
-                  <StatusTag>先调试，再固定</StatusTag>
+                  <h2>AI Debug Prototype</h2>
+                  <StatusTag>local only</StatusTag>
                 </div>
                 <div className="owner-field">
-                  <label htmlFor="aiQuestion">测试问题</label>
+                  <label htmlFor="aiQuestion">Test question</label>
                   <textarea
                     id="aiQuestion"
                     value={aiQuestion}
@@ -936,15 +1171,15 @@ const AppConsolePage = () => {
                 </div>
                 <div className="owner-quick-line">
                   <button type="button" className="owner-secondary" onClick={testAiQuestion}>
-                    生成候选
+                    Generate candidates
                   </button>
                   <button type="button" className="owner-primary" onClick={saveFixedAnswer}>
-                    保存为固定答案
+                    Save local answer
                   </button>
                 </div>
                 <div className="owner-panel-title owner-panel-title--spaced">
-                  <h2>候选答案</h2>
-                  <StatusTag>选择满意的一条</StatusTag>
+                  <h2>Candidates</h2>
+                  <StatusTag>pick one</StatusTag>
                 </div>
                 <div className="owner-candidate-list">
                   {candidateAnswers.map((answer, index) => (
@@ -954,7 +1189,7 @@ const AppConsolePage = () => {
                       className={selectedAnswerIndex === index ? "selected" : ""}
                       onClick={() => {
                         setSelectedAnswerIndex(index);
-                        setAnswerToast("已选择候选答案，可以直接保存为固定回复。");
+                        setAnswerToast("Selected one candidate answer.");
                       }}
                     >
                       {answer}
@@ -962,10 +1197,10 @@ const AppConsolePage = () => {
                   ))}
                 </div>
                 <div className="owner-field owner-field--spaced">
-                  <label htmlFor="manualAnswer">手动补充或改写答案</label>
+                  <label htmlFor="manualAnswer">Manual final answer</label>
                   <textarea
                     id="manualAnswer"
-                    placeholder="没有满意候选时，在这里写最终要给用户看到的固定答案。"
+                    placeholder="Rewrite or complete the final answer here."
                     value={manualAnswer}
                     onChange={(e) => setManualAnswer(e.target.value)}
                   />
@@ -975,8 +1210,8 @@ const AppConsolePage = () => {
 
               <aside className="owner-debug-box owner-glass">
                 <div className="owner-panel-title">
-                  <h2>固定答案库</h2>
-                  <StatusTag>用户输出</StatusTag>
+                  <h2>Saved Answers</h2>
+                  <StatusTag>prototype</StatusTag>
                 </div>
                 <div className="owner-fixed-list">
                   {fixedAnswers.map((item) => (
@@ -1002,7 +1237,7 @@ const AppConsolePage = () => {
               className={activeScreen === screen.id ? "active" : ""}
               onClick={() => openScreen(screen.id)}
             >
-              {screen.navLabel.replace("发", "")}
+              {screen.navLabel}
             </button>
           ))}
       </nav>
@@ -1014,7 +1249,7 @@ const AppConsolePage = () => {
               <div className="owner-kicker">Publish Flow</div>
               <h2>{publishState.title}</h2>
             </div>
-            <button type="button" className="owner-close" onClick={closePublish} aria-label="关闭">
+            <button type="button" className="owner-close" onClick={closePublish} aria-label="Close">
               <FiX aria-hidden />
             </button>
           </div>
@@ -1040,32 +1275,36 @@ const AppConsolePage = () => {
                     <strong>{step}</strong>
                     <small>
                       {failed
-                        ? "线上旧版本不受影响"
+                        ? publishState.simulated
+                          ? "Simulated failure"
+                          : "Failed"
                         : active
-                          ? "正在处理，请稍等"
+                          ? "Running"
                           : done
-                            ? "这一步已经处理完成"
-                            : "后台自动处理"}
+                            ? "Completed"
+                            : "Waiting"}
                     </small>
                   </span>
-                  <em>{failed ? "失败" : done ? "已完成" : active ? "进行中" : "等待中"}</em>
+                  <em>{failed ? "fail" : done ? "done" : active ? "active" : "idle"}</em>
                 </div>
               );
             })}
           </div>
           <p className="owner-toast">{publishState.toast}</p>
-          <div className="owner-quick-line">
-            <button type="button" className="owner-secondary" onClick={simulateFail}>
-              模拟失败
-            </button>
-            <button
-              type="button"
-              className="owner-primary"
-              onClick={() => startPublish(publishState.title || "重新发布")}
-            >
-              重新模拟
-            </button>
-          </div>
+          {publishState.simulated ? (
+            <div className="owner-quick-line">
+              <button type="button" className="owner-secondary" onClick={simulateFail}>
+                Simulate fail
+              </button>
+              <button
+                type="button"
+                className="owner-primary"
+                onClick={() => startPublish(publishState.title || "Retry publish flow")}
+              >
+                Retry simulation
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </main>
