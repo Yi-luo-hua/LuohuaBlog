@@ -12,6 +12,13 @@ func TestOwnerCOSObjectKeyForGallery(t *testing.T) {
 	}
 }
 
+func TestOwnerCOSObjectKeyForGalleryKeepsChineseAlbumNames(t *testing.T) {
+	key := ownerCOSObjectKey("gallery", "御坂美琴", "20260607-010203-uuid.png")
+	if key != "gallery/御坂美琴/20260607-010203-uuid.png" {
+		t.Fatalf("unexpected key for chinese album: %q", key)
+	}
+}
+
 func TestOwnerCOSObjectKeyForArticle(t *testing.T) {
 	key := ownerCOSObjectKey("article", "", "20260607-010203-uuid.png")
 	if !strings.HasPrefix(key, "articles/") {

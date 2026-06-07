@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
@@ -96,16 +96,35 @@ func (u ownerTencentCOSUploader) UploadImage(kind, album, filename, mimeType str
 	}, nil
 }
 
-var ownerAlbumSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
-
 func ownerAlbumSlug(input string) string {
-	raw := strings.ToLower(strings.TrimSpace(input))
-	raw = ownerAlbumSlugPattern.ReplaceAllString(raw, "-")
-	raw = strings.Trim(raw, "-")
+	raw := strings.TrimSpace(input)
 	if raw == "" {
 		return "default"
 	}
-	return raw
+
+	var b strings.Builder
+	lastDash := false
+	for _, r := range raw {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsNumber(r):
+			if r <= unicode.MaxASCII {
+				r = unicode.ToLower(r)
+			}
+			b.WriteRune(r)
+			lastDash = false
+		default:
+			if !lastDash && b.Len() > 0 {
+				b.WriteByte('-')
+				lastDash = true
+			}
+		}
+	}
+
+	slug := strings.Trim(b.String(), "-")
+	if slug == "" {
+		return "default"
+	}
+	return slug
 }
 
 func ownerCOSObjectKey(kind, album, filename string) string {

@@ -23,6 +23,11 @@ import {
   getOwnerSessionLabel,
   getStatsSnapshot,
 } from "../pwa/appConsoleState";
+import {
+  ownerCustomGalleryAlbumValue,
+  ownerGalleryAlbumOptions,
+  resolveOwnerGalleryAlbum,
+} from "../lib/ownerGalleryAlbums";
 
 const screenMap = Object.fromEntries(ownerConsoleScreens.map((screen) => [screen.id, screen]));
 
@@ -125,7 +130,8 @@ const AppConsolePage = () => {
   const [manualAnswer, setManualAnswer] = useState("");
   const [fixedAnswers, setFixedAnswers] = useState(initialFixedAnswers);
   const [answerToast, setAnswerToast] = useState("");
-  const [galleryAlbum, setGalleryAlbum] = useState("Default Gallery");
+  const [galleryAlbum, setGalleryAlbum] = useState(ownerGalleryAlbumOptions[0]?.value || "");
+  const [customGalleryAlbum, setCustomGalleryAlbum] = useState("");
   const [galleryURLInput, setGalleryURLInput] = useState("");
   const [galleryUploads, setGalleryUploads] = useState([]);
   const [saveBusy, setSaveBusy] = useState(false);
@@ -363,7 +369,11 @@ const AppConsolePage = () => {
     setUploadBusy(true);
     setError("");
     try {
-      const data = await uploadOwnerAsset(file, { kind: "gallery", album: galleryAlbum });
+      const resolvedAlbum = resolveOwnerGalleryAlbum(galleryAlbum, customGalleryAlbum);
+      if (!resolvedAlbum) {
+        throw new Error("Please choose an album or enter a custom album name.");
+      }
+      const data = await uploadOwnerAsset(file, { kind: "gallery", album: resolvedAlbum });
       const item = data.item || {};
       setGalleryUploads((current) => [
         {
@@ -977,11 +987,24 @@ const AppConsolePage = () => {
                     value={galleryAlbum}
                     onChange={(e) => setGalleryAlbum(e.target.value)}
                   >
-                    <option>Default Gallery</option>
-                    <option>Spring Album</option>
-                    <option>New Album Later</option>
+                    {ownerGalleryAlbumOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
+                {galleryAlbum === ownerCustomGalleryAlbumValue ? (
+                  <div className="owner-field owner-field--spaced">
+                    <label htmlFor="customGalleryAlbum">Custom album</label>
+                    <input
+                      id="customGalleryAlbum"
+                      value={customGalleryAlbum}
+                      placeholder="请输入自定义相册名"
+                      onChange={(e) => setCustomGalleryAlbum(e.target.value)}
+                    />
+                  </div>
+                ) : null}
                 <label className="owner-dropzone" htmlFor="galleryUpload">
                   <strong>Choose an image to upload</strong>
                   <span>
