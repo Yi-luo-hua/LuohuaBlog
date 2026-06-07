@@ -33,7 +33,10 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
     def test_nginx_api_snippet_is_rewritten_on_redeploy(self):
         text = SCRIPT_PATH.read_text(encoding="utf-8")
 
-        self.assertIn('run_sudo tee "$SNIP" >/dev/null <<\'NGX\'', text)
+        self.assertIn('SNIP_TMP=$(mktemp)', text)
+        self.assertIn('cat >"$SNIP_TMP" <<\'NGX\'', text)
+        self.assertIn('run_sudo install -m 0644 "$SNIP_TMP" "$SNIP"', text)
+        self.assertNotIn('run_sudo tee "$SNIP" >/dev/null <<\'NGX\'', text)
         self.assertNotIn('if ! run_sudo test -f "$SNIP"; then', text)
 
 
