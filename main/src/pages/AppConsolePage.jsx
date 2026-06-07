@@ -59,6 +59,7 @@ const defaultFriendLink = {
   name: "桃之夭夭",
   desc: "桃之夭夭的小屋",
   url: "https://taozhiyy.top",
+  avatar: "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/1.png",
 };
 
 const initialCandidateAnswers = [
@@ -139,6 +140,7 @@ const AppConsolePage = () => {
   const [friendName, setFriendName] = useState(defaultFriendLink.name);
   const [friendDesc, setFriendDesc] = useState(defaultFriendLink.desc);
   const [friendUrl, setFriendUrl] = useState(defaultFriendLink.url);
+  const [friendAvatar, setFriendAvatar] = useState(defaultFriendLink.avatar);
   const [mobileMaterial, setMobileMaterial] = useState(defaultMobileMaterial);
   const [mobileDraft, setMobileDraft] = useState({
     title: "待生成文章",
@@ -533,12 +535,17 @@ const AppConsolePage = () => {
     const name = friendName.trim();
     const desc = friendDesc.trim();
     const url = friendUrl.trim();
+    const avatarUrl = friendAvatar.trim();
     if (!name || !desc || !url) {
       setError("请填写站点名称、站点描述和站点 URL。");
       return;
     }
     if (!isPublicImageURL(url)) {
       setError("友链 URL 必须是公开的 http 或 https 地址。");
+      return;
+    }
+    if (avatarUrl && !isPublicImageURL(avatarUrl)) {
+      setError("友链头像 URL 必须是公开的 http 或 https 地址。");
       return;
     }
 
@@ -555,7 +562,7 @@ const AppConsolePage = () => {
     });
 
     try {
-      const data = await publishOwnerFriend({ name, desc, url });
+      const data = await publishOwnerFriend({ name, desc, url, avatar: avatarUrl });
       const item = data.item || {};
       const commitSha = item.commitSha ? `（commit ${item.commitSha.slice(0, 7)}）` : "";
       setPublishState({
@@ -1283,6 +1290,14 @@ const AppConsolePage = () => {
                   />
                 </div>
                 <div className="owner-field">
+                  <label htmlFor="friendAvatar">头像 URL</label>
+                  <input
+                    id="friendAvatar"
+                    value={friendAvatar}
+                    onChange={(e) => setFriendAvatar(e.target.value)}
+                  />
+                </div>
+                <div className="owner-field">
                   <label htmlFor="friendDesc">站点描述</label>
                   <textarea
                     id="friendDesc"
@@ -1297,6 +1312,10 @@ const AppConsolePage = () => {
                     onClick={() => {
                       if (!isPublicImageURL(friendUrl.trim())) {
                         setError("友链 URL 必须是公开的 http 或 https 地址。");
+                        return;
+                      }
+                      if (friendAvatar.trim() && !isPublicImageURL(friendAvatar.trim())) {
+                        setError("友链头像 URL 必须是公开的 http 或 https 地址。");
                         return;
                       }
                       setError("");
@@ -1325,7 +1344,11 @@ const AppConsolePage = () => {
               <aside className="owner-preview-card">
                 <div className="owner-kicker">友链卡片</div>
                 <div className="owner-friend-preview">
-                  <span>{userInitial(friendName)}</span>
+                  {isPublicImageURL(friendAvatar.trim()) ? (
+                    <img src={friendAvatar.trim()} alt={friendName || "站点头像"} />
+                  ) : (
+                    <span>{userInitial(friendName)}</span>
+                  )}
                   <div>
                     <h2>{friendName || "站点名称"}</h2>
                     <p>{friendDesc || "站点描述"}</p>

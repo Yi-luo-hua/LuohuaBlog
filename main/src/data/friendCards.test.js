@@ -14,3 +14,12 @@ test("includes KoBariDev as a featured friend link", () => {
     "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/picgo-uploads/download.png"
   );
 });
+
+test("includes Anze as a friend link with explicit avatar", () => {
+  const anze = friendCards.find((friend) => friend.name === "安泽的温馨小窝");
+
+  assert.ok(anze);
+  assert.equal(anze.desc, "愿得一人心.");
+  assert.equal(anze.url, "https://anze.love");
+  assert.equal(anze.avatar, "https://anze.love/wp-content/uploads/2026/03/cropped-anze.jpg");
+});

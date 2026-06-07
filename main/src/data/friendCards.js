@@ -13,4 +13,11 @@ export const friendCards = [
     avatar: "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/picgo-uploads/download.png",
     note: "FRIEND",
   },
+  {
+    name: "安泽的温馨小窝",
+    desc: "愿得一人心.",
+    url: "https://anze.love",
+    avatar: "https://anze.love/wp-content/uploads/2026/03/cropped-anze.jpg",
+    note: "FRIEND",
+  },
 ];

@@ -5672,16 +5672,25 @@ body {
   margin-bottom: 14px;
 }
 
-.owner-friend-preview > span {
+.owner-friend-preview > span,
+.owner-friend-preview > img {
   width: 54px;
   height: 54px;
   border-radius: 18px;
+  flex: 0 0 auto;
+}
+
+.owner-friend-preview > span {
   background: linear-gradient(135deg, var(--owner-blue), var(--owner-rose));
   display: grid;
   place-items: center;
   color: white;
   font-weight: 900;
-  flex: 0 0 auto;
+}
+
+.owner-friend-preview > img {
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.78);
 }
 
 .owner-friend-preview h2 {
