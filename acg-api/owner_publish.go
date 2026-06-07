@@ -60,10 +60,18 @@ func newOwnerGitHubPublisher() *ownerGitHubPublisher {
 		baseURL: strings.TrimRight(env("OWNER_PUBLISH_GITHUB_API_BASE", ownerPublishDefaultAPIBase), "/"),
 		owner:   strings.TrimSpace(env("OWNER_PUBLISH_GITHUB_OWNER", ownerPublishDefaultOwner)),
 		repo:    strings.TrimSpace(env("OWNER_PUBLISH_GITHUB_REPO", ownerPublishDefaultRepo)),
-		branch:  strings.TrimSpace(env("OWNER_PUBLISH_GITHUB_BRANCH", ownerPublishDefaultBranch)),
+		branch:  normalizeOwnerPublishBranch(env("OWNER_PUBLISH_GITHUB_BRANCH", ownerPublishDefaultBranch)),
 		token:   strings.TrimSpace(env("OWNER_PUBLISH_GITHUB_TOKEN", "")),
 		http:    &http.Client{Timeout: 20 * time.Second},
 	}
+}
+
+func normalizeOwnerPublishBranch(raw string) string {
+	branch := strings.TrimSpace(raw)
+	if strings.EqualFold(branch, ownerPublishDefaultBranch) {
+		return ownerPublishDefaultBranch
+	}
+	return branch
 }
 
 func (p *ownerGitHubPublisher) configured() bool {

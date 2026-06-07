@@ -656,3 +656,55 @@ func TestOwnerPublishWritesMarkdownViaGitHubContentsAPI(t *testing.T) {
 		}
 	})
 }
+
+func TestOwnerPublishNormalizesDefaultBranchCase(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		token := seedUnlimitedOwnerSession(t)
+		var gotBody map[string]any
+		github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+				t.Fatalf("decode github request: %v", err)
+			}
+			writeJSON(w, map[string]any{
+				"content": map[string]any{
+					"path": "blog/source/_posts/test-owner-publish.md",
+				},
+				"commit": map[string]any{
+					"sha": "commit-sha",
+				},
+			})
+		}))
+		defer github.Close()
+
+		t.Setenv("OWNER_PUBLISH_GITHUB_API_BASE", github.URL)
+		t.Setenv("OWNER_PUBLISH_GITHUB_OWNER", "octo")
+		t.Setenv("OWNER_PUBLISH_GITHUB_REPO", "taozhiyy")
+		t.Setenv("OWNER_PUBLISH_GITHUB_BRANCH", "MASTER")
+		t.Setenv("OWNER_PUBLISH_GITHUB_TOKEN", "secret-token")
+
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/api/owner/publish",
+			bytes.NewBufferString(`{"title":"Test Owner Publish","body":"# Hello publish\n\ncontent"}`),
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		if gotBody["branch"] != "master" {
+			t.Fatalf("expected normalized master branch, got %#v", gotBody["branch"])
+		}
+
+		payload := decodeOwnerJSONMap(t, rr)
+		item := payload["item"].(map[string]any)
+		if item["branch"] != "master" {
+			t.Fatalf("expected normalized branch in response, got %#v", item["branch"])
+		}
+	})
+}
