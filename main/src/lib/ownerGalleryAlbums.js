@@ -19,3 +19,20 @@ export function resolveOwnerGalleryAlbum(selectedAlbum, customAlbum = "") {
   }
   return selectedAlbum.trim();
 }
+
+export function getOwnerGalleryAlbumSelection(selectedAlbum, customAlbum = "") {
+  const albumId = resolveOwnerGalleryAlbum(selectedAlbum, customAlbum);
+  if (!albumId) {
+    return { albumId: "", albumTitle: "" };
+  }
+
+  if (selectedAlbum === ownerCustomGalleryAlbumValue) {
+    return { albumId: "", albumTitle: albumId };
+  }
+
+  const option = ownerGalleryAlbumOptions.find((item) => item.value === albumId);
+  return {
+    albumId,
+    albumTitle: option?.label || albumId,
+  };
+}

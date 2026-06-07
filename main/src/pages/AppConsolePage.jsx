@@ -7,6 +7,7 @@ import {
   fetchOwnerStatus,
   isPublicImageURL,
   publishOwnerArticle,
+  publishOwnerGalleryImage,
   uploadOwnerAsset,
 } from "../services/ownerApi";
 import {
@@ -24,9 +25,9 @@ import {
   getStatsSnapshot,
 } from "../pwa/appConsoleState";
 import {
+  getOwnerGalleryAlbumSelection,
   ownerCustomGalleryAlbumValue,
   ownerGalleryAlbumOptions,
-  resolveOwnerGalleryAlbum,
 } from "../lib/ownerGalleryAlbums";
 
 const screenMap = Object.fromEntries(ownerConsoleScreens.map((screen) => [screen.id, screen]));
@@ -138,6 +139,7 @@ const AppConsolePage = () => {
   const [publishBusy, setPublishBusy] = useState(false);
   const [articleUploadBusy, setArticleUploadBusy] = useState(false);
   const [uploadBusy, setUploadBusy] = useState(false);
+  const [galleryPublishBusy, setGalleryPublishBusy] = useState(false);
   const [publishState, setPublishState] = useState({
     open: false,
     title: "Publish Task",
@@ -369,16 +371,19 @@ const AppConsolePage = () => {
     setUploadBusy(true);
     setError("");
     try {
-      const resolvedAlbum = resolveOwnerGalleryAlbum(galleryAlbum, customGalleryAlbum);
-      if (!resolvedAlbum) {
+      const albumSelection = getOwnerGalleryAlbumSelection(galleryAlbum, customGalleryAlbum);
+      const uploadAlbum = albumSelection.albumId || albumSelection.albumTitle;
+      if (!uploadAlbum) {
         throw new Error("Please choose an album or enter a custom album name.");
       }
-      const data = await uploadOwnerAsset(file, { kind: "gallery", album: resolvedAlbum });
+      const data = await uploadOwnerAsset(file, { kind: "gallery", album: uploadAlbum });
       const item = data.item || {};
       setGalleryUploads((current) => [
         {
           name: item.path || item.name || file.name,
           url: item.url || "",
+          albumId: albumSelection.albumId,
+          albumTitle: albumSelection.albumTitle,
         },
         ...current,
       ]);
@@ -404,8 +409,21 @@ const AppConsolePage = () => {
       setError("Please enter a valid public image URL.");
       return;
     }
+    const albumSelection = getOwnerGalleryAlbumSelection(galleryAlbum, customGalleryAlbum);
+    if (!albumSelection.albumId && !albumSelection.albumTitle) {
+      setError("Please choose an album or enter a custom album name.");
+      return;
+    }
     setError("");
-    setGalleryUploads((current) => [{ name: "PicGo URL", url: next }, ...current]);
+    setGalleryUploads((current) => [
+      {
+        name: "PicGo URL",
+        url: next,
+        albumId: albumSelection.albumId,
+        albumTitle: albumSelection.albumTitle,
+      },
+      ...current,
+    ]);
     setGalleryURLInput("");
     setPublishState({
       open: true,
@@ -415,6 +433,75 @@ const AppConsolePage = () => {
       simulated: false,
       toast: `Gallery image will use ${next}`,
     });
+  };
+
+  const handlePublishGalleryImage = async () => {
+    const latest = galleryUploads[0];
+    if (!latest?.url) {
+      setError("Please upload an image or add a public image URL first.");
+      return;
+    }
+    if (!latest.albumId && !latest.albumTitle) {
+      setError("Please choose an album or enter a custom album name.");
+      return;
+    }
+
+    setGalleryPublishBusy(true);
+    clearPublishTimer();
+    setError("");
+    setPublishState({
+      open: true,
+      title: "Publish gallery image",
+      activeIndex: 3,
+      failIndex: null,
+      simulated: false,
+      toast: "Submitting the gallery image to the real publish pipeline...",
+    });
+
+    try {
+      const data = await publishOwnerGalleryImage({
+        albumId: latest.albumId || "",
+        albumTitle: latest.albumTitle || "",
+        imageUrl: latest.url,
+      });
+      const item = data.item || {};
+      const commitSha = item.commitSha ? ` (commit ${item.commitSha.slice(0, 7)})` : "";
+      setGalleryUploads((current) =>
+        current.map((entry, index) =>
+          index === 0
+            ? {
+                ...entry,
+                albumId: item.albumId || entry.albumId,
+                published: true,
+              }
+            : entry,
+        ),
+      );
+      setPublishState({
+        open: true,
+        title: "Publish gallery image",
+        activeIndex: publishSteps.length,
+        failIndex: null,
+        simulated: false,
+        toast: item.changed === false
+          ? `This image is already in ${item.path || "gallery data"}.`
+          : `Published to ${item.path || "gallery data"}${commitSha}. GitHub Actions will deploy from ${item.branch || "master"}.`,
+      });
+      await loadConsole();
+    } catch (e) {
+      const message = e.message || "Gallery publish failed";
+      setError(message);
+      setPublishState({
+        open: true,
+        title: "Publish gallery image",
+        activeIndex: 3,
+        failIndex: 3,
+        simulated: false,
+        toast: message,
+      });
+    } finally {
+      setGalleryPublishBusy(false);
+    }
   };
 
   const handleArticleImageUpload = async (event) => {
@@ -1029,7 +1116,10 @@ const AppConsolePage = () => {
                 </div>
                 <div className="owner-thumb-grid">
                   {(galleryUploads.length ? galleryUploads : [{ name: "No uploads yet" }]).map((item) => (
-                    <span key={item.url || item.name}>{item.name}</span>
+                    <span key={item.url || item.name}>
+                      {item.name}
+                      {item.albumTitle ? ` -> ${item.albumTitle}` : ""}
+                    </span>
                   ))}
                 </div>
                 <div className="owner-quick-line">
@@ -1046,9 +1136,10 @@ const AppConsolePage = () => {
                   <button
                     type="button"
                     className="owner-primary"
-                    onClick={() => startPublish("Gallery publish flow")}
+                    onClick={handlePublishGalleryImage}
+                    disabled={!galleryUploads[0]?.url || galleryPublishBusy}
                   >
-                    Open publish flow
+                    {galleryPublishBusy ? "Publishing..." : "Publish to Gallery"}
                   </button>
                 </div>
               </div>
@@ -1058,7 +1149,9 @@ const AppConsolePage = () => {
                 <h2>{galleryUploads[0]?.name || "No uploaded image yet"}</h2>
                 <p>
                   {galleryUploads[0]?.url
-                    ? `Real upload URL: ${galleryUploads[0].url}`
+                    ? `Real upload URL: ${galleryUploads[0].url}. Target album: ${
+                        galleryUploads[0].albumTitle || galleryUploads[0].albumId || "Gallery"
+                      }.`
                     : "Upload an image to COS or add a public image URL."}
                 </p>
               </aside>

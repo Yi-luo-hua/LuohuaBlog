@@ -79,6 +79,13 @@ func ownerRouter(w http.ResponseWriter, r *http.Request) {
 		}
 		ownerAssetCreateHandler(w, r)
 		return
+	case path == "gallery/images":
+		if r.Method != http.MethodPost {
+			methodNotAllowed(w)
+			return
+		}
+		ownerGalleryPublishHandler(w, r)
+		return
 	case path == "publish":
 		if r.Method != http.MethodPost {
 			methodNotAllowed(w)
