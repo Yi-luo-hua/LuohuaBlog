@@ -40,6 +40,8 @@ I have made many original and site-specific changes around my own personal websi
 - Backend APIs for comments, AI context, Bili data caching, and related site functions.
 - Engineering configuration for my own domain, UCloud server, and GitHub Actions deployment.
 
+Across these original/customized parts, the product direction, feature planning, interaction model, content structure, and visual taste are led by me. **Vibe Coding / AI coding tools are implementation assistants** for coding, debugging, organizing details, and iteration; they do not replace my authorship over the requirements, design decisions, and final selection. In that sense, the customized product design and ongoing evolution of this site are my original work, with AI-assisted implementation.
+
 These original/customized parts were mainly completed through **vibecoding**: I defined requirements, made design decisions, evaluated results, and iterated continuously, while AI coding tools helped implement code and visual details.
 
 The parts that were created, designed, organized, or iterated by me through vibecoding may be freely referenced, studied, and used, as long as this notice is respected.
@@ -71,6 +73,10 @@ This page is an original/customized page created during my personal learning and
 ### `acg-api/` Backend And API
 
 The backend and API calling logic were mainly completed with the help of **vibecoding**, including guestbook, AI assistant context, Bili Hub data cache sync, and related functions.
+
+Concretely, `acg-api` is the Go service layer behind the site's `/api` routes. It handles public features such as guestbook submissions, AI assistant context/statistics, Bili Hub cache sync, and health checks, plus owner-only workflows such as owner authentication/session checks, unread message inbox and read markers, AI registered-user inspection, publishing build/blog content, friend links/gallery URLs, and COS-backed image uploads.
+
+Data is persisted mainly through SQLite and server runtime files. Write actions that touch GitHub, COS, or AI services require private environment variables on the deployment machine. This repository may expose route names, source code structure, and environment variable names, but it is not intended to include my owner login password, verification answer, GitHub token, COS secret, AI key, server credentials, or private database. Anyone cloning this project must provide their own credentials, verification information, database, deployment host, and external service configuration.
 
 If you want to reference or reuse the backend logic, please read, verify, and test it first to make sure it fits your own use case.
 
