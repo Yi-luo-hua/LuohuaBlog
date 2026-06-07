@@ -123,10 +123,10 @@ if ! wait_for_http_ready http://127.0.0.1:8787/api/v1/health 30 1; then
 fi
 
 SNIP="/etc/nginx/snippets/taozhiyy-acg-api.conf"
-if ! run_sudo test -f "$SNIP"; then
-  run_sudo mkdir -p /etc/nginx/snippets
-  run_sudo tee "$SNIP" >/dev/null <<'NGX'
+SNIP_TMP=$(mktemp)
+cat >"$SNIP_TMP" <<'NGX'
 location /api/ {
+    client_max_body_size 10m;
     proxy_pass http://127.0.0.1:8787;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -135,7 +135,9 @@ location /api/ {
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 NGX
-fi
+run_sudo mkdir -p /etc/nginx/snippets
+run_sudo install -m 0644 "$SNIP_TMP" "$SNIP"
+rm -f "$SNIP_TMP"
 
 CONF=""
 for f in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do

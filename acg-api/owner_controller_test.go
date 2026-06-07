@@ -656,3 +656,170 @@ func TestOwnerPublishWritesMarkdownViaGitHubContentsAPI(t *testing.T) {
 		}
 	})
 }
+
+func TestOwnerPublishNormalizesDefaultBranchCase(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		token := seedUnlimitedOwnerSession(t)
+		var gotBody map[string]any
+		github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+				t.Fatalf("decode github request: %v", err)
+			}
+			writeJSON(w, map[string]any{
+				"content": map[string]any{
+					"path": "blog/source/_posts/test-owner-publish.md",
+				},
+				"commit": map[string]any{
+					"sha": "commit-sha",
+				},
+			})
+		}))
+		defer github.Close()
+
+		t.Setenv("OWNER_PUBLISH_GITHUB_API_BASE", github.URL)
+		t.Setenv("OWNER_PUBLISH_GITHUB_OWNER", "octo")
+		t.Setenv("OWNER_PUBLISH_GITHUB_REPO", "taozhiyy")
+		t.Setenv("OWNER_PUBLISH_GITHUB_BRANCH", "MASTER")
+		t.Setenv("OWNER_PUBLISH_GITHUB_TOKEN", "secret-token")
+
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/api/owner/publish",
+			bytes.NewBufferString(`{"title":"Test Owner Publish","body":"# Hello publish\n\ncontent"}`),
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		if gotBody["branch"] != "master" {
+			t.Fatalf("expected normalized master branch, got %#v", gotBody["branch"])
+		}
+
+		payload := decodeOwnerJSONMap(t, rr)
+		item := payload["item"].(map[string]any)
+		if item["branch"] != "master" {
+			t.Fatalf("expected normalized branch in response, got %#v", item["branch"])
+		}
+	})
+}
+
+func TestOwnerGalleryPublishWritesGalleryDataViaGitHubContentsAPI(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		token := seedUnlimitedOwnerSession(t)
+		var (
+			gotMethods []string
+			gotPaths   []string
+			gotAuths   []string
+			gotPutBody map[string]any
+		)
+		github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotMethods = append(gotMethods, r.Method)
+			gotPaths = append(gotPaths, r.URL.RequestURI())
+			gotAuths = append(gotAuths, r.Header.Get("Authorization"))
+			defer r.Body.Close()
+
+			switch r.Method {
+			case http.MethodGet:
+				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/galleryAlbums.js" {
+					t.Fatalf("unexpected github GET path: %q", r.URL.RequestURI())
+				}
+				if r.URL.Query().Get("ref") != "master" {
+					t.Fatalf("expected master ref, got %q", r.URL.Query().Get("ref"))
+				}
+				writeJSON(w, map[string]any{
+					"path":     "main/src/data/galleryAlbums.js",
+					"sha":      "gallery-sha",
+					"encoding": "base64",
+					"content":  base64.StdEncoding.EncodeToString([]byte(ownerGalleryDataFixture)),
+				})
+			case http.MethodPut:
+				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/galleryAlbums.js" {
+					t.Fatalf("unexpected github PUT path: %q", r.URL.RequestURI())
+				}
+				if err := json.NewDecoder(r.Body).Decode(&gotPutBody); err != nil {
+					t.Fatalf("decode github put request: %v", err)
+				}
+				writeJSON(w, map[string]any{
+					"content": map[string]any{
+						"path": "main/src/data/galleryAlbums.js",
+						"sha":  "new-gallery-sha",
+					},
+					"commit": map[string]any{
+						"sha": "gallery-commit-sha",
+					},
+				})
+			default:
+				t.Fatalf("unexpected github method: %s", r.Method)
+			}
+		}))
+		defer github.Close()
+
+		t.Setenv("OWNER_PUBLISH_GITHUB_API_BASE", github.URL)
+		t.Setenv("OWNER_PUBLISH_GITHUB_OWNER", "octo")
+		t.Setenv("OWNER_PUBLISH_GITHUB_REPO", "taozhiyy")
+		t.Setenv("OWNER_PUBLISH_GITHUB_BRANCH", "master")
+		t.Setenv("OWNER_PUBLISH_GITHUB_TOKEN", "secret-token")
+
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/api/owner/gallery/images",
+			bytes.NewBufferString(`{"albumId":"misaka","imageUrl":"https://cdn.example/new.jpg"}`),
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		if strings.Join(gotMethods, ",") != "GET,PUT" {
+			t.Fatalf("expected github GET then PUT, got methods=%v paths=%v", gotMethods, gotPaths)
+		}
+		for _, auth := range gotAuths {
+			if auth != "Bearer secret-token" {
+				t.Fatalf("expected bearer token auth, got %q", auth)
+			}
+		}
+		if gotPutBody["branch"] != "master" {
+			t.Fatalf("expected master branch, got %#v", gotPutBody["branch"])
+		}
+		if gotPutBody["sha"] != "gallery-sha" {
+			t.Fatalf("expected existing file sha, got %#v", gotPutBody["sha"])
+		}
+		message, ok := gotPutBody["message"].(string)
+		if !ok || !strings.Contains(message, "feat: publish gallery image to misaka") {
+			t.Fatalf("unexpected commit message: %#v", gotPutBody["message"])
+		}
+		contentRaw, ok := gotPutBody["content"].(string)
+		if !ok || contentRaw == "" {
+			t.Fatalf("expected base64 content payload, got %#v", gotPutBody["content"])
+		}
+		updated, err := decodeBase64String(contentRaw)
+		if err != nil {
+			t.Fatalf("decode base64 gallery data: %v", err)
+		}
+		if !strings.Contains(updated, `"https://cdn.example/new.jpg",`) {
+			t.Fatalf("expected published image in gallery data, got %q", updated)
+		}
+
+		payload := decodeOwnerJSONMap(t, rr)
+		item := payload["item"].(map[string]any)
+		if item["albumId"] != "misaka" {
+			t.Fatalf("unexpected album id: %#v", item["albumId"])
+		}
+		if item["path"] != "main/src/data/galleryAlbums.js" {
+			t.Fatalf("unexpected publish path: %#v", item["path"])
+		}
+		if item["commitSha"] != "gallery-commit-sha" {
+			t.Fatalf("unexpected commit sha: %#v", item["commitSha"])
+		}
+	})
+}

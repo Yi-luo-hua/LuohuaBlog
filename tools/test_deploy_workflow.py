@@ -57,11 +57,19 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("TENCENT_COS_BUCKET: ${{ secrets.TENCENT_COS_BUCKET }}", text)
         self.assertIn("TENCENT_COS_REGION: ${{ secrets.TENCENT_COS_REGION }}", text)
         self.assertIn("TENCENT_COS_BASE_URL: ${{ secrets.TENCENT_COS_BASE_URL }}", text)
+        self.assertIn("LEGACY_COS_SECRET_ID: ${{ secrets.COS_SECRET_ID }}", text)
+        self.assertIn("LEGACY_COS_SECRET_KEY: ${{ secrets.COS_SECRET_KEY }}", text)
+        self.assertIn("LEGACY_COS_BUCKET: ${{ secrets.COS_BUCKET }}", text)
+        self.assertIn("LEGACY_COS_REGION: ${{ secrets.COS_REGION }}", text)
         self.assertIn("printf 'TENCENT_COS_SECRET_ID=%s\\n' \"$TENCENT_COS_SECRET_ID\" >> \"$FRAG\"", text)
         self.assertIn("printf 'TENCENT_COS_SECRET_KEY=%s\\n' \"$TENCENT_COS_SECRET_KEY\" >> \"$FRAG\"", text)
         self.assertIn("printf 'TENCENT_COS_BUCKET=%s\\n' \"$TENCENT_COS_BUCKET\" >> \"$FRAG\"", text)
         self.assertIn("printf 'TENCENT_COS_REGION=%s\\n' \"$TENCENT_COS_REGION\" >> \"$FRAG\"", text)
         self.assertIn("printf 'TENCENT_COS_BASE_URL=%s\\n' \"$TENCENT_COS_BASE_URL\" >> \"$FRAG\"", text)
+        self.assertIn('TENCENT_COS_SECRET_ID="${TENCENT_COS_SECRET_ID:-$LEGACY_COS_SECRET_ID}"', text)
+        self.assertIn('TENCENT_COS_SECRET_KEY="${TENCENT_COS_SECRET_KEY:-$LEGACY_COS_SECRET_KEY}"', text)
+        self.assertIn('TENCENT_COS_BUCKET="${TENCENT_COS_BUCKET:-$LEGACY_COS_BUCKET}"', text)
+        self.assertIn('TENCENT_COS_REGION="${TENCENT_COS_REGION:-$LEGACY_COS_REGION}"', text)
 
 
 if __name__ == "__main__":

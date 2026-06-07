@@ -25,6 +25,20 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
         self.assertIn('journalctl -u "$service" -n 80 --no-pager', text)
         self.assertIn("grep -E ':(8787)[[:space:]]' || true", text)
 
+    def test_nginx_api_snippet_allows_owner_asset_upload_size(self):
+        text = SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('client_max_body_size 10m;', text)
+
+    def test_nginx_api_snippet_is_rewritten_on_redeploy(self):
+        text = SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('SNIP_TMP=$(mktemp)', text)
+        self.assertIn('cat >"$SNIP_TMP" <<\'NGX\'', text)
+        self.assertIn('run_sudo install -m 0644 "$SNIP_TMP" "$SNIP"', text)
+        self.assertNotIn('run_sudo tee "$SNIP" >/dev/null <<\'NGX\'', text)
+        self.assertNotIn('if ! run_sudo test -f "$SNIP"; then', text)
+
 
 class SyncAuthEnvTests(unittest.TestCase):
     def test_waits_for_acg_api_after_env_restart(self):

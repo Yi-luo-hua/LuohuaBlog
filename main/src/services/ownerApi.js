@@ -50,6 +50,19 @@ export async function publishOwnerArticle(payload) {
   return parseResponse(res);
 }
 
+export async function publishOwnerGalleryImage(payload) {
+  const res = await fetch("/api/owner/gallery/images", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...JSON_HEADERS,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  return parseResponse(res);
+}
+
 export function isPublicImageURL(value) {
   try {
     const url = new URL(value);

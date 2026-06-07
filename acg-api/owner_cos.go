@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
@@ -41,11 +41,11 @@ type ownerTencentCOSUploader struct {
 
 func loadOwnerCOSConfig() (ownerCOSConfig, error) {
 	cfg := ownerCOSConfig{
-		secretID:  strings.TrimSpace(env("TENCENT_COS_SECRET_ID", "")),
-		secretKey: strings.TrimSpace(env("TENCENT_COS_SECRET_KEY", "")),
-		bucket:    strings.TrimSpace(env("TENCENT_COS_BUCKET", "")),
-		region:    strings.TrimSpace(env("TENCENT_COS_REGION", "")),
-		baseURL:   strings.TrimRight(strings.TrimSpace(env("TENCENT_COS_BASE_URL", "")), "/"),
+		secretID:  ownerCOSEnv("TENCENT_COS_SECRET_ID", "COS_SECRET_ID"),
+		secretKey: ownerCOSEnv("TENCENT_COS_SECRET_KEY", "COS_SECRET_KEY"),
+		bucket:    ownerCOSEnv("TENCENT_COS_BUCKET", "COS_BUCKET"),
+		region:    ownerCOSEnv("TENCENT_COS_REGION", "COS_REGION"),
+		baseURL:   strings.TrimRight(ownerCOSEnv("TENCENT_COS_BASE_URL", "COS_BASE_URL"), "/"),
 	}
 	if cfg.secretID == "" || cfg.secretKey == "" || cfg.bucket == "" || cfg.region == "" {
 		return ownerCOSConfig{}, errors.New("cos upload not configured")
@@ -54,6 +54,14 @@ func loadOwnerCOSConfig() (ownerCOSConfig, error) {
 		cfg.baseURL = fmt.Sprintf("https://%s.cos.%s.myqcloud.com", cfg.bucket, cfg.region)
 	}
 	return cfg, nil
+}
+
+func ownerCOSEnv(primary, legacy string) string {
+	value := strings.TrimSpace(env(primary, ""))
+	if value != "" {
+		return value
+	}
+	return strings.TrimSpace(env(legacy, ""))
 }
 
 func newOwnerAssetUploader() (ownerAssetUploader, error) {
@@ -96,16 +104,35 @@ func (u ownerTencentCOSUploader) UploadImage(kind, album, filename, mimeType str
 	}, nil
 }
 
-var ownerAlbumSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
-
 func ownerAlbumSlug(input string) string {
-	raw := strings.ToLower(strings.TrimSpace(input))
-	raw = ownerAlbumSlugPattern.ReplaceAllString(raw, "-")
-	raw = strings.Trim(raw, "-")
+	raw := strings.TrimSpace(input)
 	if raw == "" {
 		return "default"
 	}
-	return raw
+
+	var b strings.Builder
+	lastDash := false
+	for _, r := range raw {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsNumber(r):
+			if r <= unicode.MaxASCII {
+				r = unicode.ToLower(r)
+			}
+			b.WriteRune(r)
+			lastDash = false
+		default:
+			if !lastDash && b.Len() > 0 {
+				b.WriteByte('-')
+				lastDash = true
+			}
+		}
+	}
+
+	slug := strings.Trim(b.String(), "-")
+	if slug == "" {
+		return "default"
+	}
+	return slug
 }
 
 func ownerCOSObjectKey(kind, album, filename string) string {
