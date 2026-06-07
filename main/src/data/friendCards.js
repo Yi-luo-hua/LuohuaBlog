@@ -20,4 +20,11 @@ export const friendCards = [
     avatar: "https://anze.love/wp-content/uploads/2026/03/cropped-anze.jpg",
     note: "FRIEND",
   },
+  {
+    name: "安知鱼",
+    desc: "生活明朗，万物可爱",
+    url: "https://blog.anheyu.com/",
+    avatar: "https://npm.elemecdn.com/anzhiyu-blog-static@1.0.4/img/avatar.jpg",
+    note: "FRIEND",
+  },
 ];
