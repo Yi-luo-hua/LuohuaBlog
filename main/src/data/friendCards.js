@@ -90,4 +90,11 @@ export const friendCards = [
     avatar: "https://090909.top/assets/images/logo.ico",
     note: "FRIEND",
   },
+  {
+    name: "阿叶Ayeez的小站",
+    desc: "记录学习历程，记录美好生活",
+    url: "https://blog.Ayeez.cn",
+    avatar: "https://qiniu.ayeez.cn/avatar.jpg",
+    note: "FRIEND",
+  },
 ];
