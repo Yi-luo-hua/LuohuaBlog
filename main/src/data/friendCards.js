@@ -69,4 +69,11 @@ export const friendCards = [
     avatar: "https://www.nannax.top/upload/LOGO-mini.ico",
     note: "FRIEND",
   },
+  {
+    name: "萑澈的寒舍",
+    desc: "就是为了这点醋才包的这顿饺子",
+    url: "https://hxcn.cnies.org/",
+    avatar: "https://gastigado.cnies.org/d/elements/hxcn_transparent_240.png",
+    note: "FRIEND",
+  },
 ];
