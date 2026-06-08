@@ -48,4 +48,11 @@ export const friendCards = [
     avatar: "https://i.ibb.co/vvXLPFCh/avatar.jpg",
     note: "FRIEND",
   },
+  {
+    name: "Dream Blog",
+    desc: "A personal space for code, science, and thoughts.",
+    url: "https://pc-blog.github.io/next",
+    avatar: "https://pc-blog.github.io/next/bg/1.jpg",
+    note: "FRIEND",
+  },
 ];
