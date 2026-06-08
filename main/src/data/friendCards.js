@@ -34,4 +34,11 @@ export const friendCards = [
     avatar: "https://img.hgl123.icu/i/1780730938101-EUvDVVgB.webp",
     note: "FRIEND",
   },
+  {
+    name: "橘子の博客",
+    desc: "与世界漫长交手，最终成为自己",
+    url: "https://www.originblog.xyz/",
+    avatar: "https://bu.dusays.com/2026/05/31/6a1b386c94497.png",
+    note: "FRIEND",
+  },
 ];
