@@ -269,10 +269,10 @@ func TestGuestbookCreateSendsOwnerNotificationEmail(t *testing.T) {
 		if !ok {
 			t.Fatalf("expected owner notification email, got %#v", mailer.messages)
 		}
-		if !strings.Contains(message.Subject, "guestbook") {
-			t.Fatalf("expected guestbook subject, got %q", message.Subject)
+		if !strings.Contains(message.Subject, "新的留言") {
+			t.Fatalf("expected Chinese owner notification subject, got %q", message.Subject)
 		}
-		if !strings.Contains(message.Body, "please read this") {
+		if !strings.Contains(message.Body, "留言人：Guestbook") || !strings.Contains(message.Body, "please read this") {
 			t.Fatalf("expected body to include message content, got %q", message.Body)
 		}
 	})
@@ -303,7 +303,7 @@ func TestOwnerReplySendsParentContactEmailNotification(t *testing.T) {
 		if !ok {
 			t.Fatalf("expected reply notification to visitor, got %#v", mailer.messages)
 		}
-		if !strings.Contains(message.Subject, "reply") || !strings.Contains(message.Body, "owner reply") {
+		if !strings.Contains(message.Subject, "收到回复") || !strings.Contains(message.Body, "owner reply") {
 			t.Fatalf("expected reply subject/body, got subject=%q body=%q", message.Subject, message.Body)
 		}
 	})

@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"mime"
@@ -104,15 +105,31 @@ func buildMailMessage(fromEmail, fromName, to, subject, body string) []byte {
 		"Subject: " + mime.QEncoding.Encode("utf-8", subject),
 		"MIME-Version: 1.0",
 		"Content-Type: text/plain; charset=UTF-8",
-		"Content-Transfer-Encoding: 8bit",
+		"Content-Transfer-Encoding: base64",
 	}
-	return []byte(strings.Join(headers, "\r\n") + "\r\n\r\n" + body)
+	encodedBody := wrapBase64Lines(base64.StdEncoding.EncodeToString([]byte(body)))
+	return []byte(strings.Join(headers, "\r\n") + "\r\n\r\n" + encodedBody)
 }
 
 func sanitizeMailHeader(value string) string {
 	value = strings.ReplaceAll(value, "\r", " ")
 	value = strings.ReplaceAll(value, "\n", " ")
 	return strings.TrimSpace(value)
+}
+
+func wrapBase64Lines(value string) string {
+	const lineLength = 76
+	if len(value) <= lineLength {
+		return value
+	}
+	var builder strings.Builder
+	for len(value) > lineLength {
+		builder.WriteString(value[:lineLength])
+		builder.WriteString("\r\n")
+		value = value[lineLength:]
+	}
+	builder.WriteString(value)
+	return builder.String()
 }
 
 func sendGuestbookMail(message outboundMail) error {

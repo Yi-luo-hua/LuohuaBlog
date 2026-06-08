@@ -408,7 +408,7 @@ func sendGuestbookReplyNotification(item guestbookMessageRow, channel, createdAt
 	}
 	return sendGuestbookMail(outboundMail{
 		To:      to,
-		Subject: "Your message has a new reply",
+		Subject: "桃之夭夭：你的留言收到回复",
 		Body:    guestbookReplyMailBody(item, channel, createdAt),
 	})
 }
@@ -441,41 +441,52 @@ func guestbookReplyRecipientEmail(parentID int64) string {
 func guestbookOwnerMailSubject(channel string, reply bool) string {
 	if reply {
 		if channel == guestbookChannelLink {
-			return "New reply on friends-page"
+			return "桃之夭夭：友链留言有新回复"
 		}
-		return "New guestbook reply"
+		return "桃之夭夭：留言有新回复"
 	}
 	if channel == guestbookChannelLink {
-		return "New friends-page message"
+		return "桃之夭夭：新的友链留言"
 	}
-	return "New guestbook message"
+	return "桃之夭夭：新的留言"
 }
 
 func guestbookOwnerMailBody(item guestbookMessageRow, channel, createdAt string) string {
 	return strings.Join([]string{
-		"Site: Taozhiyy",
-		"Channel: " + channel,
-		"Author: " + item.Nickname,
-		"Created at: " + createdAt,
+		"桃之夭夭有新的留言通知。",
 		"",
-		"Message:",
+		"留言位置：" + guestbookChannelName(channel),
+		"留言人：" + item.Nickname,
+		"留言时间：" + createdAt,
+		"",
+		"留言内容：",
 		item.Content,
 		"",
-		"Open: " + guestbookChannelURL(channel),
+		"查看地址：" + guestbookChannelURL(channel),
 	}, "\n")
 }
 
 func guestbookReplyMailBody(item guestbookMessageRow, channel, createdAt string) string {
 	return strings.Join([]string{
-		"Your message on Taozhiyy has a new reply.",
-		"Channel: " + channel,
-		"Created at: " + createdAt,
+		"你在桃之夭夭留下的留言收到了一条回复。",
 		"",
-		"Reply:",
+		"留言位置：" + guestbookChannelName(channel),
+		"回复时间：" + createdAt,
+		"",
+		"回复内容：",
 		item.Content,
 		"",
-		"Open: " + guestbookChannelURL(channel),
+		"查看地址：" + guestbookChannelURL(channel),
 	}, "\n")
+}
+
+func guestbookChannelName(channel string) string {
+	switch channel {
+	case guestbookChannelLink:
+		return "友链留言"
+	default:
+		return "留言区"
+	}
 }
 
 func guestbookChannelURL(channel string) string {
