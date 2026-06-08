@@ -283,7 +283,35 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		isLogin      int
 		isAdminUser  int
 	)
-	if cu == nil {
+	if cu != nil {
+		avatar = cu.Avatar
+		userID = sql.NullInt64{Int64: cu.ID, Valid: true}
+		isLogin = 1
+		if cu.Role == "admin" {
+			isAdminUser = 1
+		}
+	}
+	if body.ParentID == 0 && channel == guestbookChannelLink {
+		nickname = strings.TrimSpace(body.Nickname)
+		if nickname == "" {
+			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_NICKNAME", "请给自己取个名字呀")
+			return
+		}
+		if utf8.RuneCountInString(nickname) > guestbookNickMax {
+			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_NICKNAME", "昵称最多 12 个字哦")
+			return
+		}
+		submittedEmail := normalizeEmail(body.ContactEmail)
+		if submittedEmail == "" {
+			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_EMAIL", "请留下邮箱，方便收到回复通知")
+			return
+		}
+		if !validateEmail(submittedEmail) {
+			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_EMAIL", "请输入有效的邮箱地址")
+			return
+		}
+		contactEmail = submittedEmail
+	} else if cu == nil {
 		nickname = strings.TrimSpace(body.Nickname)
 		if nickname == "" {
 			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_NICKNAME", "请给自己取个名字呀")
@@ -295,27 +323,6 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		nickname = cu.Nickname
-		avatar = cu.Avatar
-		contactEmail = cu.Email
-		userID = sql.NullInt64{Int64: cu.ID, Valid: true}
-		isLogin = 1
-		if cu.Role == "admin" {
-			isAdminUser = 1
-		}
-	}
-	if body.ParentID == 0 && channel == guestbookChannelLink {
-		submittedEmail := normalizeEmail(body.ContactEmail)
-		if submittedEmail != "" {
-			if !validateEmail(submittedEmail) {
-				writeGuestbookErr(w, http.StatusBadRequest, "INVALID_EMAIL", "请输入有效的邮箱地址")
-				return
-			}
-			contactEmail = submittedEmail
-		}
-		if contactEmail == "" {
-			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_EMAIL", "请留下邮箱，方便收到回复通知")
-			return
-		}
 	}
 
 	ip := clientIP(r)

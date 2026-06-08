@@ -242,26 +242,51 @@ const FriendsApplicationBoard = () => {
           </p>
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6B7280]">
-          像留言板一样留下一条想说的话，访客可以提交留言，登录后也可以在已有留言下面继续回复。
+          友链留言需要留下昵称和邮箱，邮箱仅用于回复通知，不会公开显示。想匿名随便聊，可以前往
+          <Link to="/guestbook" className="font-semibold text-[#4D8FC6] hover:text-[#FF8FAB]">
+            留言区
+          </Link>
+          。
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="mt-6">
         <div>
           <div className="min-w-0 flex-1 rounded-[22px] border border-[#D8E9F8] bg-[linear-gradient(135deg,rgba(255,255,255,0.86),rgba(241,248,255,0.72))] p-4 shadow-[0_16px_36px_rgba(95,75,82,0.08)] backdrop-blur md:p-5">
-            {user ? (
-              <div className="mb-4">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-semibold text-[#4D8FC6]">
-                    以 {displayName} 身份留言
-                  </p>
-                  <span className="text-xs text-[#8A7C74]">
-                    回复通知默认发往登录邮箱
-                  </span>
-                </div>
-                <label className="mt-3 block">
+            <div className="mb-4">
+              <div className="mb-3 flex flex-col gap-3 rounded-[16px] border border-dashed border-[#D8E9F8] bg-white/65 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm leading-7 text-[#6B7280]">
+                  {user
+                    ? `当前以 ${displayName} 身份登录，友链留言仍需要填写公开昵称和私密邮箱。`
+                    : "不登录也可以留言。昵称会公开显示，邮箱只用于收到回复通知。"}
+                </p>
+                {!user && (
+                  <Link
+                    to="/login"
+                    className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-[#74C0FC] bg-white px-4 py-2 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(116,192,252,0.14)] transition hover:border-[#FF8FAB]"
+                  >
+                    去登录 / 注册
+                  </Link>
+                )}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
                   <span className="mb-1.5 block text-xs font-bold text-[#7B5C61]">
-                    回复通知邮箱（可选）
+                    昵称 <span className="text-[#FF6B6B]">*</span>
+                  </span>
+                  <input
+                    value={nickname}
+                    onChange={(event) => setNickname(event.target.value)}
+                    maxLength={12}
+                    required
+                    disabled={submitting}
+                    placeholder="怎么称呼你"
+                    className="min-h-[42px] w-full rounded-[16px] border border-[#CFE6F7] bg-white/60 px-4 py-2.5 text-sm text-[#2B2B2B] outline-none transition placeholder:text-[#9AA4B2] focus:border-[#74C0FC] focus:bg-white/80 disabled:cursor-not-allowed disabled:opacity-70"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-bold text-[#7B5C61]">
+                    邮箱 <span className="text-[#FF6B6B]">*</span>
                   </span>
                   <input
                     type="email"
@@ -270,62 +295,14 @@ const FriendsApplicationBoard = () => {
                     value={contactEmail}
                     onChange={(event) => setContactEmail(event.target.value)}
                     maxLength={120}
+                    required
                     disabled={submitting}
-                    placeholder={
-                      user?.email ? `不填则使用 ${user.email}` : "不填则使用登录邮箱"
-                    }
+                    placeholder="you@example.com"
                     className="min-h-[42px] w-full rounded-[16px] border border-[#CFE6F7] bg-white/60 px-4 py-2.5 text-sm text-[#2B2B2B] outline-none transition placeholder:text-[#9AA4B2] focus:border-[#74C0FC] focus:bg-white/80 disabled:cursor-not-allowed disabled:opacity-70"
                   />
                 </label>
               </div>
-            ) : (
-              <div className="mb-4">
-                <div className="mb-3 flex flex-col gap-3 rounded-[16px] border border-dashed border-[#D8E9F8] bg-white/65 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm leading-7 text-[#6B7280]">
-                    不登录也可以留言。邮箱仅用于收到回复通知，不会公开显示。
-                  </p>
-                  <Link
-                    to="/login"
-                    className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-[#74C0FC] bg-white px-4 py-2 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(116,192,252,0.14)] transition hover:border-[#FF8FAB]"
-                  >
-                    去登录 / 注册
-                  </Link>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="mb-1.5 block text-xs font-bold text-[#7B5C61]">
-                      昵称
-                    </span>
-                    <input
-                      value={nickname}
-                      onChange={(event) => setNickname(event.target.value)}
-                      maxLength={40}
-                      required
-                      disabled={submitting}
-                      placeholder="怎么称呼你"
-                      className="min-h-[42px] w-full rounded-[16px] border border-[#CFE6F7] bg-white/60 px-4 py-2.5 text-sm text-[#2B2B2B] outline-none transition placeholder:text-[#9AA4B2] focus:border-[#74C0FC] focus:bg-white/80 disabled:cursor-not-allowed disabled:opacity-70"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1.5 block text-xs font-bold text-[#7B5C61]">
-                      邮箱
-                    </span>
-                    <input
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      value={contactEmail}
-                      onChange={(event) => setContactEmail(event.target.value)}
-                      maxLength={120}
-                      required
-                      disabled={submitting}
-                      placeholder="you@example.com"
-                      className="min-h-[42px] w-full rounded-[16px] border border-[#CFE6F7] bg-white/60 px-4 py-2.5 text-sm text-[#2B2B2B] outline-none transition placeholder:text-[#9AA4B2] focus:border-[#74C0FC] focus:bg-white/80 disabled:cursor-not-allowed disabled:opacity-70"
-                    />
-                  </label>
-                </div>
-              </div>
-            )}
+            </div>
 
             <textarea
               value={content}

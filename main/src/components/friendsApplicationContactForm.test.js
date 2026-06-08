@@ -44,25 +44,42 @@ test("anonymous friends application includes private contact email", () => {
   );
 });
 
-test("logged-in friends application uses optional override email only when filled", () => {
+test("logged-in friends application also requires nickname and contact email", () => {
   assert.deepEqual(
     buildFriendsApplicationPayload({
       user: { email: "account@example.com" },
       nickname: "",
-      contactEmail: "",
+      contactEmail: "account@example.com",
       content: " hello ",
     }),
-    { ok: true, payload: { content: "hello" } },
+    { ok: false, error: "请留下昵称。" },
   );
 
   assert.deepEqual(
     buildFriendsApplicationPayload({
       user: { email: "account@example.com" },
-      nickname: "",
+      nickname: "Member",
+      contactEmail: "",
+      content: " hello ",
+    }),
+    { ok: false, error: "请留下邮箱，方便收到回复通知。" },
+  );
+
+  assert.deepEqual(
+    buildFriendsApplicationPayload({
+      user: { email: "account@example.com" },
+      nickname: " Member ",
       contactEmail: "Override@Example.com",
       content: " hello ",
     }),
-    { ok: true, payload: { content: "hello", contactEmail: "override@example.com" } },
+    {
+      ok: true,
+      payload: {
+        nickname: "Member",
+        content: "hello",
+        contactEmail: "override@example.com",
+      },
+    },
   );
 });
 

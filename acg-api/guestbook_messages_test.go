@@ -202,7 +202,7 @@ func TestFriendsLoggedInTopLevelMessageUsesSubmittedContactEmail(t *testing.T) {
 
 		rr := postGuestbookMessageWithSession(
 			t,
-			`{"content":"friends root","channel":"friends","contactEmail":"Preferred@Example.com"}`,
+			`{"nickname":"Preferred","content":"friends root","channel":"friends","contactEmail":"Preferred@Example.com"}`,
 			"127.0.0.1:3456",
 			sessionToken,
 		)
@@ -215,10 +215,16 @@ func TestFriendsLoggedInTopLevelMessageUsesSubmittedContactEmail(t *testing.T) {
 		if stored := guestbookStoredContactEmail(t, id); stored != "preferred@example.com" {
 			t.Fatalf("expected submitted email override, got %q", stored)
 		}
+		if item["nickname"] != "Preferred" {
+			t.Fatalf("expected submitted nickname, got %#v", item["nickname"])
+		}
+		if item["isLoginUser"] != true {
+			t.Fatalf("expected logged-in marker to be preserved, got %#v", item["isLoginUser"])
+		}
 	})
 }
 
-func TestFriendsLoggedInTopLevelMessageFallsBackToAccountEmail(t *testing.T) {
+func TestFriendsLoggedInTopLevelMessageRequiresSubmittedContactFields(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		userID := seedGuestbookTestUser(t, "Login@Example.com", "Login", false)
 		sessionToken := seedGuestbookTestSession(t, userID, false)
@@ -229,14 +235,12 @@ func TestFriendsLoggedInTopLevelMessageFallsBackToAccountEmail(t *testing.T) {
 			"127.0.0.1:3456",
 			sessionToken,
 		)
-		if rr.Code != http.StatusOK {
-			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400 for missing friends contact fields, got %d body=%s", rr.Code, rr.Body.String())
 		}
-		item := decodeJSONMap(t, rr)["item"].(map[string]any)
-		id := int64(item["id"].(float64))
-
-		if stored := guestbookStoredContactEmail(t, id); stored != "login@example.com" {
-			t.Fatalf("expected account email fallback, got %q", stored)
+		payload := decodeJSONMap(t, rr)
+		if payload["error"] != "INVALID_NICKNAME" {
+			t.Fatalf("expected INVALID_NICKNAME, got %#v", payload["error"])
 		}
 	})
 }
