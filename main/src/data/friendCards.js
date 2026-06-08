@@ -83,4 +83,11 @@ export const friendCards = [
     avatar: "https://tc.lqay.cn/LightPicture/2026/03/5f64e0f0f361e19c.png",
     note: "FRIEND",
   },
+  {
+    name: "他说",
+    desc: "梁栋烨的博客网站。",
+    url: "https://090909.top/",
+    avatar: "https://090909.top/assets/images/logo.ico",
+    note: "FRIEND",
+  },
 ];
