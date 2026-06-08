@@ -55,4 +55,11 @@ export const friendCards = [
     avatar: "https://pc-blog.github.io/next/bg/1.jpg",
     note: "FRIEND",
   },
+  {
+    name: "星轨手札",
+    desc: "德国留学、日本旅行与技术折腾记录",
+    url: "https://yuulog.org/",
+    avatar: "https://yuulog.org/_astro/avatar.Djw_wQKk_Z1Q0puo.webp",
+    note: "FRIEND",
+  },
 ];
