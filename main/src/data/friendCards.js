@@ -41,4 +41,11 @@ export const friendCards = [
     avatar: "https://bu.dusays.com/2026/05/31/6a1b386c94497.png",
     note: "FRIEND",
   },
+  {
+    name: "雾醉醉言",
+    desc: "雾里醉语，且行切记。",
+    url: "https://www.wuzuizuiyan.cn",
+    avatar: "https://i.ibb.co/vvXLPFCh/avatar.jpg",
+    note: "FRIEND",
+  },
 ];
