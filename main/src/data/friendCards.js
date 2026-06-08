@@ -84,10 +84,10 @@ export const friendCards = [
     note: "FRIEND",
   },
   {
-    name: "他说",
-    desc: "梁栋烨的博客网站。",
-    url: "https://090909.top/",
-    avatar: "https://090909.top/assets/images/logo.ico",
+    name: "Leyili 花园",
+    desc: "小小后花园~~~",
+    url: "https://930309.xyz/",
+    avatar: "https://photo.930309.xyz/lcj.svg",
     note: "FRIEND",
   },
   {

@@ -23,3 +23,12 @@ test("includes Anze as a friend link with explicit avatar", () => {
   assert.equal(anze.url, "https://anze.love");
   assert.equal(anze.avatar, "https://anze.love/wp-content/uploads/2026/03/cropped-anze.jpg");
 });
+
+test("names the 930309 friend link Leyili Garden", () => {
+  const leyili = friendCards.find((friend) => friend.url === "https://930309.xyz/");
+
+  assert.ok(leyili);
+  assert.equal(leyili.name, "Leyili 花园");
+  assert.equal(leyili.desc, "小小后花园~~~");
+  assert.equal(leyili.avatar, "https://photo.930309.xyz/lcj.svg");
+});
