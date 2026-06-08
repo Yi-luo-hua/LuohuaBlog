@@ -5,6 +5,9 @@ public/
 main/public/**
 !main/public/manifest.webmanifest
 !main/public/pwa-icon.svg
+!main/public/pwa-icon-192.png
+!main/public/pwa-icon-512.png
+!main/public/pwa-icon.ico
 !main/public/sw.js
 **/node_modules/
 **/.cache/

@@ -24,14 +24,33 @@ test("manifest describes an installable personal app", async () => {
   assert.equal(manifest.start_url, "/app");
   assert.equal(manifest.scope, "/");
   assert.equal(manifest.display, "standalone");
+  assert.equal(manifest.background_color, "#fffaf2");
+  assert.equal(manifest.theme_color, "#fffaf2");
   assert.ok(
     manifest.icons.some(
       (icon) =>
-        icon.src === "/pwa-icon.svg" &&
-        icon.sizes === "any" &&
-        icon.type === "image/svg+xml",
+        icon.src === "/pwa-icon-192.png" &&
+        icon.sizes === "192x192" &&
+        icon.type === "image/png" &&
+        icon.purpose === "any",
     ),
   );
+  assert.ok(
+    manifest.icons.some(
+      (icon) =>
+        icon.src === "/pwa-icon-512.png" &&
+        icon.sizes === "512x512" &&
+        icon.type === "image/png" &&
+        icon.purpose === "any maskable",
+    ),
+  );
+});
+
+test("PWA install metadata uses the site white chrome color", async () => {
+  const source = await readFile(resolve(mainDir, "src", "pwa", "registerServiceWorker.js"), "utf8");
+
+  assert.match(source, /setMetaTag\(documentRef,\s*"theme-color",\s*"#fffaf2"\)/);
+  assert.doesNotMatch(source, /#f472b6/);
 });
 
 test("service worker leaves live API traffic online-first", async () => {

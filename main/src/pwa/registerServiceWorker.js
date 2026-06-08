@@ -56,7 +56,7 @@ export function applyPwaInstallMetadata({
     documentRef.head.appendChild(manifest);
   }
 
-  setMetaTag(documentRef, "theme-color", "#f472b6");
+  setMetaTag(documentRef, "theme-color", "#fffaf2");
   setMetaTag(documentRef, "mobile-web-app-capable", "yes");
   setMetaTag(documentRef, "apple-mobile-web-app-capable", "yes");
   setMetaTag(documentRef, "apple-mobile-web-app-title", "桃之夭夭");
