@@ -104,4 +104,11 @@ export const friendCards = [
     avatar: "https://photo.930309.xyz/lcj.svg",
     note: "FRIEND",
   },
+  {
+    name: "mccsjs",
+    desc: "点一盏灯，等待一个迷路的夜🍁",
+    url: "https://blog.seln.cn/",
+    avatar: "https://seln.cn/img/ico.jpg",
+    note: "FRIEND",
+  },
 ];
