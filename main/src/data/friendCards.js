@@ -97,4 +97,11 @@ export const friendCards = [
     avatar: "https://qiniu.ayeez.cn/avatar.jpg",
     note: "FRIEND",
   },
+  {
+    name: "名称",
+    desc: "Leyili 花园",
+    url: "https://930309.xyz/",
+    avatar: "https://photo.930309.xyz/lcj.svg",
+    note: "FRIEND",
+  },
 ];
