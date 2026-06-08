@@ -69,6 +69,16 @@ class SyncAuthEnvTests(unittest.TestCase):
         self.assertIn("TENCENT_COS_REGION", text)
         self.assertIn("TENCENT_COS_BASE_URL", text)
 
+    def test_syncs_smtp_notification_env_keys(self):
+        text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("SMTP_HOST", text)
+        self.assertIn("SMTP_PORT", text)
+        self.assertIn("SMTP_USER", text)
+        self.assertIn("SMTP_PASS", text)
+        self.assertIn("SMTP_FROM_NAME", text)
+        self.assertIn("MAIL_NOTIFY_TO", text)
+
 
 if __name__ == "__main__":
     unittest.main()

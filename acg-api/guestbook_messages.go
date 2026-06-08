@@ -361,10 +361,123 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		IsAdminUser: isAdminUser == 1,
 		Status:      "visible",
 	}
+	notifyGuestbookMessageCreated(item, channel, now)
 	writeJSON(w, map[string]any{
 		"message": "留言成功",
 		"item":    item,
 	})
+}
+
+func notifyGuestbookMessageCreated(item guestbookMessageRow, channel, createdAt string) {
+	if err := sendGuestbookOwnerNotification(item, channel, createdAt); err != nil {
+		logGuestbookMailError("owner notification", err)
+	}
+	if item.ParentID > 0 && item.IsAdminUser {
+		if err := sendGuestbookReplyNotification(item, channel, createdAt); err != nil {
+			logGuestbookMailError("reply notification", err)
+		}
+	}
+}
+
+func sendGuestbookOwnerNotification(item guestbookMessageRow, channel, createdAt string) error {
+	to := normalizeEmail(env("MAIL_NOTIFY_TO", ""))
+	if to == "" || !validateEmail(to) {
+		return nil
+	}
+	return sendGuestbookMail(outboundMail{
+		To:      to,
+		Subject: guestbookOwnerMailSubject(channel, item.ParentID > 0),
+		Body:    guestbookOwnerMailBody(item, channel, createdAt),
+	})
+}
+
+func sendGuestbookReplyNotification(item guestbookMessageRow, channel, createdAt string) error {
+	to := guestbookReplyRecipientEmail(item.ParentID)
+	if to == "" || !validateEmail(to) {
+		return nil
+	}
+	if strings.EqualFold(to, normalizeEmail(env("SMTP_USER", ""))) {
+		return nil
+	}
+	return sendGuestbookMail(outboundMail{
+		To:      to,
+		Subject: "Your message has a new reply",
+		Body:    guestbookReplyMailBody(item, channel, createdAt),
+	})
+}
+
+func guestbookReplyRecipientEmail(parentID int64) string {
+	if parentID <= 0 {
+		return ""
+	}
+	var contactEmail string
+	var userID sql.NullInt64
+	if err := db.QueryRow(
+		`SELECT contact_email, user_id FROM guestbook_messages WHERE id = ? AND status != 'deleted'`,
+		parentID,
+	).Scan(&contactEmail, &userID); err != nil {
+		return ""
+	}
+	if email := normalizeEmail(contactEmail); email != "" {
+		return email
+	}
+	if !userID.Valid {
+		return ""
+	}
+	var email string
+	if err := db.QueryRow(`SELECT email FROM users WHERE id = ?`, userID.Int64).Scan(&email); err != nil {
+		return ""
+	}
+	return normalizeEmail(email)
+}
+
+func guestbookOwnerMailSubject(channel string, reply bool) string {
+	if reply {
+		if channel == guestbookChannelLink {
+			return "New reply on friends-page"
+		}
+		return "New guestbook reply"
+	}
+	if channel == guestbookChannelLink {
+		return "New friends-page message"
+	}
+	return "New guestbook message"
+}
+
+func guestbookOwnerMailBody(item guestbookMessageRow, channel, createdAt string) string {
+	return strings.Join([]string{
+		"Site: Taozhiyy",
+		"Channel: " + channel,
+		"Author: " + item.Nickname,
+		"Created at: " + createdAt,
+		"",
+		"Message:",
+		item.Content,
+		"",
+		"Open: " + guestbookChannelURL(channel),
+	}, "\n")
+}
+
+func guestbookReplyMailBody(item guestbookMessageRow, channel, createdAt string) string {
+	return strings.Join([]string{
+		"Your message on Taozhiyy has a new reply.",
+		"Channel: " + channel,
+		"Created at: " + createdAt,
+		"",
+		"Reply:",
+		item.Content,
+		"",
+		"Open: " + guestbookChannelURL(channel),
+	}, "\n")
+}
+
+func guestbookChannelURL(channel string) string {
+	switch channel {
+	case guestbookChannelLink:
+		return "https://taozhiyy.top/friends"
+	default:
+		return "https://taozhiyy.top/guestbook"
+	}
 }
 
 func guestbookParentExists(parentID int64, admin bool, channel string) bool {

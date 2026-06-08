@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -122,6 +125,32 @@ func guestbookStoredContactEmail(t *testing.T, id int64) string {
 	return email
 }
 
+type capturingGuestbookMailer struct {
+	err      error
+	messages []outboundMail
+}
+
+func (m *capturingGuestbookMailer) Send(message outboundMail) error {
+	m.messages = append(m.messages, message)
+	return m.err
+}
+
+func useGuestbookTestMailer(t *testing.T, mailer siteMailer) {
+	t.Helper()
+	prev := guestbookMailer
+	guestbookMailer = mailer
+	t.Cleanup(func() { guestbookMailer = prev })
+}
+
+func findMailTo(messages []outboundMail, to string) (outboundMail, bool) {
+	for _, message := range messages {
+		if strings.EqualFold(message.To, to) {
+			return message, true
+		}
+	}
+	return outboundMail{}, false
+}
+
 func TestGuestbookCreateTopLevelMessage(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		payload := seedGuestbookMessage(t, `{"nickname":"Tao","content":"站点名称：A\n站点链接：https://a.test"}`, "127.0.0.1:3456")
@@ -220,6 +249,120 @@ func TestGuestbookChannelDoesNotRequireContactEmail(t *testing.T) {
 
 		if stored := guestbookStoredContactEmail(t, id); stored != "" {
 			t.Fatalf("expected empty contact email for generic guestbook, got %q", stored)
+		}
+	})
+}
+
+func TestGuestbookCreateSendsOwnerNotificationEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		t.Setenv("MAIL_NOTIFY_TO", "owner-notify@example.com")
+		mailer := &capturingGuestbookMailer{}
+		useGuestbookTestMailer(t, mailer)
+
+		seedGuestbookMessage(t, `{"nickname":"Guestbook","content":"please read this","channel":"guestbook"}`, "127.0.0.1:3456")
+
+		message, ok := findMailTo(mailer.messages, "owner-notify@example.com")
+		if !ok {
+			t.Fatalf("expected owner notification email, got %#v", mailer.messages)
+		}
+		if !strings.Contains(message.Subject, "guestbook") {
+			t.Fatalf("expected guestbook subject, got %q", message.Subject)
+		}
+		if !strings.Contains(message.Body, "please read this") {
+			t.Fatalf("expected body to include message content, got %q", message.Body)
+		}
+	})
+}
+
+func TestOwnerReplySendsParentContactEmailNotification(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		t.Setenv("MAIL_NOTIFY_TO", "owner-notify@example.com")
+		parent := seedGuestbookMessage(t, `{"nickname":"Friend","content":"friend request","channel":"friends","contactEmail":"visitor@example.com"}`, "127.0.0.1:3456")
+		parentID := int64(parent["item"].(map[string]any)["id"].(float64))
+
+		ownerID := seedGuestbookTestUser(t, "owner@example.com", "Owner", true)
+		sessionToken := seedGuestbookTestSession(t, ownerID, true)
+		mailer := &capturingGuestbookMailer{}
+		useGuestbookTestMailer(t, mailer)
+
+		rr := postGuestbookMessageWithSession(
+			t,
+			`{"content":"owner reply","channel":"friends","parentId":`+strconv.FormatInt(parentID, 10)+`}`,
+			"127.0.0.1:4567",
+			sessionToken,
+		)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+
+		message, ok := findMailTo(mailer.messages, "visitor@example.com")
+		if !ok {
+			t.Fatalf("expected reply notification to visitor, got %#v", mailer.messages)
+		}
+		if !strings.Contains(message.Subject, "reply") || !strings.Contains(message.Body, "owner reply") {
+			t.Fatalf("expected reply subject/body, got subject=%q body=%q", message.Subject, message.Body)
+		}
+	})
+}
+
+func TestOwnerReplyFallsBackToParentUserAccountEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		userID := seedGuestbookTestUser(t, "member@example.com", "Member", false)
+		now := time.Now().UTC().Format(time.RFC3339)
+		res, err := db.Exec(
+			`INSERT INTO guestbook_messages
+			 (user_id, nickname, avatar, channel, content, contact_email, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
+			 VALUES (?, 'Member', '', 'friends', 'member request', '', 'content-hash', 'ip-hash', '', '', '', 0, 'visible', 1, 0, ?, ?)`,
+			userID,
+			now,
+			now,
+		)
+		if err != nil {
+			t.Fatalf("insert parent message: %v", err)
+		}
+		parentID, err := res.LastInsertId()
+		if err != nil {
+			t.Fatalf("parent last insert id: %v", err)
+		}
+		ownerID := seedGuestbookTestUser(t, "owner@example.com", "Owner", true)
+		sessionToken := seedGuestbookTestSession(t, ownerID, true)
+		mailer := &capturingGuestbookMailer{}
+		useGuestbookTestMailer(t, mailer)
+
+		rr := postGuestbookMessageWithSession(
+			t,
+			`{"content":"owner reply","channel":"friends","parentId":`+strconv.FormatInt(parentID, 10)+`}`,
+			"127.0.0.1:4567",
+			sessionToken,
+		)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+
+		if _, ok := findMailTo(mailer.messages, "member@example.com"); !ok {
+			t.Fatalf("expected reply notification to parent account email, got %#v", mailer.messages)
+		}
+	})
+}
+
+func TestGuestbookMailFailureDoesNotFailMessageCreation(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		t.Setenv("MAIL_NOTIFY_TO", "owner-notify@example.com")
+		mailer := &capturingGuestbookMailer{err: errors.New("smtp unavailable")}
+		useGuestbookTestMailer(t, mailer)
+
+		rr := postGuestbookMessageWithSession(
+			t,
+			`{"nickname":"Guestbook","content":"mail can fail","channel":"guestbook"}`,
+			"127.0.0.1:3456",
+			"",
+		)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("mail failure should not fail message creation, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		if len(mailer.messages) != 1 {
+			t.Fatalf("expected attempted owner notification, got %#v", mailer.messages)
 		}
 	})
 }

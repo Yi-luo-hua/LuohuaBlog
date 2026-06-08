@@ -71,6 +71,22 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn('TENCENT_COS_BUCKET="${TENCENT_COS_BUCKET:-$LEGACY_COS_BUCKET}"', text)
         self.assertIn('TENCENT_COS_REGION="${TENCENT_COS_REGION:-$LEGACY_COS_REGION}"', text)
 
+    def test_sync_step_includes_smtp_notification_secrets(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("SMTP_HOST: ${{ secrets.SMTP_HOST }}", text)
+        self.assertIn("SMTP_PORT: ${{ secrets.SMTP_PORT }}", text)
+        self.assertIn("SMTP_USER: ${{ secrets.SMTP_USER }}", text)
+        self.assertIn("SMTP_PASS: ${{ secrets.SMTP_PASS }}", text)
+        self.assertIn("SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}", text)
+        self.assertIn("MAIL_NOTIFY_TO: ${{ secrets.MAIL_NOTIFY_TO }}", text)
+        self.assertIn("printf 'SMTP_HOST=%s\\n' \"$SMTP_HOST\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'SMTP_PORT=%s\\n' \"$SMTP_PORT\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'SMTP_USER=%s\\n' \"$SMTP_USER\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'SMTP_PASS=%s\\n' \"$SMTP_PASS\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'SMTP_FROM_NAME=%s\\n' \"$SMTP_FROM_NAME\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'MAIL_NOTIFY_TO=%s\\n' \"$MAIL_NOTIFY_TO\" >> \"$FRAG\"", text)
+
 
 if __name__ == "__main__":
     unittest.main()
