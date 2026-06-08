@@ -27,4 +27,11 @@ export const friendCards = [
     avatar: "https://npm.elemecdn.com/anzhiyu-blog-static@1.0.4/img/avatar.jpg",
     note: "FRIEND",
   },
+  {
+    name: "HGL",
+    desc: "全栈开发者 · 二次元爱好者",
+    url: "https://hgl123.icu",
+    avatar: "https://img.hgl123.icu/i/1780730938101-EUvDVVgB.webp",
+    note: "FRIEND",
+  },
 ];
