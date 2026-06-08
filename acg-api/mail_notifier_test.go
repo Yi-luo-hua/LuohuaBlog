@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -14,6 +15,26 @@ func TestSMTPMailerFromEnvDisabledWhenRequiredConfigMissing(t *testing.T) {
 
 	if _, ok := smtpMailerFromEnv(); ok {
 		t.Fatal("expected SMTP mailer to be disabled when required config is missing")
+	}
+}
+
+func TestSendGuestbookMailFailsWhenSMTPConfigMissing(t *testing.T) {
+	prev := guestbookMailer
+	guestbookMailer = nil
+	t.Cleanup(func() { guestbookMailer = prev })
+	t.Setenv("SMTP_HOST", "")
+	t.Setenv("SMTP_PORT", "")
+	t.Setenv("SMTP_USER", "")
+	t.Setenv("SMTP_PASS", "")
+
+	err := sendGuestbookMail(outboundMail{
+		To:      "receiver@example.com",
+		Subject: "桃之夭夭：你的留言收到回复",
+		Body:    "中文邮件配置测试",
+	})
+
+	if !errors.Is(err, errSMTPNotConfigured) {
+		t.Fatalf("expected errSMTPNotConfigured, got %v", err)
 	}
 }
 
@@ -39,7 +60,40 @@ func TestBuildMailMessageEncodesUTF8BodyAsBase64(t *testing.T) {
 	if !strings.Contains(strings.ToLower(raw), "subject: =?utf-8?") {
 		t.Fatalf("expected MIME-encoded UTF-8 subject, got %q", raw)
 	}
+	if !strings.Contains(strings.ToLower(raw), "from: =?utf-8?") {
+		t.Fatalf("expected MIME-encoded UTF-8 from name, got %q", raw)
+	}
 
+	parts := strings.SplitN(raw, "\r\n\r\n", 2)
+	if len(parts) != 2 {
+		t.Fatalf("expected headers/body separator, got %q", raw)
+	}
+	encodedBody := strings.NewReplacer("\r", "", "\n", "").Replace(parts[1])
+	decoded, err := base64.StdEncoding.DecodeString(encodedBody)
+	if err != nil {
+		t.Fatalf("decode base64 body: %v", err)
+	}
+	if string(decoded) != body {
+		t.Fatalf("expected decoded body %q, got %q", body, decoded)
+	}
+}
+
+func TestBuildMailMessagePreservesChineseAndEmoji(t *testing.T) {
+	body := "你在桃之夭夭留下的留言收到回复。😭😂"
+	raw := string(buildMailMessage(
+		"sender@qq.com",
+		"taozhiyy.top",
+		"receiver@example.com",
+		"桃之夭夭：你的留言收到回复",
+		body,
+	))
+
+	if strings.Contains(raw, body) {
+		t.Fatalf("expected raw body to be base64 encoded, got %q", raw)
+	}
+	if !strings.Contains(raw, "Content-Transfer-Encoding: base64") {
+		t.Fatalf("expected base64 transfer encoding, got %q", raw)
+	}
 	parts := strings.SplitN(raw, "\r\n\r\n", 2)
 	if len(parts) != 2 {
 		t.Fatalf("expected headers/body separator, got %q", raw)

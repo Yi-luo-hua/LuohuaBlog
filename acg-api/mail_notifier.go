@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"mime"
@@ -23,6 +24,8 @@ type siteMailer interface {
 
 var guestbookMailer siteMailer
 
+var errSMTPNotConfigured = errors.New("smtp mailer is not configured")
+
 type smtpMailer struct {
 	host     string
 	port     string
@@ -41,6 +44,34 @@ func smtpMailerFromEnv() (siteMailer, bool) {
 	}
 	fromName := strings.TrimSpace(env("SMTP_FROM_NAME", "Taozhiyy Notifications"))
 	return smtpMailer{host: host, port: port, user: user, pass: pass, fromName: fromName}, true
+}
+
+func smtpMissingConfigKeys() []string {
+	required := []struct {
+		key   string
+		value string
+	}{
+		{"SMTP_HOST", strings.TrimSpace(env("SMTP_HOST", ""))},
+		{"SMTP_PORT", strings.TrimSpace(env("SMTP_PORT", ""))},
+		{"SMTP_USER", normalizeEmail(env("SMTP_USER", ""))},
+		{"SMTP_PASS", strings.TrimSpace(env("SMTP_PASS", ""))},
+	}
+	missing := make([]string, 0)
+	for _, item := range required {
+		if item.value == "" {
+			missing = append(missing, item.key)
+		}
+	}
+	return missing
+}
+
+func logSMTPMailerConfig() {
+	missing := smtpMissingConfigKeys()
+	if len(missing) == 0 {
+		log.Printf("mail: SMTP configured for %s", normalizeEmail(env("SMTP_USER", "")))
+		return
+	}
+	log.Printf("WARN: mail: SMTP disabled; missing %s", strings.Join(missing, ","))
 }
 
 func (m smtpMailer) Send(message outboundMail) error {
@@ -138,7 +169,7 @@ func sendGuestbookMail(message outboundMail) error {
 		var ok bool
 		mailer, ok = smtpMailerFromEnv()
 		if !ok {
-			return nil
+			return errSMTPNotConfigured
 		}
 	}
 	if err := mailer.Send(message); err != nil {

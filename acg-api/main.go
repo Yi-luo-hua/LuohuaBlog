@@ -27,6 +27,7 @@ func main() {
 	addr := env("ACG_API_ADDR", ":8787")
 	dataDir := env("ACG_DATA_DIR", "./data")
 	cacheDir = filepath.Join(dataDir, "cache")
+	logSMTPMailerConfig()
 	_ = os.MkdirAll(dataDir, 0o755)
 	_ = os.MkdirAll(cacheDir, 0o755)
 
