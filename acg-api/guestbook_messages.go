@@ -153,20 +153,13 @@ func guestbookListHandler(w http.ResponseWriter, r *http.Request) {
 		parentIDs = append(parentIDs, item.ID)
 	}
 	if len(parentIDs) > 0 {
-		replies, err := loadGuestbookReplies(parentIDs, admin, channel)
+		replyMap, err := loadGuestbookReplyTree(parentIDs, admin, channel)
 		if err != nil {
 			writeGuestbookErr(w, http.StatusInternalServerError, "SERVER_ERROR", "加载留言失败")
 			return
 		}
-		replyMap := make(map[int64][]guestbookMessageRow, len(replies))
-		for _, reply := range replies {
-			replyMap[reply.ParentID] = append(replyMap[reply.ParentID], reply)
-		}
 		for i := range items {
-			if nested := replyMap[items[i].ID]; len(nested) > 0 {
-				items[i].Replies = nested
-				items[i].ReplyCount = len(nested)
-			}
+			attachGuestbookReplyTree(&items[i], replyMap)
 		}
 	}
 
@@ -237,6 +230,56 @@ func loadGuestbookReplies(parentIDs []int64, admin bool, channel string) ([]gues
 		replies = append(replies, item)
 	}
 	return replies, nil
+}
+
+func loadGuestbookReplyTree(parentIDs []int64, admin bool, channel string) (map[int64][]guestbookMessageRow, error) {
+	replyMap := make(map[int64][]guestbookMessageRow)
+	pending := append([]int64(nil), parentIDs...)
+	visited := make(map[int64]bool, len(parentIDs))
+
+	for len(pending) > 0 {
+		currentParents := make([]int64, 0, len(pending))
+		nextParents := make([]int64, 0)
+		for _, id := range pending {
+			if id <= 0 || visited[id] {
+				continue
+			}
+			visited[id] = true
+			currentParents = append(currentParents, id)
+		}
+		if len(currentParents) == 0 {
+			break
+		}
+
+		replies, err := loadGuestbookReplies(currentParents, admin, channel)
+		if err != nil {
+			return nil, err
+		}
+		for _, reply := range replies {
+			replyMap[reply.ParentID] = append(replyMap[reply.ParentID], reply)
+			nextParents = append(nextParents, reply.ID)
+		}
+		pending = nextParents
+	}
+
+	return replyMap, nil
+}
+
+func attachGuestbookReplyTree(item *guestbookMessageRow, replyMap map[int64][]guestbookMessageRow) int {
+	replies := replyMap[item.ID]
+	if len(replies) == 0 {
+		return 0
+	}
+
+	item.Replies = make([]guestbookMessageRow, len(replies))
+	copy(item.Replies, replies)
+
+	total := 0
+	for i := range item.Replies {
+		total += 1 + attachGuestbookReplyTree(&item.Replies[i], replyMap)
+	}
+	item.ReplyCount = total
+	return total
 }
 
 func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {

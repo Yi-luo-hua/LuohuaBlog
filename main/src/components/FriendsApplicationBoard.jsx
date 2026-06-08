@@ -11,7 +11,12 @@ import {
   postGuestbookReply,
 } from "../services/guestbookMessagesApi";
 import { buildFriendsApplicationPayload } from "./friendsApplicationContactForm";
-import { normalizeFriendsThreads } from "./friendsApplicationThreads";
+import {
+  appendReplyToFriendsThreads,
+  findFriendsThreadRootId,
+  flattenThreadReplies,
+  normalizeFriendsThreads,
+} from "./friendsApplicationThreads";
 
 const FRIENDS_CHANNEL = "friends";
 
@@ -126,7 +131,9 @@ const FriendsApplicationBoard = () => {
       const nextEntries = normalizeFriendsThreads(asList(data));
       setEntries(nextEntries);
       setExpandedThreads(
-        Object.fromEntries(nextEntries.map((item) => [item.id, (item.replyCount || 0) > 0]))
+        Object.fromEntries(
+          nextEntries.map((item) => [item.id, (item.replyCount || 0) > 0]),
+        ),
       );
       setLoading(false);
     };
@@ -178,7 +185,9 @@ const FriendsApplicationBoard = () => {
     setContactEmail("");
     setNotice("留言已经提交成功。");
     if (data.item) {
-      setEntries((prev) => [{ ...data.item, replies: [], replyCount: 0 }, ...prev].slice(0, 30));
+      setEntries((prev) =>
+        [{ ...data.item, replies: [], replyCount: 0 }, ...prev].slice(0, 30),
+      );
     }
   };
 
@@ -206,18 +215,11 @@ const FriendsApplicationBoard = () => {
       return;
     }
 
+    const rootId = findFriendsThreadRootId(entries, parentId) || parentId;
     setEntries((prev) =>
-      prev.map((item) =>
-        item.id === parentId
-          ? {
-              ...item,
-              replies: [...(item.replies || []), data.item],
-              replyCount: (item.replyCount || 0) + 1,
-            }
-          : item
-      )
+      appendReplyToFriendsThreads(prev, parentId, data.item),
     );
-    setExpandedThreads((prev) => ({ ...prev, [parentId]: true }));
+    setExpandedThreads((prev) => ({ ...prev, [rootId]: true }));
     setReplyDrafts((prev) => ({ ...prev, [parentId]: "" }));
     setReplyTargetId(null);
     setNotice("回复已经贴在这条留言下面啦。");
@@ -243,7 +245,10 @@ const FriendsApplicationBoard = () => {
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6B7280]">
           友链留言需要留下昵称和邮箱，邮箱仅用于回复通知，不会公开显示。想匿名随便聊，可以前往
-          <Link to="/guestbook" className="font-semibold text-[#4D8FC6] hover:text-[#FF8FAB]">
+          <Link
+            to="/guestbook"
+            className="font-semibold text-[#4D8FC6] hover:text-[#FF8FAB]"
+          >
             留言区
           </Link>
           。
@@ -316,9 +321,7 @@ const FriendsApplicationBoard = () => {
             />
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-[#8A7C74]">
-                {content.length}/500
-              </p>
+              <p className="text-xs text-[#8A7C74]">{content.length}/500</p>
               <button
                 type="submit"
                 disabled={submitting}
@@ -329,7 +332,11 @@ const FriendsApplicationBoard = () => {
               </button>
             </div>
 
-            {notice && <p className="mt-3 text-sm font-semibold text-[#2F9E44]">{notice}</p>}
+            {notice && (
+              <p className="mt-3 text-sm font-semibold text-[#2F9E44]">
+                {notice}
+              </p>
+            )}
             {error && <p className="mt-3 text-sm text-[#E67700]">{error}</p>}
           </div>
         </div>
@@ -348,7 +355,7 @@ const FriendsApplicationBoard = () => {
           const tone = cardTone(item);
           const isExpanded = !!expandedThreads[item.id];
           const isReplying = replyTargetId === item.id;
-          const replies = item.replies || [];
+          const replies = flattenThreadReplies(item.replies || []);
 
           return (
             <article key={item.id} className="flex items-start gap-4">
@@ -358,13 +365,15 @@ const FriendsApplicationBoard = () => {
                   "min-w-0 flex-1 rounded-[22px] border p-4 shadow-[0_14px_32px_rgba(95,75,82,0.08)] backdrop-blur md:p-5",
                   tone === "guest" && "border-[#FFE066]/70 bg-[#FFF9DB]/72",
                   tone === "login" && "border-[#A5D8FF]/70 bg-[#F3FAFF]/78",
-                  tone === "admin" && "border-[#FFC9C9]/80 bg-[#FFF0F6]/78"
+                  tone === "admin" && "border-[#FFC9C9]/80 bg-[#FFF0F6]/78",
                 )}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#8A7C74]">
-                      <span className="font-bold text-[#5F4B52]">{item.nickname}</span>
+                      <span className="font-bold text-[#5F4B52]">
+                        {item.nickname}
+                      </span>
                       <span>发表于 {formatTime(item.createdAt)}</span>
                       <span className="rounded-full bg-white/62 px-2 py-0.5 text-[11px] font-semibold text-[#6B7280]">
                         {roleLabel(item)}
@@ -380,7 +389,10 @@ const FriendsApplicationBoard = () => {
                       <button
                         type="button"
                         onClick={() =>
-                          setExpandedThreads((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
+                          setExpandedThreads((prev) => ({
+                            ...prev,
+                            [item.id]: !prev[item.id],
+                          }))
                         }
                         className="rounded-full border border-white/70 bg-white/58 px-3 py-1 text-xs font-semibold text-[#7B5C61] transition hover:border-[#FF8FAB]"
                       >
@@ -389,7 +401,11 @@ const FriendsApplicationBoard = () => {
                     )}
                     <button
                       type="button"
-                      onClick={() => setReplyTargetId((current) => (current === item.id ? null : item.id))}
+                      onClick={() =>
+                        setReplyTargetId((current) =>
+                          current === item.id ? null : item.id,
+                        )
+                      }
                       className="inline-flex min-h-[32px] items-center justify-center rounded-full border border-white/70 bg-white/68 px-3 py-1 text-xs font-semibold text-[#5F80C8] transition hover:border-[#74C0FC]"
                       aria-label="回复这条留言"
                     >
@@ -406,7 +422,9 @@ const FriendsApplicationBoard = () => {
                   <div className="mt-4 rounded-[18px] border border-white/70 bg-white/54 p-4">
                     {!user ? (
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-sm text-[#6B7280]">回复前也需要先登录哦。</p>
+                        <p className="text-sm text-[#6B7280]">
+                          回复前也需要先登录哦。
+                        </p>
                         <Link
                           to="/login"
                           className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-[#74C0FC] bg-white px-4 py-2 text-sm font-semibold text-[#2B2B2B]"
@@ -419,7 +437,10 @@ const FriendsApplicationBoard = () => {
                         <textarea
                           value={replyDrafts[item.id] || ""}
                           onChange={(event) =>
-                            setReplyDrafts((prev) => ({ ...prev, [item.id]: event.target.value }))
+                            setReplyDrafts((prev) => ({
+                              ...prev,
+                              [item.id]: event.target.value,
+                            }))
                           }
                           maxLength={300}
                           rows={3}
@@ -433,7 +454,9 @@ const FriendsApplicationBoard = () => {
                             disabled={replySubmittingId === item.id}
                             className="inline-flex min-h-[38px] items-center justify-center rounded-full border border-[#74C0FC] bg-white px-4 py-2 text-sm font-semibold text-[#2B2B2B] transition hover:border-[#FF8FAB] disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {replySubmittingId === item.id ? "回复中..." : "提交回复"}
+                            {replySubmittingId === item.id
+                              ? "回复中..."
+                              : "提交回复"}
                           </button>
                           <button
                             type="button"
@@ -450,21 +473,107 @@ const FriendsApplicationBoard = () => {
 
                 {isExpanded && replies.length > 0 && (
                   <div className="mt-4 space-y-3 border-l-4 border-white/80 pl-4">
-                    {replies.map((reply) => (
-                      <div key={reply.id} className="flex items-start gap-3">
-                        <CommentAvatar item={reply} />
-                        <div className="min-w-0 flex-1 rounded-[18px] border border-white/70 bg-white/58 p-4">
-                          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#8A7C74]">
-                            <span className="font-bold text-[#5F4B52]">{reply.nickname}</span>
-                            <span>发表于 {formatTime(reply.createdAt)}</span>
-                            <span>{roleLabel(reply)}</span>
-                          </p>
-                          <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-[#4B5563]">
-                            {reply.content}
-                          </p>
+                    {replies.map((reply) => {
+                      const isReplyingToReply = replyTargetId === reply.id;
+                      const replyOffset =
+                        Math.min(Math.max(reply.depth - 1, 0), 2) * 12;
+
+                      return (
+                        <div
+                          key={reply.id}
+                          className="space-y-3"
+                          style={{ marginLeft: replyOffset }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <CommentAvatar item={reply} />
+                            <div className="min-w-0 flex-1 rounded-[18px] border border-white/70 bg-white/58 p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#8A7C74]">
+                                  <span className="font-bold text-[#5F4B52]">
+                                    {reply.nickname}
+                                  </span>
+                                  <span>
+                                    发表于 {formatTime(reply.createdAt)}
+                                  </span>
+                                  <span>{roleLabel(reply)}</span>
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setReplyTargetId((current) =>
+                                      current === reply.id ? null : reply.id,
+                                    )
+                                  }
+                                  className="inline-flex min-h-[30px] shrink-0 items-center justify-center rounded-full border border-white/70 bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#5F80C8] transition hover:border-[#74C0FC]"
+                                  aria-label="回复这条留言"
+                                >
+                                  <FiCornerUpLeft
+                                    className="h-3.5 w-3.5"
+                                    aria-hidden
+                                  />
+                                </button>
+                              </div>
+                              <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-[#4B5563]">
+                                {reply.content}
+                              </p>
+                            </div>
+                          </div>
+
+                          {isReplyingToReply && (
+                            <div className="rounded-[18px] border border-white/70 bg-white/54 p-4 sm:ml-[60px]">
+                              {!user ? (
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                  <p className="text-sm text-[#6B7280]">
+                                    回复前也需要先登录哦。
+                                  </p>
+                                  <Link
+                                    to="/login"
+                                    className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-[#74C0FC] bg-white px-4 py-2 text-sm font-semibold text-[#2B2B2B]"
+                                  >
+                                    去登录
+                                  </Link>
+                                </div>
+                              ) : (
+                                <>
+                                  <textarea
+                                    value={replyDrafts[reply.id] || ""}
+                                    onChange={(event) =>
+                                      setReplyDrafts((prev) => ({
+                                        ...prev,
+                                        [reply.id]: event.target.value,
+                                      }))
+                                    }
+                                    maxLength={300}
+                                    rows={3}
+                                    placeholder="接着这条回复往下说..."
+                                    className="w-full resize-y rounded-2xl border border-[#D8E9F8] bg-white/70 px-4 py-3 text-sm leading-7 text-[#2B2B2B] outline-none transition focus:border-[#74C0FC]"
+                                  />
+                                  <div className="mt-3 flex flex-wrap gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => onReplySubmit(reply.id)}
+                                      disabled={replySubmittingId === reply.id}
+                                      className="inline-flex min-h-[38px] items-center justify-center rounded-full border border-[#74C0FC] bg-white px-4 py-2 text-sm font-semibold text-[#2B2B2B] transition hover:border-[#FF8FAB] disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      {replySubmittingId === reply.id
+                                        ? "回复中..."
+                                        : "提交回复"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setReplyTargetId(null)}
+                                      className="inline-flex min-h-[38px] items-center justify-center rounded-full border border-[#E7D8C7] bg-[#FFF8F1] px-4 py-2 text-sm font-semibold text-[#6B7280]"
+                                    >
+                                      取消
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

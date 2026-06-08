@@ -484,3 +484,49 @@ func TestGuestbookListReturnsNestedReplies(t *testing.T) {
 		}
 	})
 }
+
+func TestGuestbookListReturnsMultiLevelReplyTree(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		top := seedGuestbookMessage(t, `{"nickname":"Top","content":"root thread","channel":"friends","contactEmail":"top@example.com"}`, "127.0.0.1:3456")
+		topID := int64(top["item"].(map[string]any)["id"].(float64))
+		first := seedGuestbookMessage(t, `{"nickname":"First","content":"first reply","channel":"friends","parentId":`+strconv.FormatInt(topID, 10)+`}`, "127.0.0.1:4567")
+		firstID := int64(first["item"].(map[string]any)["id"].(float64))
+		seedGuestbookMessage(t, `{"nickname":"Second","content":"second reply","channel":"friends","parentId":`+strconv.FormatInt(firstID, 10)+`}`, "127.0.0.1:5678")
+
+		req := httptest.NewRequest(http.MethodGet, "/api/guestbook/messages?page=1&pageSize=20&channel=friends", nil)
+		rr := httptest.NewRecorder()
+
+		guestbookListHandler(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		payload := decodeJSONMap(t, rr)
+		items := payload["items"].([]any)
+		if len(items) != 1 {
+			t.Fatalf("expected 1 top-level item, got %d", len(items))
+		}
+		root := items[0].(map[string]any)
+		if int64(root["id"].(float64)) != topID {
+			t.Fatalf("expected root id %d, got %#v", topID, root["id"])
+		}
+		if int(root["replyCount"].(float64)) != 2 {
+			t.Fatalf("expected total replyCount 2, got %#v", root["replyCount"])
+		}
+		replies := root["replies"].([]any)
+		if len(replies) != 1 {
+			t.Fatalf("expected one direct reply, got %d", len(replies))
+		}
+		firstReply := replies[0].(map[string]any)
+		if int64(firstReply["id"].(float64)) != firstID {
+			t.Fatalf("expected first reply id %d, got %#v", firstID, firstReply["id"])
+		}
+		nested := firstReply["replies"].([]any)
+		if len(nested) != 1 {
+			t.Fatalf("expected one nested reply, got %d", len(nested))
+		}
+		if nested[0].(map[string]any)["content"] != "second reply" {
+			t.Fatalf("expected nested reply content, got %#v", nested[0])
+		}
+	})
+}
