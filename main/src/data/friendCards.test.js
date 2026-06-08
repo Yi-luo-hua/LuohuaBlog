@@ -25,10 +25,21 @@ test("includes Anze as a friend link with explicit avatar", () => {
 });
 
 test("names the 930309 friend link Leyili Garden", () => {
-  const leyili = friendCards.find((friend) => friend.url === "https://930309.xyz/");
+  const leyiliMatches = friendCards.filter((friend) => friend.url === "https://930309.xyz/");
+  const leyili = leyiliMatches[0];
 
+  assert.equal(leyiliMatches.length, 1);
   assert.ok(leyili);
   assert.equal(leyili.name, "Leyili 花园");
   assert.equal(leyili.desc, "小小后花园~~~");
   assert.equal(leyili.avatar, "https://photo.930309.xyz/lcj.svg");
+});
+
+test("keeps the 090909 friend link as Tashuo", () => {
+  const tashuo = friendCards.find((friend) => friend.url === "https://090909.top/");
+
+  assert.ok(tashuo);
+  assert.equal(tashuo.name, "他说");
+  assert.equal(tashuo.desc, "梁栋烨的博客网站。");
+  assert.equal(tashuo.avatar, "https://090909.top/assets/images/logo.ico");
 });
