@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS guestbook_messages (
   nickname TEXT NOT NULL,
   avatar TEXT NOT NULL DEFAULT '',
   content TEXT NOT NULL,
+  contact_email TEXT NOT NULL DEFAULT '',
   content_hash TEXT NOT NULL DEFAULT '',
   ip_hash TEXT NOT NULL,
   ip_region TEXT NOT NULL DEFAULT '',

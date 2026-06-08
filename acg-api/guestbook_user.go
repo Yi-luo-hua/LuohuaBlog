@@ -9,6 +9,7 @@ import (
 
 type currentUser struct {
 	ID       int64
+	Email    string
 	Nickname string
 	Avatar   string
 	Role     string // "admin" or "user"
@@ -52,6 +53,7 @@ func getCurrentUserFromRequest(r *http.Request) *currentUser {
 	}
 	return &currentUser{
 		ID:       sess.UserID,
+		Email:    normalizeEmail(email),
 		Nickname: displayNameOrEmail(email, displayName),
 		Avatar:   "",
 		Role:     role,

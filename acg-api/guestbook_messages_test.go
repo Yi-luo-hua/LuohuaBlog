@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
 
@@ -54,6 +56,72 @@ func seedGuestbookMessage(t *testing.T, body string, remoteAddr string) map[stri
 	return decodeJSONMap(t, rr)
 }
 
+func seedGuestbookTestUser(t *testing.T, email, displayName string, isOwner bool) int64 {
+	t.Helper()
+	now := time.Now().UTC().Format(time.RFC3339)
+	ownerFlag := 0
+	if isOwner {
+		ownerFlag = 1
+	}
+	res, err := db.Exec(
+		`INSERT INTO users (email, display_name, password_hash, created_at, is_owner) VALUES (?, ?, 'hash', ?, ?)`,
+		normalizeEmail(email),
+		displayName,
+		now,
+		ownerFlag,
+	)
+	if err != nil {
+		t.Fatalf("insert user: %v", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		t.Fatalf("user last insert id: %v", err)
+	}
+	return id
+}
+
+func seedGuestbookTestSession(t *testing.T, userID int64, unlimited bool) string {
+	t.Helper()
+	token := uuid.NewString()
+	unlimitedFlag := 0
+	if unlimited {
+		unlimitedFlag = 1
+	}
+	expires := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	if _, err := db.Exec(
+		`INSERT INTO sessions (id, user_id, expires_at, unlimited) VALUES (?, ?, ?, ?)`,
+		token,
+		userID,
+		expires,
+		unlimitedFlag,
+	); err != nil {
+		t.Fatalf("insert session: %v", err)
+	}
+	return token
+}
+
+func postGuestbookMessageWithSession(t *testing.T, body, remoteAddr, sessionToken string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/api/guestbook/messages", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.RemoteAddr = remoteAddr
+	if sessionToken != "" {
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionToken})
+	}
+	rr := httptest.NewRecorder()
+	guestbookCreateHandler(rr, req)
+	return rr
+}
+
+func guestbookStoredContactEmail(t *testing.T, id int64) string {
+	t.Helper()
+	var email string
+	if err := db.QueryRow(`SELECT contact_email FROM guestbook_messages WHERE id = ?`, id).Scan(&email); err != nil {
+		t.Fatalf("select contact_email: %v", err)
+	}
+	return email
+}
+
 func TestGuestbookCreateTopLevelMessage(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		payload := seedGuestbookMessage(t, `{"nickname":"Tao","content":"站点名称：A\n站点链接：https://a.test"}`, "127.0.0.1:3456")
@@ -64,10 +132,102 @@ func TestGuestbookCreateTopLevelMessage(t *testing.T) {
 	})
 }
 
+func TestFriendsAnonymousTopLevelMessageRequiresContactEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		rr := postGuestbookMessageWithSession(
+			t,
+			`{"nickname":"Friend","content":"friends root","channel":"friends"}`,
+			"127.0.0.1:3456",
+			"",
+		)
+
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400 for missing friends contact email, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		payload := decodeJSONMap(t, rr)
+		if payload["error"] != "INVALID_EMAIL" {
+			t.Fatalf("expected INVALID_EMAIL, got %#v", payload["error"])
+		}
+	})
+}
+
+func TestFriendsAnonymousTopLevelMessageStoresPrivateContactEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		payload := seedGuestbookMessage(t, `{"nickname":"Friend","content":"friends root","channel":"friends","contactEmail":" Visitor@Example.COM "}`, "127.0.0.1:3456")
+		item := payload["item"].(map[string]any)
+		id := int64(item["id"].(float64))
+
+		if stored := guestbookStoredContactEmail(t, id); stored != "visitor@example.com" {
+			t.Fatalf("expected normalized contact email, got %q", stored)
+		}
+		if _, ok := item["contactEmail"]; ok {
+			t.Fatalf("public response leaked contactEmail: %#v", item)
+		}
+	})
+}
+
+func TestFriendsLoggedInTopLevelMessageUsesSubmittedContactEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		userID := seedGuestbookTestUser(t, "login@example.com", "Login", false)
+		sessionToken := seedGuestbookTestSession(t, userID, false)
+
+		rr := postGuestbookMessageWithSession(
+			t,
+			`{"content":"friends root","channel":"friends","contactEmail":"Preferred@Example.com"}`,
+			"127.0.0.1:3456",
+			sessionToken,
+		)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		item := decodeJSONMap(t, rr)["item"].(map[string]any)
+		id := int64(item["id"].(float64))
+
+		if stored := guestbookStoredContactEmail(t, id); stored != "preferred@example.com" {
+			t.Fatalf("expected submitted email override, got %q", stored)
+		}
+	})
+}
+
+func TestFriendsLoggedInTopLevelMessageFallsBackToAccountEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		userID := seedGuestbookTestUser(t, "Login@Example.com", "Login", false)
+		sessionToken := seedGuestbookTestSession(t, userID, false)
+
+		rr := postGuestbookMessageWithSession(
+			t,
+			`{"content":"friends root","channel":"friends"}`,
+			"127.0.0.1:3456",
+			sessionToken,
+		)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		item := decodeJSONMap(t, rr)["item"].(map[string]any)
+		id := int64(item["id"].(float64))
+
+		if stored := guestbookStoredContactEmail(t, id); stored != "login@example.com" {
+			t.Fatalf("expected account email fallback, got %q", stored)
+		}
+	})
+}
+
+func TestGuestbookChannelDoesNotRequireContactEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		payload := seedGuestbookMessage(t, `{"nickname":"Guestbook","content":"plain guestbook","channel":"guestbook"}`, "127.0.0.1:3456")
+		item := payload["item"].(map[string]any)
+		id := int64(item["id"].(float64))
+
+		if stored := guestbookStoredContactEmail(t, id); stored != "" {
+			t.Fatalf("expected empty contact email for generic guestbook, got %q", stored)
+		}
+	})
+}
+
 func TestGuestbookChannelKeepsGuestbookAndFriendsSeparate(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		seedGuestbookMessage(t, `{"nickname":"Guestbook","content":"only guestbook"}`, "127.0.0.1:3456")
-		seedGuestbookMessage(t, `{"nickname":"Friend","content":"only friends","channel":"friends"}`, "127.0.0.1:4567")
+		seedGuestbookMessage(t, `{"nickname":"Friend","content":"only friends","channel":"friends","contactEmail":"friend@example.com"}`, "127.0.0.1:4567")
 
 		guestbookReq := httptest.NewRequest(http.MethodGet, "/api/guestbook/messages?page=1&pageSize=20&channel=guestbook", nil)
 		guestbookRR := httptest.NewRecorder()
@@ -97,7 +257,7 @@ func TestGuestbookChannelKeepsGuestbookAndFriendsSeparate(t *testing.T) {
 
 func TestGuestbookRejectsReplyAcrossChannels(t *testing.T) {
 	withGuestbookTestDB(t, func() {
-		first := seedGuestbookMessage(t, `{"nickname":"Friend","content":"friends root","channel":"friends"}`, "127.0.0.1:3456")
+		first := seedGuestbookMessage(t, `{"nickname":"Friend","content":"friends root","channel":"friends","contactEmail":"friend@example.com"}`, "127.0.0.1:3456")
 		parentID := int(first["item"].(map[string]any)["id"].(float64))
 
 		req := httptest.NewRequest(

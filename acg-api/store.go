@@ -21,6 +21,7 @@ func migrateAll(db *sql.DB) error {
 			avatar TEXT NOT NULL DEFAULT '',
 			channel TEXT NOT NULL DEFAULT 'guestbook',
 			content TEXT NOT NULL,
+			contact_email TEXT NOT NULL DEFAULT '',
 			content_hash TEXT NOT NULL DEFAULT '',
 			ip_hash TEXT NOT NULL,
 			ip_region TEXT NOT NULL DEFAULT '',
@@ -158,6 +159,9 @@ func migrateAll(db *sql.DB) error {
 		return err
 	}
 	if err := ensureColumn(db, "guestbook_messages", "owner_read_at", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "guestbook_messages", "contact_email", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
 	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_parent_created ON guestbook_messages(parent_id, created_at ASC);`); err != nil {

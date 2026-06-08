@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	guestbookNickMax    = 12
-	guestbookContentMax = 300
-	guestbookDupWindow  = 60 * time.Second
+	guestbookNickMax     = 12
+	guestbookContentMax  = 300
+	guestbookDupWindow   = 60 * time.Second
 	guestbookChannelMain = "guestbook"
 	guestbookChannelLink = "friends"
 )
@@ -242,10 +242,11 @@ func loadGuestbookReplies(parentIDs []int64, admin bool, channel string) ([]gues
 func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	cu := getCurrentUserFromRequest(r)
 	var body struct {
-		Nickname string `json:"nickname"`
-		Content  string `json:"content"`
-		ParentID int64  `json:"parentId"`
-		Channel  string `json:"channel"`
+		Nickname     string `json:"nickname"`
+		Content      string `json:"content"`
+		ContactEmail string `json:"contactEmail"`
+		ParentID     int64  `json:"parentId"`
+		Channel      string `json:"channel"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_JSON", "请求格式不正确")
@@ -275,11 +276,12 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var (
-		nickname    string
-		avatar      string
-		userID      sql.NullInt64
-		isLogin     int
-		isAdminUser int
+		nickname     string
+		avatar       string
+		contactEmail string
+		userID       sql.NullInt64
+		isLogin      int
+		isAdminUser  int
 	)
 	if cu == nil {
 		nickname = strings.TrimSpace(body.Nickname)
@@ -294,10 +296,25 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		nickname = cu.Nickname
 		avatar = cu.Avatar
+		contactEmail = cu.Email
 		userID = sql.NullInt64{Int64: cu.ID, Valid: true}
 		isLogin = 1
 		if cu.Role == "admin" {
 			isAdminUser = 1
+		}
+	}
+	if body.ParentID == 0 && channel == guestbookChannelLink {
+		submittedEmail := normalizeEmail(body.ContactEmail)
+		if submittedEmail != "" {
+			if !validateEmail(submittedEmail) {
+				writeGuestbookErr(w, http.StatusBadRequest, "INVALID_EMAIL", "请输入有效的邮箱地址")
+				return
+			}
+			contactEmail = submittedEmail
+		}
+		if contactEmail == "" {
+			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_EMAIL", "请留下邮箱，方便收到回复通知")
+			return
 		}
 	}
 
@@ -322,9 +339,9 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := db.Exec(
 		`INSERT INTO guestbook_messages
-		 (user_id, nickname, avatar, channel, content, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'visible', ?, ?, ?, ?)`,
-		userID, nickname, avatar, channel, content, contentHash, ipHash, ipRegion, ipMasked, uaHash,
+		 (user_id, nickname, avatar, channel, content, contact_email, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'visible', ?, ?, ?, ?)`,
+		userID, nickname, avatar, channel, content, contactEmail, contentHash, ipHash, ipRegion, ipMasked, uaHash,
 		body.ParentID, isLogin, isAdminUser, now, now,
 	)
 	if err != nil {

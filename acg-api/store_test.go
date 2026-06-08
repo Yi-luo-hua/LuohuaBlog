@@ -70,6 +70,14 @@ func TestMigrateAllAddsParentIDBeforeParentIndexForLegacyGuestbookMessages(t *te
 	if channelIndexCount != 1 {
 		t.Fatalf("expected channel index to be created, got count %d", channelIndexCount)
 	}
+
+	var contactEmailColumnCount int
+	if err := testDB.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('guestbook_messages') WHERE name = 'contact_email'`).Scan(&contactEmailColumnCount); err != nil {
+		t.Fatal(err)
+	}
+	if contactEmailColumnCount != 1 {
+		t.Fatalf("expected contact_email column to be added, got count %d", contactEmailColumnCount)
+	}
 }
 
 func TestListRadarFromDBSkipsSeedRows(t *testing.T) {
