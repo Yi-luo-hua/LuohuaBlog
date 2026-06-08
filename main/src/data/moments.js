@@ -1,6 +1,14 @@
 export const moments = [
   {
     year: "2026",
+    date: "6.9",
+    type: "记录",
+    tone: "aurora",
+    module: "postcard",
+    lines: ["本来今天想听一点计组课回去美美睡觉，结果被这网站邮箱发送问题磨到现在😭"],
+  },
+  {
+    year: "2026",
     date: "6.8",
     type: "心事",
     tone: "aurora",
