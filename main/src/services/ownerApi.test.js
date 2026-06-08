@@ -7,6 +7,7 @@ import {
   publishOwnerArticle,
   publishOwnerFriend,
   publishOwnerGalleryImage,
+  publishOwnerMoment,
   uploadOwnerAsset,
 } from "./ownerApi.js";
 
@@ -189,6 +190,47 @@ test("publishOwnerFriend posts to the real friend publish endpoint", async (t) =
   assert.equal(requestOptions.headers["Content-Type"], "application/json");
   assert.deepEqual(JSON.parse(requestOptions.body), payload);
   assert.equal(result.item.commitSha, "friend-commit-sha");
+});
+
+test("publishOwnerMoment posts category and content to the real moments endpoint", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  let requestURL = "";
+  let requestOptions = null;
+  globalThis.fetch = async (url, options = {}) => {
+    requestURL = url;
+    requestOptions = options;
+    return {
+      ok: true,
+      async json() {
+        return {
+          ok: true,
+          item: {
+            path: "main/src/data/moments.js",
+            commitSha: "moment-commit-sha",
+          },
+        };
+      },
+    };
+  };
+
+  const payload = {
+    year: "2026",
+    date: "6.8",
+    type: "碎碎念",
+    content: "今天也想把小碎片写下来",
+  };
+  const result = await publishOwnerMoment(payload);
+
+  assert.equal(requestURL, "/api/owner/moments");
+  assert.equal(requestOptions.method, "POST");
+  assert.equal(requestOptions.credentials, "include");
+  assert.equal(requestOptions.headers["Content-Type"], "application/json");
+  assert.deepEqual(JSON.parse(requestOptions.body), payload);
+  assert.equal(result.item.commitSha, "moment-commit-sha");
 });
 
 test("isPublicImageURL accepts http and https urls", () => {

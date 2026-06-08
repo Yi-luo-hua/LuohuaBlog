@@ -1,5 +1,10 @@
 import { moments } from "../data/moments";
 
+const momentDateTime = (moment) => {
+  const [month, day] = moment.date.split(".");
+  return `${moment.year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+};
+
 const MomentsPage = () => (
   <div className="moments-page">
     <div className="moments-page-bg" aria-hidden="true">
@@ -16,12 +21,14 @@ const MomentsPage = () => (
     <section className="moments-page-list" aria-label="碎语列表">
       {moments.map((moment, index) => (
         <article
-          key={`${moment.date}-${moment.type}`}
+          key={`${moment.year}-${moment.date}-${moment.type}`}
           className={`moments-card moments-page-card moments-card--${moment.tone} moments-module--${moment.module}`}
           style={{ "--moment-index": String(index + 1) }}
         >
           <div className="moments-meta">
-            <time className="moments-date">{moment.date}</time>
+            <time className="moments-date" dateTime={momentDateTime(moment)}>
+              {moment.year} · {moment.date}
+            </time>
             <span className="moments-type">{moment.type}</span>
           </div>
           <div className="moments-lines">

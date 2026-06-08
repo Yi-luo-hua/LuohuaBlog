@@ -28,6 +28,13 @@ export const ownerConsoleScreens = [
     subtitle: "上传图片到 COS，并把图片发布到站内相册。",
   },
   {
+    id: "moments",
+    navLabel: "碎语",
+    icon: "S",
+    title: "发布碎语",
+    subtitle: "填写分类和内容，直接写入首页碎语。",
+  },
+  {
     id: "friend",
     navLabel: "友链",
     icon: "F",
@@ -68,11 +75,19 @@ export const ownerConsoleModules = [
     status: "待上传 0",
   },
   {
+    id: "moments",
+    title: "发布碎语",
+    description: "填写分类和内容，提交到首页导航里的碎语页。",
+    icon: "S",
+    tone: "rose",
+    status: "轻量发布",
+  },
+  {
     id: "friend",
     title: "增加友链",
     description: "输入站点信息，实时生成卡片预览。",
     icon: "F",
-    tone: "rose",
+    tone: "sun",
     status: "申请 1",
   },
   {

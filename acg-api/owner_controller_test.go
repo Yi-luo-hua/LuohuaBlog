@@ -1004,3 +1004,123 @@ func TestOwnerFriendPublishWritesFriendCardsViaGitHubContentsAPI(t *testing.T) {
 		}
 	})
 }
+
+func TestOwnerMomentPublishWritesMomentsDataViaGitHubContentsAPI(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		token := seedUnlimitedOwnerSession(t)
+		var (
+			gotMethods []string
+			gotPaths   []string
+			gotPutBody map[string]any
+		)
+		github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotMethods = append(gotMethods, r.Method)
+			gotPaths = append(gotPaths, r.URL.RequestURI())
+			defer r.Body.Close()
+
+			switch r.Method {
+			case http.MethodGet:
+				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/moments.js" {
+					t.Fatalf("unexpected github GET path: %q", r.URL.RequestURI())
+				}
+				writeJSON(w, map[string]any{
+					"path":     "main/src/data/moments.js",
+					"sha":      "moments-sha",
+					"encoding": "base64",
+					"content": base64.StdEncoding.EncodeToString([]byte(`export const moments = [
+  {
+    year: "2026",
+    date: "6.8",
+    type: "心事",
+    tone: "aurora",
+    module: "postcard",
+    lines: ["一滴泪真正的重量取决于它落在谁的心上"],
+  },
+];
+`)),
+				})
+			case http.MethodPut:
+				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/moments.js" {
+					t.Fatalf("unexpected github PUT path: %q", r.URL.RequestURI())
+				}
+				if err := json.NewDecoder(r.Body).Decode(&gotPutBody); err != nil {
+					t.Fatalf("decode github put request: %v", err)
+				}
+				writeJSON(w, map[string]any{
+					"content": map[string]any{
+						"path": "main/src/data/moments.js",
+						"sha":  "new-moments-sha",
+					},
+					"commit": map[string]any{
+						"sha": "moment-commit-sha",
+					},
+				})
+			default:
+				t.Fatalf("unexpected github method: %s", r.Method)
+			}
+		}))
+		defer github.Close()
+
+		t.Setenv("OWNER_PUBLISH_GITHUB_API_BASE", github.URL)
+		t.Setenv("OWNER_PUBLISH_GITHUB_OWNER", "octo")
+		t.Setenv("OWNER_PUBLISH_GITHUB_REPO", "taozhiyy")
+		t.Setenv("OWNER_PUBLISH_GITHUB_BRANCH", "master")
+		t.Setenv("OWNER_PUBLISH_GITHUB_TOKEN", "secret-token")
+
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/api/owner/moments",
+			bytes.NewBufferString(`{"year":"2027","date":"1.1","type":"碎碎念","content":"今天也想把小碎片写下来\n第二行"}`),
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		if strings.Join(gotMethods, ",") != "GET,PUT" {
+			t.Fatalf("expected github GET then PUT, got methods=%v paths=%v", gotMethods, gotPaths)
+		}
+		if gotPutBody["branch"] != "master" {
+			t.Fatalf("expected master branch, got %#v", gotPutBody["branch"])
+		}
+		if gotPutBody["sha"] != "moments-sha" {
+			t.Fatalf("expected existing file sha, got %#v", gotPutBody["sha"])
+		}
+		contentRaw, ok := gotPutBody["content"].(string)
+		if !ok || contentRaw == "" {
+			t.Fatalf("expected base64 content payload, got %#v", gotPutBody["content"])
+		}
+		updated, err := decodeBase64String(contentRaw)
+		if err != nil {
+			t.Fatalf("decode base64 moments data: %v", err)
+		}
+		if !strings.Contains(updated, `year: "2027"`) {
+			t.Fatalf("expected new moment year in updated data, got %q", updated)
+		}
+		if !strings.Contains(updated, `date: "1.1"`) {
+			t.Fatalf("expected new moment date in updated data, got %q", updated)
+		}
+		if !strings.Contains(updated, `type: "碎碎念"`) {
+			t.Fatalf("expected new moment type in updated data, got %q", updated)
+		}
+		if !strings.Contains(updated, `lines: ["今天也想把小碎片写下来", "第二行"]`) {
+			t.Fatalf("expected split moment lines in updated data, got %q", updated)
+		}
+		if strings.Index(updated, `year: "2027"`) > strings.Index(updated, `year: "2026"`) {
+			t.Fatalf("expected newest published moment before existing moments, got %q", updated)
+		}
+
+		payload := decodeOwnerJSONMap(t, rr)
+		item := payload["item"].(map[string]any)
+		if item["path"] != "main/src/data/moments.js" {
+			t.Fatalf("unexpected publish path: %#v", item["path"])
+		}
+		if item["commitSha"] != "moment-commit-sha" {
+			t.Fatalf("unexpected commit sha: %#v", item["commitSha"])
+		}
+	})
+}

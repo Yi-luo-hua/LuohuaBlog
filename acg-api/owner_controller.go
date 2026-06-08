@@ -72,6 +72,13 @@ func ownerRouter(w http.ResponseWriter, r *http.Request) {
 		}
 		ownerFriendPublishHandler(w, r)
 		return
+	case path == "moments":
+		if r.Method != http.MethodPost {
+			methodNotAllowed(w)
+			return
+		}
+		ownerMomentPublishHandler(w, r)
+		return
 	case strings.HasPrefix(path, "notifications/") && strings.HasSuffix(path, "/read"):
 		if r.Method != http.MethodPatch {
 			methodNotAllowed(w)

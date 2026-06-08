@@ -85,6 +85,19 @@ export async function publishOwnerFriend(payload) {
   return parseResponse(res);
 }
 
+export async function publishOwnerMoment(payload) {
+  const res = await fetch("/api/owner/moments", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...JSON_HEADERS,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  return parseResponse(res);
+}
+
 export function isPublicImageURL(value) {
   try {
     const url = new URL(value);

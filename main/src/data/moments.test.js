@@ -3,11 +3,15 @@ import assert from "node:assert/strict";
 
 import { moments } from "./moments.js";
 
-test("keeps six homepage moments dated from June 4 by day", () => {
+test("keeps six homepage moments dated newest first from June 8", () => {
   assert.equal(moments.length, 6);
   assert.deepEqual(
+    moments.map((moment) => moment.year),
+    ["2026", "2026", "2026", "2026", "2026", "2026"]
+  );
+  assert.deepEqual(
     moments.map((moment) => moment.date),
-    ["6.4", "6.5", "6.6", "6.7", "6.8", "6.9"]
+    ["6.8", "6.7", "6.6", "6.5", "6.4", "6.3"]
   );
 });
 

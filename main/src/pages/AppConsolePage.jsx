@@ -10,8 +10,10 @@ import {
   publishOwnerArticle,
   publishOwnerFriend,
   publishOwnerGalleryImage,
+  publishOwnerMoment,
   uploadOwnerAsset,
 } from "../services/ownerApi";
+import { parseFriendQuickInput } from "../lib/friendQuickInput";
 import {
   buildMobileArticleDraft,
   getNotificationTotal,
@@ -60,6 +62,13 @@ const defaultFriendLink = {
   desc: "桃之夭夭的小屋",
   url: "https://taozhiyy.top",
   avatar: "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/1.png",
+};
+
+const defaultMoment = {
+  year: "2026",
+  date: "6.8",
+  type: "碎碎念",
+  content: "今天也想把小碎片写下来",
 };
 
 const initialCandidateAnswers = [
@@ -141,6 +150,11 @@ const AppConsolePage = () => {
   const [friendDesc, setFriendDesc] = useState(defaultFriendLink.desc);
   const [friendUrl, setFriendUrl] = useState(defaultFriendLink.url);
   const [friendAvatar, setFriendAvatar] = useState(defaultFriendLink.avatar);
+  const [friendQuickInput, setFriendQuickInput] = useState("");
+  const [momentYear, setMomentYear] = useState(defaultMoment.year);
+  const [momentDate, setMomentDate] = useState(defaultMoment.date);
+  const [momentType, setMomentType] = useState(defaultMoment.type);
+  const [momentContent, setMomentContent] = useState(defaultMoment.content);
   const [mobileMaterial, setMobileMaterial] = useState(defaultMobileMaterial);
   const [mobileDraft, setMobileDraft] = useState({
     title: "待生成文章",
@@ -165,6 +179,7 @@ const AppConsolePage = () => {
   const [uploadBusy, setUploadBusy] = useState(false);
   const [galleryPublishBusy, setGalleryPublishBusy] = useState(false);
   const [friendPublishBusy, setFriendPublishBusy] = useState(false);
+  const [momentPublishBusy, setMomentPublishBusy] = useState(false);
   const [readingNotificationId, setReadingNotificationId] = useState(null);
   const [publishState, setPublishState] = useState({
     open: false,
@@ -529,6 +544,78 @@ const AppConsolePage = () => {
     } finally {
       setGalleryPublishBusy(false);
     }
+  };
+
+  const handlePublishMoment = async () => {
+    const year = momentYear.trim();
+    const date = momentDate.trim();
+    const type = momentType.trim();
+    const content = momentContent.trim();
+    if (!year || !type || !content) {
+      setError("请填写碎语年份、分类和内容。");
+      return;
+    }
+
+    setMomentPublishBusy(true);
+    clearPublishTimer();
+    setError("");
+    setPublishState({
+      open: true,
+      title: "发布碎语",
+      activeIndex: 3,
+      failIndex: null,
+      simulated: false,
+      toast: "正在提交到真实碎语发布接口...",
+    });
+
+    try {
+      const data = await publishOwnerMoment({ year, date, type, content });
+      const item = data.item || {};
+      const commitSha = item.commitSha ? `（commit ${item.commitSha.slice(0, 7)}）` : "";
+      setPublishState({
+        open: true,
+        title: "发布碎语",
+        activeIndex: publishSteps.length,
+        failIndex: null,
+        simulated: false,
+        toast: `已写入 ${item.path || "碎语数据"}${commitSha}，GitHub Actions 会从 ${item.branch || "master"} 部署。`,
+      });
+      await loadConsole();
+    } catch (e) {
+      const message = e.message || "碎语发布失败";
+      setError(message);
+      setPublishState({
+        open: true,
+        title: "发布碎语",
+        activeIndex: 3,
+        failIndex: 3,
+        simulated: false,
+        toast: message,
+      });
+    } finally {
+      setMomentPublishBusy(false);
+    }
+  };
+
+  const handleFriendQuickFill = () => {
+    const parsed = parseFriendQuickInput(friendQuickInput);
+    if (!parsed.name || !parsed.desc || !parsed.url) {
+      setError("没有识别完整，请确认四行里包含站名、描述和站点 URL。");
+      return;
+    }
+    setFriendName(parsed.name);
+    setFriendDesc(parsed.desc);
+    setFriendUrl(parsed.url);
+    setFriendAvatar(parsed.avatar);
+    setError("");
+    setPublishState({
+      open: true,
+      title: "友链 AI 识别",
+      activeIndex: -1,
+      failIndex: null,
+      simulated: false,
+      toast: "已自动识别站名、描述、站点 URL 和头像 URL，并填入友链表单。",
+    });
   };
 
   const handlePublishFriend = async () => {
@@ -1270,9 +1357,87 @@ const AppConsolePage = () => {
             </div>
           </section>
 
+          <section className={`owner-screen ${activeScreen === "moments" ? "active" : ""}`}>
+            <div className="owner-form-shell owner-glass">
+              <div>
+                <div className="owner-field">
+                  <label htmlFor="momentYear">年份</label>
+                  <input
+                    id="momentYear"
+                    value={momentYear}
+                    placeholder="2026"
+                    onChange={(e) => setMomentYear(e.target.value)}
+                  />
+                </div>
+                <div className="owner-field">
+                  <label htmlFor="momentDate">日期</label>
+                  <input
+                    id="momentDate"
+                    value={momentDate}
+                    placeholder="6.8"
+                    onChange={(e) => setMomentDate(e.target.value)}
+                  />
+                </div>
+                <div className="owner-field">
+                  <label htmlFor="momentType">分类</label>
+                  <input
+                    id="momentType"
+                    value={momentType}
+                    placeholder="碎碎念"
+                    onChange={(e) => setMomentType(e.target.value)}
+                  />
+                </div>
+                <div className="owner-field">
+                  <label htmlFor="momentContent">内容</label>
+                  <textarea
+                    id="momentContent"
+                    value={momentContent}
+                    placeholder="写下今天的一点点心情"
+                    onChange={(e) => setMomentContent(e.target.value)}
+                  />
+                </div>
+                <div className="owner-quick-line">
+                  <button
+                    type="button"
+                    className="owner-primary"
+                    onClick={handlePublishMoment}
+                    disabled={momentPublishBusy}
+                  >
+                    {momentPublishBusy ? "发布中..." : "发布碎语"}
+                  </button>
+                </div>
+              </div>
+              <aside className="owner-preview-card">
+                <div className="owner-kicker">碎语预览</div>
+                <div className="owner-friend-preview">
+                  <span>{momentYear || "2026"} · {momentDate || "6.8"}</span>
+                  <div>
+                    <h2>{momentType || "分类"}</h2>
+                    <p>{momentContent || "碎语内容"}</p>
+                  </div>
+                </div>
+                <p>发布后会写入首页右上角导航进入的“碎语”页面。</p>
+              </aside>
+            </div>
+          </section>
+
           <section className={`owner-screen ${activeScreen === "friend" ? "active" : ""}`}>
             <div className="owner-form-shell owner-glass">
               <div>
+                <div className="owner-field">
+                  <label htmlFor="friendQuickInput">AI 识别四行友链</label>
+                  <textarea
+                    id="friendQuickInput"
+                    value={friendQuickInput}
+                    placeholder={"把站名、描述、站点 URL、头像 URL 四行一起粘进来，顺序可以乱。"}
+                    onChange={(e) => setFriendQuickInput(e.target.value)}
+                  />
+                </div>
+                <div className="owner-quick-line">
+                  <button type="button" className="owner-secondary" onClick={handleFriendQuickFill}>
+                    AI 识别填表
+                  </button>
+                </div>
                 <div className="owner-field">
                   <label htmlFor="friendName">站点名称</label>
                   <input
