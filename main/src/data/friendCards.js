@@ -111,4 +111,11 @@ export const friendCards = [
     avatar: "https://seln.cn/img/ico.jpg",
     note: "FRIEND",
   },
+  {
+    name: "Zenghr",
+    desc: "平凡日子，也值得落笔珍藏",
+    url: "https://blog.zenghr.cn/",
+    avatar: "https://blog.zenghr.cn/static/img/avatar.jpg",
+    note: "FRIEND",
+  },
 ];
