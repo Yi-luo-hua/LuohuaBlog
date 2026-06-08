@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   getBackendHealthLabel,
+  getOwnerFixedAnswers,
   getOwnerSessionLabel,
   getOwnerRegisteredUsers,
   getStatsSnapshot,
@@ -89,4 +90,25 @@ test("uses the complete registered user list for AI registration review", () => 
       ["friend@example.test", "", "2026-06-06T09:00:00Z"],
     ],
   );
+});
+
+test("uses backend fixed answers for the app console AI screen", () => {
+  const answers = getOwnerFixedAnswers({
+    ai: {
+      fixedAnswers: [
+        {
+          id: 2,
+          question: "How do friend links work?",
+          answer: "Use the friends page application flow.",
+          updatedAt: "2026-06-08T09:00:00Z",
+        },
+      ],
+    },
+  });
+
+  assert.deepEqual(
+    answers.map((item) => [item.id, item.question, item.answer]),
+    [[2, "How do friend links work?", "Use the friends page application flow."]],
+  );
+  assert.deepEqual(getOwnerFixedAnswers(null), []);
 });

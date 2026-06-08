@@ -70,7 +70,7 @@
 
 该页面属于我个人学习和实践过程中搭建的原创/定制页面，欢迎自由参考、学习和使用。
 
-最近的成长记录也补充了 `/moments` 碎语页面迁移、站长控制台碎语发布链路、Leyili 花园友链修正，以及首页和其他页面的双层滚动修复。
+最近的成长记录也补充了 `/moments` 碎语页面迁移、站长控制台碎语发布链路、Leyili 花园友链修正、首页和其他页面的双层滚动修复，以及 AI 固定答案从站长控制台同步到网站助手的链路。
 
 ### `main/` 主站说明
 
@@ -79,6 +79,8 @@
 最近也修正了 `https://930309.xyz/` 的友链信息：名称为 `Leyili 花园`，图标为 `https://photo.930309.xyz/lcj.svg`，描述为 `小小后花园~~~`。独立的 `090909.top` 友链仍然保留为“他说”。
 
 首页双层滚动条问题已经通过收紧 Hero 与站点布局的 overflow 行为修复，并补充了布局类名相关的回归测试。
+
+站长控制台里的 AI 固定答案区现在不再只保存在本地 React 状态中，而是写入后端固定问答库。`GET /api/owner/status` 会把已保存答案返回给控制台查看，`/api/chat` 在调用 DeepSeek 前会先匹配固定答案，因此网站右下角 AI 助手遇到相同问题时可以优先返回维护好的回复。
 
 ### `acg-api/` 后端与 API
 
@@ -93,9 +95,9 @@
 | `main.go` 公开控制器 | `GET /api/v1/health`, `GET /api/v1/bangumi/list`, `GET /api/v1/radar/feed`, `GET /api/v1/wallpapers/draw`, `GET /api/v1/acg/image/:name`, `POST /api/v1/sync/trigger` | 公开 | 健康检查、Bili 番剧缓存、radar 动态、壁纸抽取池、缓存封面/图片服务、手动同步触发。 |
 | `main.go` 旧留言接口 | `GET/POST /api/v1/guestbook` | 公开 | 早期简单留言 API，只包含 `name` 和 `content`，用于兼容旧前端。 |
 | `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | 公开/登录/站长二次验证 | 邮箱注册、登录、会话 cookie、昵称修改、站长二次验证。 |
-| `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | 公开/登录/站长额度 | AI 助手额度查询、聊天请求、DeepSeek 转发、小时/日统计、游客/用户/站长额度控制。 |
+| `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | 公开/登录/站长额度 | AI 助手额度查询、固定答案匹配、聊天请求、DeepSeek 转发、小时/日统计、游客/用户/站长额度控制。 |
 | `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | 公开可见留言；站长/管理员可审核 | 当前留言板和朋友页留言控制器，支持分区、回复、匿名/登录用户、限流、防重复、IP 脱敏和软审核。 |
-| `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | 仅站长 | 站长控制台状态、注册用户列表、未读留言收件箱、草稿保存、本地临时图片上传、COS 资源上传。 |
+| `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | 仅站长 | 站长控制台状态、注册用户列表、未读留言收件箱、AI 固定答案保存、草稿保存、本地临时图片上传、COS 资源上传。 |
 | `owner_publish.go` | `POST /api/owner/publish` | 站长 + GitHub token | 通过 GitHub Contents API 发布 Markdown 到 `blog/source/_posts/`，合并 front matter，处理文件名冲突，并返回 commit 信息。 |
 | `owner_friend_publish.go` | `POST /api/owner/friends` | 站长 + GitHub token | 写入友链到 `main/src/data/friendCards.js`，会检测重复 URL，已有链接不会重复写入。 |
 | `owner_moment_publish.go` | `POST /api/owner/moments` | 站长 + GitHub token | 写入碎语到 `main/src/data/moments.js`，校验年份、日期、分类和内容，分配下一组视觉卡片样式，按日期插入，并返回 commit 信息。 |
@@ -118,6 +120,7 @@
 | `POST /api/owner/friends` | `{ "name": "...", "desc": "...", "url": "...", "avatar": "..." }` | `url` 和 `avatar` 必须是公开 `http`/`https` 地址。 |
 | `POST /api/owner/moments` | `{ "year": "2026", "date": "6.8", "type": "...", "content": "..." }` | 写入一条碎语到 `main/src/data/moments.js`；`category` 也可作为 `type` 的兼容字段。 |
 | `POST /api/owner/gallery/images` | `{ "albumId": "...", "albumTitle": "...", "imageUrl": "..." }` | `imageUrl` 必须是公开 `http`/`https` 地址。 |
+| `POST /api/owner/ai/fixed-answers` | `{ "question": "...", "answer": "..." }` | 保存或更新仅站长可维护的固定答案。公开 `/api/chat` 会规范化用户问题并优先返回固定答案，再回退到 DeepSeek。 |
 
 拉取/部署环境清单：
 
@@ -142,6 +145,7 @@
 
 - 服务器数据和状态监测：在站长控制台中展示服务健康、资源使用、同步状态和关键数据趋势。
 - 邮箱绑定与发送：补充账号邮箱绑定、验证和通知发送能力。
+- 部署低成本生图 AI：接入预算更低的生图服务，并限制为仅登录账户可用。
 - 设计艺术字主页：继续探索更有辨识度的首页标题与艺术字视觉方向。
 
 ## 非商业立场

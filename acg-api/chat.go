@@ -19,8 +19,11 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		fixedEnabled := hasAIFixedAnswers(db)
 		out := chatQuotaJSON(snap)
-		out["chatEnabled"] = enabled
+		out["chatEnabled"] = enabled || fixedEnabled
+		out["deepseekEnabled"] = enabled
+		out["fixedAnswersEnabled"] = fixedEnabled
 		writeJSON(w, out)
 		return
 	case http.MethodPost:
@@ -61,13 +64,31 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 		return
 	}
 
+	if fixed, ok, err := findAIFixedAnswer(db, msg); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if ok {
+		recordChatStat(db, id, "success")
+		snap, _ := getQuotaSnapshot(db, id)
+		out := chatQuotaJSON(snap)
+		out["reply"] = fixed.Answer
+		out["fixedAnswer"] = true
+		out["fixedAnswerId"] = fixed.ID
+		out["chatEnabled"] = true
+		out["fixedAnswersEnabled"] = true
+		writeJSON(w, out)
+		return
+	}
+
 	if !enabled {
+		fixedEnabled := hasAIFixedAnswers(db)
 		recordChatStatSimple(db, "not_configured")
 		snap, _ := getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":       "CHAT_NOT_CONFIGURED",
 			"message":     "小精灵还在沉睡中～站长配置 DeepSeek API Key 后就能聊天啦",
-			"chatEnabled": false,
+			"chatEnabled": fixedEnabled,
+			"fixedAnswersEnabled": fixedEnabled,
 			"limit":       id.Limit,
 			"used":        snap.Used,
 			"remaining":   snap.Remaining,

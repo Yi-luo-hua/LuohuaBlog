@@ -3,6 +3,7 @@ import { FiBell, FiRefreshCw, FiUpload, FiX } from "react-icons/fi";
 import { authMe } from "../services/authApi";
 import { fetchChatStats } from "../services/chatStatsApi";
 import {
+  createOwnerFixedAnswer,
   createOwnerDraft,
   fetchOwnerStatus,
   isPublicImageURL,
@@ -25,6 +26,7 @@ import {
 } from "../pwa/appConsoleBlueprint";
 import {
   getBackendHealthLabel,
+  getOwnerFixedAnswers,
   getOwnerSessionLabel,
   getOwnerRegisteredUsers,
   getStatsSnapshot,
@@ -72,16 +74,9 @@ const defaultMoment = {
 };
 
 const initialCandidateAnswers = [
-  "这是站长控制台里的 AI 调试区，当前仍是本地原型回答区，后续再接真实固定问答库。",
-  "这块功能的目标是先调试满意答案，再决定是否发布给用户使用，目前先保留原型交互。",
-  "第一阶段先把数据接通，AI 固定回答库会放到后续阶段继续做。",
-];
-
-const initialFixedAnswers = [
-  {
-    question: "如何交换友链？",
-    answer: "可以先在友链页留言申请，控制台会在后续阶段接入真实审批和写库流程。",
-  },
+  "这是站长控制台里的 AI 调试区，满意答案会保存到后端固定问答库。",
+  "固定答案保存后，网站右下角 AI 助手遇到相同问题会优先返回这条回复。",
+  "如果没有命中固定答案，AI 助手会继续走 DeepSeek 正常聊天链路。",
 ];
 
 const fetchBackendHealth = async () => {
@@ -167,8 +162,8 @@ const AppConsolePage = () => {
   const [candidateAnswers, setCandidateAnswers] = useState(initialCandidateAnswers);
   const [selectedAnswerIndex, setSelectedAnswerIndex] = useState(0);
   const [manualAnswer, setManualAnswer] = useState("");
-  const [fixedAnswers, setFixedAnswers] = useState(initialFixedAnswers);
   const [answerToast, setAnswerToast] = useState("");
+  const [answerSaveBusy, setAnswerSaveBusy] = useState(false);
   const [galleryAlbum, setGalleryAlbum] = useState(ownerGalleryAlbumOptions[0]?.value || "");
   const [customGalleryAlbum, setCustomGalleryAlbum] = useState("");
   const [galleryURLInput, setGalleryURLInput] = useState("");
@@ -231,6 +226,7 @@ const AppConsolePage = () => {
     ownerStatus?.notifications?.total ?? getNotificationTotal(ownerConsoleNotifications);
   const liveUsers = ownerStatus?.users?.latest || [];
   const registeredUsers = getOwnerRegisteredUsers(ownerStatus);
+  const fixedAnswers = getOwnerFixedAnswers(ownerStatus);
   const liveDrafts = ownerStatus?.drafts?.items || [];
   const draftCount = ownerStatus?.drafts?.total ?? liveDrafts.length;
   const previewBody = useMemo(
@@ -733,24 +729,33 @@ const AppConsolePage = () => {
   const testAiQuestion = () => {
     const question = aiQuestion.trim() || "用户问题";
     setCandidateAnswers([
-      `关于“${question}”，目前建议先在控制台内调试回答，固定问答库还在后续阶段。`,
-      "这块功能先保留原型交互，等真实内容链路稳定后再接固定回答入库。",
-      "第一阶段重点是真实上传和真实草稿，AI 固定答案区先继续本地演示。",
+      `关于“${question}”，可以先在控制台内调试回答，再保存为网站 AI 的固定回复。`,
+      "保存后的固定答案会进入后端库，用户侧 AI 助手遇到同样问题会优先命中。",
+      "没有命中固定答案的问题会继续走模型聊天，不影响原来的 AI 使用流程。",
     ]);
     setSelectedAnswerIndex(0);
     setAnswerToast("已生成 3 条候选答案。");
   };
 
-  const saveFixedAnswer = () => {
+  const saveFixedAnswer = async () => {
     const question = aiQuestion.trim() || "未命名问题";
     const answer = manualAnswer.trim() || candidateAnswers[selectedAnswerIndex] || "";
     if (!answer) {
       setAnswerToast("请先选一条候选答案，或手动填写最终答案。");
       return;
     }
-    setFixedAnswers((current) => [{ question, answer }, ...current]);
-    setManualAnswer("");
-    setAnswerToast("已保存到当前原型会话。");
+    setAnswerSaveBusy(true);
+    setError("");
+    try {
+      await createOwnerFixedAnswer({ question, answer });
+      setManualAnswer("");
+      setAnswerToast("已同步到后端固定答案库，网站 AI 会优先命中这条回复。");
+      await loadConsole();
+    } catch (e) {
+      setAnswerToast(e.message || "固定答案保存失败。");
+    } finally {
+      setAnswerSaveBusy(false);
+    }
   };
 
   const handleSync = async () => {
@@ -1604,7 +1609,7 @@ const AppConsolePage = () => {
               <section className="owner-debug-box owner-glass">
                 <div className="owner-panel-title">
                   <h2>AI 调试区</h2>
-                  <StatusTag>本地会话</StatusTag>
+                  <StatusTag>后端同步</StatusTag>
                 </div>
                 <div className="owner-field">
                   <label htmlFor="aiQuestion">测试问题</label>
@@ -1618,8 +1623,13 @@ const AppConsolePage = () => {
                   <button type="button" className="owner-secondary" onClick={testAiQuestion}>
                     生成候选答案
                   </button>
-                  <button type="button" className="owner-primary" onClick={saveFixedAnswer}>
-                    保存本地答案
+                  <button
+                    type="button"
+                    className="owner-primary"
+                    onClick={saveFixedAnswer}
+                    disabled={answerSaveBusy}
+                  >
+                    {answerSaveBusy ? "保存中..." : "保存固定答案"}
                   </button>
                 </div>
                 <div className="owner-panel-title owner-panel-title--spaced">
@@ -1677,15 +1687,19 @@ const AppConsolePage = () => {
                 </div>
                 <div className="owner-panel-title owner-panel-title--spaced">
                   <h2>已保存答案</h2>
-                  <StatusTag>本地原型</StatusTag>
+                  <StatusTag>后端固定答案</StatusTag>
                 </div>
                 <div className="owner-fixed-list">
-                  {fixedAnswers.map((item) => (
-                    <article key={`${item.question}-${item.answer}`}>
-                      <strong>{item.question}</strong>
-                      <p>{item.answer}</p>
-                    </article>
-                  ))}
+                  {fixedAnswers.length ? (
+                    fixedAnswers.map((item) => (
+                      <article key={item.id || `${item.question}-${item.answer}`}>
+                        <strong>{item.question}</strong>
+                        <p>{item.answer}</p>
+                      </article>
+                    ))
+                  ) : (
+                    <article className="owner-empty-row">暂无后端固定答案</article>
+                  )}
                 </div>
               </aside>
             </div>

@@ -215,6 +215,13 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		token := seedOwnerControllerSession(t, ownerID, true)
 		seedOwnerNotificationMessage(t, "guest", guestbookChannelMain, "hello from guestbook")
 		seedOwnerChatHourlySuccess(t, 3)
+		if _, err := upsertAIFixedAnswer(
+			db,
+			"How do friend links work?",
+			"Use the friends page application flow.",
+		); err != nil {
+			t.Fatalf("insert ai fixed answer: %v", err)
+		}
 
 		req := httptest.NewRequest(http.MethodGet, "/api/owner/status", nil)
 		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
@@ -269,6 +276,17 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		}
 		if got := int(ai["today"].(float64)); got != 3 {
 			t.Fatalf("expected ai.today 3, got %d", got)
+		}
+		fixedAnswers := ai["fixedAnswers"].([]any)
+		if len(fixedAnswers) != 1 {
+			t.Fatalf("expected one fixed answer, got %d", len(fixedAnswers))
+		}
+		fixed := fixedAnswers[0].(map[string]any)
+		if fixed["question"] != "How do friend links work?" {
+			t.Fatalf("unexpected fixed answer question: %#v", fixed["question"])
+		}
+		if fixed["answer"] != "Use the friends page application flow." {
+			t.Fatalf("unexpected fixed answer body: %#v", fixed["answer"])
 		}
 		if got := int64(uploads["maxBytes"].(float64)); got != 8*1024*1024 {
 			t.Fatalf("expected uploads.maxBytes 8388608, got %d", got)

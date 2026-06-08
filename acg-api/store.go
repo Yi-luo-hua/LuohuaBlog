@@ -120,6 +120,16 @@ func migrateAll(db *sql.DB) error {
 			updated_at TEXT NOT NULL
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_owner_drafts_updated ON owner_drafts(updated_at DESC, id DESC);`,
+		`CREATE TABLE IF NOT EXISTS ai_fixed_answers (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			question TEXT NOT NULL,
+			normalized_question TEXT NOT NULL UNIQUE,
+			answer TEXT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'active',
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_ai_fixed_answers_status_updated ON ai_fixed_answers(status, updated_at DESC, id DESC);`,
 		`CREATE TABLE IF NOT EXISTS wallpaper_pool (
 			id TEXT PRIMARY KEY,
 			url TEXT NOT NULL,
@@ -169,6 +179,9 @@ func migrateAll(db *sql.DB) error {
 		return err
 	}
 	if err := ensureColumn(db, "ai_chat_hourly", "owner_tokens", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "ai_fixed_answers", "normalized_question", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
 	return nil

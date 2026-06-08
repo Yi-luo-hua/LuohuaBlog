@@ -70,7 +70,7 @@ The `build/` page is a build-log subsite created with the help of **vibecoding**
 
 This page is an original/customized page created during my personal learning and practice process. You are welcome to freely reference, study, and use it.
 
-Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, and the homepage/page-level double-scroll fix.
+Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, the homepage/page-level double-scroll fix, and the AI fixed-answer sync from the owner console into the public site assistant.
 
 ### `main/` Main Site Notes
 
@@ -79,6 +79,8 @@ The main site now includes a first-class `/moments` page named `碎语`. It is r
 The latest cleanup also corrected the friend link for `https://930309.xyz/` to `Leyili 花园`, using `https://photo.930309.xyz/lcj.svg` and the description `小小后花园~~~`. The separate `090909.top` friend link remains `他说`.
 
 The homepage double-scroll issue was fixed by tightening Hero and site-layout overflow behavior, with regression tests covering the expected layout classes.
+
+The owner-console AI answer area now saves fixed answers into the backend instead of keeping them only in local React state. `GET /api/owner/status` returns the saved answers for review, and `/api/chat` checks the fixed-answer table before calling DeepSeek, so matching public-site questions can receive the maintained reply immediately.
 
 ### `acg-api/` Backend And API
 
@@ -93,9 +95,9 @@ Backend controller map:
 | `main.go` public controllers | `GET /api/v1/health`, `GET /api/v1/bangumi/list`, `GET /api/v1/radar/feed`, `GET /api/v1/wallpapers/draw`, `GET /api/v1/acg/image/:name`, `POST /api/v1/sync/trigger` | Public | Health check, Bili bangumi cache, radar feed, wallpaper draw pool, cached cover/image serving, and manual sync trigger. |
 | `main.go` legacy guestbook | `GET/POST /api/v1/guestbook` | Public | Older simple guestbook API using `name` and `content`. Kept for compatibility with earlier frontend code. |
 | `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | Public/login/owner challenge | Email registration, login, session cookie management, display-name updates, and owner second-step verification. |
-| `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | Public/login/owner quota tiers | AI assistant quota status, chat requests, DeepSeek proxying, hourly/daily usage statistics, guest/user/owner quota handling. |
+| `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | Public/login/owner quota tiers | AI assistant quota status, fixed-answer lookup, chat requests, DeepSeek proxying, hourly/daily usage statistics, guest/user/owner quota handling. |
 | `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | Public for visible messages; owner/admin for moderation | Current guestbook and friend-page message controller, including channels, replies, anonymous/login users, rate limits, duplicate checks, IP masking, and soft moderation. |
-| `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | Owner only | Owner console status, registered-user list, unread message inbox, draft storage, local temporary image uploads, and COS asset uploads. |
+| `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | Owner only | Owner console status, registered-user list, unread message inbox, AI fixed-answer storage, draft storage, local temporary image uploads, and COS asset uploads. |
 | `owner_publish.go` | `POST /api/owner/publish` | Owner only + GitHub token | Publishes Markdown through the GitHub Contents API into `blog/source/_posts/`, merges front matter, handles filename conflicts, and returns commit information. |
 | `owner_friend_publish.go` | `POST /api/owner/friends` | Owner only + GitHub token | Adds a friend link to `main/src/data/friendCards.js`, with duplicate URL detection so an existing link is not written twice. |
 | `owner_moment_publish.go` | `POST /api/owner/moments` | Owner only + GitHub token | Adds a short Moment to `main/src/data/moments.js`, validates year/date/type/content, assigns the next visual card style, inserts by date, and returns commit information. |
@@ -118,6 +120,7 @@ Important request shapes:
 | `POST /api/owner/friends` | `{ "name": "...", "desc": "...", "url": "...", "avatar": "..." }` | `url` and `avatar` must be public `http`/`https` URLs. |
 | `POST /api/owner/moments` | `{ "year": "2026", "date": "6.8", "type": "...", "content": "..." }` | Writes a short Moment to `main/src/data/moments.js`; `category` is also accepted as a fallback for `type`. |
 | `POST /api/owner/gallery/images` | `{ "albumId": "...", "albumTitle": "...", "imageUrl": "..." }` | `imageUrl` must be a public `http`/`https` URL. |
+| `POST /api/owner/ai/fixed-answers` | `{ "question": "...", "answer": "..." }` | Saves or updates an owner-only fixed answer. Public `/api/chat` normalizes the incoming question and returns the fixed answer before falling back to DeepSeek. |
 
 Clone/deploy environment checklist:
 
@@ -142,6 +145,7 @@ If you find any problem while reading, using, or deploying this project, or if y
 
 - Server data and status monitoring: surface service health, resource usage, sync state, and key data trends in the owner console.
 - Email binding and sending: add account email binding, verification, and notification-sending capabilities.
+- Low-cost image-generation AI: deploy a budget-friendly image-generation route limited to logged-in accounts only.
 - Artistic lettering homepage: explore a more recognizable homepage title/typographic art direction for the main visual identity.
 
 ## Non-Commercial Position

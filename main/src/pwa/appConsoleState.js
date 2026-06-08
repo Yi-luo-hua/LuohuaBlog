@@ -22,3 +22,18 @@ export function getStatsSnapshot(stats) {
 export function getOwnerRegisteredUsers(ownerStatus) {
   return ownerStatus?.users?.registered || [];
 }
+
+export function getOwnerFixedAnswers(ownerStatus) {
+  const items = ownerStatus?.ai?.fixedAnswers;
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((item) => item?.question && item?.answer)
+    .map((item) => ({
+      id: item.id,
+      question: item.question,
+      answer: item.answer,
+      status: item.status || "active",
+      createdAt: item.createdAt || "",
+      updatedAt: item.updatedAt || "",
+    }));
+}

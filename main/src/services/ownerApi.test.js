@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  createOwnerFixedAnswer,
   isPublicImageURL,
   markOwnerNotificationRead,
   publishOwnerArticle,
@@ -231,6 +232,46 @@ test("publishOwnerMoment posts category and content to the real moments endpoint
   assert.equal(requestOptions.headers["Content-Type"], "application/json");
   assert.deepEqual(JSON.parse(requestOptions.body), payload);
   assert.equal(result.item.commitSha, "moment-commit-sha");
+});
+
+test("createOwnerFixedAnswer posts to the real owner AI fixed answer endpoint", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  let requestURL = "";
+  let requestOptions = null;
+  globalThis.fetch = async (url, options = {}) => {
+    requestURL = url;
+    requestOptions = options;
+    return {
+      ok: true,
+      async json() {
+        return {
+          ok: true,
+          item: {
+            id: 9,
+            question: "How do friend links work?",
+            answer: "Use the friends page application flow.",
+          },
+        };
+      },
+    };
+  };
+
+  const payload = {
+    question: "How do friend links work?",
+    answer: "Use the friends page application flow.",
+  };
+  const result = await createOwnerFixedAnswer(payload);
+
+  assert.equal(requestURL, "/api/owner/ai/fixed-answers");
+  assert.equal(requestOptions.method, "POST");
+  assert.equal(requestOptions.credentials, "include");
+  assert.equal(requestOptions.headers["Content-Type"], "application/json");
+  assert.deepEqual(JSON.parse(requestOptions.body), payload);
+  assert.equal(result.item.id, 9);
 });
 
 test("isPublicImageURL accepts http and https urls", () => {
