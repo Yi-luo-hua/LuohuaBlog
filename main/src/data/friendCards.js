@@ -76,4 +76,11 @@ export const friendCards = [
     avatar: "https://gastigado.cnies.org/d/elements/hxcn_transparent_240.png",
     note: "FRIEND",
   },
+  {
+    name: "流欺の博客",
+    desc: "嗯对就是个博客",
+    url: "https://blog.lqay.cn",
+    avatar: "https://tc.lqay.cn/LightPicture/2026/03/5f64e0f0f361e19c.png",
+    note: "FRIEND",
+  },
 ];
