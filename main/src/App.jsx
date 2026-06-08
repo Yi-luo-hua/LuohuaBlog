@@ -9,6 +9,7 @@ import FriendsPage from "./pages/FriendsPage";
 import GuestbookPage from "./pages/GuestbookPage";
 import GalleryAlbumPage from "./pages/GalleryAlbumPage";
 import GalleryPage from "./pages/GalleryPage";
+import MomentsPage from "./pages/MomentsPage";
 import {
   shouldExposeAppConsole,
   shouldOpenAppConsoleAtRoot,
@@ -47,6 +48,7 @@ function App() {
             <Route path="guestbook" element={<GuestbookPage />} />
             <Route path="gallery" element={<GalleryPage />} />
             <Route path="gallery/:albumId" element={<GalleryAlbumPage />} />
+            <Route path="moments" element={<MomentsPage />} />
             <Route path="login" element={<LoginPage />} />
           </Route>
         </Routes>

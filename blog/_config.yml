@@ -109,18 +109,3 @@ search:
   path: search.xml
   field: post
   content: true
-
-bangumi:
-  enable: true
-  source: bili
-  vmid: '1061280173'
-  title: '追番列表'
-  quote: '摸鱼是第一生产力 🐟'
-  show: 1
-  webp: true
-  progress: true
-  limit: 30
-  extra_options:
-    top_img: false
-  watching: false
-  watchedExtra: false

@@ -46,6 +46,20 @@ const footerThemes = {
     icon: "text-[#2B2B2B] hover:text-[#FF8FAB]",
     tip: "border border-[#F2E6C9] bg-white text-[#2B2B2B]",
   },
+  friends: {
+    shell:
+      "border-t border-[#F2E6C9] bg-gradient-to-r from-[#FFF7ED] via-[#FFFDF7] to-[#EEF7FF] text-[#2B2B2B]",
+    copy: "text-[#6B7280]",
+    icon: "text-[#5F4B52] hover:text-[#74C0FC]",
+    tip: "border border-[#F2E6C9] bg-[#FFFEFA]/95 text-[#5F4B52]",
+  },
+  moments: {
+    shell:
+      "border-t border-[#E8DFFB] bg-gradient-to-r from-[#FFFDFD] via-[#FFF4F8] to-[#F1FFFC] text-[#4A4456]",
+    copy: "text-[#6A6674]",
+    icon: "text-[#4A4456] hover:text-[#9B8FD4]",
+    tip: "border border-[#E8DFFB] bg-white/95 text-[#4A4456]",
+  },
 };
 
 const Footer = () => {
@@ -56,11 +70,15 @@ const Footer = () => {
       ? "ai"
       : pathname.startsWith("/guestbook")
         ? "guestbook"
-        : "default";
+        : pathname.startsWith("/friends")
+          ? "friends"
+          : pathname.startsWith("/moments")
+            ? "moments"
+            : "default";
   const theme = footerThemes[variant];
 
   return (
-    <footer className={clsx("w-screen py-4 md:py-5", theme.shell)}>
+    <footer className={clsx("w-full py-4 md:py-5", theme.shell)}>
       <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
         <p className={clsx("text-center text-sm font-light md:text-left", theme.copy)}>
           @bistutzyy

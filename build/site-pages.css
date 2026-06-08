@@ -745,50 +745,6 @@
 .hexo-guest-field input::placeholder {
   color: #ccc;
 }
-.shuoshuo-feed {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-.shuoshuo-item {
-  padding: 18px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-.shuoshuo-item:last-child {
-  border-bottom: none;
-  padding-bottom: 4px;
-}
-.shuoshuo-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.shuoshuo-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  flex-shrink: 0;
-}
-.shuoshuo-author {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  flex: 1;
-}
-.shuoshuo-time {
-  font-size: 12px;
-  color: #bbb;
-  font-variant-numeric: tabular-nums;
-}
-.shuoshuo-body {
-  font-size: 14px;
-  color: #555;
-  line-height: 1.75;
-  padding-left: 46px;
-}
 @media (max-width: 600px) {
   .hexo-card {
     padding: 20px 18px 24px;
@@ -802,9 +758,6 @@
   }
   .hexo-guest-field:last-child {
     border-bottom: none;
-  }
-  .shuoshuo-body {
-    padding-left: 0;
   }
 }
 

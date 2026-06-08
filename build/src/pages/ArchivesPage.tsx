@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Bilingual } from '../components/Bilingual';
 import { siteContent } from '../data/content';
 import { useI18n } from '../i18n/I18nContext';
-import { useMomentsRandom } from '../hooks/useMomentsRandom';
+import { useCardRandom } from '../hooks/useCardRandom';
 
 type TimelineEntry =
   | { kind: 'year'; year: string }
@@ -51,7 +51,7 @@ export function ArchivesPage() {
     return out;
   }, []);
 
-  useMomentsRandom([entries.length]);
+  useCardRandom([entries.length]);
 
   return (
     <div className="page-main-inner page-art page-art--neat">

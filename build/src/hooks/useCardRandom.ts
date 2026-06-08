@@ -37,7 +37,6 @@ const CALM_SKINS = [
 const POETIC = 'moment-skin--mist';
 
 const FEEDS: { root: string; tilt: boolean; skins: string[] }[] = [
-  { root: '.moments-feed', tilt: true, skins: SKINS },
   { root: '.gallery-feed', tilt: true, skins: SKINS },
   { root: '.archive-timeline', tilt: false, skins: CALM_SKINS },
   { root: '.links-stack', tilt: false, skins: CALM_SKINS },
@@ -63,20 +62,25 @@ function applyFeed(cfg: (typeof FEEDS)[0]) {
 
   cards.forEach((el) => {
     [...SKINS, POETIC].forEach((c) => el.classList.remove(c));
-    el.style.setProperty('--moment-tilt', cfg.tilt ? `${(Math.random() * 5 - 2.5).toFixed(2)}deg` : '0deg');
+    el.style.setProperty(
+      '--moment-tilt',
+      cfg.tilt ? `${(Math.random() * 5 - 2.5).toFixed(2)}deg` : '0deg',
+    );
 
     if (el.classList.contains('moment--poetic')) {
       el.classList.add(POETIC);
       el.style.setProperty('--moment-tilt', '0deg');
       return;
     }
+
     el.classList.add(pool[pi % pool.length]);
     pi += 1;
   });
 }
 
-export function useMomentsRandom(deps: unknown[] = []) {
+export function useCardRandom(deps: unknown[] = []) {
   useEffect(() => {
     FEEDS.forEach(applyFeed);
   }, deps);
 }
+

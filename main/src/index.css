@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  width: 100dvw;
+  width: 100%;
   overflow-x: hidden;
   background-color: #dfdff0;
   font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei",
@@ -522,6 +522,16 @@ body {
       rgba(255, 248, 241, 0.95) 0%,
       rgba(255, 238, 245, 0.95) 48%,
       rgba(246, 251, 255, 0.95) 100%
+    );
+  }
+
+  .floating-nav-moments {
+    @apply rounded-2xl border border-[#F2E6C9] shadow-[0_12px_30px_rgba(255,143,171,0.12)] backdrop-blur-sm;
+    background-image: linear-gradient(
+      135deg,
+      rgba(255, 249, 236, 0.95) 0%,
+      rgba(255, 238, 245, 0.95) 44%,
+      rgba(236, 251, 246, 0.95) 100%
     );
   }
 
@@ -5994,6 +6004,629 @@ body {
   .owner-bottom-nav button.active {
     color: var(--owner-ink);
     background: rgba(255, 255, 255, 0.78);
+  }
+}
+/* Fresh visual system for the migrated moments feed. */
+.moments-page {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    linear-gradient(132deg, rgba(255, 246, 250, 0.88), rgba(255, 255, 255, 0) 34%),
+    linear-gradient(208deg, rgba(236, 252, 248, 0.78), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(28deg, rgba(246, 241, 255, 0.74), rgba(255, 255, 255, 0) 42%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(208, 222, 232, 0.12) 0,
+      rgba(208, 222, 232, 0.12) 1px,
+      transparent 1px,
+      transparent 4.8rem
+    ),
+    linear-gradient(180deg, #ffffff 0%, #fffafb 44%, #f8fffc 100%);
+  padding: 6.8rem 1.35rem 5.8rem;
+  color: #3f3342;
+}
+
+.moments-page::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(112deg, transparent 0 18%, rgba(255, 214, 232, 0.18) 18.2%, transparent 19.2% 46%, rgba(204, 239, 229, 0.18) 46.4%, transparent 47.4% 71%, rgba(226, 214, 255, 0.16) 71.4%, transparent 72.4%),
+    repeating-linear-gradient(
+      118deg,
+      rgba(233, 206, 220, 0.12) 0,
+      rgba(233, 206, 220, 0.12) 1px,
+      transparent 1px,
+      transparent 8.5rem
+    );
+  opacity: 0.62;
+}
+
+.moments-page-bg {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.moments-page-bg::before,
+.moments-page-bg::after {
+  content: "";
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 166, 203, 0.24), rgba(190, 232, 222, 0.22), rgba(206, 220, 255, 0.2), transparent);
+}
+
+.moments-page-bg::before {
+  left: -8vw;
+  top: 22vh;
+  width: 72vw;
+  transform: rotate(-6deg);
+}
+
+.moments-page-bg::after {
+  right: -12vw;
+  bottom: 20vh;
+  width: 82vw;
+  transform: rotate(7deg);
+}
+
+.moments-page-glow {
+  position: absolute;
+  display: block;
+  height: 1px;
+  border-radius: 0;
+  opacity: 0.5;
+  filter: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 178, 211, 0.28), rgba(190, 232, 222, 0.28), rgba(206, 220, 255, 0.22), transparent);
+}
+
+.moments-page-glow--rose {
+  right: 9vw;
+  top: 8.8rem;
+  width: 17rem;
+  transform: rotate(-9deg);
+}
+
+.moments-page-glow--mint {
+  left: 11vw;
+  top: 20rem;
+  width: 13rem;
+  transform: rotate(8deg);
+}
+
+.moments-page-glow--sun {
+  right: 20vw;
+  bottom: 7rem;
+  width: 15rem;
+  transform: rotate(5deg);
+}
+
+.moments-page-hero,
+.moments-page-list {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 740px);
+  margin: 0 auto;
+}
+
+.moments-page-hero {
+  padding-left: 0.35rem;
+}
+
+.moments-page h1 {
+  margin: 0;
+  color: #655569;
+  font-family: "ZCOOL XiaoWei", "KaiTi", "STKaiti", "Microsoft YaHei", serif;
+  font-size: 3rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.08;
+}
+
+.moments-page-subtitle {
+  width: fit-content;
+  margin: 0.72rem 0 0;
+  padding: 0.12rem 0.35rem 0.24rem 0.08rem;
+  color: #9a7d8e;
+  font-family: "ZCOOL XiaoWei", "KaiTi", "STKaiti", "Microsoft YaHei", serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.75;
+  background: linear-gradient(180deg, transparent 58%, rgba(255, 214, 232, 0.5) 58%);
+}
+
+.moments-page-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.12rem;
+  margin-top: 2.45rem;
+}
+
+.moments-card {
+  --moment-accent: 255, 160, 202;
+  --moment-ink: #554354;
+  --moment-holo-rose:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 214, 232, 0.3) 28%, rgba(220, 238, 255, 0.22) 48%, rgba(247, 237, 255, 0.22) 66%, rgba(255, 246, 214, 0.18) 100%);
+  --moment-holo-mint:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.72) 0%, rgba(204, 244, 234, 0.34) 28%, rgba(230, 246, 255, 0.24) 50%, rgba(255, 240, 226, 0.18) 72%, rgba(255, 255, 255, 0.2) 100%);
+  --moment-holo-blue:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.72) 0%, rgba(212, 232, 255, 0.34) 30%, rgba(242, 232, 255, 0.28) 52%, rgba(255, 238, 224, 0.18) 78%, rgba(255, 255, 255, 0.2) 100%);
+  --moment-holo-sun:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.74) 0%, rgba(255, 236, 190, 0.34) 30%, rgba(255, 218, 226, 0.24) 52%, rgba(219, 242, 238, 0.2) 78%, rgba(255, 255, 255, 0.2) 100%);
+  --moment-holo-lavender:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.72) 0%, rgba(232, 220, 255, 0.36) 28%, rgba(255, 222, 236, 0.22) 52%, rgba(218, 240, 255, 0.2) 78%, rgba(255, 255, 255, 0.2) 100%);
+  --moment-holo-peach:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.74) 0%, rgba(255, 224, 204, 0.34) 28%, rgba(255, 232, 244, 0.25) 50%, rgba(214, 242, 231, 0.2) 76%, rgba(255, 255, 255, 0.2) 100%);
+  --moment-holo: var(--moment-holo-rose);
+  --moment-decoration: linear-gradient(135deg, rgba(255, 214, 232, 0.2), rgba(255, 255, 255, 0));
+  --moment-glint: linear-gradient(102deg, transparent 0 42%, rgba(255, 255, 255, 0.34) 46%, transparent 52%);
+  --moment-corner: linear-gradient(135deg, rgba(255, 214, 232, 0.42), rgba(211, 239, 255, 0.28));
+  --moment-shift: 0;
+  --moment-tilt: 0deg;
+  position: relative;
+  display: grid;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 9.2rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 180, 214, 0.32);
+  border-radius: 8px;
+  background:
+    var(--moment-decoration),
+    var(--moment-holo),
+    rgba(255, 255, 255, 0.56);
+  background-blend-mode: normal, screen, normal;
+  padding: 1.28rem 1.45rem 1.42rem;
+  box-shadow:
+    0 0.85rem 2.2rem rgba(188, 137, 165, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(255, 214, 232, 0.24);
+  backdrop-filter: blur(15px) saturate(1.2);
+  transform: rotate(var(--moment-tilt)) translateX(var(--moment-shift));
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.32s ease,
+    border-color 0.32s ease;
+  animation: momentsCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--moment-index) * 0.045s);
+}
+
+.moments-card::before,
+.moments-card::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.moments-card::before {
+  inset: 0;
+  background:
+    var(--moment-glint),
+    radial-gradient(circle at 12% 0%, rgba(var(--moment-accent), 0.24), transparent 28%),
+    radial-gradient(circle at 100% 18%, rgba(207, 235, 255, 0.22), transparent 30%);
+  opacity: 0.82;
+}
+
+.moments-card::after {
+  right: 1rem;
+  top: 0.95rem;
+  width: 2.55rem;
+  height: 2.55rem;
+  border: 1px solid rgba(255, 174, 210, 0.35);
+  border-radius: 50%;
+  background:
+    var(--moment-corner),
+    rgba(255, 255, 255, 0.16);
+}
+
+.moments-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.moments-card:nth-child(1) {
+  --moment-shift: -0.12rem;
+  --moment-tilt: -0.18deg;
+}
+
+.moments-card:nth-child(2) {
+  --moment-shift: 0.1rem;
+  --moment-tilt: 0.16deg;
+}
+
+.moments-card:nth-child(3) {
+  --moment-shift: -0.04rem;
+  --moment-tilt: -0.08deg;
+}
+
+.moments-card:nth-child(4) {
+  --moment-shift: 0.06rem;
+  --moment-tilt: 0.1deg;
+}
+
+.moments-card:nth-child(5) {
+  --moment-shift: 0.02rem;
+  --moment-tilt: -0.12deg;
+}
+
+.moments-card:nth-child(6) {
+  --moment-shift: -0.08rem;
+  --moment-tilt: 0.14deg;
+}
+
+.moments-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  margin-bottom: 0.62rem;
+}
+
+.moments-date {
+  color: rgba(91, 71, 91, 0.62);
+  font-family: "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.moments-type {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.22rem;
+  border: 1px solid rgba(var(--moment-accent), 0.28);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.42);
+  padding: 0.15rem 0.48rem 0.18rem;
+  color: rgba(91, 71, 91, 0.66);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.moments-lines {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.moments-lines p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--moment-ink);
+  font-family: "Ma Shan Zheng", "ZCOOL XiaoWei", "STKaiti", "KaiTi", "Microsoft YaHei",
+    cursive;
+  font-size: 1.4rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.82;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.moments-card--aurora {
+  --moment-accent: 255, 160, 202;
+  --moment-holo: var(--moment-holo-rose);
+  --moment-ink: #5a4059;
+  --moment-decoration:
+    radial-gradient(ellipse 52% 42% at 16% 18%, rgba(255, 214, 232, 0.28), transparent 74%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+  --moment-corner: linear-gradient(135deg, rgba(255, 204, 228, 0.5), rgba(216, 235, 255, 0.28));
+}
+
+.moments-card--ticket {
+  --moment-accent: 180, 156, 226;
+  --moment-holo: var(--moment-holo-lavender);
+  --moment-ink: #514866;
+  --moment-decoration:
+    linear-gradient(90deg, rgba(226, 214, 255, 0.3), transparent 26%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.26), transparent);
+  --moment-corner: linear-gradient(135deg, rgba(226, 214, 255, 0.52), rgba(255, 222, 236, 0.26));
+}
+
+.moments-card--watercolor {
+  --moment-accent: 144, 211, 197;
+  --moment-holo: var(--moment-holo-mint);
+  --moment-ink: #455d59;
+  --moment-decoration:
+    radial-gradient(ellipse 48% 42% at 18% 20%, rgba(201, 244, 234, 0.36), transparent 72%),
+    radial-gradient(ellipse 45% 46% at 86% 78%, rgba(255, 228, 214, 0.22), transparent 72%);
+  --moment-corner: linear-gradient(135deg, rgba(204, 244, 234, 0.5), rgba(255, 232, 214, 0.28));
+}
+
+.moments-card--mist {
+  --moment-accent: 151, 184, 232;
+  --moment-holo: var(--moment-holo-blue);
+  --moment-ink: #46556d;
+  --moment-decoration:
+    linear-gradient(120deg, rgba(212, 232, 255, 0.3), transparent 36%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.18), transparent);
+  --moment-corner: linear-gradient(135deg, rgba(212, 232, 255, 0.52), rgba(242, 232, 255, 0.28));
+}
+
+.moments-card--journal {
+  --moment-accent: 229, 188, 118;
+  --moment-holo: var(--moment-holo-sun);
+  --moment-ink: #5c4f3c;
+  --moment-decoration:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 1.54rem,
+      rgba(203, 162, 106, 0.12) 1.54rem,
+      rgba(203, 162, 106, 0.12) 1.59rem
+    ),
+    linear-gradient(135deg, rgba(255, 236, 190, 0.25), transparent);
+  --moment-corner: linear-gradient(135deg, rgba(255, 236, 190, 0.54), rgba(255, 218, 226, 0.26));
+}
+
+.moments-card--mint {
+  --moment-accent: 255, 174, 132;
+  --moment-holo: var(--moment-holo-peach);
+  --moment-ink: #5f4d42;
+  --moment-decoration:
+    linear-gradient(135deg, rgba(255, 224, 204, 0.3), rgba(218, 247, 240, 0.2)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18), transparent);
+  --moment-corner: linear-gradient(135deg, rgba(255, 224, 204, 0.52), rgba(218, 247, 240, 0.3));
+}
+
+.moments-module--postcard {
+  padding-right: 5rem;
+}
+
+.moments-module--postcard::after {
+  right: 1.08rem;
+  top: 1rem;
+  width: 2.65rem;
+  height: 1.85rem;
+  border: 1px dashed rgba(var(--moment-accent), 0.5);
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(var(--moment-accent), 0.4) 0,
+      rgba(var(--moment-accent), 0.4) 4px,
+      rgba(255, 255, 255, 0.5) 4px,
+      rgba(255, 255, 255, 0.5) 8px
+    );
+}
+
+.moments-module--ticket {
+  border-style: dashed;
+  padding-left: 2.85rem;
+}
+
+.moments-module--ticket::after {
+  left: 1.35rem;
+  top: 0.95rem;
+  bottom: 0.95rem;
+  width: 1px;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(var(--moment-accent), 0.5) 0,
+      rgba(var(--moment-accent), 0.5) 0.32rem,
+      transparent 0.32rem,
+      transparent 0.7rem
+    );
+}
+
+.moments-module--watercolor {
+  border-radius: 8px 7px 8px 6px;
+}
+
+.moments-module--watercolor::after {
+  left: auto;
+  right: 1.05rem;
+  top: auto;
+  bottom: 1rem;
+  width: 4.5rem;
+  height: 1.2rem;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(var(--moment-accent), 0.34), transparent 68%);
+}
+
+.moments-module--poem {
+  padding-left: 1.75rem;
+}
+
+.moments-module--poem::after {
+  left: 1.05rem;
+  top: 1.05rem;
+  bottom: 1.05rem;
+  width: 1px;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, transparent, rgba(var(--moment-accent), 0.42), transparent);
+}
+
+.moments-module--poem .moments-lines p {
+  font-size: 1.48rem;
+  line-height: 1.74;
+}
+
+.moments-module--journal {
+  padding-left: 2.75rem;
+}
+
+.moments-module--journal::after {
+  left: 1.5rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: rgba(var(--moment-accent), 0.24);
+}
+
+.moments-module--journal .moments-lines p {
+  font-size: 1.28rem;
+  line-height: 1.92;
+}
+
+.moments-module--ribbon {
+  padding-left: 2.35rem;
+}
+
+.moments-module--ribbon::after {
+  left: 0.95rem;
+  top: -0.32rem;
+  bottom: 0.78rem;
+  width: 0.58rem;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(var(--moment-accent), 0.58), rgba(255, 255, 255, 0.4));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%);
+}
+
+.moments-card:hover {
+  transform: rotate(var(--moment-tilt)) translateX(var(--moment-shift)) translateY(-0.18rem);
+  border-color: rgba(var(--moment-accent), 0.46);
+  box-shadow:
+    0 1.1rem 2.65rem rgba(188, 137, 165, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+@keyframes momentsCardIn {
+  from {
+    opacity: 0;
+    transform: rotate(var(--moment-tilt)) translateX(var(--moment-shift)) translateY(0.65rem);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--moment-tilt)) translateX(var(--moment-shift)) translateY(0);
+  }
+}
+
+@media (max-width: 960px) {
+  .moments-page-hero,
+  .moments-page-list {
+    width: min(100%, 700px);
+  }
+}
+
+@media (max-width: 767px) {
+  .moments-page {
+    padding: 5.7rem 0.95rem 4.1rem;
+  }
+
+  .moments-page::before {
+    opacity: 0.44;
+  }
+
+  .moments-page-glow {
+    opacity: 0.32;
+  }
+
+  .moments-page-hero,
+  .moments-page-list {
+    width: 100%;
+  }
+
+  .moments-page-hero {
+    padding-left: 0.15rem;
+  }
+
+  .moments-page h1 {
+    font-size: 2.35rem;
+  }
+
+  .moments-page-subtitle {
+    margin-top: 0.55rem;
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+
+  .moments-page-list {
+    gap: 0.95rem;
+    margin-top: 2rem;
+  }
+
+  .moments-card,
+  .moments-card:nth-child(1),
+  .moments-card:nth-child(2),
+  .moments-card:nth-child(3),
+  .moments-card:nth-child(4),
+  .moments-card:nth-child(5),
+  .moments-card:nth-child(6) {
+    --moment-shift: 0;
+    --moment-tilt: 0deg;
+  }
+
+  .moments-card {
+    min-height: 8.6rem;
+    animation: none;
+    transform: none;
+    padding: 1.08rem 1.08rem 1.2rem;
+  }
+
+  .moments-card:hover {
+    transform: translateY(-0.12rem);
+  }
+
+  .moments-module--postcard {
+    padding-right: 3.85rem;
+  }
+
+  .moments-module--postcard::after {
+    right: 0.82rem;
+    top: 0.85rem;
+    width: 2rem;
+    height: 1.36rem;
+  }
+
+  .moments-module--ticket {
+    padding-left: 2.18rem;
+  }
+
+  .moments-module--ticket::after {
+    left: 1rem;
+  }
+
+  .moments-module--poem,
+  .moments-module--ribbon {
+    padding-left: 1.72rem;
+  }
+
+  .moments-module--poem::after,
+  .moments-module--journal::after {
+    left: 0.86rem;
+  }
+
+  .moments-module--journal {
+    padding-left: 2.15rem;
+  }
+
+  .moments-module--ribbon::after {
+    left: 0.72rem;
+  }
+
+  .moments-lines p {
+    font-size: 1.2rem;
+    line-height: 1.82;
+  }
+
+  .moments-module--poem .moments-lines p {
+    font-size: 1.28rem;
+  }
+
+  .moments-module--journal .moments-lines p {
+    font-size: 1.12rem;
+    line-height: 1.9;
   }
 }
 

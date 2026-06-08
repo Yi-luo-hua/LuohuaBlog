@@ -6,7 +6,6 @@ export const STR = {
     navHome: '首页',
     navArchive: '归档',
     navArticle: '文章',
-    navShuo: '说说',
     footerLine: '桃之夭夭 © 2026',
     archiveTitle: '归档',
     archiveLead: '时光轴',
@@ -15,7 +14,6 @@ export const STR = {
     metaReads: '阅读',
     metaMinutes: '约',
     metaMinSuffix: '分钟',
-    shuoshuoTitle: '说说',
     tagDone: '完成',
   },
   en: {
@@ -23,7 +21,6 @@ export const STR = {
     navHome: 'Home',
     navArchive: 'Archives',
     navArticle: 'Posts',
-    navShuo: 'Moments',
     footerLine: 'Taozhiyaoyao © 2026',
     archiveTitle: 'Archives',
     archiveLead: 'Timeline',
@@ -32,7 +29,6 @@ export const STR = {
     metaReads: 'reads',
     metaMinutes: '~',
     metaMinSuffix: 'min read',
-    shuoshuoTitle: 'Moments',
     tagDone: 'Done',
   },
 } as const;

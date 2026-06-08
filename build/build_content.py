@@ -10,7 +10,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 ARTICLES_DIR = ROOT / "content" / "articles"
-MOMENTS_DIR = ROOT / "content" / "moments"
 POST_DIR = ROOT / "post"
 REACT_DATA = ROOT / "src" / "data" / "content.json"
 HOME_CSS = ROOT / "src" / "styles" / "home.css"
@@ -35,7 +34,6 @@ except ImportError:
 NAV = """    <a href="{p}index.html" class="nav-item{home}"><span class="nav-icon">HOME</span><span class="nav-label" data-i18n="navHome">首页</span></a>
     <a href="{p}archives.html" class="nav-item{arc}"><span class="nav-icon">ARC</span><span class="nav-label" data-i18n="navArchive">归档</span></a>
     <a href="{p}articles.html" class="nav-item{art}"><span class="nav-icon">ART</span><span class="nav-label" data-i18n="navArticle">文章</span></a>
-    <a href="{p}shuoshuo.html" class="nav-item{mom}"><span class="nav-icon">MOM</span><span class="nav-label" data-i18n="navShuo">说说</span></a>
 """
 
 PAGE_STYLES = """
@@ -323,11 +321,10 @@ def nav_html(active: str, prefix: str = "") -> str:
         "index": "home",
         "archives": "arc",
         "articles": "art",
-        "shuoshuo": "mom",
         "post": "art",
     }
     act = mapping.get(active, "")
-    fmt = {k: " active" if k == act else "" for k in ("home", "arc", "art", "mom")}
+    fmt = {k: " active" if k == act else "" for k in ("home", "arc", "art")}
     fmt["p"] = prefix
     return NAV.format(**fmt)
 
@@ -335,7 +332,7 @@ def nav_html(active: str, prefix: str = "") -> str:
 def page_shell(title: str, active: str, inner: str, *, depth: int = 0, extra_scripts: str = "") -> str:
     prefix = "../" * depth
     fonts = ""
-    if active in ("shuoshuo", "post"):
+    if active in ("post",):
         fonts = (
             '<link rel="preconnect" href="https://fonts.googleapis.com">'
             '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
@@ -448,26 +445,6 @@ def load_articles() -> list[dict]:
     items.sort(key=lambda x: x["date"], reverse=True)
     return items
 
-
-def load_moments() -> list[dict]:
-    items = []
-    for path in sorted(MOMENTS_DIR.glob("*.md"), reverse=True):
-        meta, body = parse_frontmatter(path.read_text(encoding="utf-8"))
-        zh, en = split_bilingual(body) if body.strip() else ("", "")
-        items.append(
-            {
-                "date": meta.get("date", path.stem),
-                "title_zh": meta.get("title_zh", ""),
-                "title_en": meta.get("title_en", ""),
-                "body_zh": meta.get("body_zh") or zh,
-                "body_en": meta.get("body_en") or en,
-                "poetic": str(meta.get("poetic", "")).lower() in ("1", "true", "yes"),
-            }
-        )
-    items.sort(key=lambda x: x["date"], reverse=True)
-    return items
-
-
 def article_card(a: dict) -> str:
     return f"""    <a href="post/{esc(a['slug'])}.html" class="article-card">
       <h2>{i18n_pair(a['title_zh'], a['title_en'])}</h2>
@@ -479,18 +456,6 @@ def article_card(a: dict) -> str:
         <span><span data-i18n="metaMinutes">约</span>{esc(a['minutes'])} <span data-i18n="metaMinSuffix">分钟</span></span>
       </div>
     </a>"""
-
-
-def moment_card(m: dict) -> str:
-    cls = "moment moment--poetic" if m["poetic"] else "moment"
-    title = ""
-    if m["title_zh"] or m["title_en"]:
-        title = f'      <div class="moment-title">{i18n_pair(m["title_zh"], m["title_en"])}</div>\n'
-    return f"""    <article class="{cls}">
-      <div class="moment-date">{esc(m['date'])}</div>
-{title}      <div class="moment-body">{i18n_body_br(m['body_zh'], m['body_en'])}</div>
-    </article>"""
-
 
 def build_articles_list(articles: list[dict]) -> None:
     cards = "\n".join(article_card(a) for a in articles)
@@ -532,20 +497,6 @@ def build_posts(articles: list[dict]) -> None:
         )
     print(f"OK: post/ ({len(articles)} 篇)")
 
-
-def build_shuoshuo(moments: list[dict]) -> None:
-    cards = "\n".join(moment_card(m) for m in moments) or '    <p class="page-lead">暂无说说。</p>'
-    inner = f"""<div class="page-main-inner">
-  <h1 class="page-title" data-i18n="shuoshuoTitle">说说</h1>
-  <div class="moments-feed">
-{cards}
-  </div>
-</div>
-<script src="moments-random.js" defer></script>"""
-    (ROOT / "shuoshuo.html").write_text(page_shell("说说 Moments", "shuoshuo", inner), encoding="utf-8")
-    print(f"OK: shuoshuo.html ({len(moments)} 条)")
-
-
 def build_archives(articles: list[dict]) -> None:
     by_year: dict[str, list[dict]] = {}
     for a in articles:
@@ -584,7 +535,7 @@ def build_archives(articles: list[dict]) -> None:
     print("OK: archives.html")
 
 
-def build_react_data(articles: list[dict], moments: list[dict]) -> None:
+def build_react_data(articles: list[dict]) -> None:
     import json
 
     payload = {
@@ -599,11 +550,10 @@ def build_react_data(articles: list[dict], moments: list[dict]) -> None:
             }
             for a in articles
         ],
-        "moments": moments,
     }
     REACT_DATA.parent.mkdir(parents=True, exist_ok=True)
     REACT_DATA.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"OK: {REACT_DATA.relative_to(ROOT)} ({len(articles)} 篇, {len(moments)} 条)")
+    print(f"OK: {REACT_DATA.relative_to(ROOT)} ({len(articles)} 篇)")
 
 
 def _extract_style(html_path: Path, out_path: Path) -> None:
@@ -650,12 +600,10 @@ def extract_static_assets() -> None:
 
 def main() -> None:
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
-    MOMENTS_DIR.mkdir(parents=True, exist_ok=True)
     articles = load_articles()
-    moments = load_moments()
-    build_react_data(articles, moments)
+    build_react_data(articles)
     extract_static_assets()
-    print(f"完成: {len(articles)} 篇文章, {len(moments)} 条说说")
+    print(f"完成: {len(articles)} 篇文章")
     print("更新 content/ 后请运行: python build_content.py")
 
 

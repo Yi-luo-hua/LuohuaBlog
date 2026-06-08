@@ -6,7 +6,6 @@ import { WeatherProvider } from './weather/WeatherContext';
 import { ArchivesPage } from './pages/ArchivesPage';
 import { ArticlesPage } from './pages/ArticlesPage';
 import { HomePage } from './pages/HomePage';
-import { MomentsPage } from './pages/MomentsPage';
 import { PostPage } from './pages/PostPage';
 
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined;
@@ -30,7 +29,6 @@ export function App() {
               <Route path="/archives" element={<ArchivesPage />} />
               <Route path="/articles" element={<ArticlesPage />} />
               <Route path="/post/:slug" element={<PostPage />} />
-              <Route path="/moments" element={<MomentsPage />} />
               <Route path="/gallery/*" element={<ExternalRedirect to="/gallery" />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

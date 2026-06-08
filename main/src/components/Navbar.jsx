@@ -8,6 +8,7 @@ import { useWindowScroll } from "react-use";
 const navLinks = [
   { label: "HOME", to: "/", end: true },
   { label: "Gallery", to: "/gallery", end: true },
+  { label: "碎语", to: "/moments", end: true },
   { label: "Bili Hub", to: "/bili", end: true },
   { label: "AI 流量", to: "/ai-traffic", end: true },
   { label: "Friends", to: "/friends", end: true },
@@ -21,6 +22,7 @@ const getNavTheme = (pathname) => {
   if (pathname === "/friends" || pathname.startsWith("/friends/")) return "friends";
   if (pathname === "/guestbook" || pathname.startsWith("/guestbook/")) return "guestbook";
   if (pathname === "/gallery" || pathname.startsWith("/gallery/")) return "gallery";
+  if (pathname === "/moments" || pathname.startsWith("/moments/")) return "moments";
   return "dark";
 };
 
@@ -50,8 +52,15 @@ const NavBar = () => {
     pathname === "/guestbook" || pathname.startsWith("/guestbook/");
   const isGalleryPage =
     pathname === "/gallery" || pathname.startsWith("/gallery/");
+  const isMomentsPage =
+    pathname === "/moments" || pathname.startsWith("/moments/");
   const isSubPage =
-    isBiliPage || isAiTrafficPage || isFriendsPage || isGuestbookPage || isGalleryPage;
+    isBiliPage ||
+    isAiTrafficPage ||
+    isFriendsPage ||
+    isGuestbookPage ||
+    isGalleryPage ||
+    isMomentsPage;
   const navTheme = getNavTheme(pathname);
   const isLightNav = navTheme !== "dark";
 
@@ -125,7 +134,8 @@ const NavBar = () => {
         "floating-nav-ai",
         "floating-nav-friends",
         "floating-nav-guestbook",
-        "floating-nav-gallery"
+        "floating-nav-gallery",
+        "floating-nav-moments"
       );
     };
 
@@ -140,6 +150,8 @@ const NavBar = () => {
         navContainerRef.current.classList.add("floating-nav-guestbook");
       } else if (navTheme === "gallery") {
         navContainerRef.current.classList.add("floating-nav-gallery");
+      } else if (navTheme === "moments") {
+        navContainerRef.current.classList.add("floating-nav-moments");
       } else {
         navContainerRef.current.classList.add("floating-nav");
       }
@@ -174,7 +186,11 @@ const NavBar = () => {
     clsx("nav-hover-btn", isLightNav && `nav-hover-btn--${navTheme}`, {
       "text-[#7C5CFF]": active && navTheme === "bili",
       "text-[#FF8FAB]":
-        active && (navTheme === "ai" || navTheme === "guestbook" || navTheme === "gallery"),
+        active &&
+        (navTheme === "ai" ||
+          navTheme === "guestbook" ||
+          navTheme === "gallery" ||
+          navTheme === "moments"),
       "text-[#102A24]": active && navTheme === "friends",
       "text-yellow-300": active && navTheme === "dark",
     });
@@ -185,7 +201,8 @@ const NavBar = () => {
     (item.to === "/bili" && isBiliPage) ||
     (item.to === "/ai-traffic" && isAiTrafficPage) ||
     (item.to === "/friends" && isFriendsPage) ||
-    (item.to === "/guestbook" && isGuestbookPage);
+    (item.to === "/guestbook" && isGuestbookPage) ||
+    (item.to === "/moments" && isMomentsPage);
 
   const handleNavClick = (item) => {
     if (item.to === "/" && pathname === "/") {
@@ -280,7 +297,8 @@ const NavBar = () => {
           navTheme === "ai" && currentScrollY === 0 && "floating-nav-ai",
           navTheme === "friends" && currentScrollY === 0 && "floating-nav-friends",
           navTheme === "guestbook" && currentScrollY === 0 && "floating-nav-guestbook",
-          navTheme === "gallery" && currentScrollY === 0 && "floating-nav-gallery"
+          navTheme === "gallery" && currentScrollY === 0 && "floating-nav-gallery",
+          navTheme === "moments" && currentScrollY === 0 && "floating-nav-moments"
         )}
       >
         <header className="absolute top-1/2 w-full -translate-y-1/2">
@@ -356,7 +374,8 @@ const NavBar = () => {
                       "indicator-line-ai":
                         navTheme === "ai" ||
                         navTheme === "guestbook" ||
-                        navTheme === "gallery",
+                        navTheme === "gallery" ||
+                        navTheme === "moments",
                     })}
                     style={{
                       animationDelay: `${bar * 0.1}s`,
