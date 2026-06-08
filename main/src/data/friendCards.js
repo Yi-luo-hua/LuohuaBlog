@@ -62,4 +62,11 @@ export const friendCards = [
     avatar: "https://yuulog.org/_astro/avatar.Djw_wQKk_Z1Q0puo.webp",
     note: "FRIEND",
   },
+  {
+    name: "楠枝小笺",
+    desc: "安安静静地存在，就已经很好啦。",
+    url: "https://www.nannax.top",
+    avatar: "https://www.nannax.top/upload/LOGO-mini.ico",
+    note: "FRIEND",
+  },
 ];
