@@ -38,6 +38,37 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 - `POST /api/auth/verify-security` — `{ "challengeToken", "answer" }` 学号验证 → 无限 AI
 - `POST /api/auth/logout` / `GET /api/auth/me`
 
+### 站长控制器（`/api/owner/`）
+
+站长控制器统一要求 `acg_session` 登录态，并且用户必须是站长二次验证后的 unlimited session。浏览器只提交内容、图片或公开 URL，GitHub Token、COS 密钥等写入凭据保留在服务器环境变量里。
+
+| 方法 | 路径 | 控制器文件 | 说明 |
+|------|------|------|------|
+| GET | `/api/owner/status` | `owner_controller.go` | 返回站长信息、注册用户、未读留言提醒、AI 今日调用数、草稿和上传限制。 |
+| GET/POST | `/api/owner/drafts` | `owner_controller.go` | 读取和保存站长草稿。 |
+| PATCH | `/api/owner/notifications/:id/read` | `owner_controller.go` | 只写入 `owner_read_at`，不会隐藏公开留言。 |
+| POST | `/api/owner/uploads` | `owner_controller.go` | 保存本地临时图片到 `ACG_DATA_DIR/owner-uploads`，最大 8 MiB。 |
+| GET | `/api/owner/uploads/:name` | `owner_controller.go` | 读取本地临时上传图片。 |
+| POST | `/api/owner/assets` | `owner_controller.go` + `owner_cos.go` | 使用服务器端 COS 凭据上传文章/相册图片，返回公开 URL 和对象 key。 |
+| POST | `/api/owner/publish` | `owner_publish.go` | 发布 Markdown 到 `blog/source/_posts/`，通过 GitHub Contents API 产生真实 commit。 |
+| POST | `/api/owner/friends` | `owner_friend_publish.go` | 写入友链到 `main/src/data/friendCards.js`，检测重复 URL。 |
+| POST | `/api/owner/moments` | `owner_moment_publish.go` | 写入碎语到 `main/src/data/moments.js`，校验年份、日期、分类和内容，按日期插入并返回 commit 信息。 |
+| POST | `/api/owner/gallery/images` | `owner_gallery_publish.go` | 写入公开图片 URL 到 `main/src/data/galleryAlbums.js`，必要时创建相册并避免重复图片。 |
+
+常用站长发布请求：
+
+```http
+POST /api/owner/moments
+{
+  "year": "2026",
+  "date": "6.8",
+  "type": "心事",
+  "content": "一滴泪真正的重量取决于它落在谁的心上"
+}
+```
+
+`/api/owner/moments` 也兼容 `category` 字段作为 `type` 的 fallback。发布成功后，GitHub Actions 会按仓库部署流程更新主站。
+
 ### 留言小纸条（`/api/guestbook/`）
 
 自研轻量留言板，复用 `acg_session` 登录态；支持匿名与登录用户留言，站长（`is_owner`）可删/隐藏。
@@ -96,3 +127,9 @@ Image cache (later): serve `/api/v1/acg/image/` via Nginx `alias` + `sendfile`, 
 ## Memory
 
 Stdlib `net/http` + SQLite file DB. No Docker. Typical RSS **~60–180MB** under light load.
+
+## Follow-Up Plan
+
+- 服务器数据和状态监测：在站长控制台中展示服务健康、资源使用、同步状态和关键数据趋势。
+- 邮箱绑定与发送：补充账号邮箱绑定、验证和通知发送能力。
+- 设计艺术字主页：前端继续探索更有辨识度的首页标题与艺术字主视觉方向。

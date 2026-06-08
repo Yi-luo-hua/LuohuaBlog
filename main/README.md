@@ -14,9 +14,12 @@ This version has been extensively customized for personal use:
 - **About Section**: New illustrations. "FEEL FREE TO KEEP SCROLLING DOWN" message.
 - **Story Section**: Anime scene background. "FOLLOW-UP PLAN" and "LOOK FORWARD TO IT TO THE FULLEST".
 - **Features (Bento Grid)**: Three links — [My Blog](https://bistutzyy.github.io/), [Projects](https://tzyy11.vercel.app/), and [Reimu Blog](https://blog1-reimu.vercel.app/) — each with "Let's go!" buttons.
+- **Moments Page**: `/moments` is now a first-class top-nav page named “碎语”, rendering short notes from `src/data/moments.js` with varied holographic card modules.
+- **Friends Page**: Friend cards are maintained in `src/data/friendCards.js`; the `https://930309.xyz/` entry is `Leyili 花园` with icon `https://photo.930309.xyz/lcj.svg`.
 - **Contact Section**: Credits to Adrian Hajdin with a link to the original repo.
 - **Footer**: GitHub / Bilibili / Vercel / Email social icons with hover tooltips. "本站仅作学习使用，感谢开源" disclaimer.
 - **Assets**: Circular avatar logo, anime illustrations, custom videos, and background music.
+- **Layout Stability**: Homepage and shared site layout overflow handling has been tightened to avoid page-level double scrollbars.
 
 ## 🛠 Tech Stack
 
@@ -24,6 +27,19 @@ This version has been extensively customized for personal use:
 - Tailwind CSS
 - GSAP (ScrollTrigger)
 - React Icons
+
+## 🧩 Current Site Modules
+
+- `/moments`: 碎语 page, with postcard/ticket/watercolor/poem/journal/ribbon style modules.
+- `/friends`: friend links and friend-page messages.
+- `/gallery`: gallery albums and published image URLs.
+- `/app`: owner console for drafts, article publishing, friend publishing, moment publishing, gallery publishing, and uploads through the backend owner APIs.
+
+## 🗓 Follow-Up Plan
+
+- 服务器数据和状态监测
+- 邮箱绑定与发送
+- 设计艺术字主页
 
 ## 🚀 Run Locally
 

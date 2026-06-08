@@ -36,8 +36,8 @@
 - `桃之夭夭` 个人站点身份、文案与内容组织。
 - About 区域的视觉明信片式滚动展示。
 - Features 区域的展厅布局与档案书翻页交互。
-- Blog、Build Log、Bili Hub、AI 助手、留言板等站内功能路由与集成。
-- 留言、AI 上下文、Bili 数据缓存等后端 API。
+- Blog、Build Log、Bili Hub、AI 助手、留言板、友链、相册和 `/moments` 碎语页面等站内功能路由与集成。
+- 留言、AI 上下文、Bili 数据缓存、站长发布、友链、相册图片和碎语更新等后端 API。
 - 适配个人域名、UCloud 服务器、GitHub Actions 自动部署的工程配置。
 
 在这些原创/定制部分里，整体产品方向、功能规划、交互逻辑、内容组织和审美取舍由我主导。**Vibe Coding / AI 编程工具是实现辅助**：它们帮助我写代码、调试、整理细节和迭代版本，但不替代我对需求、设计判断和最终效果的主导。因此，本站的定制化产品设计和持续迭代成果属于我的原创设计与个人实践。
@@ -70,6 +70,16 @@
 
 该页面属于我个人学习和实践过程中搭建的原创/定制页面，欢迎自由参考、学习和使用。
 
+最近的成长记录也补充了 `/moments` 碎语页面迁移、站长控制台碎语发布链路、Leyili 花园友链修正，以及首页和其他页面的双层滚动修复。
+
+### `main/` 主站说明
+
+主站现在包含一个正式的 `/moments` 页面，页面名称为“碎语”。它可以从顶部导航进入，并从 `main/src/data/moments.js` 读取短内容，使用 postcard、ticket、watercolor、poem、journal、ribbon 等多种全息卡片模块展示。
+
+最近也修正了 `https://930309.xyz/` 的友链信息：名称为 `Leyili 花园`，图标为 `https://photo.930309.xyz/lcj.svg`，描述为 `小小后花园~~~`。独立的 `090909.top` 友链仍然保留为“他说”。
+
+首页双层滚动条问题已经通过收紧 Hero 与站点布局的 overflow 行为修复，并补充了布局类名相关的回归测试。
+
 ### `acg-api/` 后端与 API
 
 后端部分以及 API 调用逻辑主要借助 **vibecoding** 完成，包括留言板、AI 助手上下文、Bili Hub 数据缓存同步等功能。
@@ -88,6 +98,7 @@
 | `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | 仅站长 | 站长控制台状态、注册用户列表、未读留言收件箱、草稿保存、本地临时图片上传、COS 资源上传。 |
 | `owner_publish.go` | `POST /api/owner/publish` | 站长 + GitHub token | 通过 GitHub Contents API 发布 Markdown 到 `blog/source/_posts/`，合并 front matter，处理文件名冲突，并返回 commit 信息。 |
 | `owner_friend_publish.go` | `POST /api/owner/friends` | 站长 + GitHub token | 写入友链到 `main/src/data/friendCards.js`，会检测重复 URL，已有链接不会重复写入。 |
+| `owner_moment_publish.go` | `POST /api/owner/moments` | 站长 + GitHub token | 写入碎语到 `main/src/data/moments.js`，校验年份、日期、分类和内容，分配下一组视觉卡片样式，按日期插入，并返回 commit 信息。 |
 | `owner_gallery_publish.go` | `POST /api/owner/gallery/images` | 站长 + GitHub token | 写入公开图片 URL 到 `main/src/data/galleryAlbums.js`，必要时创建相册，并避免重复图片。 |
 | `owner_cos.go` | 被 `POST /api/owner/assets` 调用 | 站长 + COS 凭据 | 使用服务器端腾讯 COS 凭据上传文章/相册图片，并返回公开 URL 和对象 key。 |
 
@@ -105,6 +116,7 @@
 | `POST /api/owner/assets` | `multipart/form-data`，字段 `file`、`kind` 为 `gallery` 或 `article`，可选 `album` | 上传到腾讯 COS；相册上传必须带相册。 |
 | `POST /api/owner/publish` | `{ "draftId": 1, "title": "...", "body": "...", "coverUrl": "..." }` | 通过配置好的 token 产生真实 GitHub commit。 |
 | `POST /api/owner/friends` | `{ "name": "...", "desc": "...", "url": "...", "avatar": "..." }` | `url` 和 `avatar` 必须是公开 `http`/`https` 地址。 |
+| `POST /api/owner/moments` | `{ "year": "2026", "date": "6.8", "type": "...", "content": "..." }` | 写入一条碎语到 `main/src/data/moments.js`；`category` 也可作为 `type` 的兼容字段。 |
 | `POST /api/owner/gallery/images` | `{ "albumId": "...", "albumTitle": "...", "imageUrl": "..." }` | `imageUrl` 必须是公开 `http`/`https` 地址。 |
 
 拉取/部署环境清单：
@@ -125,6 +137,12 @@
 环境变量、密钥、服务器地址、数据库或外部服务配置请自行准备和配置，本仓库不会提供可直接复用的私密环境变量。
 
 如果你在使用、阅读或部署过程中发现任何问题，或有任何建议，欢迎向我提出。
+
+## 后续计划
+
+- 服务器数据和状态监测：在站长控制台中展示服务健康、资源使用、同步状态和关键数据趋势。
+- 邮箱绑定与发送：补充账号邮箱绑定、验证和通知发送能力。
+- 设计艺术字主页：继续探索更有辨识度的首页标题与艺术字视觉方向。
 
 ## 非商业立场
 

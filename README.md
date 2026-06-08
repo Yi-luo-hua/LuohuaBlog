@@ -36,8 +36,8 @@ I have made many original and site-specific changes around my own personal websi
 - Personal site identity, wording, and content structure for `桃之夭夭`.
 - A visual postcard-style scrolling About section.
 - A gallery layout and archive-book page-flipping interaction for the Features section.
-- Custom routing and integrations for Blog, Build Log, Bili Hub, AI assistant, and guestbook.
-- Backend APIs for comments, AI context, Bili data caching, and related site functions.
+- Custom routing and integrations for Blog, Build Log, Bili Hub, AI assistant, guestbook, friends, gallery, and the `/moments` Moments page.
+- Backend APIs for comments, AI context, Bili data caching, owner-only publishing, friend links, gallery images, and Moments updates.
 - Engineering configuration for my own domain, UCloud server, and GitHub Actions deployment.
 
 Across these original/customized parts, the product direction, feature planning, interaction model, content structure, and visual taste are led by me. **Vibe Coding / AI coding tools are implementation assistants** for coding, debugging, organizing details, and iteration; they do not replace my authorship over the requirements, design decisions, and final selection. In that sense, the customized product design and ongoing evolution of this site are my original work, with AI-assisted implementation.
@@ -70,6 +70,16 @@ The `build/` page is a build-log subsite created with the help of **vibecoding**
 
 This page is an original/customized page created during my personal learning and practice process. You are welcome to freely reference, study, and use it.
 
+Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, and the homepage/page-level double-scroll fix.
+
+### `main/` Main Site Notes
+
+The main site now includes a first-class `/moments` page named `碎语`. It is reachable from the top navigation and renders short notes from `main/src/data/moments.js` with varied holographic card modules such as postcard, ticket, watercolor, poem, journal, and ribbon.
+
+The latest cleanup also corrected the friend link for `https://930309.xyz/` to `Leyili 花园`, using `https://photo.930309.xyz/lcj.svg` and the description `小小后花园~~~`. The separate `090909.top` friend link remains `他说`.
+
+The homepage double-scroll issue was fixed by tightening Hero and site-layout overflow behavior, with regression tests covering the expected layout classes.
+
 ### `acg-api/` Backend And API
 
 The backend and API calling logic were mainly completed with the help of **vibecoding**, including guestbook, AI assistant context, Bili Hub data cache sync, and related functions.
@@ -88,6 +98,7 @@ Backend controller map:
 | `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | Owner only | Owner console status, registered-user list, unread message inbox, draft storage, local temporary image uploads, and COS asset uploads. |
 | `owner_publish.go` | `POST /api/owner/publish` | Owner only + GitHub token | Publishes Markdown through the GitHub Contents API into `blog/source/_posts/`, merges front matter, handles filename conflicts, and returns commit information. |
 | `owner_friend_publish.go` | `POST /api/owner/friends` | Owner only + GitHub token | Adds a friend link to `main/src/data/friendCards.js`, with duplicate URL detection so an existing link is not written twice. |
+| `owner_moment_publish.go` | `POST /api/owner/moments` | Owner only + GitHub token | Adds a short Moment to `main/src/data/moments.js`, validates year/date/type/content, assigns the next visual card style, inserts by date, and returns commit information. |
 | `owner_gallery_publish.go` | `POST /api/owner/gallery/images` | Owner only + GitHub token | Adds a public image URL to `main/src/data/galleryAlbums.js`, creates a new album when needed, and avoids duplicate image entries. |
 | `owner_cos.go` | Used by `POST /api/owner/assets` | Owner only + COS credentials | Uploads article/gallery images to Tencent COS using server-side credentials and returns a public URL/object key. |
 
@@ -105,6 +116,7 @@ Important request shapes:
 | `POST /api/owner/assets` | `multipart/form-data` with `file`, `kind` as `gallery` or `article`, optional `album` | Uploads to Tencent COS. Gallery uploads require an album. |
 | `POST /api/owner/publish` | `{ "draftId": 1, "title": "...", "body": "...", "coverUrl": "..." }` | Writes a real GitHub commit through the configured token. |
 | `POST /api/owner/friends` | `{ "name": "...", "desc": "...", "url": "...", "avatar": "..." }` | `url` and `avatar` must be public `http`/`https` URLs. |
+| `POST /api/owner/moments` | `{ "year": "2026", "date": "6.8", "type": "...", "content": "..." }` | Writes a short Moment to `main/src/data/moments.js`; `category` is also accepted as a fallback for `type`. |
 | `POST /api/owner/gallery/images` | `{ "albumId": "...", "albumTitle": "...", "imageUrl": "..." }` | `imageUrl` must be a public `http`/`https` URL. |
 
 Clone/deploy environment checklist:
@@ -125,6 +137,12 @@ If you want to reference or reuse the backend logic, please read, verify, and te
 Environment variables, secrets, server addresses, database settings, and external service configurations must be prepared and configured by yourself. This repository does not provide private environment variables that can be reused directly.
 
 If you find any problem while reading, using, or deploying this project, or if you have any suggestions, you are welcome to contact me.
+
+## Follow-Up Plan
+
+- Server data and status monitoring: surface service health, resource usage, sync state, and key data trends in the owner console.
+- Email binding and sending: add account email binding, verification, and notification-sending capabilities.
+- Artistic lettering homepage: explore a more recognizable homepage title/typographic art direction for the main visual identity.
 
 ## Non-Commercial Position
 
