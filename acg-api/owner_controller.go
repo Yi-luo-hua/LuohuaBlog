@@ -19,7 +19,6 @@ const (
 	ownerUploadMaxBytes   = 8 * 1024 * 1024
 	ownerDraftTitleMax    = 120
 	ownerDraftBodyMax     = 200000
-	ownerLatestUserLimit  = 5
 	ownerLatestDraftLimit = 20
 )
 
@@ -54,6 +53,13 @@ func ownerRouter(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		ownerStatusHandler(w, r)
+		return
+	case path == "emails":
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w)
+			return
+		}
+		ownerEmailDirectoryHandler(w, r)
 		return
 	case path == "drafts":
 		switch r.Method {
@@ -199,12 +205,7 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	latestUsers, err := ownerLatestUsers(ownerLatestUserLimit)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	registeredUsers, err := ownerRegisteredUsers()
+	registeredTotal, err := ownerRegisteredUserTotal()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -238,9 +239,7 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 		},
 		"users": map[string]any{
 			"total":           totalUsers,
-			"latest":          latestUsers,
-			"registered":      registeredUsers,
-			"registeredTotal": len(registeredUsers),
+			"registeredTotal": registeredTotal,
 		},
 		"notifications": notifications,
 		"ai": map[string]any{
@@ -255,6 +254,28 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 			"total": len(drafts),
 			"items": drafts,
 		},
+	})
+}
+
+func ownerEmailDirectoryHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireOwnerSession(w, r); !ok {
+		return
+	}
+
+	registeredUsers, err := ownerRegisteredUsers()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	guestbookContacts, err := ownerGuestbookContactEmails(200)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, map[string]any{
+		"registeredUsers":   registeredUsers,
+		"guestbookContacts": guestbookContacts,
 	})
 }
 
@@ -634,34 +655,10 @@ func ownerUserTotal() (int, error) {
 	return total, err
 }
 
-func ownerLatestUsers(limit int) ([]map[string]any, error) {
-	rows, err := db.Query(
-		`SELECT email, display_name, is_owner, created_at
-		 FROM users
-		 ORDER BY id DESC
-		 LIMIT ?`,
-		limit,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	latest := make([]map[string]any, 0, limit)
-	for rows.Next() {
-		var email, displayName, createdAt string
-		var isOwner int
-		if err := rows.Scan(&email, &displayName, &isOwner, &createdAt); err != nil {
-			return nil, err
-		}
-		latest = append(latest, map[string]any{
-			"email":       email,
-			"displayName": displayNameOrEmail(email, displayName),
-			"isOwner":     isOwner == 1,
-			"createdAt":   createdAt,
-		})
-	}
-	return latest, rows.Err()
+func ownerRegisteredUserTotal() (int, error) {
+	var total int
+	err := db.QueryRow(`SELECT COUNT(*) FROM users WHERE is_owner = 0`).Scan(&total)
+	return total, err
 }
 
 func ownerRegisteredUsers() ([]map[string]any, error) {
@@ -688,6 +685,47 @@ func ownerRegisteredUsers() ([]map[string]any, error) {
 			"email":       email,
 			"displayName": displayNameOrEmail(email, displayName),
 			"createdAt":   createdAt,
+		})
+	}
+	return items, rows.Err()
+}
+
+func ownerGuestbookContactEmails(limit int) ([]map[string]any, error) {
+	rows, err := db.Query(
+		`SELECT gm.id, gm.channel, gm.nickname, gm.content, gm.contact_email, COALESCE(u.email, ''), gm.created_at
+		 FROM guestbook_messages gm
+		 LEFT JOIN users u ON u.id = gm.user_id
+		 WHERE gm.status = 'visible'
+		   AND (TRIM(gm.contact_email) != '' OR COALESCE(u.email, '') != '')
+		 ORDER BY gm.id DESC
+		 LIMIT ?`,
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]map[string]any, 0)
+	for rows.Next() {
+		var id int64
+		var channel, nickname, content, submittedEmail, accountEmail, createdAt string
+		if err := rows.Scan(&id, &channel, &nickname, &content, &submittedEmail, &accountEmail, &createdAt); err != nil {
+			return nil, err
+		}
+		accountEmail = normalizeEmail(accountEmail)
+		contactEmail := ownerNotificationContactEmail(submittedEmail, accountEmail)
+		if contactEmail == "" {
+			continue
+		}
+		items = append(items, map[string]any{
+			"id":           id,
+			"source":       channel,
+			"nickname":     nickname,
+			"content":      content,
+			"contactEmail": contactEmail,
+			"accountEmail": accountEmail,
+			"createdAt":    createdAt,
 		})
 	}
 	return items, rows.Err()

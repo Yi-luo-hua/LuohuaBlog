@@ -49,6 +49,13 @@ export const ownerConsoleScreens = [
     subtitle: "集中查看留言、朋友页评论和友链申请。",
   },
   {
+    id: "emails",
+    navLabel: "邮箱",
+    icon: "@",
+    title: "邮箱目录",
+    subtitle: "只在站长后台查看注册用户邮箱和留言联系邮箱。",
+  },
+  {
     id: "ai",
     navLabel: "AI 状态",
     icon: "AI",
@@ -97,6 +104,14 @@ export const ownerConsoleModules = [
     icon: "M",
     tone: "sun",
     status: "新消息 3",
+  },
+  {
+    id: "emails",
+    title: "邮箱目录",
+    description: "站长后台专用，查看注册用户邮箱和留言联系邮箱。",
+    icon: "@",
+    tone: "blue",
+    status: "后台可见",
   },
 ];
 

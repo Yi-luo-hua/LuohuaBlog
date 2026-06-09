@@ -5,6 +5,7 @@ import { fetchChatStats } from "../services/chatStatsApi";
 import {
   createOwnerFixedAnswer,
   createOwnerDraft,
+  fetchOwnerEmails,
   fetchOwnerStatus,
   isPublicImageURL,
   markOwnerNotificationRead,
@@ -27,6 +28,7 @@ import {
 import {
   getBackendHealthLabel,
   getOwnerFixedAnswers,
+  getOwnerGuestbookContacts,
   getOwnerSessionLabel,
   getOwnerRegisteredUsers,
   getStatsSnapshot,
@@ -134,6 +136,7 @@ const AppConsolePage = () => {
   const [health, setHealth] = useState(null);
   const [stats, setStats] = useState(null);
   const [ownerStatus, setOwnerStatus] = useState(null);
+  const [ownerEmails, setOwnerEmails] = useState(null);
   const [error, setError] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -188,12 +191,14 @@ const AppConsolePage = () => {
 
   const loadConsole = useCallback(async () => {
     setError("");
-    const [authResult, healthResult, statsResult, ownerStatusResult] = await Promise.allSettled([
-      authMe(),
-      fetchBackendHealth(),
-      fetchChatStats(14),
-      fetchOwnerStatus(),
-    ]);
+    const [authResult, healthResult, statsResult, ownerStatusResult, ownerEmailsResult] =
+      await Promise.allSettled([
+        authMe(),
+        fetchBackendHealth(),
+        fetchChatStats(14),
+        fetchOwnerStatus(),
+        fetchOwnerEmails(),
+      ]);
 
     if (authResult.status === "fulfilled") {
       setAuth(authResult.value.ok ? authResult.value.data : { loggedIn: false });
@@ -201,6 +206,7 @@ const AppConsolePage = () => {
     if (healthResult.status === "fulfilled") setHealth(healthResult.value);
     if (statsResult.status === "fulfilled") setStats(statsResult.value);
     if (ownerStatusResult.status === "fulfilled") setOwnerStatus(ownerStatusResult.value);
+    if (ownerEmailsResult.status === "fulfilled") setOwnerEmails(ownerEmailsResult.value);
 
     const requiredFailures = [authResult, healthResult, statsResult].some(
       (result) => result.status === "rejected",
@@ -224,8 +230,10 @@ const AppConsolePage = () => {
   const liveNotifications = ownerStatus?.notifications?.items || ownerConsoleNotifications;
   const notificationTotal =
     ownerStatus?.notifications?.total ?? getNotificationTotal(ownerConsoleNotifications);
-  const liveUsers = ownerStatus?.users?.latest || [];
-  const registeredUsers = getOwnerRegisteredUsers(ownerStatus);
+  const registeredUsers = getOwnerRegisteredUsers(ownerEmails);
+  const guestbookContacts = getOwnerGuestbookContacts(ownerEmails);
+  const registeredUserTotal =
+    ownerStatus?.users?.registeredTotal ?? ownerStatus?.users?.total ?? registeredUsers.length;
   const fixedAnswers = getOwnerFixedAnswers(ownerStatus);
   const liveDrafts = ownerStatus?.drafts?.items || [];
   const draftCount = ownerStatus?.drafts?.total ?? liveDrafts.length;
@@ -945,7 +953,7 @@ const AppConsolePage = () => {
                   <div className="owner-stats-grid">
                     <article className="owner-stat-card">
                       <span>注册用户</span>
-                      <strong>{ownerStatus?.users?.total ?? liveUsers.length ?? 0}</strong>
+                      <strong>{registeredUserTotal}</strong>
                       <em>真实数据</em>
                     </article>
                     <article className="owner-stat-card">
@@ -963,35 +971,6 @@ const AppConsolePage = () => {
                       <strong>{statsSnapshot.today}</strong>
                       <em>{statsSnapshot.model}</em>
                     </article>
-                  </div>
-                </section>
-
-                <section className="owner-panel owner-glass">
-                  <div className="owner-panel-title">
-                    <h2>最新用户</h2>
-                    <button type="button" className="owner-secondary owner-small-button">
-                      实时列表
-                    </button>
-                  </div>
-                  <div className="owner-user-list">
-                    <div className="owner-user-row">
-                      <span className="owner-user-avatar">{userInitial(ownerLabel)}</span>
-                      <span>
-                        <strong>{ownerLabel}</strong>
-                        <small>站长会话 · {healthLabel}</small>
-                      </span>
-                      <StatusTag>站长</StatusTag>
-                    </div>
-                    {liveUsers.map((user) => (
-                      <div className="owner-user-row" key={`${user.email}-${user.createdAt}`}>
-                        <span className="owner-user-avatar">{userInitial(user.displayName)}</span>
-                        <span>
-                          <strong>{user.displayName}</strong>
-                          <small>{user.email}</small>
-                        </span>
-                        <StatusTag>{user.isOwner ? "站长" : "用户"}</StatusTag>
-                      </div>
-                    ))}
                   </div>
                 </section>
               </div>
@@ -1579,6 +1558,73 @@ const AppConsolePage = () => {
             </div>
           </section>
 
+          <section className={`owner-screen ${activeScreen === "emails" ? "active" : ""}`}>
+            <div className="owner-content-grid">
+              <section className="owner-panel owner-glass">
+                <div className="owner-panel-title">
+                  <h2>注册用户邮箱</h2>
+                  <StatusTag>{registeredUsers.length}</StatusTag>
+                </div>
+                {registeredUsers.length ? (
+                  <div className="owner-table-wrap">
+                    <table className="owner-data-table">
+                      <thead>
+                        <tr>
+                          <th>昵称</th>
+                          <th>邮箱</th>
+                          <th>注册时间</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {registeredUsers.map((user) => (
+                          <tr key={`${user.email}-${user.createdAt}`}>
+                            <td>{user.displayName || "未设置昵称"}</td>
+                            <td>{user.email}</td>
+                            <td>{user.createdAt || "未知"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <article className="owner-empty-row">暂无注册用户邮箱</article>
+                )}
+              </section>
+
+              <aside className="owner-side-stack">
+                <section className="owner-panel owner-glass">
+                  <div className="owner-panel-title">
+                    <h2>留言联系邮箱</h2>
+                    <StatusTag>{guestbookContacts.length}</StatusTag>
+                  </div>
+                  <div className="owner-user-list">
+                    {guestbookContacts.length ? (
+                      guestbookContacts.map((contact) => (
+                        <article
+                          className="owner-user-row owner-user-row--stacked"
+                          key={`${contact.id}-${contact.contactEmail}`}
+                        >
+                          <span className="owner-user-avatar">{userInitial(contact.nickname || contact.contactEmail)}</span>
+                          <span>
+                            <strong>{contact.nickname || "访客"}</strong>
+                            <small>{contact.contactEmail}</small>
+                            {contact.accountEmail && contact.accountEmail !== contact.contactEmail ? (
+                              <small>登录邮箱：{contact.accountEmail}</small>
+                            ) : null}
+                            {contact.content ? <small>{contact.content}</small> : null}
+                          </span>
+                          <StatusTag>{notificationSourceLabel(contact.source)}</StatusTag>
+                        </article>
+                      ))
+                    ) : (
+                      <article className="owner-empty-row">暂无留言联系邮箱</article>
+                    )}
+                  </div>
+                </section>
+              </aside>
+            </div>
+          </section>
+
           <section className={`owner-screen ${activeScreen === "ai" ? "active" : ""}`}>
             <div className="owner-panel owner-glass">
               <div className="owner-panel-title">
@@ -1665,27 +1711,6 @@ const AppConsolePage = () => {
 
               <aside className="owner-debug-box owner-glass">
                 <div className="owner-panel-title">
-                  <h2>AI 注册用户</h2>
-                  <StatusTag>{registeredUsers.length}</StatusTag>
-                </div>
-                <div className="owner-user-list">
-                  {registeredUsers.length ? (
-                    registeredUsers.map((user) => (
-                      <article className="owner-user-row" key={`${user.email}-${user.createdAt}`}>
-                        <span className="owner-user-avatar">{userInitial(user.displayName || user.email)}</span>
-                        <span>
-                          <strong>{user.displayName || "未设置昵称"}</strong>
-                          <small>{user.email}</small>
-                          <small>注册时间：{user.createdAt || "未知"}</small>
-                        </span>
-                        <StatusTag>用户</StatusTag>
-                      </article>
-                    ))
-                  ) : (
-                    <article className="owner-empty-row">暂无注册用户</article>
-                  )}
-                </div>
-                <div className="owner-panel-title owner-panel-title--spaced">
                   <h2>已保存答案</h2>
                   <StatusTag>后端固定答案</StatusTag>
                 </div>

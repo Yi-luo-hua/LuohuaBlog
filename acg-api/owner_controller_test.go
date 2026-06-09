@@ -253,6 +253,9 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		ai := payload["ai"].(map[string]any)
 		uploads := payload["uploads"].(map[string]any)
 
+		if _, ok := users["latest"]; ok {
+			t.Fatalf("owner status should not expose latest users on the home summary")
+		}
 		if got := int(users["total"].(float64)); got != 2 {
 			t.Fatalf("expected users.total 2, got %d", got)
 		}
@@ -277,16 +280,11 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		if item["nickname"] != "guest" {
 			t.Fatalf("expected notification nickname, got %#v", item["nickname"])
 		}
-		registered := users["registered"].([]any)
-		if len(registered) != 1 {
-			t.Fatalf("expected one registered user, got %d", len(registered))
+		if _, ok := users["registered"]; ok {
+			t.Fatalf("owner status should not expose registered user emails")
 		}
-		reader := registered[0].(map[string]any)
-		if reader["email"] != "reader@example.com" {
-			t.Fatalf("expected registered user email, got %#v", reader["email"])
-		}
-		if reader["createdAt"] == "" {
-			t.Fatalf("expected registered user createdAt")
+		if got := int(users["registeredTotal"].(float64)); got != 1 {
+			t.Fatalf("expected users.registeredTotal 1, got %d", got)
 		}
 		if got := int(ai["today"].(float64)); got != 3 {
 			t.Fatalf("expected ai.today 3, got %d", got)
@@ -304,6 +302,88 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		}
 		if got := int64(uploads["maxBytes"].(float64)); got != 8*1024*1024 {
 			t.Fatalf("expected uploads.maxBytes 8388608, got %d", got)
+		}
+	})
+}
+
+func TestOwnerEmailsRequiresLogin(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		req := httptest.NewRequest(http.MethodGet, "/api/owner/emails", nil)
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("expected 401, got %d body=%s", rr.Code, rr.Body.String())
+		}
+	})
+}
+
+func TestOwnerEmailsReturnsRegisteredUsersAndGuestbookContacts(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		readerID := seedOwnerControllerUser(t, "reader@example.com", false)
+		memberID := seedOwnerControllerUser(t, "member@example.com", false)
+		token := seedOwnerControllerSession(t, ownerID, true)
+		seedOwnerNotificationMessageWithContact(t, 0, "Visitor", guestbookChannelLink, "friend request", "visitor@example.com")
+		seedOwnerNotificationMessageWithContact(t, memberID, "Member", guestbookChannelMain, "login message", "")
+		seedOwnerNotificationMessageWithContact(t, 0, "NoContact", guestbookChannelMain, "plain guestbook", "")
+		_ = readerID
+
+		req := httptest.NewRequest(http.MethodGet, "/api/owner/emails", nil)
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		payload := decodeOwnerJSONMap(t, rr)
+		registered := payload["registeredUsers"].([]any)
+		if len(registered) != 2 {
+			t.Fatalf("expected two registered users, got %d", len(registered))
+		}
+		registeredEmails := make(map[string]bool, len(registered))
+		for _, raw := range registered {
+			user := raw.(map[string]any)
+			registeredEmails[user["email"].(string)] = true
+			if user["createdAt"] == "" {
+				t.Fatalf("expected registered user createdAt")
+			}
+		}
+		if !registeredEmails["reader@example.com"] || !registeredEmails["member@example.com"] {
+			t.Fatalf("expected registered emails, got %#v", registeredEmails)
+		}
+
+		contacts := payload["guestbookContacts"].([]any)
+		if len(contacts) != 2 {
+			t.Fatalf("expected two guestbook contacts, got %d", len(contacts))
+		}
+		contactsByName := make(map[string]map[string]any, len(contacts))
+		for _, raw := range contacts {
+			item := raw.(map[string]any)
+			contactsByName[item["nickname"].(string)] = item
+		}
+		visitor := contactsByName["Visitor"]
+		if visitor["source"] != guestbookChannelLink {
+			t.Fatalf("expected visitor source friends, got %#v", visitor["source"])
+		}
+		if visitor["contactEmail"] != "visitor@example.com" {
+			t.Fatalf("expected submitted contact email, got %#v", visitor["contactEmail"])
+		}
+		if visitor["accountEmail"] != "" {
+			t.Fatalf("expected anonymous visitor accountEmail empty, got %#v", visitor["accountEmail"])
+		}
+		member := contactsByName["Member"]
+		if member["contactEmail"] != "member@example.com" {
+			t.Fatalf("expected member contact fallback, got %#v", member["contactEmail"])
+		}
+		if member["accountEmail"] != "member@example.com" {
+			t.Fatalf("expected member account email, got %#v", member["accountEmail"])
+		}
+		if _, ok := contactsByName["NoContact"]; ok {
+			t.Fatalf("guestbook contact without email should not be included")
 		}
 	})
 }

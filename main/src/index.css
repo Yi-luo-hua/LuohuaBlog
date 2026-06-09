@@ -5322,6 +5322,15 @@ body {
   overflow-wrap: anywhere;
 }
 
+.owner-user-row--stacked {
+  align-items: start;
+}
+
+.owner-user-row--stacked span:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
+
 .owner-user-avatar {
   width: 40px;
   height: 40px;
@@ -5987,7 +5996,7 @@ body {
     backdrop-filter: blur(24px) saturate(135%);
     -webkit-backdrop-filter: blur(24px) saturate(135%);
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 5px;
   }
 

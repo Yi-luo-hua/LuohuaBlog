@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   createOwnerFixedAnswer,
+  fetchOwnerEmails,
   isPublicImageURL,
   markOwnerNotificationRead,
   publishOwnerArticle,
@@ -11,6 +12,37 @@ import {
   publishOwnerMoment,
   uploadOwnerAsset,
 } from "./ownerApi.js";
+
+test("fetchOwnerEmails gets the dedicated owner email directory", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  let requestURL = "";
+  let requestOptions = null;
+  globalThis.fetch = async (url, options = {}) => {
+    requestURL = url;
+    requestOptions = options;
+    return {
+      ok: true,
+      async json() {
+        return {
+          registeredUsers: [{ email: "reader@example.test" }],
+          guestbookContacts: [{ contactEmail: "visitor@example.test" }],
+        };
+      },
+    };
+  };
+
+  const result = await fetchOwnerEmails();
+
+  assert.equal(requestURL, "/api/owner/emails");
+  assert.equal(requestOptions.credentials, "include");
+  assert.equal(requestOptions.headers.Accept, "application/json");
+  assert.equal(result.registeredUsers[0].email, "reader@example.test");
+  assert.equal(result.guestbookContacts[0].contactEmail, "visitor@example.test");
+});
 
 test("publishOwnerArticle posts to the real owner publish endpoint", async (t) => {
   const originalFetch = globalThis.fetch;
