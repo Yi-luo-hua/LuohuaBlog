@@ -4,22 +4,33 @@
   if (document.getElementById("blog-ai-root")) return;
 
   var API_CHAT = "/api/chat";
+  var API_IMAGE = "/api/ai/image";
   var API_AUTH = "/api/auth";
   var OWNER_EMAIL = "173236231@qq.com";
   var LIMIT_MSG = "今日提问次数用完啦，明天再来问我吧～";
+  var IMAGE_LIMIT_MSG = "今日生图次数用完啦，明天再来画吧～";
   var ERROR_MSG = "小精灵暂时走神了，请稍后再试～";
+  var IMAGE_ERROR_MSG = "生图暂时失败了，请稍后再试～";
   var NOT_CONFIGURED_MSG =
     "小精灵还在沉睡中～站长配置 DeepSeek API Key 后就能聊天啦";
+  var IMAGE_NOT_CONFIGURED_MSG =
+    "生图还没配置百炼 API Key，站长配好后就能用了。";
 
   var state = {
     open: false,
+    mode: "chat",
     authMode: "login",
     authModalOpen: false,
+    imageModalOpen: false,
     sending: false,
     chatEnabled: true,
+    imageEnabled: false,
     limit: 10,
     used: 0,
     remaining: 10,
+    imageLimit: 0,
+    imageUsed: 0,
+    imageRemaining: 0,
     isLogin: false,
     unlimited: false,
     user: null,
@@ -161,6 +172,7 @@
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && state.authModalOpen) closeAuthModal();
+      if (e.key === "Escape" && state.imageModalOpen) closeImageModal();
     });
   }
 
@@ -461,9 +473,25 @@
       window.dispatchEvent(new CustomEvent("blog-auth-state-changed", {
         detail: { user: null, isLogin: false, unlimited: false },
       }));
-      refreshQuota();
+      refreshAllQuotas();
       appendMsg(ui.messages, "system", "已退出登录");
     });
+  }
+
+  function setMode(mode) {
+    state.mode = mode === "image" ? "image" : "chat";
+    if (ui.modeChat) ui.modeChat.classList.toggle("is-active", state.mode === "chat");
+    if (ui.modeImage) ui.modeImage.classList.toggle("is-active", state.mode === "image");
+    if (ui.input) {
+      ui.input.placeholder =
+        state.mode === "image" ? "描述想生成的画面…" : "输入你的问题…";
+      ui.input.setAttribute("maxlength", state.mode === "image" ? "400" : "500");
+    }
+    if (ui.send) {
+      ui.send.textContent = state.mode === "image" ? "生成" : "发送";
+    }
+    updateQuotaLabel();
+    if (state.mode === "image") refreshImageQuota();
   }
 
   function mount() {
@@ -484,7 +512,16 @@
     var header = el("div");
     header.id = "blog-ai-header";
     header.appendChild(el("h2", null, "✦ 博客小精灵"));
-    header.appendChild(el("p", null, "可以问我当前页面相关问题"));
+    ui.subtitle = el("p", null, "可以问我当前页面相关问题，也可以生成一张小图");
+    header.appendChild(ui.subtitle);
+    ui.modeTabs = el("div", "blog-ai-mode-tabs");
+    ui.modeChat = el("button", "blog-ai-mode-tab is-active", "聊天");
+    ui.modeChat.type = "button";
+    ui.modeImage = el("button", "blog-ai-mode-tab", "生图");
+    ui.modeImage.type = "button";
+    ui.modeTabs.appendChild(ui.modeChat);
+    ui.modeTabs.appendChild(ui.modeImage);
+    header.appendChild(ui.modeTabs);
     ui.pageHint = el("p");
     ui.pageHint.id = "blog-ai-page-hint";
     ui.pageHint.className = "blog-ai-page-hint";
@@ -513,10 +550,12 @@
     ui.chatForm.id = "blog-ai-form";
     var input = document.createElement("textarea");
     input.id = "blog-ai-input";
+    ui.input = input;
     input.rows = 1;
     input.placeholder = "输入你的问题…";
     input.setAttribute("maxlength", "500");
     var send = el("button", null, "发送");
+    ui.send = send;
     send.id = "blog-ai-send";
     send.type = "submit";
     ui.chatForm.appendChild(input);
@@ -533,13 +572,35 @@
       setOpen(!state.open);
       if (state.open) {
         updatePageHint();
-        refreshAuthMe().then(refreshQuota);
+        refreshAuthMe().then(refreshAllQuotas);
+      }
+    });
+
+    ui.modeChat.addEventListener("click", function () {
+      setMode("chat");
+    });
+
+    ui.modeImage.addEventListener("click", function () {
+      setMode("image");
+      if (ui.messages && !ui.messages.querySelector(".bai-image-intro")) {
+        var intro = appendMsg(
+          ui.messages,
+          "system",
+          state.isLogin
+            ? "生图使用 z-image-turbo，默认每天 3 张。"
+            : "生图需要先登录，避免额度被刷。"
+        );
+        intro.classList.add("bai-image-intro");
       }
     });
 
     ui.chatForm.addEventListener("submit", function (e) {
       e.preventDefault();
-      sendMessage(input, send);
+      if (state.mode === "image") {
+        generateImage(input, send);
+      } else {
+        sendMessage(input, send);
+      }
     });
 
     input.addEventListener("keydown", function (e) {
@@ -559,11 +620,18 @@
       if (detail.openAuth === true) {
         openAuthModal(detail.mode || "login");
       }
-      refreshAuthMe().then(refreshQuota);
+      refreshAuthMe().then(refreshAllQuotas);
+    });
+
+    window.addEventListener("blog-ai-image-result", function (e) {
+      var detail = (e && e.detail) || {};
+      var image = detail.image || detail;
+      if (image && image.url) openImageModal(image);
     });
 
     updateAuthBar();
     refreshAuthMe();
+    refreshAllQuotas();
   }
 
   function setOpen(open) {
@@ -577,6 +645,16 @@
 
   function updateQuotaLabel() {
     if (!ui.quota) return;
+    if (state.mode === "image") {
+      if (state.unlimited) {
+        ui.quota.textContent = "生图剩余：无限（站长）";
+        return;
+      }
+      var imageSuffix = state.isLogin ? "" : " · 登录后可生图";
+      ui.quota.textContent =
+        "生图剩余：" + state.imageRemaining + "/" + state.imageLimit + imageSuffix;
+      return;
+    }
     if (state.unlimited) {
       ui.quota.textContent = "今日剩余：无限（站长）";
       return;
@@ -590,6 +668,173 @@
     container.appendChild(el("div", "bai-msg " + role, text));
     container.scrollTop = container.scrollHeight;
     return container.lastElementChild;
+  }
+
+  function ensureImageModal() {
+    if (ui.imageOverlay) return;
+
+    ui.imageOverlay = el("div", "blog-ai-image-overlay");
+    ui.imageOverlay.id = "blog-ai-image-overlay";
+    ui.imageOverlay.setAttribute("aria-hidden", "true");
+
+    var backdrop = el("button", "blog-ai-image-backdrop");
+    backdrop.type = "button";
+    backdrop.setAttribute("aria-label", "关闭生成图片");
+    backdrop.addEventListener("click", closeImageModal);
+
+    ui.imageCard = el("div", "blog-ai-image-card");
+    ui.imageCard.setAttribute("role", "dialog");
+    ui.imageCard.setAttribute("aria-modal", "true");
+    ui.imageCard.setAttribute("aria-labelledby", "blog-ai-image-title");
+
+    var close = el("button", "blog-ai-image-close", "关闭");
+    close.type = "button";
+    close.addEventListener("click", closeImageModal);
+
+    ui.imageMedia = el("div", "blog-ai-image-media");
+    var img = document.createElement("img");
+    ui.imagePreview = img;
+    img.alt = "AI 生成图片";
+    img.loading = "lazy";
+    img.addEventListener("load", function () {
+      var ratio =
+        img.naturalWidth > 0 && img.naturalHeight > 0
+          ? img.naturalWidth / img.naturalHeight
+          : 1;
+      ui.imageCard.style.setProperty("--blog-ai-result-aspect", ratio.toFixed(4));
+      img.classList.add("is-loaded");
+    });
+    ui.imageMedia.appendChild(img);
+
+    var copy = el("div", "blog-ai-image-copy");
+    copy.appendChild(el("p", "blog-ai-image-kicker", "AI Image"));
+    ui.imageTitle = el("h3", null, "生图完成");
+    ui.imageTitle.id = "blog-ai-image-title";
+    copy.appendChild(ui.imageTitle);
+
+    var actions = el("div", "blog-ai-image-actions");
+    ui.imageSave = el("button", "blog-ai-image-action", "保存本地");
+    ui.imageSave.type = "button";
+    actions.appendChild(ui.imageSave);
+    ui.imageCopy = el("button", "blog-ai-image-action", "复制链接");
+    ui.imageCopy.type = "button";
+    actions.appendChild(ui.imageCopy);
+
+    copy.appendChild(actions);
+    ui.imageCard.appendChild(close);
+    ui.imageCard.appendChild(ui.imageMedia);
+    ui.imageCard.appendChild(copy);
+    ui.imageOverlay.appendChild(backdrop);
+    ui.imageOverlay.appendChild(ui.imageCard);
+    document.body.appendChild(ui.imageOverlay);
+  }
+
+  function imageFilenameFromUrl(rawUrl) {
+    try {
+      var parsed = new URL(rawUrl, window.location.href);
+      var filename = decodeURIComponent(
+        (parsed.pathname.split("/").pop() || "").trim()
+      );
+      if (filename && /\.[a-z0-9]{2,5}$/i.test(filename)) return filename;
+    } catch (err) {
+      // Fall through to a stable default name.
+    }
+    return "taozhiyy-ai-image.png";
+  }
+
+  function triggerImageDownload(url, filename) {
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  function saveImageLocally(rawUrl) {
+    var filename = imageFilenameFromUrl(rawUrl);
+    return fetch(rawUrl, { mode: "cors", credentials: "omit" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("image download failed");
+        return res.blob();
+      })
+      .then(function (blob) {
+        var objectUrl = URL.createObjectURL(blob);
+        triggerImageDownload(objectUrl, filename);
+        setTimeout(function () {
+          URL.revokeObjectURL(objectUrl);
+        }, 1000);
+        return "downloaded";
+      })
+      .catch(function () {
+        window.open(rawUrl, "_blank", "noopener,noreferrer");
+        return "opened";
+      });
+  }
+
+  function openImageModal(image) {
+    if (!image || !image.url) return;
+    ensureImageModal();
+    ui.imagePreview.classList.remove("is-loaded");
+    ui.imagePreview.src = image.url;
+    setTimeout(function () {
+      if (ui.imagePreview && ui.imagePreview.complete) {
+        ui.imagePreview.classList.add("is-loaded");
+      }
+    }, 0);
+    ui.imageSave.textContent = "保存本地";
+    ui.imageSave.onclick = function () {
+      ui.imageSave.disabled = true;
+      ui.imageSave.textContent = "保存中";
+      saveImageLocally(image.url).then(function (result) {
+        ui.imageSave.textContent = result === "opened" ? "已打开" : "已保存";
+        setTimeout(function () {
+          if (ui.imageSave) {
+            ui.imageSave.disabled = false;
+            ui.imageSave.textContent = "保存本地";
+          }
+        }, 1400);
+      });
+    };
+    ui.imageCopy.textContent = "复制链接";
+    ui.imageCopy.onclick = function () {
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(image.url).then(function () {
+        ui.imageCopy.textContent = "已复制";
+        setTimeout(function () {
+          if (ui.imageCopy) ui.imageCopy.textContent = "复制链接";
+        }, 1400);
+      });
+    };
+    state.imageModalOpen = true;
+    ui.imageOverlay.classList.add("is-open");
+    ui.imageOverlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("blog-ai-image-open");
+  }
+
+  function closeImageModal() {
+    if (!ui.imageOverlay) return;
+    state.imageModalOpen = false;
+    ui.imageOverlay.classList.remove("is-open");
+    ui.imageOverlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("blog-ai-image-open");
+  }
+
+  function applyImageQuota(data) {
+    if (!data) return;
+    if (data.limit != null) state.imageLimit = data.limit;
+    if (data.used != null) state.imageUsed = data.used;
+    if (data.remaining != null) state.imageRemaining = data.remaining;
+    if (data.isLogin != null) state.isLogin = !!data.isLogin;
+    if (data.unlimited != null) state.unlimited = !!data.unlimited;
+    if (data.imageEnabled != null) state.imageEnabled = !!data.imageEnabled;
+  }
+
+  function refreshAllQuotas() {
+    return Promise.all([refreshQuota(), refreshImageQuota()]).then(function () {
+      updateQuotaLabel();
+    });
   }
 
   function refreshQuota() {
@@ -616,6 +861,103 @@
       })
       .catch(function () {
         updateQuotaLabel();
+      });
+  }
+
+  function refreshImageQuota() {
+    return fetch(API_IMAGE, {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          return { ok: r.ok, data: d };
+        });
+      })
+      .then(function (res) {
+        if (res.ok && res.data) {
+          applyImageQuota(res.data);
+        }
+        updateQuotaLabel();
+      })
+      .catch(function () {
+        updateQuotaLabel();
+      });
+  }
+
+  function generateImage(input, sendBtn) {
+    if (state.sending || state.authModalOpen) return;
+    var text = (input.value || "").trim();
+    if (!text) return;
+    if (!state.isLogin) {
+      appendMsg(ui.messages, "system", "请先登录后再生图，避免额度被刷爆。");
+      openAuthModal("login");
+      return;
+    }
+    if (!state.imageEnabled) {
+      appendMsg(ui.messages, "system", IMAGE_NOT_CONFIGURED_MSG);
+      return;
+    }
+    if (!state.unlimited && state.imageRemaining <= 0) {
+      appendMsg(ui.messages, "system", IMAGE_LIMIT_MSG);
+      return;
+    }
+
+    state.sending = true;
+    sendBtn.disabled = true;
+    input.disabled = true;
+    appendMsg(ui.messages, "user", text);
+    input.value = "";
+    var thinking = appendMsg(ui.messages, "bot", "正在生成图片...");
+
+    fetch(API_IMAGE, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ prompt: text, size: "1024*1024" }),
+    })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          return { status: r.status, data: d };
+        });
+      })
+      .then(function (res) {
+        thinking.remove();
+        var d = res.data || {};
+        applyImageQuota(d);
+        updateQuotaLabel();
+
+        if (d.error === "IMAGE_NOT_CONFIGURED" || d.imageEnabled === false) {
+          appendMsg(ui.messages, "system", d.message || IMAGE_NOT_CONFIGURED_MSG);
+          return;
+        }
+        if (res.status === 401 || d.error === "LOGIN_REQUIRED") {
+          appendMsg(ui.messages, "system", d.message || "请先登录后再生图。");
+          openAuthModal("login");
+          return;
+        }
+        if (res.status === 429 || d.error === "DAILY_LIMIT_EXCEEDED") {
+          state.imageRemaining = 0;
+          appendMsg(ui.messages, "system", d.message || IMAGE_LIMIT_MSG);
+          return;
+        }
+        if (res.status >= 400 || d.error || !d.image || !d.image.url) {
+          appendMsg(ui.messages, "system", d.message || IMAGE_ERROR_MSG);
+          return;
+        }
+        appendMsg(ui.messages, "system", "图片已生成，已在屏幕中央打开。");
+        openImageModal(d.image);
+      })
+      .catch(function () {
+        thinking.remove();
+        appendMsg(ui.messages, "system", IMAGE_ERROR_MSG);
+      })
+      .finally(function () {
+        state.sending = false;
+        sendBtn.disabled = false;
+        input.disabled = false;
+        input.focus();
       });
   }
 

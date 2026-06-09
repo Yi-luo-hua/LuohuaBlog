@@ -79,6 +79,13 @@ class SyncAuthEnvTests(unittest.TestCase):
         self.assertIn("SMTP_FROM_NAME", text)
         self.assertIn("MAIL_NOTIFY_TO", text)
 
+    def test_syncs_dashscope_image_generation_env_keys(self):
+        text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("DASHSCOPE_API_KEY", text)
+        self.assertIn("DASHSCOPE_BASE_URL", text)
+        self.assertIn("AI_IMAGE_MODEL", text)
+
 
 if __name__ == "__main__":
     unittest.main()

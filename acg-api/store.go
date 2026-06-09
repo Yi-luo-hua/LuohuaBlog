@@ -131,6 +131,19 @@ func migrateAll(db *sql.DB) error {
 			updated_at TEXT NOT NULL
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_ai_fixed_answers_status_updated ON ai_fixed_answers(status, updated_at DESC, id DESC);`,
+		`CREATE TABLE IF NOT EXISTS ai_image_generations (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER,
+			identity_key TEXT NOT NULL,
+			prompt TEXT NOT NULL,
+			model TEXT NOT NULL,
+			size TEXT NOT NULL,
+			image_url TEXT NOT NULL,
+			object_key TEXT NOT NULL,
+			provider_request_id TEXT NOT NULL DEFAULT '',
+			created_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_ai_image_generations_user_created ON ai_image_generations(user_id, created_at DESC);`,
 		`CREATE TABLE IF NOT EXISTS wallpaper_pool (
 			id TEXT PRIMARY KEY,
 			url TEXT NOT NULL,

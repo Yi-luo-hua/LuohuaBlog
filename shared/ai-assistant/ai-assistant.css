@@ -88,6 +88,35 @@
   color: rgba(43, 43, 43, 0.72);
 }
 
+.blog-ai-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.blog-ai-mode-tab {
+  min-height: 30px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(43, 43, 43, 0.68);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.blog-ai-mode-tab.is-active {
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--bai-text);
+  box-shadow: 0 8px 18px rgba(116, 192, 252, 0.18);
+}
+
 .blog-ai-page-hint {
   margin-top: 6px !important;
   font-size: 11px !important;
@@ -445,6 +474,204 @@ body.acct-auth-open {
   text-align: center;
 }
 
+body.blog-ai-image-open {
+  overflow: hidden;
+}
+
+.blog-ai-image-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999998;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.26s ease;
+}
+
+.blog-ai-image-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.blog-ai-image-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 248, 231, 0.22), transparent 34rem),
+    rgba(33, 24, 36, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: default;
+}
+
+.blog-ai-image-card {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 0.75rem;
+  width: fit-content;
+  max-width: 94vw;
+  max-height: 90vh;
+  padding: clamp(0.52rem, 1.4vw, 0.9rem);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: clamp(1.2rem, 3vw, 2rem);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 231, 239, 0.38)),
+    linear-gradient(135deg, rgba(255, 225, 154, 0.36), rgba(178, 224, 255, 0.3));
+  box-shadow:
+    0 2rem 5rem rgba(45, 35, 55, 0.38),
+    0 0 0 0.5rem rgba(255, 255, 255, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  transform: perspective(1100px) rotateX(2deg) rotateY(-3deg) translateY(6px);
+  animation: blogAIImageCardIn 0.34s ease forwards;
+}
+
+.blog-ai-image-card::before,
+.blog-ai-image-card::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: clamp(0.52rem, 1.4vw, 0.9rem);
+  z-index: 1;
+  border-radius: clamp(0.9rem, 2.4vw, 1.45rem);
+}
+
+.blog-ai-image-card::before {
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(115deg, transparent 0 28%, rgba(255, 255, 255, 0.5) 38%, transparent 52%),
+    conic-gradient(from 140deg at 52% 48%, rgba(255, 143, 171, 0.22), rgba(255, 232, 126, 0.18), rgba(131, 217, 255, 0.2), rgba(202, 168, 255, 0.18), rgba(255, 143, 171, 0.22));
+  opacity: 0.68;
+}
+
+.blog-ai-image-card::after {
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow:
+    inset 0 0 2rem rgba(255, 255, 255, 0.24),
+    inset 0 -1.4rem 2rem rgba(255, 180, 211, 0.16);
+}
+
+.blog-ai-image-media {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: min(
+    calc(min(72vh, 38rem) * var(--blog-ai-result-aspect, 1)),
+    calc(92vw - clamp(1.2rem, 4vw, 3rem))
+  );
+  aspect-ratio: var(--blog-ai-result-aspect, 1);
+  max-width: 100%;
+  max-height: min(72vh, 38rem);
+  overflow: hidden;
+  border-radius: clamp(0.9rem, 2.4vw, 1.45rem);
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.72), transparent 9rem),
+    linear-gradient(135deg, rgba(255, 246, 232, 0.82), rgba(232, 246, 255, 0.78));
+}
+
+.blog-ai-image-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  border-radius: inherit;
+  background: rgba(255, 250, 241, 0.42);
+  box-shadow:
+    0 1.1rem 2.2rem rgba(62, 45, 54, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+  transition: opacity 360ms ease;
+}
+
+.blog-ai-image-media img.is-loaded {
+  opacity: 1;
+}
+
+.blog-ai-image-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: min(22rem, 84vw);
+  padding: 0 0.2rem 0.1rem;
+  color: rgba(60, 45, 55, 0.9);
+}
+
+.blog-ai-image-kicker {
+  margin: 0 0 0.12rem;
+  color: rgba(107, 71, 82, 0.58);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.blog-ai-image-copy h3 {
+  margin: 0;
+  font-size: clamp(1rem, 2.8vw, 1.28rem);
+  font-weight: 900;
+}
+
+.blog-ai-image-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.45rem;
+}
+
+.blog-ai-image-action,
+.blog-ai-image-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(255, 250, 245, 0.84);
+  color: rgba(43, 43, 43, 0.86);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 0.8rem 1.8rem rgba(62, 45, 54, 0.14);
+  cursor: pointer;
+}
+
+.blog-ai-image-action {
+  padding: 0 0.86rem;
+}
+
+.blog-ai-image-close {
+  position: absolute;
+  right: clamp(0.8rem, 2vw, 1.15rem);
+  top: clamp(0.8rem, 2vw, 1.15rem);
+  z-index: 4;
+  padding: 0 0.82rem;
+}
+
+.blog-ai-image-action:hover,
+.blog-ai-image-close:hover {
+  border-color: rgba(255, 143, 171, 0.55);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.blog-ai-image-action:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+@keyframes blogAIImageCardIn {
+  to {
+    transform: perspective(1100px) rotateX(2deg) rotateY(-3deg) translateY(0);
+  }
+}
+
 #blog-ai-form {
   display: flex;
   gap: 8px;
@@ -506,5 +733,48 @@ body.acct-auth-open {
     right: 16px;
     bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     height: min(400px, 58vh);
+  }
+
+  .blog-ai-image-card {
+    max-width: 94vw;
+    max-height: 84vh;
+    padding: 0.42rem;
+    border-radius: 1.1rem;
+    transform: perspective(900px) rotateX(1.5deg) rotateY(-2deg) translateY(5px);
+  }
+
+  .blog-ai-image-card::before,
+  .blog-ai-image-card::after {
+    inset: 0.42rem;
+    border-radius: 0.82rem;
+  }
+
+  .blog-ai-image-media {
+    width: min(82vw, calc(72vh * var(--blog-ai-result-aspect, 1)));
+    max-height: 66vh;
+    border-radius: 0.82rem;
+  }
+
+  .blog-ai-image-copy {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.55rem;
+    min-width: 0;
+    width: min(82vw, 22rem);
+    padding: 0 0.24rem 0.18rem;
+  }
+
+  .blog-ai-image-actions {
+    width: 100%;
+  }
+
+  .blog-ai-image-action {
+    flex: 1;
+  }
+
+  @keyframes blogAIImageCardIn {
+    to {
+      transform: perspective(900px) rotateX(1.5deg) rotateY(-2deg) translateY(0);
+    }
   }
 }

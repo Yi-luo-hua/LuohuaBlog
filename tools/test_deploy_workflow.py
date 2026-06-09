@@ -87,6 +87,16 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("printf 'SMTP_FROM_NAME=%s\\n' \"$SMTP_FROM_NAME\" >> \"$FRAG\"", text)
         self.assertIn("printf 'MAIL_NOTIFY_TO=%s\\n' \"$MAIL_NOTIFY_TO\" >> \"$FRAG\"", text)
 
+    def test_sync_step_includes_dashscope_image_generation_secrets(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}", text)
+        self.assertIn("DASHSCOPE_BASE_URL: ${{ secrets.DASHSCOPE_BASE_URL }}", text)
+        self.assertIn("AI_IMAGE_MODEL: ${{ secrets.AI_IMAGE_MODEL }}", text)
+        self.assertIn("printf 'DASHSCOPE_API_KEY=%s\\n' \"$DASHSCOPE_API_KEY\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'DASHSCOPE_BASE_URL=%s\\n' \"$DASHSCOPE_BASE_URL\" >> \"$FRAG\"", text)
+        self.assertIn("printf 'AI_IMAGE_MODEL=%s\\n' \"$AI_IMAGE_MODEL\" >> \"$FRAG\"", text)
+
 
 if __name__ == "__main__":
     unittest.main()

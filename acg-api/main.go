@@ -69,6 +69,7 @@ func main() {
 	})
 	mux.HandleFunc("/api/chat/stats", chatStatsHandler)
 	mux.HandleFunc("/api/chat", chatHandler)
+	mux.HandleFunc("/api/ai/image", aiImageHandler)
 	mux.HandleFunc("/api/auth/", authHandler)
 	mux.HandleFunc("/api/owner/", ownerRouter)
 	mux.HandleFunc("/api/v1/sync/trigger", func(w http.ResponseWriter, r *http.Request) {
