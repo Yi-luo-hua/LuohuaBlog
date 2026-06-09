@@ -16,6 +16,14 @@ export async function fetchOwnerStatus() {
   return parseResponse(res);
 }
 
+export async function fetchOwnerEmails() {
+  const res = await fetch("/api/owner/emails", {
+    credentials: "include",
+    headers: JSON_HEADERS,
+  });
+  return parseResponse(res);
+}
+
 export async function fetchOwnerDrafts() {
   const res = await fetch("/api/owner/drafts", {
     credentials: "include",

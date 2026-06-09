@@ -19,8 +19,33 @@ export function getStatsSnapshot(stats) {
   };
 }
 
-export function getOwnerRegisteredUsers(ownerStatus) {
-  return ownerStatus?.users?.registered || [];
+export function getOwnerRegisteredUsers(ownerEmails) {
+  const items = ownerEmails?.registeredUsers;
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((item) => item?.email)
+    .map((item) => ({
+      id: item.id,
+      email: item.email,
+      displayName: item.displayName || "",
+      createdAt: item.createdAt || "",
+    }));
+}
+
+export function getOwnerGuestbookContacts(ownerEmails) {
+  const items = ownerEmails?.guestbookContacts;
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((item) => item?.contactEmail)
+    .map((item) => ({
+      id: item.id,
+      source: item.source || "",
+      nickname: item.nickname || "",
+      content: item.content || "",
+      contactEmail: item.contactEmail,
+      accountEmail: item.accountEmail || "",
+      createdAt: item.createdAt || "",
+    }));
 }
 
 export function getOwnerFixedAnswers(ownerStatus) {
