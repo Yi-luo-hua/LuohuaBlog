@@ -9,7 +9,7 @@ This is the monorepo for my personal website `Taozhiyy / 桃之夭夭`, includin
 - `main/`: Main frontend site, built with React, Vite, Tailwind CSS, and GSAP.
 - `build/`: Build-log subsite for recording how this website is built and iterated.
 - `blog/`: Hexo + Butterfly blog.
-- `acg-api/`: Go backend API, including guestbook, AI assistant, Bili Hub cache sync, and related features.
+- `acg-api/`: Go backend API, including guestbook, mail notifications, AI assistant, AI image generation, Bili Hub cache sync, and related features.
 - `shared/`: Shared scripts and styles used by multiple sites, such as the floating AI assistant.
 - `deploy/`: Deployment-related scripts.
 - `.github/workflows/`: GitHub Actions deployment configuration.
@@ -37,7 +37,7 @@ I have made many original and site-specific changes around my own personal websi
 - A visual postcard-style scrolling About section.
 - A gallery layout and archive-book page-flipping interaction for the Features section.
 - Custom routing and integrations for Blog, Build Log, Bili Hub, AI assistant, guestbook, friends, gallery, and the `/moments` Moments page.
-- Backend APIs for comments, AI context, Bili data caching, owner-only publishing, friend links, gallery images, and Moments updates.
+- Backend APIs for comments, mail notifications, AI context, AI image generation, Bili data caching, owner-only publishing, friend links, gallery images, and Moments updates.
 - Engineering configuration for my own domain, UCloud server, and GitHub Actions deployment.
 
 Across these original/customized parts, the product direction, feature planning, interaction model, content structure, and visual taste are led by me. **Vibe Coding / AI coding tools are implementation assistants** for coding, debugging, organizing details, and iteration; they do not replace my authorship over the requirements, design decisions, and final selection. In that sense, the customized product design and ongoing evolution of this site are my original work, with AI-assisted implementation.
@@ -70,7 +70,7 @@ The `build/` page is a build-log subsite created with the help of **vibecoding**
 
 This page is an original/customized page created during my personal learning and practice process. You are welcome to freely reference, study, and use it.
 
-Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, the homepage/page-level double-scroll fix, and the AI fixed-answer sync from the owner console into the public site assistant.
+Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, the homepage/page-level double-scroll fix, the AI fixed-answer sync from the owner console into the public site assistant, UTF-8-safe mail notifications, friend-page contact-email collection, threaded friend replies, owner-only email visibility, and AI image generation saved to Tencent COS.
 
 ### `main/` Main Site Notes
 
@@ -82,9 +82,11 @@ The homepage double-scroll issue was fixed by tightening Hero and site-layout ov
 
 The owner-console AI answer area now saves fixed answers into the backend instead of keeping them only in local React state. `GET /api/owner/status` returns the saved answers for review, and `/api/chat` checks the fixed-answer table before calling DeepSeek, so matching public-site questions can receive the maintained reply immediately.
 
+The floating AI assistant also has an image-generation mode for logged-in users. It calls the backend `/api/ai/image` route, uses Alibaba Cloud DashScope `z-image-turbo` with prompt rewriting disabled, stores the generated image in Tencent COS, and shows the final result in a centered translucent holographic card with local-save and COS-link copy actions.
+
 ### `acg-api/` Backend And API
 
-The backend and API calling logic were mainly completed with the help of **vibecoding**, including guestbook, AI assistant context, Bili Hub data cache sync, and related functions.
+The backend and API calling logic were mainly completed with the help of **vibecoding**, including guestbook, mail notifications, AI assistant context, AI image generation, Bili Hub data cache sync, and related functions.
 
 Concretely, `acg-api` is the Go service layer behind the site's `/api` routes. It is a standard `net/http` service bootstrapped from `acg-api/main.go`: it loads `/opt/acg-api/.env` and local `.env`, opens SQLite at `ACG_DATA_DIR/acg.db`, runs database migrations, reserves the owner account, starts Bilibili/radar/wallpaper sync loops, and is normally exposed by Nginx as `/api`.
 
@@ -96,13 +98,14 @@ Backend controller map:
 | `main.go` legacy guestbook | `GET/POST /api/v1/guestbook` | Public | Older simple guestbook API using `name` and `content`. Kept for compatibility with earlier frontend code. |
 | `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | Public/login/owner challenge | Email registration, login, session cookie management, display-name updates, and owner second-step verification. |
 | `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | Public/login/owner quota tiers | AI assistant quota status, fixed-answer lookup, chat requests, DeepSeek proxying, hourly/daily usage statistics, guest/user/owner quota handling. |
-| `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | Public for visible messages; owner/admin for moderation | Current guestbook and friend-page message controller, including channels, replies, anonymous/login users, rate limits, duplicate checks, IP masking, and soft moderation. |
-| `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | Owner only | Owner console status, registered-user list, unread message inbox, AI fixed-answer storage, draft storage, local temporary image uploads, and COS asset uploads. |
+| `ai_image.go` | `GET/POST /api/ai/image` | Login/owner quota tiers | Image-generation quota status, DashScope `z-image-turbo` generation with `promptExtend: false`, provider-image download, Tencent COS upload, and generation-history recording. |
+| `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go`, `mail_notifier.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | Public for visible messages; owner/admin for moderation | Current guestbook and friend-page message controller, including channels, threaded replies, anonymous/login users, required friend-page contact email, UTF-8 mail notifications, rate limits, duplicate checks, IP masking, and soft moderation. |
+| `owner_controller.go` | `GET /api/owner/status`, `GET /api/owner/emails`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | Owner only | Owner console status, registered-user list, unread message inbox, owner-only email directory, AI fixed-answer storage, draft storage, local temporary image uploads, and COS asset uploads. |
 | `owner_publish.go` | `POST /api/owner/publish` | Owner only + GitHub token | Publishes Markdown through the GitHub Contents API into `blog/source/_posts/`, merges front matter, handles filename conflicts, and returns commit information. |
 | `owner_friend_publish.go` | `POST /api/owner/friends` | Owner only + GitHub token | Adds a friend link to `main/src/data/friendCards.js`, with duplicate URL detection so an existing link is not written twice. |
 | `owner_moment_publish.go` | `POST /api/owner/moments` | Owner only + GitHub token | Adds a short Moment to `main/src/data/moments.js`, validates year/date/type/content, assigns the next visual card style, inserts by date, and returns commit information. |
 | `owner_gallery_publish.go` | `POST /api/owner/gallery/images` | Owner only + GitHub token | Adds a public image URL to `main/src/data/galleryAlbums.js`, creates a new album when needed, and avoids duplicate image entries. |
-| `owner_cos.go` | Used by `POST /api/owner/assets` | Owner only + COS credentials | Uploads article/gallery images to Tencent COS using server-side credentials and returns a public URL/object key. |
+| `owner_cos.go` | Used by `POST /api/owner/assets` and `POST /api/ai/image` | Owner only or server-side flow + COS credentials | Uploads article/gallery/generated images to Tencent COS using server-side credentials and returns a public URL/object key. |
 
 Important request shapes:
 
@@ -112,8 +115,11 @@ Important request shapes:
 | `POST /api/auth/login` | `{ "email": "...", "password": "..." }` | Owner login returns a `challengeToken` and requires `/api/auth/verify-security`. |
 | `POST /api/auth/verify-security` | `{ "challengeToken": "...", "answer": "..." }` | Creates an owner session with unlimited AI quota after the private answer matches. |
 | `GET /api/guestbook/messages?page=1&pageSize=20&channel=guestbook` | `channel` is `guestbook` or `friends` | Public users see visible messages; owner/admin can see hidden messages. |
-| `POST /api/guestbook/messages` | `{ "nickname": "...", "content": "...", "parentId": 0, "channel": "guestbook" }` | Anonymous users must provide `nickname`; logged-in users use their profile name. |
+| `POST /api/guestbook/messages` | `{ "nickname": "...", "contactEmail": "...", "content": "...", "parentId": 0, "channel": "guestbook" }` | `contactEmail` is optional for normal guestbook messages. Top-level `friends` messages require both `nickname` and `contactEmail` for anonymous and logged-in users; public responses never expose `contactEmail`. Replies ignore submitted `contactEmail` and notify the parent contact/account email when available. |
 | `PATCH /api/guestbook/messages/:id` | `{ "status": "visible" \| "hidden" \| "deleted" }` | Owner/admin moderation only. |
+| `GET /api/owner/emails` | No body | Owner-only directory returning registered user emails and private guestbook contact emails. |
+| `GET /api/ai/image` | No body | Returns image quota, `imageEnabled`, `canGenerate`, selected model, and `promptExtend: false`. |
+| `POST /api/ai/image` | `{ "prompt": "...", "size": "1024*1024" }` | Logged-in users only; normal users are limited to 3 images/day, owner is unlimited. Supported sizes are `1024*1024`, `1280*720`, and `720*1280`; the returned `image.url` is the final Tencent COS URL. |
 | `POST /api/owner/uploads` | `multipart/form-data` with `file` | Stores a temporary local image under `ACG_DATA_DIR/owner-uploads`, max 8 MiB. |
 | `POST /api/owner/assets` | `multipart/form-data` with `file`, `kind` as `gallery` or `article`, optional `album` | Uploads to Tencent COS. Gallery uploads require an album. |
 | `POST /api/owner/publish` | `{ "draftId": 1, "title": "...", "body": "...", "coverUrl": "..." }` | Writes a real GitHub commit through the configured token. |
@@ -128,6 +134,8 @@ Clone/deploy environment checklist:
 - Owner login: set `AUTH_OWNER_PASSWORD` and `AUTH_OWNER_SECURITY_ANSWER`; optionally tune `AUTH_SESSION_DAYS` and `AUTH_COOKIE_SECURE`.
 - Important source-level identity note: `owner.go` currently reserves the owner email and displays the security-question text for this site's deployment. Anyone reusing the backend should replace those constants or move them to environment variables for their own deployment.
 - AI assistant: set `DEEPSEEK_API_KEY`; optionally set `DEEPSEEK_BASE_URL` and `DEEPSEEK_MODEL`.
+- AI image generation: set `DASHSCOPE_API_KEY`; optionally set `DASHSCOPE_BASE_URL` and `AI_IMAGE_MODEL` (default `z-image-turbo`). Legacy `ALIYUN_BAILIAN_API_KEY` is also accepted as a fallback for the DashScope key.
+- Mail notifications: set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_NAME`, and `MAIL_NOTIFY_TO`. `SMTP_PASS` should be a mail-provider app password or authorization code, never an account login password.
 - GitHub owner publishing: set `OWNER_PUBLISH_GITHUB_TOKEN`; optionally set `OWNER_PUBLISH_GITHUB_API_BASE`, `OWNER_PUBLISH_GITHUB_OWNER`, `OWNER_PUBLISH_GITHUB_REPO`, and `OWNER_PUBLISH_GITHUB_BRANCH`. The token must have permission to write repository contents.
 - Tencent COS upload: set `TENCENT_COS_SECRET_ID`, `TENCENT_COS_SECRET_KEY`, `TENCENT_COS_BUCKET`, `TENCENT_COS_REGION`, and optionally `TENCENT_COS_BASE_URL`. Legacy `COS_SECRET_ID`, `COS_SECRET_KEY`, `COS_BUCKET`, `COS_REGION`, and `COS_BASE_URL` are also supported as fallbacks.
 - Bili sync: `BILIBILI_UID` can override the default UID; the radar creator list is defined in `acg-api/config.go`.
@@ -144,8 +152,7 @@ If you find any problem while reading, using, or deploying this project, or if y
 ## Follow-Up Plan
 
 - Server data and status monitoring: surface service health, resource usage, sync state, and key data trends in the owner console.
-- Email binding and sending: add account email binding, verification, and notification-sending capabilities.
-- Low-cost image-generation AI: deploy a budget-friendly image-generation route limited to logged-in accounts only.
+- Generated-image showcase page: turn generated COS images into a browsable, reusable, and manageable site gallery.
 - Artistic lettering homepage: explore a more recognizable homepage title/typographic art direction for the main visual identity.
 
 ## Non-Commercial Position

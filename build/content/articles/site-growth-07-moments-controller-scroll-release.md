@@ -157,7 +157,7 @@ minutes: 13
 第三类是后续计划：
 
 - 服务器数据和状态监测
-- 邮箱绑定与发送
+- 打造生成图展示页面
 - 设计艺术字主页
 
 我希望 README 不只是“项目能跑起来”的说明，也能记录当前网站真实发展到了哪一步。
@@ -169,10 +169,10 @@ minutes: 13
 | 计划 | 想解决的问题 |
 | --- | --- |
 | 服务器数据和状态监测 | 在站长控制台里看到服务运行状态、资源使用、同步状态和关键数据趋势 |
-| 邮箱绑定与发送 | 让账号体系具备更完整的邮箱能力，例如绑定、验证和发送通知 |
+| 打造生成图展示页面 | 把已经生成并保存到 COS 的图片整理成可浏览、可回看、可管理的展示页 |
 | 设计艺术字主页 | 继续探索更有辨识度的首页标题、艺术字和主视觉表达 |
 
-前两个方向偏后台基础设施，第三个方向偏视觉识别。
+第一个方向偏后台基础设施，第二个方向偏内容资产，第三个方向偏视觉识别。
 
 它们不像碎语页面那样都能一眼看出功能边界，但会让网站从“能发布内容”继续往“能长期维护、运营和表达自己”靠近。
 
@@ -294,9 +294,9 @@ The next planned directions are:
 | Plan | Goal |
 | --- | --- |
 | Server data and status monitoring | Surface service health, resource usage, sync state, and key data trends in the owner console |
-| Email binding and sending | Make the account system more complete with email binding, verification, and notifications |
+| Generated-image showcase page | Turn generated COS images into a browsable, reusable, and manageable site gallery |
 | Artistic lettering homepage | Explore a more recognizable homepage title, lettering system, and main visual identity |
 
-Some of these are less visual than the Moments page, but they matter for long-term maintenance and a stronger site identity.
+Some of these are less visual than the Moments page, but they matter for long-term maintenance, content reuse, and a stronger site identity.
 
 The site is slowly moving from “a set of pages” toward a small system I can actually run, update, and take care of over time.

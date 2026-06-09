@@ -9,7 +9,7 @@
 - `main/`: 主站前端，基于 React、Vite、Tailwind CSS 和 GSAP。
 - `build/`: 成长博客子站，用于记录本站从搭建到迭代的过程。
 - `blog/`: Hexo + Butterfly 博客。
-- `acg-api/`: Go 后端 API，包含留言板、AI 助手、Bili Hub 缓存同步等功能。
+- `acg-api/`: Go 后端 API，包含留言板、邮件通知、AI 助手、AI 生图、Bili Hub 缓存同步等功能。
 - `shared/`: 多个站点共用的脚本与样式，例如右下角 AI 助手。
 - `deploy/`: 部署相关脚本。
 - `.github/workflows/`: GitHub Actions 自动部署配置。
@@ -37,7 +37,7 @@
 - About 区域的视觉明信片式滚动展示。
 - Features 区域的展厅布局与档案书翻页交互。
 - Blog、Build Log、Bili Hub、AI 助手、留言板、友链、相册和 `/moments` 碎语页面等站内功能路由与集成。
-- 留言、AI 上下文、Bili 数据缓存、站长发布、友链、相册图片和碎语更新等后端 API。
+- 留言、邮件通知、AI 上下文、AI 生图、Bili 数据缓存、站长发布、友链、相册图片和碎语更新等后端 API。
 - 适配个人域名、UCloud 服务器、GitHub Actions 自动部署的工程配置。
 
 在这些原创/定制部分里，整体产品方向、功能规划、交互逻辑、内容组织和审美取舍由我主导。**Vibe Coding / AI 编程工具是实现辅助**：它们帮助我写代码、调试、整理细节和迭代版本，但不替代我对需求、设计判断和最终效果的主导。因此，本站的定制化产品设计和持续迭代成果属于我的原创设计与个人实践。
@@ -70,7 +70,7 @@
 
 该页面属于我个人学习和实践过程中搭建的原创/定制页面，欢迎自由参考、学习和使用。
 
-最近的成长记录也补充了 `/moments` 碎语页面迁移、站长控制台碎语发布链路、Leyili 花园友链修正、首页和其他页面的双层滚动修复，以及 AI 固定答案从站长控制台同步到网站助手的链路。
+最近的成长记录也补充了 `/moments` 碎语页面迁移、站长控制台碎语发布链路、Leyili 花园友链修正、首页和其他页面的双层滚动修复、AI 固定答案从站长控制台同步到网站助手的链路、UTF-8 安全邮件通知、友链联系邮箱收集、友链连续回复、站长后台邮箱可见能力，以及 AI 生图结果保存到腾讯 COS 的链路。
 
 ### `main/` 主站说明
 
@@ -82,9 +82,11 @@
 
 站长控制台里的 AI 固定答案区现在不再只保存在本地 React 状态中，而是写入后端固定问答库。`GET /api/owner/status` 会把已保存答案返回给控制台查看，`/api/chat` 在调用 DeepSeek 前会先匹配固定答案，因此网站右下角 AI 助手遇到相同问题时可以优先返回维护好的回复。
 
+右下角 AI 助手也加入了面向登录用户的生图模式。它会调用后端 `/api/ai/image`，使用阿里云百炼 DashScope 的 `z-image-turbo`，固定关闭提示词改写，把生成图保存到腾讯 COS，并在屏幕中央用透明浅色镭射卡片展示结果，支持保存本地和复制最终 COS 链接。
+
 ### `acg-api/` 后端与 API
 
-后端部分以及 API 调用逻辑主要借助 **vibecoding** 完成，包括留言板、AI 助手上下文、Bili Hub 数据缓存同步等功能。
+后端部分以及 API 调用逻辑主要借助 **vibecoding** 完成，包括留言板、邮件通知、AI 助手上下文、AI 生图、Bili Hub 数据缓存同步等功能。
 
 更具体地说，`acg-api` 是本站 `/api` 路由背后的 Go 服务层。它是从 `acg-api/main.go` 启动的标准 `net/http` 服务：启动时会加载 `/opt/acg-api/.env` 和本地 `.env`，在 `ACG_DATA_DIR/acg.db` 打开 SQLite，执行数据库迁移，保留站长账号，启动 Bilibili / radar / 壁纸池同步循环，并通常由 Nginx 反向代理暴露为 `/api`。
 
@@ -96,13 +98,14 @@
 | `main.go` 旧留言接口 | `GET/POST /api/v1/guestbook` | 公开 | 早期简单留言 API，只包含 `name` 和 `content`，用于兼容旧前端。 |
 | `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | 公开/登录/站长二次验证 | 邮箱注册、登录、会话 cookie、昵称修改、站长二次验证。 |
 | `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | 公开/登录/站长额度 | AI 助手额度查询、固定答案匹配、聊天请求、DeepSeek 转发、小时/日统计、游客/用户/站长额度控制。 |
-| `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | 公开可见留言；站长/管理员可审核 | 当前留言板和朋友页留言控制器，支持分区、回复、匿名/登录用户、限流、防重复、IP 脱敏和软审核。 |
-| `owner_controller.go` | `GET /api/owner/status`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | 仅站长 | 站长控制台状态、注册用户列表、未读留言收件箱、AI 固定答案保存、草稿保存、本地临时图片上传、COS 资源上传。 |
+| `ai_image.go` | `GET/POST /api/ai/image` | 登录/站长额度 | 生图额度状态、DashScope `z-image-turbo` 生图、固定 `promptExtend: false`、临时图下载、腾讯 COS 上传和生成历史记录。 |
+| `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go`, `mail_notifier.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | 公开可见留言；站长/管理员可审核 | 当前留言板和朋友页留言控制器，支持分区、连续回复、匿名/登录用户、友链联系邮箱必填、UTF-8 邮件通知、限流、防重复、IP 脱敏和软审核。 |
+| `owner_controller.go` | `GET /api/owner/status`, `GET /api/owner/emails`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | 仅站长 | 站长控制台状态、注册用户列表、未读留言收件箱、仅站长可见邮箱目录、AI 固定答案保存、草稿保存、本地临时图片上传、COS 资源上传。 |
 | `owner_publish.go` | `POST /api/owner/publish` | 站长 + GitHub token | 通过 GitHub Contents API 发布 Markdown 到 `blog/source/_posts/`，合并 front matter，处理文件名冲突，并返回 commit 信息。 |
 | `owner_friend_publish.go` | `POST /api/owner/friends` | 站长 + GitHub token | 写入友链到 `main/src/data/friendCards.js`，会检测重复 URL，已有链接不会重复写入。 |
 | `owner_moment_publish.go` | `POST /api/owner/moments` | 站长 + GitHub token | 写入碎语到 `main/src/data/moments.js`，校验年份、日期、分类和内容，分配下一组视觉卡片样式，按日期插入，并返回 commit 信息。 |
 | `owner_gallery_publish.go` | `POST /api/owner/gallery/images` | 站长 + GitHub token | 写入公开图片 URL 到 `main/src/data/galleryAlbums.js`，必要时创建相册，并避免重复图片。 |
-| `owner_cos.go` | 被 `POST /api/owner/assets` 调用 | 站长 + COS 凭据 | 使用服务器端腾讯 COS 凭据上传文章/相册图片，并返回公开 URL 和对象 key。 |
+| `owner_cos.go` | 被 `POST /api/owner/assets` 和 `POST /api/ai/image` 调用 | 站长或服务端流程 + COS 凭据 | 使用服务器端腾讯 COS 凭据上传文章/相册/生成图片，并返回公开 URL 和对象 key。 |
 
 重要请求形状：
 
@@ -112,8 +115,11 @@
 | `POST /api/auth/login` | `{ "email": "...", "password": "..." }` | 站长登录会返回 `challengeToken`，还需要调用 `/api/auth/verify-security`。 |
 | `POST /api/auth/verify-security` | `{ "challengeToken": "...", "answer": "..." }` | 私密答案匹配后创建站长会话，并获得无限 AI 额度。 |
 | `GET /api/guestbook/messages?page=1&pageSize=20&channel=guestbook` | `channel` 可为 `guestbook` 或 `friends` | 普通访问者只看可见留言；站长/管理员可看隐藏留言。 |
-| `POST /api/guestbook/messages` | `{ "nickname": "...", "content": "...", "parentId": 0, "channel": "guestbook" }` | 匿名留言必须提供 `nickname`；登录用户使用账号昵称。 |
+| `POST /api/guestbook/messages` | `{ "nickname": "...", "contactEmail": "...", "content": "...", "parentId": 0, "channel": "guestbook" }` | 普通留言墙不强制 `contactEmail`。顶层 `friends` 友链留言不管匿名或登录，都必须提供 `nickname` 和 `contactEmail`；公开响应不会暴露 `contactEmail`。回复会忽略提交的 `contactEmail`，并在可用时通知父留言联系人或账号邮箱。 |
 | `PATCH /api/guestbook/messages/:id` | `{ "status": "visible" \| "hidden" \| "deleted" }` | 仅站长/管理员审核。 |
+| `GET /api/owner/emails` | 无请求体 | 仅站长可访问，返回注册用户邮箱和私有留言联系邮箱目录。 |
+| `GET /api/ai/image` | 无请求体 | 返回生图额度、`imageEnabled`、`canGenerate`、当前模型和 `promptExtend: false`。 |
+| `POST /api/ai/image` | `{ "prompt": "...", "size": "1024*1024" }` | 仅登录用户可用；普通用户每天 3 张，站长不限额度。支持 `1024*1024`、`1280*720`、`720*1280`，返回的 `image.url` 是最终腾讯 COS 链接。 |
 | `POST /api/owner/uploads` | `multipart/form-data`，字段 `file` | 保存本地临时图片到 `ACG_DATA_DIR/owner-uploads`，最大 8 MiB。 |
 | `POST /api/owner/assets` | `multipart/form-data`，字段 `file`、`kind` 为 `gallery` 或 `article`，可选 `album` | 上传到腾讯 COS；相册上传必须带相册。 |
 | `POST /api/owner/publish` | `{ "draftId": 1, "title": "...", "body": "...", "coverUrl": "..." }` | 通过配置好的 token 产生真实 GitHub commit。 |
@@ -128,6 +134,8 @@
 - 站长登录：配置 `AUTH_OWNER_PASSWORD` 和 `AUTH_OWNER_SECURITY_ANSWER`；可选配置 `AUTH_SESSION_DAYS` 与 `AUTH_COOKIE_SECURE`。
 - 重要身份说明：`owner.go` 里目前为本站部署保留了站长邮箱和安全问题文案。复用后端的人应该替换这些常量，或进一步改成环境变量。
 - AI 助手：配置 `DEEPSEEK_API_KEY`；可选配置 `DEEPSEEK_BASE_URL` 和 `DEEPSEEK_MODEL`。
+- AI 生图：配置 `DASHSCOPE_API_KEY`；可选配置 `DASHSCOPE_BASE_URL` 和 `AI_IMAGE_MODEL`（默认 `z-image-turbo`）。旧变量 `ALIYUN_BAILIAN_API_KEY` 也可作为百炼 Key 的兼容回退。
+- 邮件通知：配置 `SMTP_HOST`、`SMTP_PORT`、`SMTP_USER`、`SMTP_PASS`、`SMTP_FROM_NAME` 和 `MAIL_NOTIFY_TO`。`SMTP_PASS` 应该使用邮箱服务商的授权码或应用密码，不要使用账号登录密码。
 - GitHub 站长发布：配置 `OWNER_PUBLISH_GITHUB_TOKEN`；可选配置 `OWNER_PUBLISH_GITHUB_API_BASE`、`OWNER_PUBLISH_GITHUB_OWNER`、`OWNER_PUBLISH_GITHUB_REPO`、`OWNER_PUBLISH_GITHUB_BRANCH`。token 需要有写入仓库内容的权限。
 - 腾讯 COS 上传：配置 `TENCENT_COS_SECRET_ID`、`TENCENT_COS_SECRET_KEY`、`TENCENT_COS_BUCKET`、`TENCENT_COS_REGION`，可选配置 `TENCENT_COS_BASE_URL`。也兼容旧变量 `COS_SECRET_ID`、`COS_SECRET_KEY`、`COS_BUCKET`、`COS_REGION`、`COS_BASE_URL`。
 - Bili 同步：`BILIBILI_UID` 可以覆盖默认 UID；radar 创作者列表定义在 `acg-api/config.go`。
@@ -144,8 +152,7 @@
 ## 后续计划
 
 - 服务器数据和状态监测：在站长控制台中展示服务健康、资源使用、同步状态和关键数据趋势。
-- 邮箱绑定与发送：补充账号邮箱绑定、验证和通知发送能力。
-- 部署低成本生图 AI：接入预算更低的生图服务，并限制为仅登录账户可用。
+- 打造生成图展示页面：把已生成并保存到 COS 的图片整理成可浏览、可回看、可管理的展示页。
 - 设计艺术字主页：继续探索更有辨识度的首页标题与艺术字视觉方向。
 
 ## 非商业立场
