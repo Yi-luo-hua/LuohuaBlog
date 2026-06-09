@@ -104,14 +104,28 @@ func seedOwnerControllerSession(t *testing.T, userID int64, unlimited bool) stri
 
 func seedOwnerNotificationMessage(t *testing.T, nickname, channel, content string) int64 {
 	t.Helper()
+	return seedOwnerNotificationMessageWithContact(t, 0, nickname, channel, content, "")
+}
+
+func seedOwnerNotificationMessageWithContact(t *testing.T, userID int64, nickname, channel, content, contactEmail string) int64 {
+	t.Helper()
 	now := time.Now().UTC().Format(time.RFC3339)
+	var userIDValue any
+	isLogin := 0
+	if userID > 0 {
+		userIDValue = userID
+		isLogin = 1
+	}
 	res, err := db.Exec(
 		`INSERT INTO guestbook_messages
-		 (nickname, avatar, channel, content, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
-		 VALUES (?, '', ?, ?, 'content-hash', 'ip-hash', '', '', '', 0, 'visible', 0, 0, ?, ?)`,
+		 (user_id, nickname, avatar, channel, content, contact_email, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
+		 VALUES (?, ?, '', ?, ?, ?, 'content-hash', 'ip-hash', '', '', '', 0, 'visible', ?, 0, ?, ?)`,
+		userIDValue,
 		nickname,
 		channel,
 		content,
+		contactEmail,
+		isLogin,
 		now,
 		now,
 	)
@@ -290,6 +304,40 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		}
 		if got := int64(uploads["maxBytes"].(float64)); got != 8*1024*1024 {
 			t.Fatalf("expected uploads.maxBytes 8388608, got %d", got)
+		}
+	})
+}
+
+func TestOwnerStatusReturnsNotificationContactEmail(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		memberID := seedOwnerControllerUser(t, "member@example.com", false)
+		token := seedOwnerControllerSession(t, ownerID, true)
+		seedOwnerNotificationMessageWithContact(t, 0, "Visitor", guestbookChannelLink, "friend request", "visitor@example.com")
+		seedOwnerNotificationMessageWithContact(t, memberID, "Member", guestbookChannelLink, "legacy friend request", "")
+
+		req := httptest.NewRequest(http.MethodGet, "/api/owner/status", nil)
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		rr := httptest.NewRecorder()
+
+		ownerRouter(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		payload := decodeOwnerJSONMap(t, rr)
+		notifications := payload["notifications"].(map[string]any)
+		items := notifications["items"].([]any)
+		contacts := make(map[string]string, len(items))
+		for _, raw := range items {
+			item := raw.(map[string]any)
+			contacts[item["nickname"].(string)] = item["contactEmail"].(string)
+		}
+		if contacts["Visitor"] != "visitor@example.com" {
+			t.Fatalf("expected submitted contact email, got %#v", contacts["Visitor"])
+		}
+		if contacts["Member"] != "member@example.com" {
+			t.Fatalf("expected account email fallback, got %#v", contacts["Member"])
 		}
 	})
 }

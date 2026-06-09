@@ -195,6 +195,29 @@ func TestFriendsAnonymousTopLevelMessageStoresPrivateContactEmail(t *testing.T) 
 	})
 }
 
+func TestFriendsListDoesNotExposePrivateContactEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		seedGuestbookMessage(t, `{"nickname":"Friend","content":"friends root","channel":"friends","contactEmail":"visitor@example.com"}`, "127.0.0.1:3456")
+
+		req := httptest.NewRequest(http.MethodGet, "/api/guestbook/messages?page=1&pageSize=20&channel=friends", nil)
+		rr := httptest.NewRecorder()
+		guestbookListHandler(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		payload := decodeJSONMap(t, rr)
+		items := payload["items"].([]any)
+		if len(items) != 1 {
+			t.Fatalf("expected 1 friends item, got %d", len(items))
+		}
+		item := items[0].(map[string]any)
+		if _, ok := item["contactEmail"]; ok {
+			t.Fatalf("public list leaked contactEmail: %#v", item)
+		}
+	})
+}
+
 func TestFriendsLoggedInTopLevelMessageUsesSubmittedContactEmail(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		userID := seedGuestbookTestUser(t, "login@example.com", "Login", false)
