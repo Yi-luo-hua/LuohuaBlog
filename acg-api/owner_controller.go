@@ -695,10 +695,11 @@ func ownerRegisteredUsers() ([]map[string]any, error) {
 
 func ownerNotificationSummary() (map[string]any, error) {
 	rows, err := db.Query(
-		`SELECT id, channel, nickname, content, created_at
-		 FROM guestbook_messages
-		 WHERE status = 'visible' AND owner_read_at = ''
-		 ORDER BY id DESC
+		`SELECT gm.id, gm.channel, gm.nickname, gm.content, gm.contact_email, COALESCE(u.email, ''), gm.created_at
+		 FROM guestbook_messages gm
+		 LEFT JOIN users u ON u.id = gm.user_id
+		 WHERE gm.status = 'visible' AND gm.owner_read_at = ''
+		 ORDER BY gm.id DESC
 		 LIMIT 30`,
 	)
 	if err != nil {
@@ -710,20 +711,21 @@ func ownerNotificationSummary() (map[string]any, error) {
 	total := 0
 	for rows.Next() {
 		var id int64
-		var channel, nickname, content, createdAt string
-		if err := rows.Scan(&id, &channel, &nickname, &content, &createdAt); err != nil {
+		var channel, nickname, content, contactEmail, accountEmail, createdAt string
+		if err := rows.Scan(&id, &channel, &nickname, &content, &contactEmail, &accountEmail, &createdAt); err != nil {
 			return nil, err
 		}
 		total += 1
 		items = append(items, map[string]any{
-			"id":        id,
-			"source":    channel,
-			"title":     ownerNotificationTitle(channel),
-			"detail":    ownerNotificationMessageDetail(channel, nickname, createdAt),
-			"count":     1,
-			"nickname":  nickname,
-			"content":   content,
-			"createdAt": formatGuestbookTime(createdAt),
+			"id":           id,
+			"source":       channel,
+			"title":        ownerNotificationTitle(channel),
+			"detail":       ownerNotificationMessageDetail(channel, nickname, createdAt),
+			"count":        1,
+			"nickname":     nickname,
+			"content":      content,
+			"contactEmail": ownerNotificationContactEmail(contactEmail, accountEmail),
+			"createdAt":    formatGuestbookTime(createdAt),
 		})
 	}
 	if err := rows.Err(); err != nil {
@@ -734,6 +736,13 @@ func ownerNotificationSummary() (map[string]any, error) {
 		"total": total,
 		"items": items,
 	}, nil
+}
+
+func ownerNotificationContactEmail(contactEmail, accountEmail string) string {
+	if email := normalizeEmail(contactEmail); email != "" {
+		return email
+	}
+	return normalizeEmail(accountEmail)
 }
 
 func ownerNotificationTitle(channel string) string {
