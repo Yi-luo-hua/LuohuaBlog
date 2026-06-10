@@ -27,11 +27,19 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("journalctl -u nginx -n 200 --no-pager || true", text)
         self.assertIn("dmesg 2>&1 | tail -50 || true", text)
 
-    def test_sync_trigger_logs_backend_diagnostics_on_failure(self):
+    def test_deploy_does_not_anonymously_trigger_sync(self):
         text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("ERROR: Bilibili sync trigger failed", text)
-        self.assertIn("curl -i -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger || true", text)
+        self.assertNotIn("curl -sf -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger", text)
+        self.assertNotIn("curl -i -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger || true", text)
+        self.assertIn("Bilibili covers smoke check", text)
+        self.assertIn("covers: ok", text)
+        self.assertIn("covers: pending; background sync will retry", text)
+
+    def test_cover_check_logs_backend_diagnostics_on_failure(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("ERROR: Bilibili cover smoke check failed", text)
         self.assertIn("systemctl --no-pager --full status acg-api", text)
         self.assertIn("journalctl -u acg-api -n 120 --no-pager", text)
         self.assertIn("grep -E ':(8787)[[:space:]]' || true", text)

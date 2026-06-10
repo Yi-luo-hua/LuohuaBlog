@@ -275,11 +275,10 @@ jobs:
             rm -rf $TMP_DIR
           "
 
-      - name: Trigger Bilibili sync (covers)
+      - name: Bilibili covers smoke check
         run: |
-          if ! curl -sf -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger; then
-            echo "ERROR: Bilibili sync trigger failed"
-            curl -i -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger || true
+          if ! BODY=$(curl -sf --max-time 30 https://taozhiyy.top/api/v1/bangumi/list); then
+            echo "ERROR: Bilibili cover smoke check failed"
             SSH_PORT="${UCLOUD_PORT:-22}"
             ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
               echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl --no-pager --full status acg-api || true
@@ -289,12 +288,9 @@ jobs:
             "
             exit 1
           fi
-          echo "sync queued, waiting for downloads..."
-          sleep 45
-          BODY=$(curl -sf --max-time 30 https://taozhiyy.top/api/v1/bangumi/list)
           echo "$BODY" | head -c 500
           echo ""
-          echo "$BODY" | grep -q 'acg/image' && echo "covers: ok" || echo "covers: pending (retry sync later)"
+          echo "$BODY" | grep -q 'acg/image' && echo "covers: ok" || echo "covers: pending; background sync will retry"
 
       - name: Post-deploy health check
         run: |

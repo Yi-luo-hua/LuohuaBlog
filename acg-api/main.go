@@ -72,20 +72,31 @@ func main() {
 	mux.HandleFunc("/api/ai/image", aiImageHandler)
 	mux.HandleFunc("/api/auth/", authHandler)
 	mux.HandleFunc("/api/owner/", ownerRouter)
-	mux.HandleFunc("/api/v1/sync/trigger", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		bili := NewBiliClient(cfg)
-		go runBangumiSync(db, bili, cacheDir)
-		go runRadarSync(db, bili, cfg, cacheDir)
-		writeJSON(w, map[string]string{"queued": "sync"})
-	})
+	mux.HandleFunc("/api/v1/sync/trigger", syncTriggerHandler(cfg))
 
 	deepseekReady := chatConfigured()
 	log.Printf("acg-api on %s | bilibili uid=%s | radar=%d creators | deepseek=%v\n", addr, cfg.BilibiliUID, len(cfg.RadarCreators), deepseekReady)
 	log.Fatal(http.ListenAndServe(addr, withCORS(mux)))
+}
+
+var syncTriggerQueue = func(cfg AppConfig) {
+	bili := NewBiliClient(cfg)
+	go runBangumiSync(db, bili, cacheDir)
+	go runRadarSync(db, bili, cfg, cacheDir)
+}
+
+func syncTriggerHandler(cfg AppConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if _, ok := requireOwnerSession(w, r); !ok {
+			return
+		}
+		syncTriggerQueue(cfg)
+		writeJSON(w, map[string]string{"queued": "sync"})
+	}
 }
 
 func wallpaperDrawHandler(w http.ResponseWriter, r *http.Request) {
@@ -197,6 +208,13 @@ func guestbookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		name := strings.TrimSpace(body.Name)
 		content := strings.TrimSpace(body.Content)
+		if guestbookLooksUnsafe(name) || guestbookLooksUnsafe(content) {
+			writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+				"error":   "UNSAFE_CONTENT",
+				"message": "guestbook content cannot contain scripts, HTML tags, or executable links",
+			})
+			return
+		}
 		if content == "" {
 			http.Error(w, "content required", http.StatusBadRequest)
 			return

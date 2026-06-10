@@ -301,6 +301,10 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	content := strings.TrimSpace(body.Content)
+	if guestbookLooksUnsafe(content) {
+		writeGuestbookErr(w, http.StatusBadRequest, "UNSAFE_CONTENT", "留言不能包含脚本、HTML 标签或可执行链接")
+		return
+	}
 	if content == "" {
 		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_CONTENT", "留言内容不能为空")
 		return
@@ -336,6 +340,10 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.ParentID == 0 && channel == guestbookChannelLink {
 		nickname = strings.TrimSpace(body.Nickname)
+		if guestbookLooksUnsafe(nickname) {
+			writeGuestbookErr(w, http.StatusBadRequest, "UNSAFE_CONTENT", "昵称不能包含脚本或 HTML 标签")
+			return
+		}
 		if nickname == "" {
 			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_NICKNAME", "请给自己取个名字呀")
 			return
@@ -356,6 +364,10 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		contactEmail = submittedEmail
 	} else if cu == nil {
 		nickname = strings.TrimSpace(body.Nickname)
+		if guestbookLooksUnsafe(nickname) {
+			writeGuestbookErr(w, http.StatusBadRequest, "UNSAFE_CONTENT", "昵称不能包含脚本或 HTML 标签")
+			return
+		}
 		if nickname == "" {
 			writeGuestbookErr(w, http.StatusBadRequest, "INVALID_NICKNAME", "请给自己取个名字呀")
 			return
@@ -366,6 +378,10 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		nickname = cu.Nickname
+	}
+	if guestbookLooksUnsafe(nickname) {
+		writeGuestbookErr(w, http.StatusBadRequest, "UNSAFE_CONTENT", "昵称不能包含脚本或 HTML 标签")
+		return
 	}
 
 	ip := clientIP(r)
