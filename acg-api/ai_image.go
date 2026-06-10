@@ -67,6 +67,10 @@ func aiImageHandler(w http.ResponseWriter, r *http.Request) {
 		out["userId"] = userID
 		writeJSON(w, out)
 	case http.MethodPost:
+		if !allowAPIPost(aiImagePostLimiter, r) {
+			writeAPIRateLimited(w)
+			return
+		}
 		handleAIImagePost(w, r, id, userID, loggedIn, configured)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

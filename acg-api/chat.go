@@ -27,6 +27,10 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, out)
 		return
 	case http.MethodPost:
+		if !allowAPIPost(chatPostLimiter, r) {
+			writeAPIRateLimited(w)
+			return
+		}
 		handleChatPost(w, r, id, enabled)
 		return
 	default:
