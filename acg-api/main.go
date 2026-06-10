@@ -384,6 +384,5 @@ func configuredCORSOrigins() []string {
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	enc := json.NewEncoder(w)
-	enc.SetEscapeHTML(false)
 	_ = enc.Encode(v)
 }

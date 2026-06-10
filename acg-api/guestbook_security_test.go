@@ -43,6 +43,14 @@ func TestGuestbookCreateRejectsUnsafePayloads(t *testing.T) {
 			body: `{"nickname":"Probe","content":"javascript:alert(document.cookie)","channel":"guestbook"}`,
 		},
 		{
+			name: "fullscreen div overlay in content",
+			body: `{"nickname":"Probe","content":"<div style=\"position:fixed;inset:0;z-index:999999\">owned</div>","channel":"guestbook"}`,
+		},
+		{
+			name: "style tag in content",
+			body: `{"nickname":"Probe","content":"<style>body{display:none}</style>","channel":"guestbook"}`,
+		},
+		{
 			name: "svg event handler in nickname",
 			body: `{"nickname":"<svg/onload=alert(1)>","content":"hello","channel":"guestbook"}`,
 		},
@@ -84,6 +92,14 @@ func TestLegacyGuestbookRejectsUnsafePayloads(t *testing.T) {
 		{
 			name: "javascript url in content",
 			body: `{"name":"Probe","content":"javascript:alert(document.cookie)"}`,
+		},
+		{
+			name: "fullscreen div overlay in content",
+			body: `{"name":"Probe","content":"<div style=\"position:fixed;inset:0;z-index:999999\">owned</div>"}`,
+		},
+		{
+			name: "style tag in content",
+			body: `{"name":"Probe","content":"<style>body{display:none}</style>"}`,
 		},
 		{
 			name: "svg event handler in name",

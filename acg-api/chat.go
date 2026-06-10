@@ -85,14 +85,14 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 		recordChatStatSimple(db, "not_configured")
 		snap, _ := getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
-			"error":       "CHAT_NOT_CONFIGURED",
-			"message":     "小精灵还在沉睡中～站长配置 DeepSeek API Key 后就能聊天啦",
-			"chatEnabled": fixedEnabled,
+			"error":               "CHAT_NOT_CONFIGURED",
+			"message":             "小精灵还在沉睡中～站长配置 DeepSeek API Key 后就能聊天啦",
+			"chatEnabled":         fixedEnabled,
 			"fixedAnswersEnabled": fixedEnabled,
-			"limit":       id.Limit,
-			"used":        snap.Used,
-			"remaining":   snap.Remaining,
-			"isLogin":     id.IsLogin,
+			"limit":               id.Limit,
+			"used":                snap.Used,
+			"remaining":           snap.Remaining,
+			"isLogin":             id.IsLogin,
 		})
 		return
 	}
@@ -155,6 +155,5 @@ func writeJSONStatus(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)
-	enc.SetEscapeHTML(false)
 	_ = enc.Encode(v)
 }
