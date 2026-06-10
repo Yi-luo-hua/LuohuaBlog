@@ -118,4 +118,11 @@ export const friendCards = [
     avatar: "https://blog.zenghr.cn/static/img/avatar.jpg",
     note: "FRIEND",
   },
+  {
+    name: "Sigrika-善良耙耙柑🍊",
+    desc: "记录我的二次元之旅",
+    url: "https://qwq.sigrika.cc/",
+    avatar: "https://qwq.sigrika.cc/assets/images/avatar.gif",
+    note: "FRIEND",
+  },
 ];
