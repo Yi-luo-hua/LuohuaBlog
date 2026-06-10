@@ -27,11 +27,16 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("journalctl -u nginx -n 200 --no-pager || true", text)
         self.assertIn("dmesg 2>&1 | tail -50 || true", text)
 
-    def test_deploy_does_not_anonymously_trigger_sync(self):
+    def test_deploy_triggers_sync_with_token_header_only(self):
         text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
         self.assertNotIn("curl -sf -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger", text)
         self.assertNotIn("curl -i -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger || true", text)
+        self.assertNotIn("curl -X POST --max-time 30 https://taozhiyy.top/api/v1/sync/trigger", text)
+        self.assertIn("SYNC_TRIGGER_TOKEN: ${{ secrets.SYNC_TRIGGER_TOKEN }}", text)
+        self.assertIn("Trigger protected backend sync", text)
+        self.assertIn('if [ -z "$SYNC_TRIGGER_TOKEN" ]; then', text)
+        self.assertIn('curl -sf -X POST --max-time 30 -H "X-Sync-Trigger-Token: $SYNC_TRIGGER_TOKEN" https://taozhiyy.top/api/v1/sync/trigger', text)
         self.assertIn("Bilibili covers smoke check", text)
         self.assertIn("covers: ok", text)
         self.assertIn("covers: pending; background sync will retry", text)
@@ -104,6 +109,13 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("printf 'DASHSCOPE_API_KEY=%s\\n' \"$DASHSCOPE_API_KEY\" >> \"$FRAG\"", text)
         self.assertIn("printf 'DASHSCOPE_BASE_URL=%s\\n' \"$DASHSCOPE_BASE_URL\" >> \"$FRAG\"", text)
         self.assertIn("printf 'AI_IMAGE_MODEL=%s\\n' \"$AI_IMAGE_MODEL\" >> \"$FRAG\"", text)
+
+    def test_sync_step_includes_sync_trigger_token_secret(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("SYNC_TRIGGER_TOKEN: ${{ secrets.SYNC_TRIGGER_TOKEN }}", text)
+        self.assertIn('printf \'SYNC_TRIGGER_TOKEN=%s\\n\' "$SYNC_TRIGGER_TOKEN" >> "$FRAG"', text)
+        self.assertIn('[ -z "$SYNC_TRIGGER_TOKEN" ]', text)
 
 
 if __name__ == "__main__":

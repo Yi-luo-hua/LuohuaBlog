@@ -68,7 +68,7 @@ func smtpMissingConfigKeys() []string {
 func logSMTPMailerConfig() {
 	missing := smtpMissingConfigKeys()
 	if len(missing) == 0 {
-		log.Printf("mail: SMTP configured for %s", normalizeEmail(env("SMTP_USER", "")))
+		log.Printf("mail: SMTP configured")
 		return
 	}
 	log.Printf("WARN: mail: SMTP disabled; missing %s", strings.Join(missing, ","))

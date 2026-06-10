@@ -76,6 +76,56 @@ wait_for_http_ready() {
   return 1
 }
 
+ensure_fail2ban() {
+  if command -v fail2ban-server >/dev/null 2>&1; then
+    run_sudo systemctl enable --now fail2ban || echo "warn: fail2ban enable failed" >&2
+    return 0
+  fi
+  if command -v apt-get >/dev/null 2>&1; then
+    run_sudo apt-get update || echo "warn: apt-get update failed for fail2ban" >&2
+    run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban || {
+      echo "warn: fail2ban install failed" >&2
+      return 0
+    }
+    run_sudo systemctl enable --now fail2ban || echo "warn: fail2ban enable failed" >&2
+    return 0
+  fi
+  echo "warn: fail2ban not installed; apt-get unavailable" >&2
+}
+
+install_sqlite_backup_cron() {
+  local backup_dir="/var/backups/acg-api"
+  local script="/usr/local/sbin/acg-api-backup-sqlite.sh"
+  local cron="/etc/cron.d/acg-api-backup"
+  local tmp_script tmp_cron
+
+  tmp_script=$(mktemp)
+  cat >"$tmp_script" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+DB="/var/lib/acg-api/acg.db"
+OUT_DIR="/var/backups/acg-api"
+mkdir -p "$OUT_DIR"
+[ -f "$DB" ] || exit 0
+if command -v sqlite3 >/dev/null 2>&1; then
+  sqlite3 /var/lib/acg-api/acg.db ".backup '$OUT_DIR/acg-$(date +%F).db'"
+else
+  cp "$DB" "$OUT_DIR/acg-$(date +%F).db"
+fi
+find "$OUT_DIR" -name 'acg-*.db' -type f -mtime +14 -delete
+SH
+
+  tmp_cron=$(mktemp)
+  cat >"$tmp_cron" <<'CRON'
+17 3 * * * root /usr/local/sbin/acg-api-backup-sqlite.sh >/dev/null 2>&1
+CRON
+
+  run_sudo mkdir -p "$backup_dir"
+  run_sudo install -m 0755 "$tmp_script" "$script"
+  run_sudo install -m 0644 "$tmp_cron" "$cron"
+  rm -f "$tmp_script" "$tmp_cron"
+}
+
 if [ ! -f "$BINARY_SRC" ]; then
   echo "binary not found: $BINARY_SRC" >&2
   exit 1
@@ -122,9 +172,70 @@ if ! wait_for_http_ready http://127.0.0.1:8787/api/v1/health 30 1; then
   exit 1
 fi
 
+ensure_fail2ban
+install_sqlite_backup_cron
+
+SECURITY_CONF="/etc/nginx/conf.d/taozhiyy-security-zones.conf"
+SECURITY_TMP=$(mktemp)
+cat >"$SECURITY_TMP" <<'NGX'
+limit_req_zone $binary_remote_addr zone=api_guestbook:10m rate=5r/m;
+limit_req_zone $binary_remote_addr zone=api_auth:10m rate=10r/m;
+limit_req_zone $binary_remote_addr zone=api_chat:10m rate=30r/m;
+NGX
+run_sudo mkdir -p /etc/nginx/conf.d
+run_sudo install -m 0644 "$SECURITY_TMP" "$SECURITY_CONF"
+rm -f "$SECURITY_TMP"
+
 SNIP="/etc/nginx/snippets/taozhiyy-acg-api.conf"
 SNIP_TMP=$(mktemp)
 cat >"$SNIP_TMP" <<'NGX'
+client_max_body_size 10m;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+location = /api/guestbook/messages {
+    limit_req zone=api_guestbook burst=10 nodelay;
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location /api/auth/ {
+    limit_req zone=api_auth burst=20 nodelay;
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location = /api/chat {
+    limit_req zone=api_chat burst=30 nodelay;
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location = /api/ai/image {
+    limit_req zone=api_chat burst=30 nodelay;
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
 location /api/ {
     client_max_body_size 10m;
     proxy_pass http://127.0.0.1:8787;

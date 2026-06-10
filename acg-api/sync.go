@@ -42,20 +42,34 @@ func startSyncLoops(db *sql.DB, cfg AppConfig, cacheDir string) {
 	_ = upsertRadarCreators(db, cfg.RadarCreators)
 
 	go func() {
-		runBangumiSync(db, bili, cacheDir)
+		runSyncJob("bangumi", func() {
+			runBangumiSync(db, bili, cacheDir)
+		})
 		t := time.NewTicker(1 * time.Hour)
 		for range t.C {
-			runBangumiSync(db, bili, cacheDir)
+			runSyncJob("bangumi", func() {
+				runBangumiSync(db, bili, cacheDir)
+			})
 		}
 	}()
 
 	go func() {
-		runRadarSync(db, bili, cfg, cacheDir)
+		runSyncJob("radar", func() {
+			runRadarSync(db, bili, cfg, cacheDir)
+		})
 		t := time.NewTicker(15 * time.Minute)
 		for range t.C {
-			runRadarSync(db, bili, cfg, cacheDir)
+			runSyncJob("radar", func() {
+				runRadarSync(db, bili, cfg, cacheDir)
+			})
 		}
 	}()
+}
+
+func runSyncJob(name string, run func()) {
+	if !tryRunSyncJob(run) {
+		log.Printf("sync: %s skipped; another sync is running", name)
+	}
 }
 
 func runBangumiSync(db *sql.DB, bili *BiliClient, cacheDir string) {

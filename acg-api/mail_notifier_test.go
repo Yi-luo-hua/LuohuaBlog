@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
+	"log"
 	"strings"
 	"testing"
 )
@@ -105,6 +107,28 @@ func TestBuildMailMessagePreservesChineseAndEmoji(t *testing.T) {
 	}
 	if string(decoded) != body {
 		t.Fatalf("expected decoded body %q, got %q", body, decoded)
+	}
+}
+
+func TestLogSMTPMailerConfigDoesNotPrintMailbox(t *testing.T) {
+	t.Setenv("SMTP_HOST", "smtp.example.com")
+	t.Setenv("SMTP_PORT", "465")
+	t.Setenv("SMTP_USER", "sender@example.com")
+	t.Setenv("SMTP_PASS", "secret")
+
+	var buf bytes.Buffer
+	prevWriter := log.Writer()
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(prevWriter) })
+
+	logSMTPMailerConfig()
+
+	got := buf.String()
+	if !strings.Contains(got, "mail: SMTP configured") {
+		t.Fatalf("expected configured SMTP log, got %q", got)
+	}
+	if strings.Contains(got, "sender@example.com") {
+		t.Fatalf("SMTP log must not expose mailbox address, got %q", got)
 	}
 }
 

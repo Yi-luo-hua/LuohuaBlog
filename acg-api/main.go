@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -79,10 +81,34 @@ func main() {
 	log.Fatal(http.ListenAndServe(addr, withCORS(mux)))
 }
 
-var syncTriggerQueue = func(cfg AppConfig) {
+var syncRunning atomic.Bool
+
+var syncTriggerQueue = func(cfg AppConfig) bool {
 	bili := NewBiliClient(cfg)
-	go runBangumiSync(db, bili, cacheDir)
-	go runRadarSync(db, bili, cfg, cacheDir)
+	return tryStartSyncJob(func() {
+		runBangumiSync(db, bili, cacheDir)
+		runRadarSync(db, bili, cfg, cacheDir)
+	})
+}
+
+func tryRunSyncJob(run func()) bool {
+	if !syncRunning.CompareAndSwap(false, true) {
+		return false
+	}
+	defer syncRunning.Store(false)
+	run()
+	return true
+}
+
+func tryStartSyncJob(run func()) bool {
+	if !syncRunning.CompareAndSwap(false, true) {
+		return false
+	}
+	go func() {
+		defer syncRunning.Store(false)
+		run()
+	}()
+	return true
 }
 
 func syncTriggerHandler(cfg AppConfig) http.HandlerFunc {
@@ -91,12 +117,69 @@ func syncTriggerHandler(cfg AppConfig) http.HandlerFunc {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if _, ok := requireOwnerSession(w, r); !ok {
+		if !syncTriggerAuthorized(w, r) {
 			return
 		}
-		syncTriggerQueue(cfg)
+		if !syncTriggerQueue(cfg) {
+			writeJSONStatus(w, http.StatusAccepted, map[string]string{
+				"queued": "already_running",
+			})
+			return
+		}
 		writeJSON(w, map[string]string{"queued": "sync"})
 	}
+}
+
+func syncTriggerAuthorized(w http.ResponseWriter, r *http.Request) bool {
+	if syncTriggerTokenAuthorized(r) {
+		return true
+	}
+	if strings.TrimSpace(env("SYNC_TRIGGER_TOKEN", "")) != "" {
+		if syncTriggerOwnerAuthorized(r) {
+			return true
+		}
+		writeJSONStatus(w, http.StatusForbidden, map[string]any{
+			"error":   "FORBIDDEN",
+			"message": "valid sync trigger token or owner session required",
+		})
+		return false
+	}
+	_, ok := requireOwnerSession(w, r)
+	return ok
+}
+
+func syncTriggerTokenAuthorized(r *http.Request) bool {
+	expected := strings.TrimSpace(env("SYNC_TRIGGER_TOKEN", ""))
+	if expected == "" {
+		return false
+	}
+	provided := syncTriggerProvidedToken(r)
+	if provided == "" || len(provided) != len(expected) {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(provided), []byte(expected)) == 1
+}
+
+func syncTriggerProvidedToken(r *http.Request) string {
+	if token := strings.TrimSpace(r.Header.Get("X-Sync-Trigger-Token")); token != "" {
+		return token
+	}
+	auth := strings.TrimSpace(r.Header.Get("Authorization"))
+	scheme, token, ok := strings.Cut(auth, " ")
+	if !ok || !strings.EqualFold(scheme, "Bearer") {
+		return ""
+	}
+	return strings.TrimSpace(token)
+}
+
+func syncTriggerOwnerAuthorized(r *http.Request) bool {
+	sess, ok := sessionFromRequest(r)
+	if !ok || !sess.Unlimited {
+		return false
+	}
+	var isOwner int
+	err := db.QueryRow(`SELECT is_owner FROM users WHERE id = ?`, sess.UserID).Scan(&isOwner)
+	return err == nil && isOwner == 1
 }
 
 func wallpaperDrawHandler(w http.ResponseWriter, r *http.Request) {
@@ -253,16 +336,49 @@ func env(k, def string) string {
 
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if origin := allowedCORSOrigin(r.Header.Get("Origin")); origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Add("Vary", "Origin")
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, X-Blog-User-Id")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, X-Blog-User-Id, X-Sync-Trigger-Token, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func allowedCORSOrigin(origin string) string {
+	origin = strings.TrimSpace(origin)
+	if origin == "" {
+		return ""
+	}
+	for _, allowed := range configuredCORSOrigins() {
+		if strings.EqualFold(origin, allowed) {
+			return origin
+		}
+	}
+	return ""
+}
+
+func configuredCORSOrigins() []string {
+	raw := strings.TrimSpace(env("ACG_ALLOWED_ORIGINS", "https://taozhiyy.top,https://www.taozhiyy.top,http://localhost:5173,http://127.0.0.1:5173"))
+	if raw == "" {
+		return nil
+	}
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == ' ' || r == '\n' || r == '\t'
+	})
+	origins := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if origin := strings.TrimSpace(part); origin != "" {
+			origins = append(origins, origin)
+		}
+	}
+	return origins
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

@@ -30,6 +30,31 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
 
         self.assertIn('client_max_body_size 10m;', text)
 
+    def test_nginx_api_snippet_adds_security_headers_and_rate_limits(self):
+        text = SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("limit_req_zone $binary_remote_addr zone=api_guestbook:10m rate=5r/m;", text)
+        self.assertIn("limit_req_zone $binary_remote_addr zone=api_auth:10m rate=10r/m;", text)
+        self.assertIn("limit_req_zone $binary_remote_addr zone=api_chat:10m rate=30r/m;", text)
+        self.assertIn("run_sudo mkdir -p /etc/nginx/conf.d", text)
+        self.assertIn('add_header X-Frame-Options "SAMEORIGIN" always;', text)
+        self.assertIn('add_header X-Content-Type-Options "nosniff" always;', text)
+        self.assertIn('add_header Referrer-Policy "strict-origin-when-cross-origin" always;', text)
+        self.assertIn('add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;', text)
+        self.assertIn('add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;', text)
+        self.assertIn("limit_req zone=api_guestbook burst=10 nodelay;", text)
+        self.assertIn("limit_req zone=api_auth burst=20 nodelay;", text)
+        self.assertIn("limit_req zone=api_chat burst=30 nodelay;", text)
+
+    def test_server_baseline_installs_fail2ban_and_database_backup(self):
+        text = SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("ensure_fail2ban()", text)
+        self.assertIn("install_sqlite_backup_cron()", text)
+        self.assertIn("systemctl enable --now fail2ban", text)
+        self.assertIn("/var/backups/acg-api", text)
+        self.assertIn("sqlite3 /var/lib/acg-api/acg.db", text)
+
     def test_nginx_api_snippet_is_rewritten_on_redeploy(self):
         text = SCRIPT_PATH.read_text(encoding="utf-8")
 
@@ -51,6 +76,13 @@ class SyncAuthEnvTests(unittest.TestCase):
         self.assertIn("wait_for_http_ready http://127.0.0.1:8787/api/v1/health 30 1", text)
         self.assertIn('systemctl --no-pager --full status "$service"', text)
         self.assertIn('journalctl -u "$service" -n 80 --no-pager', text)
+        self.assertIn('chown root:root "$ENV_FILE"', text)
+        self.assertIn('chmod 600 "$ENV_FILE"', text)
+
+    def test_syncs_sync_trigger_token(self):
+        text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("SYNC_TRIGGER_TOKEN", text)
 
     def test_syncs_owner_publish_github_env_keys(self):
         text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
