@@ -228,6 +228,9 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	userID, displayName, isOwner, err := lookupUserCredentials(email, body.Password)
 	if err != nil {
 		if errors.Is(err, errInvalidCredentials) {
+			if isOwnerEmail(email) {
+				recordSecurityAudit(r, "owner.login", "failure", 0, "owner", "", "invalid_credentials")
+			}
 			writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
 				"error": "INVALID_CREDENTIALS", "message": "邮箱或密码错误",
 			})
@@ -243,12 +246,13 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		recordSecurityAudit(r, "owner.login", "challenge_issued", userID, "owner", "", "security_challenge_required")
 		writeJSON(w, map[string]any{
-			"ok":                     true,
-			"needsSecurityQuestion":  true,
-			"securityQuestion":       ownerSecurityQuestion,
-			"challengeToken":         token,
-			"user":                   authUser{ID: userID, Email: email, DisplayName: displayName, IsOwner: true},
+			"ok":                    true,
+			"needsSecurityQuestion": true,
+			"securityQuestion":      ownerSecurityQuestion,
+			"challengeToken":        token,
+			"user":                  authUser{ID: userID, Email: email, DisplayName: displayName, IsOwner: true},
 		})
 		return
 	}
@@ -282,6 +286,7 @@ func handleVerifySecurity(w http.ResponseWriter, r *http.Request) {
 	}
 	token := sanitizeID(body.ChallengeToken)
 	if token == "" {
+		recordSecurityAudit(r, "owner.security_verify", "failure", 0, "owner", "", "invalid_challenge")
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error": "INVALID_CHALLENGE", "message": "验证已失效，请重新登录",
 		})
@@ -290,6 +295,7 @@ func handleVerifySecurity(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := consumeLoginChallenge(token)
 	if err != nil {
+		recordSecurityAudit(r, "owner.security_verify", "failure", 0, "owner", "", "invalid_challenge")
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error": "INVALID_CHALLENGE", "message": "验证已失效，请重新登录",
 		})
@@ -301,6 +307,7 @@ func handleVerifySecurity(w http.ResponseWriter, r *http.Request) {
 	if err := db.QueryRow(
 		`SELECT email, display_name, is_owner FROM users WHERE id = ?`, userID,
 	).Scan(&email, &displayName, &isOwner); err != nil || isOwner != 1 {
+		recordSecurityAudit(r, "owner.security_verify", "failure", userID, "owner", "", "forbidden_user")
 		writeJSONStatus(w, http.StatusForbidden, map[string]any{
 			"error": "FORBIDDEN", "message": "无权进行此验证",
 		})
@@ -308,6 +315,7 @@ func handleVerifySecurity(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !ownerAnswerMatches(body.Answer) {
+		recordSecurityAudit(r, "owner.security_verify", "failure", userID, "owner", "", "wrong_answer")
 		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
 			"error": "WRONG_ANSWER", "message": "学号回答不正确",
 		})

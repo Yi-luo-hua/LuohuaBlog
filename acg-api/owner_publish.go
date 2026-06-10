@@ -132,6 +132,7 @@ func ownerPublishHandler(w http.ResponseWriter, r *http.Request) {
 
 	publisher := newOwnerGitHubPublisher()
 	if !publisher.configured() {
+		recordSecurityAudit(r, "owner.publish", "failure", ownerSess.UserID, "owner_publish", "", "not_configured")
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":   "PUBLISH_NOT_CONFIGURED",
 			"message": "站长发布尚未在服务器配置。",
@@ -153,8 +154,10 @@ func ownerPublishHandler(w http.ResponseWriter, r *http.Request) {
 				"error":   "PUBLISH_FAILED",
 				"message": publishErr.Message,
 			})
+			recordSecurityAudit(r, "owner.publish", "failure", ownerSess.UserID, "owner_publish", postPath, "github_status="+strconv.Itoa(publishErr.StatusCode))
 			return
 		}
+		recordSecurityAudit(r, "owner.publish", "failure", ownerSess.UserID, "owner_publish", postPath, "internal_error")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -166,11 +169,13 @@ func ownerPublishHandler(w http.ResponseWriter, r *http.Request) {
 			publishedAt,
 			body.DraftID,
 		); err != nil {
+			recordSecurityAudit(r, "owner.publish", "failure", ownerSess.UserID, "owner_publish", result.Path, "draft_update_failed")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
+	recordSecurityAudit(r, "owner.publish", "success", ownerSess.UserID, "owner_publish", result.Path, "branch="+publisher.branch)
 	writeJSON(w, map[string]any{
 		"ok": true,
 		"item": map[string]any{

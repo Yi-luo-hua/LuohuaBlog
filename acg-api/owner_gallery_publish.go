@@ -48,6 +48,7 @@ func ownerGalleryPublishHandler(w http.ResponseWriter, r *http.Request) {
 
 	publisher := newOwnerGitHubPublisher()
 	if !publisher.configured() {
+		recordSecurityAudit(r, "owner.gallery_publish", "failure", ownerSess.UserID, "owner_publish", ownerGalleryDataPath, "not_configured")
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":   "PUBLISH_NOT_CONFIGURED",
 			"message": "站长发布尚未在服务器配置。",
@@ -63,15 +64,18 @@ func ownerGalleryPublishHandler(w http.ResponseWriter, r *http.Request) {
 				"error":   "GALLERY_PUBLISH_FAILED",
 				"message": publishErr.Message,
 			})
+			recordSecurityAudit(r, "owner.gallery_publish", "failure", ownerSess.UserID, "owner_publish", ownerGalleryDataPath, fmt.Sprintf("github_status=%d", publishErr.StatusCode))
 			return
 		}
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_GALLERY_PUBLISH",
 			"message": err.Error(),
 		})
+		recordSecurityAudit(r, "owner.gallery_publish", "failure", ownerSess.UserID, "owner_publish", ownerGalleryDataPath, "invalid_request")
 		return
 	}
 
+	recordSecurityAudit(r, "owner.gallery_publish", "success", ownerSess.UserID, "owner_publish", result.Path, fmt.Sprintf("branch=%s changed=%t", publisher.branch, result.Changed))
 	writeJSON(w, map[string]any{
 		"ok": true,
 		"item": map[string]any{

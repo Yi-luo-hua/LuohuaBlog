@@ -45,6 +45,7 @@ func ownerFriendPublishHandler(w http.ResponseWriter, r *http.Request) {
 
 	publisher := newOwnerGitHubPublisher()
 	if !publisher.configured() {
+		recordSecurityAudit(r, "owner.friend_publish", "failure", ownerSess.UserID, "owner_publish", ownerFriendCardsDataPath, "not_configured")
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":   "PUBLISH_NOT_CONFIGURED",
 			"message": "站长发布尚未在服务器配置。",
@@ -60,15 +61,18 @@ func ownerFriendPublishHandler(w http.ResponseWriter, r *http.Request) {
 				"error":   "FRIEND_PUBLISH_FAILED",
 				"message": publishErr.Message,
 			})
+			recordSecurityAudit(r, "owner.friend_publish", "failure", ownerSess.UserID, "owner_publish", ownerFriendCardsDataPath, fmt.Sprintf("github_status=%d", publishErr.StatusCode))
 			return
 		}
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "INVALID_FRIEND_PUBLISH",
 			"message": err.Error(),
 		})
+		recordSecurityAudit(r, "owner.friend_publish", "failure", ownerSess.UserID, "owner_publish", ownerFriendCardsDataPath, "invalid_request")
 		return
 	}
 
+	recordSecurityAudit(r, "owner.friend_publish", "success", ownerSess.UserID, "owner_publish", result.Path, fmt.Sprintf("branch=%s changed=%t", publisher.branch, result.Changed))
 	writeJSON(w, map[string]any{
 		"ok": true,
 		"item": map[string]any{

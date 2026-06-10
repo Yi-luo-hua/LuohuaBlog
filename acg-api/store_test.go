@@ -145,3 +145,25 @@ func TestMigrateAllCreatesOwnerDraftsTable(t *testing.T) {
 		t.Fatalf("expected owner_drafts table to exist, got count %d", tableCount)
 	}
 }
+
+func TestMigrateAllCreatesSecurityAuditLogsTable(t *testing.T) {
+	testDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testDB.Close()
+
+	if err := migrateAll(testDB); err != nil {
+		t.Fatalf("migrateAll failed: %v", err)
+	}
+
+	var tableCount int
+	if err := testDB.QueryRow(
+		`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'security_audit_logs'`,
+	).Scan(&tableCount); err != nil {
+		t.Fatal(err)
+	}
+	if tableCount != 1 {
+		t.Fatalf("expected security_audit_logs table to exist, got count %d", tableCount)
+	}
+}

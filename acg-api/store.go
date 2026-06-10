@@ -121,6 +121,19 @@ func migrateAll(db *sql.DB) error {
 			updated_at TEXT NOT NULL
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_owner_drafts_updated ON owner_drafts(updated_at DESC, id DESC);`,
+		`CREATE TABLE IF NOT EXISTS security_audit_logs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			event TEXT NOT NULL,
+			outcome TEXT NOT NULL,
+			actor_user_id INTEGER NOT NULL DEFAULT 0,
+			ip_hash TEXT NOT NULL DEFAULT '',
+			user_agent_hash TEXT NOT NULL DEFAULT '',
+			target_type TEXT NOT NULL DEFAULT '',
+			target_id TEXT NOT NULL DEFAULT '',
+			detail TEXT NOT NULL DEFAULT '',
+			created_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_security_audit_logs_created ON security_audit_logs(created_at DESC);`,
 		`CREATE TABLE IF NOT EXISTS ai_fixed_answers (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			question TEXT NOT NULL,

@@ -648,6 +648,7 @@ func guestbookDeleteHandler(w http.ResponseWriter, r *http.Request, id int64) {
 		writeGuestbookErr(w, http.StatusNotFound, "NOT_FOUND", "留言不存在")
 		return
 	}
+	recordSecurityAudit(r, "guestbook.delete", "success", cu.ID, "guestbook_message", strconv.FormatInt(id, 10), "")
 	writeJSON(w, map[string]any{"ok": true, "message": "已删除"})
 }
 
@@ -685,6 +686,7 @@ func guestbookPatchStatusHandler(w http.ResponseWriter, r *http.Request, id int6
 		writeGuestbookErr(w, http.StatusNotFound, "NOT_FOUND", "留言不存在")
 		return
 	}
+	recordSecurityAudit(r, "guestbook.status_change", "success", cu.ID, "guestbook_message", strconv.FormatInt(id, 10), "status="+status)
 	writeJSON(w, map[string]any{"ok": true, "status": status})
 }
 
