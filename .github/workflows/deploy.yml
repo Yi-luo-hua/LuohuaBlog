@@ -88,7 +88,7 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.UCLOUD_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.UCLOUD_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           if [ -n "$UCLOUD_PORT" ]; then
             ssh-keyscan -p "$UCLOUD_PORT" "$UCLOUD_HOST" >> ~/.ssh/known_hosts
@@ -316,7 +316,7 @@ jobs:
           SYNC_TRIGGER_TOKEN: ${{ secrets.SYNC_TRIGGER_TOKEN }}
         run: |
           if [ -z "$SYNC_TRIGGER_TOKEN" ]; then
-            echo "Skip sync trigger: SYNC_TRIGGER_TOKEN is not set"
+            echo "Skip sync trigger: token is not set"
             exit 0
           fi
           curl -sf -X POST --max-time 30 -H "X-Sync-Trigger-Token: $SYNC_TRIGGER_TOKEN" https://taozhiyy.top/api/v1/sync/trigger
