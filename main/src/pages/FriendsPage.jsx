@@ -3,11 +3,14 @@ import { FiCopy, FiExternalLink } from "react-icons/fi";
 
 import FriendsApplicationBoard from "../components/FriendsApplicationBoard";
 import { friendCards } from "../data/friendCards";
+import { cosAsset } from "../lib/cosAsset.js";
+
+const siteAvatarUrl = `https://taozhiyy.top${cosAsset("1.png")}`;
 
 const copyBlock = `name: 桃之夭夭
 desc: 桃之夭夭的小屋
 url: https://taozhiyy.top
-avatar: https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/1.png`;
+avatar: ${siteAvatarUrl}`;
 
 const FriendsPage = () => {
   const [copied, setCopied] = useState(false);

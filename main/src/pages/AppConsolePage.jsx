@@ -38,6 +38,7 @@ import {
   ownerCustomGalleryAlbumValue,
   ownerGalleryAlbumOptions,
 } from "../lib/ownerGalleryAlbums";
+import { cosAsset } from "../lib/cosAsset.js";
 
 const screenMap = Object.fromEntries(ownerConsoleScreens.map((screen) => [screen.id, screen]));
 
@@ -65,7 +66,7 @@ const defaultFriendLink = {
   name: "桃之夭夭",
   desc: "桃之夭夭的小屋",
   url: "https://taozhiyy.top",
-  avatar: "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/1.png",
+  avatar: `https://taozhiyy.top${cosAsset("1.png")}`,
 };
 
 const defaultMoment = {

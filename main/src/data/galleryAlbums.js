@@ -1,4 +1,6 @@
-const COS = "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com";
+import { cosAsset } from "../lib/cosAsset.js";
+
+const COS = cosAsset("");
 const MISAKA = `${COS}/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4`;
 const AI_BLOG = `${COS}/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87`;
 

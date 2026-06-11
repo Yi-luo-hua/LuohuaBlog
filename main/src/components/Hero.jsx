@@ -11,6 +11,7 @@ import {
   getSnappedHeroCompassTarget,
 } from "./heroCompassSelection";
 import { areHeroImagesReady, isHeroImageReady } from "./heroImageState";
+import { cosAsset } from "../lib/cosAsset.js";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -19,7 +20,9 @@ const HERO_INDEXES = Array.from(
   { length: TOTAL_HERO_IMAGES },
   (_, index) => index + 1
 );
-const COS = `https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main`;
+const COS = cosAsset(
+  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main"
+);
 const getImgSrc = (index) => `${COS}/img/hero-${index}.webp`;
 const HERO_CARD_FOCUS = {
   1: "50% 50%",

@@ -278,6 +278,19 @@ add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
+location /cos/ {
+    proxy_pass https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/;
+    proxy_ssl_server_name on;
+    proxy_set_header Host "tzyy-1330068502.cos.ap-beijing.myqcloud.com";
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_hide_header Cache-Control;
+    proxy_hide_header Expires;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+}
+
 location = /api/guestbook/messages {
     limit_req zone=api_guestbook burst=10 nodelay;
     proxy_pass http://127.0.0.1:8787;

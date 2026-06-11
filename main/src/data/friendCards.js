@@ -1,3 +1,5 @@
+import { cosAsset } from "../lib/cosAsset.js";
+
 export const friendCards = [
   {
     name: "XingHuiSamaの宝藏之地",
@@ -10,7 +12,7 @@ export const friendCards = [
     name: "KoBariDev",
     desc: "Ciallo～(∠・ω<)⌒★",
     url: "https://hub.131714.xyz/",
-    avatar: "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/picgo-uploads/download.png",
+    avatar: cosAsset("picgo-uploads/download.png"),
     note: "FRIEND",
   },
   {

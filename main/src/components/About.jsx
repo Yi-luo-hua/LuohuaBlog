@@ -3,6 +3,7 @@ import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/all";
 
 import AnimatedTitle from "./AnimatedTitle";
+import { cosAsset } from "../lib/cosAsset.js";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -119,7 +120,9 @@ const About = () => {
           </div>
 
           <img
-            src="https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/about.webp"
+            src={cosAsset(
+              "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/about.webp"
+            )}
             alt="Background"
             className="taoyao-screen-image absolute left-0 top-0 size-full scale-100 object-cover md:scale-[1.08]"
           />

@@ -46,6 +46,16 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
         self.assertIn("limit_req zone=api_auth burst=20 nodelay;", text)
         self.assertIn("limit_req zone=api_chat burst=30 nodelay;", text)
 
+    def test_nginx_snippet_proxies_cos_assets_with_security_headers(self):
+        text = SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("location /cos/", text)
+        self.assertIn("tzyy-1330068502.cos.ap-beijing.myqcloud.com", text)
+        self.assertIn("proxy_ssl_server_name on;", text)
+        self.assertIn('proxy_set_header Host "tzyy-1330068502.cos.ap-beijing.myqcloud.com";', text)
+        self.assertIn('add_header X-Content-Type-Options "nosniff" always;', text)
+        self.assertIn('add_header Cache-Control "public, max-age=31536000, immutable" always;', text)
+
     def test_static_main_location_gets_security_headers(self):
         text = SCRIPT_PATH.read_text(encoding="utf-8")
 

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { friendCards } from "./friendCards.js";
+import { cosAsset } from "../lib/cosAsset.js";
 
 test("includes KoBariDev as a featured friend link", () => {
   const kobari = friendCards.find((friend) => friend.name === "KoBariDev");
@@ -11,7 +12,7 @@ test("includes KoBariDev as a featured friend link", () => {
   assert.equal(kobari.url, "https://hub.131714.xyz/");
   assert.equal(
     kobari.avatar,
-    "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/picgo-uploads/download.png"
+    cosAsset("picgo-uploads/download.png")
   );
 });
 

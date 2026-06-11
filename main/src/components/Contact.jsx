@@ -11,9 +11,11 @@ import {
   getWallpaperCardStyle,
 } from "./wallpaperFrameLayout";
 import { loadWallpaperGift } from "./wallpaperGiftLoader";
+import { cosAsset } from "../lib/cosAsset.js";
 
-const SOURCE_ASSET_BASE =
-  "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img";
+const SOURCE_ASSET_BASE = cosAsset(
+  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img"
+);
 
 const prizes = [
   {

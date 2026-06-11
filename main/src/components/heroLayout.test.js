@@ -14,3 +14,8 @@ test("keeps the fixed-height hero shell from becoming a vertical scroll containe
     /className="relative h-dvh w-screen overflow-x-hidden"/
   );
 });
+
+test("loads hero media through the same-origin COS proxy", () => {
+  assert.match(heroSource, /cosAsset\(/);
+  assert.doesNotMatch(heroSource, /cos\.ap-beijing\.myqcloud\.com/);
+});
