@@ -113,16 +113,25 @@ jobs:
       - name: Install acg-api and nginx /api proxy
         run: |
           SSH_PORT="${UCLOUD_PORT:-22}"
-          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
-            set -e
-            sed -i 's/\r$//' $TMP_DIR/acg-api/remote-install-acg-api.sh
-            sed -i 's/\r$//' $TMP_DIR/acg-api/acg-api.service
-            chmod +x $TMP_DIR/acg-api/remote-install-acg-api.sh
-            bash $TMP_DIR/acg-api/remote-install-acg-api.sh \
-              $TMP_DIR/acg-api/acg-api \
-              '$UCLOUD_SUDO_PASSWORD' \
-              $TMP_DIR/acg-api/acg-api.service
-          "
+          REMOTE_SUDO_ENV="/tmp/taozhiyy-sudo.env"
+          SUDO_ENV=$(mktemp)
+          trap 'rm -f "$SUDO_ENV"' EXIT
+          chmod 600 "$SUDO_ENV"
+          printf 'export SUDO_PASSWORD=%q\n' "$UCLOUD_SUDO_PASSWORD" > "$SUDO_ENV"
+          scp -P "$SSH_PORT" "$SUDO_ENV" \
+            "$UCLOUD_USER@$UCLOUD_HOST:$REMOTE_SUDO_ENV"
+          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" 'bash -se' <<REMOTE
+          set -e
+          trap 'rm -f $REMOTE_SUDO_ENV' EXIT
+          chmod 600 $REMOTE_SUDO_ENV
+          . $REMOTE_SUDO_ENV
+          sed -i 's/\r$//' $TMP_DIR/acg-api/remote-install-acg-api.sh
+          sed -i 's/\r$//' $TMP_DIR/acg-api/acg-api.service
+          chmod +x $TMP_DIR/acg-api/remote-install-acg-api.sh
+          bash $TMP_DIR/acg-api/remote-install-acg-api.sh \
+            $TMP_DIR/acg-api/acg-api \
+            $TMP_DIR/acg-api/acg-api.service
+          REMOTE
 
       - name: Sync deployment-managed env on server
         env:
@@ -164,9 +173,14 @@ jobs:
           fi
           SSH_PORT="${UCLOUD_PORT:-22}"
           REMOTE_FRAG="/tmp/taozhiyy-auth.env.frag"
+          REMOTE_SUDO_ENV="/tmp/taozhiyy-sudo.env"
           FRAG=$(mktemp)
+          SUDO_ENV=$(mktemp)
+          trap 'rm -f "$FRAG" "$SUDO_ENV"' EXIT
           chmod 600 "$FRAG"
+          chmod 600 "$SUDO_ENV"
           : > "$FRAG"
+          printf 'export SUDO_PASSWORD=%q\n' "$UCLOUD_SUDO_PASSWORD" > "$SUDO_ENV"
           if [ -n "$AUTH_OWNER_PASSWORD" ]; then
             printf 'AUTH_OWNER_PASSWORD=%s\n' "$AUTH_OWNER_PASSWORD" >> "$FRAG"
           fi
@@ -236,48 +250,66 @@ jobs:
           if [ -n "$SYNC_TRIGGER_TOKEN" ]; then
             printf 'SYNC_TRIGGER_TOKEN=%s\n' "$SYNC_TRIGGER_TOKEN" >> "$FRAG"
           fi
-          PW_Q=$(printf '%q' "$UCLOUD_SUDO_PASSWORD")
           scp -P "$SSH_PORT" deploy/sync-auth-env.sh \
             "$UCLOUD_USER@$UCLOUD_HOST:/tmp/sync-auth-env.sh"
           scp -P "$SSH_PORT" "$FRAG" \
             "$UCLOUD_USER@$UCLOUD_HOST:$REMOTE_FRAG"
-          rm -f "$FRAG"
-          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
-            set -e
-            sed -i 's/\r$//' /tmp/sync-auth-env.sh
-            chmod +x /tmp/sync-auth-env.sh
-            export SUDO_PASSWORD=$PW_Q
-            /tmp/sync-auth-env.sh $REMOTE_FRAG
-            rm -f /tmp/sync-auth-env.sh $REMOTE_FRAG
-          "
+          scp -P "$SSH_PORT" "$SUDO_ENV" \
+            "$UCLOUD_USER@$UCLOUD_HOST:$REMOTE_SUDO_ENV"
+          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" 'bash -se' <<REMOTE
+          set -e
+          trap 'rm -f /tmp/sync-auth-env.sh $REMOTE_FRAG $REMOTE_SUDO_ENV' EXIT
+          sed -i 's/\r$//' /tmp/sync-auth-env.sh
+          chmod +x /tmp/sync-auth-env.sh
+          chmod 600 $REMOTE_SUDO_ENV
+          . $REMOTE_SUDO_ENV
+          /tmp/sync-auth-env.sh $REMOTE_FRAG
+          REMOTE
 
       - name: Switch to production directories
         run: |
           SSH_PORT="${UCLOUD_PORT:-22}"
-          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
-            set -e
-            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' mkdir -p $ROOT_DIR $ROOT_DIR/blog $ROOT_DIR/build $ROOT_DIR/ai-assistant
-            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a --delete $TMP_DIR/main/ $ROOT_DIR/
-            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a --delete $TMP_DIR/blog/ $ROOT_DIR/blog/
-            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a --delete $TMP_DIR/build/ $ROOT_DIR/build/
-            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' rsync -a $TMP_DIR/ai-assistant/ $ROOT_DIR/ai-assistant/
-            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' nginx -t
-            echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl reload-or-restart nginx || {
-              echo \"ERROR: nginx reload-or-restart failed\"
-              echo \"=== nginx status ===\"
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl --no-pager --full status nginx || true
-              echo \"=== nginx processes ===\"
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' ps aux | grep '[n]ginx' || true
-              echo \"=== listening ports ===\"
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' sh -c 'if command -v ss >/dev/null 2>&1; then ss -tlnp; else netstat -tlnp; fi' | grep -E ':(80|443)[[:space:]]' || true
-              echo \"=== nginx journal ===\"
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' journalctl -u nginx -n 200 --no-pager || true
-              echo \"=== recent kernel messages ===\"
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' dmesg 2>&1 | tail -50 || true
-              exit 1
-            }
-            rm -rf $TMP_DIR
-          "
+          REMOTE_SUDO_ENV="/tmp/taozhiyy-sudo.env"
+          SUDO_ENV=$(mktemp)
+          trap 'rm -f "$SUDO_ENV"' EXIT
+          chmod 600 "$SUDO_ENV"
+          printf 'export SUDO_PASSWORD=%q\n' "$UCLOUD_SUDO_PASSWORD" > "$SUDO_ENV"
+          scp -P "$SSH_PORT" "$SUDO_ENV" \
+            "$UCLOUD_USER@$UCLOUD_HOST:$REMOTE_SUDO_ENV"
+          ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" 'bash -se' <<REMOTE
+          set -e
+          trap 'rm -f $REMOTE_SUDO_ENV' EXIT
+          chmod 600 $REMOTE_SUDO_ENV
+          . $REMOTE_SUDO_ENV
+          run_sudo() {
+            if [ -n "\${SUDO_PASSWORD:-}" ]; then
+              printf '%s\n' "\$SUDO_PASSWORD" | sudo -S -p '' "\$@"
+            else
+              sudo "\$@"
+            fi
+          }
+          run_sudo mkdir -p $ROOT_DIR $ROOT_DIR/blog $ROOT_DIR/build $ROOT_DIR/ai-assistant
+          run_sudo rsync -a --delete $TMP_DIR/main/ $ROOT_DIR/
+          run_sudo rsync -a --delete $TMP_DIR/blog/ $ROOT_DIR/blog/
+          run_sudo rsync -a --delete $TMP_DIR/build/ $ROOT_DIR/build/
+          run_sudo rsync -a $TMP_DIR/ai-assistant/ $ROOT_DIR/ai-assistant/
+          run_sudo nginx -t
+          run_sudo systemctl reload-or-restart nginx || {
+            echo "ERROR: nginx reload-or-restart failed"
+            echo "=== nginx status ==="
+            run_sudo systemctl --no-pager --full status nginx || true
+            echo "=== nginx processes ==="
+            run_sudo ps aux | grep '[n]ginx' || true
+            echo "=== listening ports ==="
+            run_sudo sh -c 'if command -v ss >/dev/null 2>&1; then ss -tlnp; else netstat -tlnp; fi' | grep -E ':(80|443)[[:space:]]' || true
+            echo "=== nginx journal ==="
+            run_sudo journalctl -u nginx -n 200 --no-pager || true
+            echo "=== recent kernel messages ==="
+            run_sudo dmesg 2>&1 | tail -50 || true
+            exit 1
+          }
+          rm -rf $TMP_DIR
+          REMOTE
 
       - name: Trigger protected backend sync
         env:
@@ -294,12 +326,30 @@ jobs:
           if ! BODY=$(curl -sf --max-time 30 https://taozhiyy.top/api/v1/bangumi/list); then
             echo "ERROR: Bilibili cover smoke check failed"
             SSH_PORT="${UCLOUD_PORT:-22}"
-            ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" "
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' systemctl --no-pager --full status acg-api || true
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' journalctl -u acg-api -n 120 --no-pager || true
-              echo \"$UCLOUD_SUDO_PASSWORD\" | sudo -S -p '' sh -c 'if command -v ss >/dev/null 2>&1; then ss -tlnp; else netstat -tlnp; fi' | grep -E ':(8787)[[:space:]]' || true
-              curl -i --max-time 10 http://127.0.0.1:8787/api/v1/health || true
-            "
+            REMOTE_SUDO_ENV="/tmp/taozhiyy-sudo.env"
+            SUDO_ENV=$(mktemp)
+            trap 'rm -f "$SUDO_ENV"' EXIT
+            chmod 600 "$SUDO_ENV"
+            printf 'export SUDO_PASSWORD=%q\n' "$UCLOUD_SUDO_PASSWORD" > "$SUDO_ENV"
+            scp -P "$SSH_PORT" "$SUDO_ENV" \
+              "$UCLOUD_USER@$UCLOUD_HOST:$REMOTE_SUDO_ENV"
+            ssh -p "$SSH_PORT" "$UCLOUD_USER@$UCLOUD_HOST" 'bash -se' <<REMOTE
+          set -e
+          trap 'rm -f $REMOTE_SUDO_ENV' EXIT
+          chmod 600 $REMOTE_SUDO_ENV
+          . $REMOTE_SUDO_ENV
+          run_sudo() {
+            if [ -n "\${SUDO_PASSWORD:-}" ]; then
+              printf '%s\n' "\$SUDO_PASSWORD" | sudo -S -p '' "\$@"
+            else
+              sudo "\$@"
+            fi
+          }
+          run_sudo systemctl --no-pager --full status acg-api || true
+          run_sudo journalctl -u acg-api -n 120 --no-pager || true
+          run_sudo sh -c 'if command -v ss >/dev/null 2>&1; then ss -tlnp; else netstat -tlnp; fi' | grep -E ':(8787)[[:space:]]' || true
+          curl -i --max-time 10 http://127.0.0.1:8787/api/v1/health || true
+          REMOTE
             exit 1
           fi
           echo "$BODY" | head -c 500

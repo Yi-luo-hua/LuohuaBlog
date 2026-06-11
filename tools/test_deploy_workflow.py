@@ -27,6 +27,25 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("journalctl -u nginx -n 200 --no-pager || true", text)
         self.assertIn("dmesg 2>&1 | tail -50 || true", text)
 
+    def test_sudo_password_is_not_embedded_in_remote_commands(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertNotIn('echo \\"$UCLOUD_SUDO_PASSWORD\\" | sudo -S', text)
+        self.assertNotIn("'$UCLOUD_SUDO_PASSWORD'", text)
+        self.assertNotIn("PW_Q=$(printf '%q' \"$UCLOUD_SUDO_PASSWORD\")", text)
+        self.assertNotIn("export SUDO_PASSWORD=$PW_Q", text)
+        self.assertIn("printf 'export SUDO_PASSWORD=%q\\n' \"$UCLOUD_SUDO_PASSWORD\"", text)
+        self.assertIn("run_sudo() {", text)
+
+    def test_sudo_password_env_is_sourced_by_remote_bash(self):
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertGreaterEqual(text.count("'bash -se' <<REMOTE"), 4)
+        terminators = [line for line in text.splitlines() if line.strip() == "REMOTE"]
+        self.assertGreaterEqual(len(terminators), 4)
+        for line in terminators:
+            self.assertEqual("          REMOTE", line)
+
     def test_deploy_triggers_sync_with_token_header_only(self):
         text = WORKFLOW_PATH.read_text(encoding="utf-8")
 

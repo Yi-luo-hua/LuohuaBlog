@@ -55,6 +55,12 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
         self.assertIn("/var/backups/acg-api", text)
         self.assertIn("sqlite3 /var/lib/acg-api/acg.db", text)
 
+    def test_sudo_password_env_takes_precedence_and_two_arg_install_is_supported(self):
+        text = SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('SUDO_PASSWORD="${SUDO_PASSWORD:-${2:-}}"', text)
+        self.assertIn('SERVICE_SRC="${2:?usage: remote-install-acg-api.sh <binary> [sudo_password] <unit-file>}"', text)
+
     def test_nginx_api_snippet_is_rewritten_on_redeploy(self):
         text = SCRIPT_PATH.read_text(encoding="utf-8")
 

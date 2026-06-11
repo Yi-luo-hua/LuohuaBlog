@@ -5,8 +5,14 @@ set -euo pipefail
 INSTALL_DIR="/opt/acg-api"
 DATA_DIR="/var/lib/acg-api"
 BINARY_SRC="${1:?usage: remote-install-acg-api.sh <binary> [sudo_password] <unit-file>}"
-SUDO_PASSWORD="${2:-}"
-SERVICE_SRC="${3:?usage: remote-install-acg-api.sh <binary> [sudo_password] <unit-file>}"
+SUDO_PASSWORD_FROM_ENV="${SUDO_PASSWORD:-}"
+SUDO_PASSWORD="${SUDO_PASSWORD:-${2:-}}"
+SERVICE_SRC="${2:?usage: remote-install-acg-api.sh <binary> [sudo_password] <unit-file>}"
+if [ "$#" -ge 3 ]; then
+  SERVICE_SRC="${3:?usage: remote-install-acg-api.sh <binary> [sudo_password] <unit-file>}"
+elif [ -z "$SUDO_PASSWORD_FROM_ENV" ]; then
+  SUDO_PASSWORD=""
+fi
 
 run_sudo() {
   if [ -n "$SUDO_PASSWORD" ]; then
