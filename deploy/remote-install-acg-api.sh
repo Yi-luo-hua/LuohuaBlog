@@ -147,11 +147,12 @@ find_taozhiyy_nginx_conf() {
 ensure_static_security_headers() {
   local conf="${1:-}"
   local backup_dir="/var/backups/nginx"
-  local tmp
+  local tmp script
 
   [ -n "$conf" ] || return 0
   tmp=$(mktemp)
-  run_sudo python3 - "$conf" >"$tmp" <<'PY'
+  script=$(mktemp)
+  cat >"$script" <<'PY'
 import sys
 from pathlib import Path
 
@@ -200,10 +201,11 @@ for line in lines:
 
 print("\n".join(out) + ("\n" if text.endswith("\n") else ""))
 PY
+  run_sudo python3 "$script" "$conf" >"$tmp"
   run_sudo mkdir -p "$backup_dir"
   run_sudo cp "$conf" "$backup_dir/$(basename "$conf").before-static-security-$(date +%F-%H%M%S)"
   run_sudo install -m 0644 "$tmp" "$conf"
-  rm -f "$tmp"
+  rm -f "$tmp" "$script"
 }
 
 if [ ! -f "$BINARY_SRC" ]; then

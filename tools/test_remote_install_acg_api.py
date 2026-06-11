@@ -54,6 +54,7 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
         self.assertIn('stripped.startswith("add_header Cache-Control")', text)
         self.assertIn("/var/backups/nginx", text)
         self.assertNotIn('$conf.before-static-security-', text)
+        self.assertNotIn('run_sudo python3 - "$conf" >"$tmp"', text)
         self.assertIn('add_header X-Frame-Options "SAMEORIGIN" always;', text)
         self.assertIn('add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;', text)
 
