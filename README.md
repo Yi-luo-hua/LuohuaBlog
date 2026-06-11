@@ -94,7 +94,8 @@ Backend controller map:
 
 | Controller / file | Main routes | Access | Responsibility |
 | --- | --- | --- | --- |
-| `main.go` public controllers | `GET /api/v1/health`, `GET /api/v1/bangumi/list`, `GET /api/v1/radar/feed`, `GET /api/v1/wallpapers/draw`, `GET /api/v1/acg/image/:name`, `POST /api/v1/sync/trigger` | Public | Health check, Bili bangumi cache, radar feed, wallpaper draw pool, cached cover/image serving, and manual sync trigger. |
+| `main.go` public controllers | `GET /api/v1/health`, `GET /api/v1/bangumi/list`, `GET /api/v1/radar/feed`, `GET /api/v1/wallpapers/draw`, `GET /api/v1/acg/image/:name` | Public | Health check, Bili bangumi cache, radar feed, wallpaper draw pool, and cached cover/image serving. |
+| `main.go` protected sync trigger | `POST /api/v1/sync/trigger` | Deploy token or owner session | Manual sync trigger. Requests must include `X-Sync-Trigger-Token` matching `SYNC_TRIGGER_TOKEN` or an authenticated owner session. |
 | `main.go` legacy guestbook | `GET/POST /api/v1/guestbook` | Public | Older simple guestbook API using `name` and `content`. Kept for compatibility with earlier frontend code. |
 | `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | Public/login/owner challenge | Email registration, login, session cookie management, display-name updates, and owner second-step verification. |
 | `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | Public/login/owner quota tiers | AI assistant quota status, fixed-answer lookup, chat requests, DeepSeek proxying, hourly/daily usage statistics, guest/user/owner quota handling. |

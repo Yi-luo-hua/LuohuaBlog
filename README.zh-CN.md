@@ -94,7 +94,8 @@
 
 | 控制器 / 文件 | 主要路由 | 权限 | 职责 |
 | --- | --- | --- | --- |
-| `main.go` 公开控制器 | `GET /api/v1/health`, `GET /api/v1/bangumi/list`, `GET /api/v1/radar/feed`, `GET /api/v1/wallpapers/draw`, `GET /api/v1/acg/image/:name`, `POST /api/v1/sync/trigger` | 公开 | 健康检查、Bili 番剧缓存、radar 动态、壁纸抽取池、缓存封面/图片服务、手动同步触发。 |
+| `main.go` 公开控制器 | `GET /api/v1/health`, `GET /api/v1/bangumi/list`, `GET /api/v1/radar/feed`, `GET /api/v1/wallpapers/draw`, `GET /api/v1/acg/image/:name` | 公开 | 健康检查、Bili 番剧缓存、radar 动态、壁纸抽取池、缓存封面/图片服务。 |
+| `main.go` 受保护同步触发 | `POST /api/v1/sync/trigger` | 部署 token 或站长会话 | 手动同步触发；请求必须携带匹配 `SYNC_TRIGGER_TOKEN` 的 `X-Sync-Trigger-Token`，或使用已认证的站长会话。 |
 | `main.go` 旧留言接口 | `GET/POST /api/v1/guestbook` | 公开 | 早期简单留言 API，只包含 `name` 和 `content`，用于兼容旧前端。 |
 | `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | 公开/登录/站长二次验证 | 邮箱注册、登录、会话 cookie、昵称修改、站长二次验证。 |
 | `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | 公开/登录/站长额度 | AI 助手额度查询、固定答案匹配、聊天请求、DeepSeek 转发、小时/日统计、游客/用户/站长额度控制。 |

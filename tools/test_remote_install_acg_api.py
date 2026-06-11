@@ -46,6 +46,17 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
         self.assertIn("limit_req zone=api_auth burst=20 nodelay;", text)
         self.assertIn("limit_req zone=api_chat burst=30 nodelay;", text)
 
+    def test_static_main_location_gets_security_headers(self):
+        text = SCRIPT_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("ensure_static_security_headers()", text)
+        self.assertIn("find_taozhiyy_nginx_conf()", text)
+        self.assertIn('stripped.startswith("add_header Cache-Control")', text)
+        self.assertIn("/var/backups/nginx", text)
+        self.assertNotIn('$conf.before-static-security-', text)
+        self.assertIn('add_header X-Frame-Options "SAMEORIGIN" always;', text)
+        self.assertIn('add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;', text)
+
     def test_server_baseline_installs_fail2ban_and_database_backup(self):
         text = SCRIPT_PATH.read_text(encoding="utf-8")
 

@@ -132,6 +132,80 @@ CRON
   rm -f "$tmp_script" "$tmp_cron"
 }
 
+find_taozhiyy_nginx_conf() {
+  local f
+
+  for f in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
+    [ -f "$f" ] || continue
+    if grep -Eq 'server_name[[:space:]]+([^;[:space:]]+[[:space:]]+)*taozhiyy\.top([[:space:];]|$)' "$f" 2>/dev/null; then
+      printf '%s\n' "$f"
+      return 0
+    fi
+  done
+}
+
+ensure_static_security_headers() {
+  local conf="${1:-}"
+  local backup_dir="/var/backups/nginx"
+  local tmp
+
+  [ -n "$conf" ] || return 0
+  tmp=$(mktemp)
+  run_sudo python3 - "$conf" >"$tmp" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+headers = [
+    '        add_header X-Frame-Options "SAMEORIGIN" always;',
+    '        add_header X-Content-Type-Options "nosniff" always;',
+    '        add_header Referrer-Policy "strict-origin-when-cross-origin" always;',
+    '        add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;',
+    '        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;',
+]
+lines = text.splitlines()
+out = []
+in_main_location = False
+brace_depth = 0
+inserted = False
+
+for line in lines:
+    stripped = line.strip()
+    if stripped == "location / {" and not in_main_location:
+        in_main_location = True
+        brace_depth = line.count("{") - line.count("}")
+        inserted = False
+        out.append(line)
+        continue
+
+    if in_main_location:
+        brace_depth += line.count("{") - line.count("}")
+        if stripped.startswith("add_header Cache-Control") and not inserted:
+            out.append(line)
+            existing = set()
+            for candidate in lines:
+                candidate_stripped = candidate.strip()
+                if candidate_stripped.startswith("add_header "):
+                    existing.add(candidate_stripped)
+            for header in headers:
+                if header.strip() not in existing:
+                    out.append(header)
+            inserted = True
+            continue
+        if brace_depth <= 0:
+            in_main_location = False
+
+    out.append(line)
+
+print("\n".join(out) + ("\n" if text.endswith("\n") else ""))
+PY
+  run_sudo mkdir -p "$backup_dir"
+  run_sudo cp "$conf" "$backup_dir/$(basename "$conf").before-static-security-$(date +%F-%H%M%S)"
+  run_sudo install -m 0644 "$tmp" "$conf"
+  rm -f "$tmp"
+}
+
 if [ ! -f "$BINARY_SRC" ]; then
   echo "binary not found: $BINARY_SRC" >&2
   exit 1
@@ -256,18 +330,12 @@ run_sudo mkdir -p /etc/nginx/snippets
 run_sudo install -m 0644 "$SNIP_TMP" "$SNIP"
 rm -f "$SNIP_TMP"
 
-CONF=""
-for f in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
-  [ -f "$f" ] || continue
-  if grep -q 'taozhiyy\.top' "$f" 2>/dev/null; then
-    CONF="$f"
-    break
-  fi
-done
+CONF="$(find_taozhiyy_nginx_conf)"
 
 if [ -n "$CONF" ] && ! grep -q 'taozhiyy-acg-api.conf' "$CONF"; then
   run_sudo sed -i '/server_name.*taozhiyy\.top/a\    include snippets/taozhiyy-acg-api.conf;' "$CONF"
 fi
+ensure_static_security_headers "$CONF"
 
 if ! run_sudo nginx -t 2>&1; then
   echo "nginx -t failed" >&2
