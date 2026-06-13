@@ -77,7 +77,7 @@ test("renders optional moment images as safe React image elements", () => {
   assert.match(momentsPageSource, /loading="lazy"/);
   assert.match(cssSource, /\.moments-photo/);
   assert.ok(photoBlock, "missing moments photo CSS block");
-  assert.match(photoBlock.groups.rules, /width:\s*clamp\(6\.8rem,\s*22vw,\s*9\.6rem\)/);
+  assert.match(photoBlock.groups.rules, /width:\s*clamp\(5\.2rem,\s*15vw,\s*6\.6rem\)/);
   assert.doesNotMatch(photoBlock.groups.rules, /30rem|100%/);
 });
 
