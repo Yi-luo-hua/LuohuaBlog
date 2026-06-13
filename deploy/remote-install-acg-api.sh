@@ -183,7 +183,7 @@ for line in lines:
     if in_main_location:
         brace_depth += line.count("{") - line.count("}")
         if stripped.startswith("add_header Cache-Control") and not inserted:
-            out.append(line)
+            out.append('        add_header Cache-Control "no-cache" always;')
             existing = set()
             for candidate in lines:
                 candidate_stripped = candidate.strip()

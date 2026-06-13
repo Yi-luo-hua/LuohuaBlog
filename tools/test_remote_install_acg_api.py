@@ -62,6 +62,8 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
         self.assertIn("ensure_static_security_headers()", text)
         self.assertIn("find_taozhiyy_nginx_conf()", text)
         self.assertIn('stripped.startswith("add_header Cache-Control")', text)
+        self.assertIn('add_header Cache-Control "no-cache" always;', text)
+        self.assertNotIn('add_header Cache-Control "public, max-age=3600"', text)
         self.assertIn("/var/backups/nginx", text)
         self.assertNotIn('$conf.before-static-security-', text)
         self.assertNotIn('run_sudo python3 - "$conf" >"$tmp"', text)
