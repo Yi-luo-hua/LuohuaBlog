@@ -69,12 +69,16 @@ test("keeps varied moments modules in one balanced multicolor holographic card f
 test("renders optional moment images as safe React image elements", () => {
   const momentsPageSource = readSource("pages/MomentsPage.jsx");
   const cssSource = readSource("index.css");
+  const photoBlock = cssSource.match(/\.moments-photo \{(?<rules>[\s\S]*?)\n\}/);
 
   assert.match(momentsPageSource, /\{moment\.image && \(/);
   assert.match(momentsPageSource, /src=\{moment\.image\.src\}/);
   assert.match(momentsPageSource, /alt=\{moment\.image\.alt\}/);
   assert.match(momentsPageSource, /loading="lazy"/);
   assert.match(cssSource, /\.moments-photo/);
+  assert.ok(photoBlock, "missing moments photo CSS block");
+  assert.match(photoBlock.groups.rules, /width:\s*clamp\(6\.8rem,\s*22vw,\s*9\.6rem\)/);
+  assert.doesNotMatch(photoBlock.groups.rules, /30rem|100%/);
 });
 
 test("does not put the moments entry in feature five", () => {

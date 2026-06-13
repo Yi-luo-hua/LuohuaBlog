@@ -6436,15 +6436,15 @@ body {
 
 .moments-photo {
   position: relative;
-  justify-self: center;
-  width: min(100%, 30rem);
-  margin: 0.55rem 0 0;
+  justify-self: start;
+  width: clamp(6.8rem, 22vw, 9.6rem);
+  margin: 0.48rem 0 0.05rem;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.82);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.16);
   box-shadow:
-    0 0.8rem 1.9rem rgba(120, 91, 74, 0.14),
+    0 0.45rem 1rem rgba(120, 91, 74, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
@@ -6681,9 +6681,8 @@ body {
   }
 
   .moments-photo {
-    width: 100%;
+    width: clamp(6.4rem, 42vw, 8.8rem);
     margin-top: 0.45rem;
-    border-radius: 8px;
   }
 
   .moments-module--postcard::after {
