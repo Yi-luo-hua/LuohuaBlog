@@ -48,6 +48,24 @@ class BlogThemeCleanupTests(unittest.TestCase):
         self.assertIn("if (!$nav || !blogInfo || !menus) return", main_js)
         self.assertIn("if (!ele) return", utils_js)
 
+    def test_blog_avoids_noisy_external_effect_assets(self):
+        theme_config = self.read("blog/_config.butterfly.yml")
+        local_asset_script = self.read("blog/scripts/local_tag_plugin_assets.js")
+
+        self.assertIn("activate_power_mode:\n  enable: false", theme_config)
+        self.assertIn("canvas_ribbon:\n  enable: false", theme_config)
+        self.assertIn("canvas_fluttering_ribbon:\n  enable: false", theme_config)
+        self.assertIn("canvas_nest:\n  enable: false", theme_config)
+        self.assertIn("    iconfont:", theme_config)
+        self.assertIn("    carousel:", theme_config)
+        self.assertIn("    anima: css/vendor/font-awesome-animation.min.css", theme_config)
+        self.assertIn("    tag_plugins_css: css/vendor/tag_plugins.css", theme_config)
+        self.assertNotIn("font_2032782_8d5kxvn09md.js", theme_config)
+        self.assertNotIn("carousel-touch.js", theme_config)
+        self.assertIn("hexo-butterfly-tag-plugins-plus", local_asset_script)
+        self.assertIn("font-awesome-animation.min.css", local_asset_script)
+        self.assertIn("tag_plugins.css", local_asset_script)
+
 
 if __name__ == "__main__":
     unittest.main()
