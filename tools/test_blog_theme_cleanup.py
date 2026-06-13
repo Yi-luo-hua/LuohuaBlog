@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import unittest
 
 
@@ -50,21 +51,49 @@ class BlogThemeCleanupTests(unittest.TestCase):
 
     def test_blog_avoids_noisy_external_effect_assets(self):
         theme_config = self.read("blog/_config.butterfly.yml")
+        package_json = json.loads(self.read("blog/package.json"))
         local_asset_script = self.read("blog/scripts/local_tag_plugin_assets.js")
+        preconnect_template = self.read(
+            "blog/themes/butterfly/layout/includes/head/preconnect.pug"
+        )
 
         self.assertIn("activate_power_mode:\n  enable: false", theme_config)
         self.assertIn("canvas_ribbon:\n  enable: false", theme_config)
         self.assertIn("canvas_fluttering_ribbon:\n  enable: false", theme_config)
         self.assertIn("canvas_nest:\n  enable: false", theme_config)
+        self.assertIn("third_party_provider: jsdelivr", theme_config)
+        self.assertIn("preconnect: false", theme_config)
         self.assertIn("    iconfont:", theme_config)
         self.assertIn("    carousel:", theme_config)
         self.assertIn("    anima: css/vendor/font-awesome-animation.min.css", theme_config)
         self.assertIn("    tag_plugins_css: css/vendor/tag_plugins.css", theme_config)
+        self.assertIn("    fontawesome: css/vendor/fontawesome/all.min.css", theme_config)
+        self.assertIn("    medium_zoom: js/vendor/medium-zoom.min.js", theme_config)
+        self.assertIn("    lazyload: js/vendor/lazyload.iife.min.js", theme_config)
+        self.assertIn("    snackbar: js/vendor/snackbar.min.js", theme_config)
+        self.assertIn("    snackbar_css: css/vendor/snackbar.min.css", theme_config)
+        self.assertIn("    egjs_infinitegrid: js/vendor/infinitegrid.min.js", theme_config)
+        for dependency in (
+            "@egjs/infinitegrid",
+            "@fortawesome/fontawesome-free",
+            "medium-zoom",
+            "node-snackbar",
+            "vanilla-lazyload",
+        ):
+            self.assertIn(dependency, package_json["dependencies"])
+        self.assertNotIn("hexo-butterfly-extjs", package_json["dependencies"])
         self.assertNotIn("font_2032782_8d5kxvn09md.js", theme_config)
         self.assertNotIn("carousel-touch.js", theme_config)
         self.assertIn("hexo-butterfly-tag-plugins-plus", local_asset_script)
         self.assertIn("font-awesome-animation.min.css", local_asset_script)
         self.assertIn("tag_plugins.css", local_asset_script)
+        self.assertIn("fontawesome-free", local_asset_script)
+        self.assertIn("medium-zoom", local_asset_script)
+        self.assertIn("vanilla-lazyload", local_asset_script)
+        self.assertIn("node-snackbar", local_asset_script)
+        self.assertIn("@egjs", local_asset_script)
+        self.assertIn("Object.values(theme.asset || {})", preconnect_template)
+        self.assertIn("usesProvider(third_party_provider)", preconnect_template)
 
 
 if __name__ == "__main__":

@@ -1045,12 +1045,19 @@ CDN:
 
   # Add version number to url, true or false
   version: false
+  preconnect: false
 
   # Custom format
   # For example: https://cdn.staticfile.org/${cdnjs_name}/${version}/${min_cdnjs_file}
   custom_format:
 
   option:
+    egjs_infinitegrid: js/vendor/infinitegrid.min.js
+    fontawesome: css/vendor/fontawesome/all.min.css
+    lazyload: js/vendor/lazyload.iife.min.js
+    medium_zoom: js/vendor/medium-zoom.min.js
+    snackbar: js/vendor/snackbar.min.js
+    snackbar_css: css/vendor/snackbar.min.css
     # abcjs_basic_js:
     # activate_power_mode:
     # algolia_js:
