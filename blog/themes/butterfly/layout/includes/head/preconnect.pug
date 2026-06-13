@@ -6,22 +6,15 @@
     'unpkg': '//unpkg.com',
     'custom': custom_format && custom_format.match(/^((https?:)?(\/\/[^/]+)|([^/]+))(\/|$)/)[1]
   }
-  const providerHost = provider => (providers[provider] || '').replace(/^\/\//, '')
-  const usesProvider = provider => {
-    const host = providerHost(provider)
-    if (!host) return false
-    return Object.values(theme.asset || {}).some(value => typeof value === 'string' && value.includes(host))
-  }
 -
 
-if theme.CDN.preconnect !== false
-  if internal_provider === third_party_provider && internal_provider !== 'local' && usesProvider(internal_provider)
+if internal_provider === third_party_provider && internal_provider !== 'local'
+  link(rel="preconnect" href=providers[internal_provider])
+else
+  if internal_provider !== 'local'
     link(rel="preconnect" href=providers[internal_provider])
-  else
-    if internal_provider !== 'local' && usesProvider(internal_provider)
-      link(rel="preconnect" href=providers[internal_provider])
-    if third_party_provider !== 'local' && usesProvider(third_party_provider)
-      link(rel="preconnect" href=providers[third_party_provider])
+  if third_party_provider !== 'local'
+  link(rel="preconnect" href=providers[third_party_provider])
 
 if theme.google_analytics
   link(rel="preconnect" href="//www.google-analytics.com" crossorigin='')

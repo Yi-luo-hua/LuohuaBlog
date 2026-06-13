@@ -16,7 +16,11 @@ nav:
   # Whether to fix navigation bar
   fixed: false
 
-menu: false
+menu:
+  Home: / || fas fa-home
+  Archives: /archives/ || fas fa-archive
+  Tags: /tags/ || fas fa-tags
+  Categories: /categories/ || fas fa-folder-open
 #List||fas fa-list:
   #Music: /music/ || fas fa-music
   #Movie: /movies/ || fas fa-video
@@ -46,7 +50,9 @@ code_blocks:
 # Social media links
 # Formal:
 #   icon: link || the description || color
-social: false
+social:
+  fab fa-github: https://github.com/bistutzyy || Github || '#24292e'
+  fas fa-envelope: mailto:173236231@qq.com || Email || '#4a7dbe'
 
 # --------------------------------------
 # Image Settings
@@ -283,10 +289,10 @@ aside:
     enable: true
     description:
     button:
-      enable: false
-      icon:
-      text:
-      link:
+      enable: true
+      icon: fab fa-github
+      text: Follow Me
+      link: https://github.com/bistutzyy
   card_announcement:
     enable: true
     content: This is my Blog
@@ -341,7 +347,7 @@ aside:
     # Sort of order. 1, asc for ascending; -1, desc for descending
     order: -1
   card_webinfo:
-    enable: false
+    enable: true
     post_count: true
     last_push_date: true
     sort_order:
@@ -467,7 +473,7 @@ math:
 search:
   # Choose: algolia_search / local_search / docsearch
   # leave it empty if you don't need search
-  use:
+  use: docsearch
   placeholder:
 
   # Algolia Search
@@ -817,7 +823,7 @@ hr_icon:
 # Typewriter Effect
 # https://github.com/disjukr/activate-power-mode
 activate_power_mode:
-  enable: false
+  enable: true
   colorful: true
   shake: true
   mobile: true
@@ -828,7 +834,7 @@ activate_power_mode:
 # canvas_ribbon
 # See: https://github.com/hustcc/ribbon.js
 canvas_ribbon:
-  enable: false
+  enable: true
   # The size of ribbon
   size: 150
   # The opacity of ribbon (0 ~ 1)
@@ -839,13 +845,13 @@ canvas_ribbon:
 
 # Fluttering Ribbon
 canvas_fluttering_ribbon:
-  enable: false
+  enable: true
   mobile: true
 
 # canvas_nest
 # https://github.com/hustcc/canvas-nest.js
 canvas_nest:
-  enable: false
+  enable: true
   # Color of lines, default: '0,0,0'; RGB values: (R,G,B).(note: use ',' to separate.)
   color: '0,0,255'
   # The opacity of line (0~1)
@@ -858,7 +864,7 @@ canvas_nest:
 
 # Mouse click effects: fireworks
 fireworks:
-  enable: false
+  enable: true
   zIndex: 9999
   mobile: true
 
@@ -1045,19 +1051,12 @@ CDN:
 
   # Add version number to url, true or false
   version: false
-  preconnect: false
 
   # Custom format
   # For example: https://cdn.staticfile.org/${cdnjs_name}/${version}/${min_cdnjs_file}
   custom_format:
 
   option:
-    egjs_infinitegrid: js/vendor/infinitegrid.min.js
-    fontawesome: css/vendor/fontawesome/all.min.css
-    lazyload: js/vendor/lazyload.iife.min.js
-    medium_zoom: js/vendor/medium-zoom.min.js
-    snackbar: js/vendor/snackbar.min.js
-    snackbar_css: css/vendor/snackbar.min.css
     # abcjs_basic_js:
     # activate_power_mode:
     # algolia_js:
@@ -1123,9 +1122,9 @@ tag_plugins:
   link:
     placeholder: /img/link.png #link_card标签默认的图标图片
   CDN:
-    anima: css/vendor/font-awesome-animation.min.css #动画标签anima的依赖
+    anima: https://npm.elemecdn.com/hexo-butterfly-tag-plugins-plus@latest/lib/assets/font-awesome-animation.min.css #动画标签anima的依赖
     jquery: https://npm.elemecdn.com/jquery@latest/dist/jquery.min.js #issues标签依赖
     issues: https://npm.elemecdn.com/hexo-butterfly-tag-plugins-plus@latest/lib/assets/issues.js #issues标签依赖
-    iconfont:
-    carousel:
-    tag_plugins_css: css/vendor/tag_plugins.css
+    iconfont: //at.alicdn.com/t/font_2032782_8d5kxvn09md.js #参看https://akilar.top/posts/d2ebecef/
+    carousel: https://npm.elemecdn.com/hexo-butterfly-tag-plugins-plus@latest/lib/assets/carousel-touch.js
+    tag_plugins_css: https://npm.elemecdn.com/hexo-butterfly-tag-plugins-plus@latest/lib/tag_plugins.css

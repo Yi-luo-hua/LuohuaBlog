@@ -6,17 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const getAllWidth = ele => Array.from(ele).reduce((width, i) => width + i.offsetWidth, 0)
 
     if (init) {
-      const blogInfo = document.querySelector('#blog-info > a')
-      const menus = document.getElementById('menus')
-      $nav = document.getElementById('nav')
-      if (!$nav || !blogInfo || !menus) return
-
-      const blogInfoWidth = getAllWidth(blogInfo.children)
-      const menusWidth = getAllWidth(menus.children)
+      const blogInfoWidth = getAllWidth(document.querySelector('#blog-info > a').children)
+      const menusWidth = getAllWidth(document.getElementById('menus').children)
       headerContentWidth = blogInfoWidth + menusWidth
+      $nav = document.getElementById('nav')
     }
 
-    if (!$nav || headerContentWidth === undefined) return
     const hideMenuIndex = window.innerWidth <= 768 || headerContentWidth > $nav.offsetWidth - 120
     $nav.classList.toggle('hide-menu', hideMenuIndex)
   }
@@ -24,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 初始化header
   const initAdjust = () => {
     adjustMenu(true)
-    if (!$nav) return
     $nav.classList.add('show')
   }
 
