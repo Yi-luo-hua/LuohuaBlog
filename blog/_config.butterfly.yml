@@ -467,7 +467,7 @@ math:
 search:
   # Choose: algolia_search / local_search / docsearch
   # leave it empty if you don't need search
-  use: docsearch
+  use:
   placeholder:
 
   # Algolia Search
@@ -858,7 +858,7 @@ canvas_nest:
 
 # Mouse click effects: fireworks
 fireworks:
-  enable: true
+  enable: false
   zIndex: 9999
   mobile: true
 

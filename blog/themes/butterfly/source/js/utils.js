@@ -301,6 +301,7 @@
     })(),
 
     addEventListenerPjax: (ele, event, fn, option = false) => {
+      if (!ele) return
       ele.addEventListener(event, fn, option)
       btf.addGlobalFn('pjaxSendOnce', () => {
         ele.removeEventListener(event, fn, option)

@@ -37,6 +37,17 @@ class BlogThemeCleanupTests(unittest.TestCase):
         self.assertNotIn("mailto:173236231@qq.com", author_card)
         self.assertNotIn(".site-data", author_template)
 
+    def test_blog_scripts_tolerate_removed_navigation(self):
+        theme_config = self.read("blog/_config.butterfly.yml")
+        main_js = self.read("blog/themes/butterfly/source/js/main.js")
+        utils_js = self.read("blog/themes/butterfly/source/js/utils.js")
+
+        self.assertIn("search:\n  # Choose: algolia_search / local_search / docsearch", theme_config)
+        self.assertIn("  use:\n  placeholder:", theme_config)
+        self.assertIn("fireworks:\n  enable: false", theme_config)
+        self.assertIn("if (!$nav || !blogInfo || !menus) return", main_js)
+        self.assertIn("if (!ele) return", utils_js)
+
 
 if __name__ == "__main__":
     unittest.main()
