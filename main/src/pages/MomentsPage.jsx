@@ -36,6 +36,15 @@ const MomentsPage = () => (
               <p key={line}>{line}</p>
             ))}
           </div>
+          {moment.image && (
+            <figure className="moments-photo">
+              <img
+                src={moment.image.src}
+                alt={moment.image.alt}
+                loading="lazy"
+              />
+            </figure>
+          )}
         </article>
       ))}
     </section>

@@ -1,6 +1,18 @@
 export const moments = [
   {
     year: "2026",
+    date: "6.13",
+    type: "校园",
+    tone: "rainbow",
+    module: "photo",
+    lines: ["在校园，彩虹🌈"],
+    image: {
+      src: "/assets/moments/campus-rainbow-2026-06-13.jpg",
+      alt: "校园里的彩虹",
+    },
+  },
+  {
+    year: "2026",
     date: "6.9",
     type: "记录",
     tone: "aurora",

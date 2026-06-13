@@ -3,6 +3,9 @@ dist/
 public/
 !main/public/
 main/public/**
+!main/public/assets/
+!main/public/assets/moments/
+!main/public/assets/moments/**
 !main/public/manifest.webmanifest
 !main/public/pwa-icon.svg
 !main/public/pwa-icon-192.png

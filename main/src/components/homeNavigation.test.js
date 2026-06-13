@@ -29,21 +29,22 @@ test("renders moments with varied visual modules", () => {
   const cssSource = readSource("index.css");
 
   assert.match(momentsPageSource, /moments-module--\$\{moment\.module\}/);
-  for (const module of ["postcard", "ticket", "watercolor", "poem", "journal", "ribbon"]) {
+  for (const module of ["photo", "postcard", "ticket", "watercolor", "poem", "journal", "ribbon"]) {
     assert.match(cssSource, new RegExp(`\\.moments-module--${module}`));
   }
 });
 
 test("keeps varied moments modules in one balanced multicolor holographic card family", () => {
   const cssSource = readSource("index.css");
-  const moduleNames = ["postcard", "ticket", "watercolor", "poem", "journal", "ribbon"];
-  const toneNames = ["aurora", "ticket", "watercolor", "mist", "journal", "mint"];
+  const moduleNames = ["photo", "postcard", "ticket", "watercolor", "poem", "journal", "ribbon"];
+  const toneNames = ["rainbow", "aurora", "ticket", "watercolor", "mist", "journal", "mint"];
 
   assert.match(cssSource, /--moment-holo:/);
   assert.match(cssSource, /--moment-holo-mint:/);
   assert.match(cssSource, /--moment-holo-blue:/);
   assert.match(cssSource, /--moment-holo-sun:/);
   assert.match(cssSource, /--moment-holo-lavender:/);
+  assert.match(cssSource, /--moment-holo-rainbow:/);
 
   for (const module of moduleNames) {
     const moduleBlock = cssSource.match(
@@ -63,6 +64,17 @@ test("keeps varied moments modules in one balanced multicolor holographic card f
     assert.match(toneBlock.groups.rules, /--moment-holo:\s*var\(--moment-holo-/);
     assert.match(toneBlock.groups.rules, /--moment-accent:/);
   }
+});
+
+test("renders optional moment images as safe React image elements", () => {
+  const momentsPageSource = readSource("pages/MomentsPage.jsx");
+  const cssSource = readSource("index.css");
+
+  assert.match(momentsPageSource, /\{moment\.image && \(/);
+  assert.match(momentsPageSource, /src=\{moment\.image\.src\}/);
+  assert.match(momentsPageSource, /alt=\{moment\.image\.alt\}/);
+  assert.match(momentsPageSource, /loading="lazy"/);
+  assert.match(cssSource, /\.moments-photo/);
 });
 
 test("does not put the moments entry in feature five", () => {

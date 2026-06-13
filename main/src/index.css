@@ -6173,6 +6173,16 @@ body {
     linear-gradient(112deg, rgba(255, 255, 255, 0.72) 0%, rgba(232, 220, 255, 0.36) 28%, rgba(255, 222, 236, 0.22) 52%, rgba(218, 240, 255, 0.2) 78%, rgba(255, 255, 255, 0.2) 100%);
   --moment-holo-peach:
     linear-gradient(112deg, rgba(255, 255, 255, 0.74) 0%, rgba(255, 224, 204, 0.34) 28%, rgba(255, 232, 244, 0.25) 50%, rgba(214, 242, 231, 0.2) 76%, rgba(255, 255, 255, 0.2) 100%);
+  --moment-holo-rainbow:
+    linear-gradient(
+      118deg,
+      rgba(255, 255, 255, 0.78) 0%,
+      rgba(255, 228, 187, 0.3) 22%,
+      rgba(255, 205, 219, 0.24) 40%,
+      rgba(209, 235, 255, 0.28) 58%,
+      rgba(215, 244, 225, 0.24) 78%,
+      rgba(255, 255, 255, 0.24) 100%
+    );
   --moment-holo: var(--moment-holo-rose);
   --moment-decoration: linear-gradient(135deg, rgba(255, 214, 232, 0.2), rgba(255, 255, 255, 0));
   --moment-glint: linear-gradient(102deg, transparent 0 42%, rgba(255, 255, 255, 0.34) 46%, transparent 52%);
@@ -6330,6 +6340,16 @@ body {
   --moment-corner: linear-gradient(135deg, rgba(255, 204, 228, 0.5), rgba(216, 235, 255, 0.28));
 }
 
+.moments-card--rainbow {
+  --moment-accent: 255, 178, 94;
+  --moment-holo: var(--moment-holo-rainbow);
+  --moment-ink: #5c4537;
+  --moment-decoration:
+    radial-gradient(ellipse 46% 52% at 8% 22%, rgba(255, 205, 142, 0.3), transparent 72%),
+    radial-gradient(ellipse 62% 52% at 92% 14%, rgba(161, 210, 255, 0.22), transparent 74%);
+  --moment-corner: linear-gradient(135deg, rgba(255, 214, 150, 0.58), rgba(197, 232, 255, 0.28));
+}
+
 .moments-card--ticket {
   --moment-accent: 180, 156, 226;
   --moment-holo: var(--moment-holo-lavender);
@@ -6388,6 +6408,63 @@ body {
 
 .moments-module--postcard {
   padding-right: 5rem;
+}
+
+.moments-module--photo {
+  gap: 1rem;
+  padding: 1.18rem 1.18rem 1.22rem;
+}
+
+.moments-module--photo::after {
+  right: 1.15rem;
+  top: 1.05rem;
+  width: 3.1rem;
+  height: 3.1rem;
+  border: 1px solid rgba(255, 201, 136, 0.44);
+  border-radius: 999px;
+  background:
+    conic-gradient(
+      from 220deg,
+      rgba(255, 129, 129, 0.26),
+      rgba(255, 218, 126, 0.34),
+      rgba(152, 224, 190, 0.26),
+      rgba(142, 197, 255, 0.28),
+      rgba(255, 129, 174, 0.24)
+    ),
+    rgba(255, 255, 255, 0.28);
+}
+
+.moments-photo {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 30rem);
+  margin: 0.55rem 0 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 0.8rem 1.9rem rgba(120, 91, 74, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.moments-photo::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 24%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.035));
+}
+
+.moments-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
 }
 
 .moments-module--postcard::after {
@@ -6589,6 +6666,24 @@ body {
 
   .moments-module--postcard {
     padding-right: 3.85rem;
+  }
+
+  .moments-module--photo {
+    gap: 0.82rem;
+    padding: 1rem;
+  }
+
+  .moments-module--photo::after {
+    right: 0.82rem;
+    top: 0.82rem;
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .moments-photo {
+    width: 100%;
+    margin-top: 0.45rem;
+    border-radius: 8px;
   }
 
   .moments-module--postcard::after {
