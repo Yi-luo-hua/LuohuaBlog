@@ -127,4 +127,11 @@ export const friendCards = [
     avatar: "https://qwq.sigrika.cc/assets/images/avatar.gif",
     note: "FRIEND",
   },
+  {
+    name: "Eliauk's Blog",
+    desc: "一方天地，记录代码、生活和偶尔的奇思妙想。",
+    url: "https://eliauk312.top/",
+    avatar: "https://img.eliauk312.top/avatar/default-avatar.jpg",
+    note: "FRIEND",
+  },
 ];
