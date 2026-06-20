@@ -134,4 +134,11 @@ export const friendCards = [
     avatar: "https://img.eliauk312.top/avatar/default-avatar.jpg",
     note: "FRIEND",
   },
+  {
+    name: "阿的宝藏之地",
+    desc: "记录项目、数学思考与杂谈。",
+    url: "https://nothing-new.icu",
+    avatar: "https://bu.dusays.com/2026/06/20/6a361fc5c68ff.jpg",
+    note: "FRIEND",
+  },
 ];
