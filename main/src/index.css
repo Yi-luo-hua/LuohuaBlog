@@ -2013,7 +2013,12 @@ body {
 }
 
 .source-arcade-lever.is-pulled .source-lever-ball {
-  transform: translate(1.25rem, 1.55rem);
+  /* 球需要跟着杆顶端的轨迹移动，并保持球本身和杆同步旋转。
+     杆长 4.8rem，旋转 28° 后杆顶位移：
+     - x: sin(28°) × 4.8 ≈ 2.25rem
+     - y: (1 - cos(28°)) × 4.8 ≈ 0.56rem
+     球本身也旋转 28° 视觉才正常（不歪头）。 */
+  transform: translate(calc(-50% + 2.25rem), 0.56rem) rotate(28deg);
 }
 
 .source-arcade-lever::after {
@@ -2446,7 +2451,9 @@ body {
 }
 
 .source-arcade-lever.is-pulled .source-lever-ball {
-  transform: translate(1.25rem, 1.55rem);
+  /* 球跟着杆一起旋转，同步保持挂在杆顶，不再歪头。
+     杆长 4.8rem，旋转 28°：sin(28°)×4.8 ≈ 2.25rem (右), (1-cos(28°))×4.8 ≈ 0.56rem (下) */
+  transform: translate(calc(-50% + 2.25rem), 0.56rem) rotate(28deg);
 }
 
 .source-arcade-lever p {
