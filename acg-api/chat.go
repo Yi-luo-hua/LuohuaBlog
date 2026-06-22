@@ -60,10 +60,10 @@ func handleChatPost(w http.ResponseWriter, r *http.Request, id chatIdentity, ena
 		})
 		return
 	}
-	if utf8.RuneCountInString(msg) > 500 {
+	if utf8.RuneCountInString(msg) > 2000 {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "MESSAGE_TOO_LONG",
-			"message": "单次最多 500 字哦",
+			"message": "单次最多 2000 字哦",
 		})
 		return
 	}

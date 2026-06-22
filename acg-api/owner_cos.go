@@ -143,6 +143,10 @@ func ownerCOSObjectKey(kind, album, filename string) string {
 		now := time.Now().UTC()
 		return path.Join("ai-images", now.Format("2006"), now.Format("01"), filename)
 	}
+	if kind == "avatar" {
+		now := time.Now().UTC()
+		return path.Join("avatars", now.Format("2006"), now.Format("01"), filename)
+	}
 	now := time.Now().UTC()
 	return path.Join("articles", now.Format("2006"), now.Format("01"), filename)
 }

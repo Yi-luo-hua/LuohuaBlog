@@ -16,7 +16,7 @@ import (
 
 const (
 	aiImageDailyLimit              = 3
-	aiImageMaxRunes                = 400
+	aiImageMaxRunes                = 1200
 	aiImageDefaultSize             = "1024*1024"
 	aiImageMaxBytes                = 12 * 1024 * 1024
 	aiImageDefaultAgnesModel       = "agnes-image-2.1-flash"
@@ -133,7 +133,7 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 	if utf8.RuneCountInString(prompt) > aiImageMaxRunes {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "PROMPT_TOO_LONG",
-			"message": "生图描述最多 400 个字。",
+			"message": "生图描述最多 1200 个字。",
 		})
 		return
 	}

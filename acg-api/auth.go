@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -33,6 +34,7 @@ type authUser struct {
 	ID          int64  `json:"id"`
 	Email       string `json:"email"`
 	DisplayName string `json:"displayName,omitempty"`
+	Avatar      string `json:"avatar,omitempty"`
 	IsOwner     bool   `json:"isOwner,omitempty"`
 	CreatedAt   string `json:"createdAt,omitempty"`
 }
@@ -75,6 +77,12 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		handleAuthProfile(w, r)
+	case "avatar":
+		if r.Method != http.MethodPost {
+			methodNotAllowed(w)
+			return
+		}
+		handleAuthAvatar(w, r)
 	case "me":
 		if r.Method != http.MethodGet {
 			methodNotAllowed(w)
@@ -225,7 +233,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	email := normalizeEmail(body.Email)
-	userID, displayName, isOwner, err := lookupUserCredentials(email, body.Password)
+	userID, displayName, avatar, isOwner, err := lookupUserCredentials(email, body.Password)
 	if err != nil {
 		if errors.Is(err, errInvalidCredentials) {
 			if isOwnerEmail(email) {
@@ -252,7 +260,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 			"needsSecurityQuestion": true,
 			"securityQuestion":      ownerSecurityQuestion,
 			"challengeToken":        token,
-			"user":                  authUser{ID: userID, Email: email, DisplayName: displayName, IsOwner: true},
+			"user":                  authUser{ID: userID, Email: email, DisplayName: displayName, Avatar: avatar, IsOwner: true},
 		})
 		return
 	}
@@ -262,7 +270,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]any{
-		"ok": true, "user": authUser{ID: userID, Email: email, DisplayName: displayName},
+		"ok": true, "user": authUser{ID: userID, Email: email, DisplayName: displayName, Avatar: avatar},
 	})
 }
 
@@ -302,11 +310,11 @@ func handleVerifySecurity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var email, displayName string
+	var email, displayName, avatar string
 	var isOwner int
 	if err := db.QueryRow(
-		`SELECT email, display_name, is_owner FROM users WHERE id = ?`, userID,
-	).Scan(&email, &displayName, &isOwner); err != nil || isOwner != 1 {
+		`SELECT email, display_name, avatar, is_owner FROM users WHERE id = ?`, userID,
+	).Scan(&email, &displayName, &avatar, &isOwner); err != nil || isOwner != 1 {
 		recordSecurityAudit(r, "owner.security_verify", "failure", userID, "owner", "", "forbidden_user")
 		writeJSONStatus(w, http.StatusForbidden, map[string]any{
 			"error": "FORBIDDEN", "message": "无权进行此验证",
@@ -329,7 +337,7 @@ func handleVerifySecurity(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"ok":        true,
 		"unlimited": true,
-		"user":      authUser{ID: userID, Email: email, DisplayName: displayNameOrEmail(email, displayName), IsOwner: true},
+		"user":      authUser{ID: userID, Email: email, DisplayName: displayNameOrEmail(email, displayName), Avatar: avatar, IsOwner: true},
 	})
 }
 
@@ -370,11 +378,11 @@ func handleAuthProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var email string
+	var email, avatar string
 	var isOwner int
 	if err := db.QueryRow(
-		`SELECT email, is_owner FROM users WHERE id = ?`, sess.UserID,
-	).Scan(&email, &isOwner); err != nil {
+		`SELECT email, avatar, is_owner FROM users WHERE id = ?`, sess.UserID,
+	).Scan(&email, &avatar, &isOwner); err != nil {
 		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
 			"error": "UNAUTHORIZED", "message": "请先登录",
 		})
@@ -386,9 +394,119 @@ func handleAuthProfile(w http.ResponseWriter, r *http.Request) {
 			ID:          sess.UserID,
 			Email:       email,
 			DisplayName: displayName,
+			Avatar:      avatar,
 			IsOwner:     isOwner == 1,
 		},
 	})
+}
+
+func handleAuthAvatar(w http.ResponseWriter, r *http.Request) {
+	sess, ok := sessionFromRequest(r)
+	if !ok {
+		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
+			"error": "UNAUTHORIZED", "message": "请先登录",
+		})
+		return
+	}
+	if !authLimiter.Allow(clientIP(r)) {
+		writeJSONStatus(w, http.StatusTooManyRequests, map[string]any{
+			"error": "RATE_LIMITED", "message": "操作太频繁，请稍后再试",
+		})
+		return
+	}
+
+	// 8 MB 上限，避免读入过大文件
+	if err := r.ParseMultipartForm(8 << 20); err != nil {
+		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+			"error": "INVALID_UPLOAD", "message": "图片读取失败，请控制在 2MB 以内",
+		})
+		return
+	}
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+			"error": "INVALID_UPLOAD", "message": "请选择要上传的头像图片",
+		})
+		return
+	}
+	defer file.Close()
+
+	mimeType := strings.TrimSpace(header.Header.Get("Content-Type"))
+	ext, ok := avatarMIMEAllowed(mimeType)
+	if !ok {
+		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+			"error": "INVALID_IMAGE_TYPE", "message": "仅支持 PNG / JPEG / WebP / GIF",
+		})
+		return
+	}
+	if header.Size > 2*1024*1024 {
+		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+			"error": "IMAGE_TOO_LARGE", "message": "头像图片不能超过 2MB",
+		})
+		return
+	}
+
+	body, err := io.ReadAll(io.LimitReader(file, 2*1024*1024+1))
+	if err != nil || int64(len(body)) > 2*1024*1024 {
+		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+			"error": "IMAGE_TOO_LARGE", "message": "头像图片不能超过 2MB",
+		})
+		return
+	}
+
+	uploader, err := newOwnerAssetUploader()
+	if err != nil {
+		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
+			"error": "COS_NOT_CONFIGURED", "message": "头像存储尚未配置，暂时无法更换。",
+		})
+		return
+	}
+	filename := "avatar-" + uuid.NewString() + ext
+	result, err := uploader.UploadImage("avatar", "", filename, mimeType, body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	avatarURL := ownerCOSProxyURL(result.ObjectKey)
+	if _, err := db.Exec(`UPDATE users SET avatar = ? WHERE id = ?`, avatarURL, sess.UserID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var email, displayName string
+	var isOwner int
+	if err := db.QueryRow(
+		`SELECT email, display_name, is_owner FROM users WHERE id = ?`, sess.UserID,
+	).Scan(&email, &displayName, &isOwner); err != nil {
+		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
+			"error": "UNAUTHORIZED", "message": "请先登录",
+		})
+		return
+	}
+	writeJSON(w, map[string]any{
+		"ok": true,
+		"user": authUser{
+			ID:          sess.UserID,
+			Email:       email,
+			DisplayName: displayNameOrEmail(email, displayName),
+			Avatar:      avatarURL,
+			IsOwner:     isOwner == 1,
+		},
+	})
+}
+
+func avatarMIMEAllowed(mime string) (string, bool) {
+	switch strings.ToLower(strings.TrimSpace(mime)) {
+	case "image/png":
+		return ".png", true
+	case "image/jpeg", "image/jpg":
+		return ".jpg", true
+	case "image/webp":
+		return ".webp", true
+	case "image/gif":
+		return ".gif", true
+	}
+	return "", false
 }
 
 func handleAuthMe(w http.ResponseWriter, r *http.Request) {
@@ -397,11 +515,11 @@ func handleAuthMe(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]any{"loggedIn": false})
 		return
 	}
-	var email, displayName string
+	var email, displayName, avatar string
 	var isOwner int
 	if err := db.QueryRow(
-		`SELECT email, display_name, is_owner FROM users WHERE id = ?`, sess.UserID,
-	).Scan(&email, &displayName, &isOwner); err != nil {
+		`SELECT email, display_name, avatar, is_owner FROM users WHERE id = ?`, sess.UserID,
+	).Scan(&email, &displayName, &avatar, &isOwner); err != nil {
 		writeJSON(w, map[string]any{"loggedIn": false})
 		return
 	}
@@ -412,6 +530,7 @@ func handleAuthMe(w http.ResponseWriter, r *http.Request) {
 			ID:          sess.UserID,
 			Email:       email,
 			DisplayName: displayNameOrEmail(email, displayName),
+			Avatar:      avatar,
 			IsOwner:     isOwner == 1,
 		},
 	})
@@ -419,24 +538,25 @@ func handleAuthMe(w http.ResponseWriter, r *http.Request) {
 
 var errInvalidCredentials = errors.New("invalid credentials")
 
-func lookupUserCredentials(email, password string) (int64, string, bool, error) {
+func lookupUserCredentials(email, password string) (int64, string, string, bool, error) {
 	var userID int64
 	var hash string
 	var displayName string
+	var avatar string
 	var isOwner int
 	err := db.QueryRow(
-		`SELECT id, password_hash, display_name, is_owner FROM users WHERE email = ?`, email,
-	).Scan(&userID, &hash, &displayName, &isOwner)
+		`SELECT id, password_hash, display_name, avatar, is_owner FROM users WHERE email = ?`, email,
+	).Scan(&userID, &hash, &displayName, &avatar, &isOwner)
 	if err == sql.ErrNoRows {
-		return 0, "", false, errInvalidCredentials
+		return 0, "", "", false, errInvalidCredentials
 	}
 	if err != nil {
-		return 0, "", false, err
+		return 0, "", "", false, err
 	}
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {
-		return 0, "", false, errInvalidCredentials
+		return 0, "", "", false, errInvalidCredentials
 	}
-	return userID, displayNameOrEmail(email, displayName), isOwner == 1, nil
+	return userID, displayNameOrEmail(email, displayName), avatar, isOwner == 1, nil
 }
 
 func createLoginChallenge(userID int64) (string, error) {

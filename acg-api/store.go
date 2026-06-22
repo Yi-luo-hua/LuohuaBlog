@@ -202,6 +202,9 @@ func migrateAll(db *sql.DB) error {
 	if err := ensureColumn(db, "users", "display_name", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
+	if err := ensureColumn(db, "users", "avatar", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
 	if err := ensureColumn(db, "sessions", "unlimited", "INTEGER NOT NULL DEFAULT 0"); err != nil {
 		return err
 	}
