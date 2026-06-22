@@ -329,10 +329,6 @@ const ServerInfoPanel = () => {
         </div>
       </div>
 
-      <p className="relative mt-1.5 max-w-2xl text-xs text-[#6B7280]">
-        仅展示非敏感运行指标（不含 IP / 主机名 / 账号 / 磁盘路径）· 10 秒自动刷新
-      </p>
-
       {loading && !info && (
         <p className="relative mt-6 text-sm text-[#6B7280]">▸ 正在连接遥测通道…</p>
       )}
