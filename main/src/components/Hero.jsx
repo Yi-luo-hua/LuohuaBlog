@@ -5,6 +5,7 @@ import { TiLocationArrow } from "react-icons/ti";
 import { useEffect, useRef, useState } from "react";
 
 import Button from "./Button";
+import HeroWordmark from "./HeroWordmark";
 import {
   getContinuousCompassRotation,
   getHeroIndexFromCompassRotation,
@@ -401,6 +402,8 @@ const Hero = () => {
           id="hero-transition-wash"
           className="pointer-events-none absolute inset-y-0 left-1/2 z-[35] hidden w-[42vw] -translate-x-1/2 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.1),rgba(190,220,255,0.12),rgba(255,255,255,0.08),transparent)] opacity-0 blur-2xl mix-blend-screen md:block"
         />
+
+        <HeroWordmark heroIndex={currentIndex} />
 
         {selectorOpen && (
           <div

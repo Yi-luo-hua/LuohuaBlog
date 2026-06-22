@@ -568,6 +568,140 @@ body {
     @apply uppercase font-bold tracking-tight text-4xl sm:right-10 sm:text-6xl md:text-8xl lg:text-[10rem];
   }
 
+  .hero-wordmark {
+    position: absolute;
+    top: clamp(4.7rem, 7vw, 6.15rem);
+    right: clamp(0.9rem, 3.7vw, 3rem);
+    z-index: 45;
+    width: clamp(13.25rem, 24vw, 21.75rem);
+    pointer-events: none;
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .hero-wordmark::before {
+    content: "";
+    position: absolute;
+    inset: 18% -5% 14% 0%;
+    border-radius: 999px;
+    background: radial-gradient(
+      ellipse at center,
+      var(--hero-wordmark-glow) 0%,
+      transparent 70%
+    );
+    filter: blur(1.2rem);
+    opacity: 0;
+    animation: heroWordmarkGlowPulse 4.5s ease-in-out infinite;
+    animation-delay: 3s;
+  }
+
+  .hero-wordmark-svg {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    filter: drop-shadow(0 0 0.35rem var(--hero-wordmark-glow))
+      drop-shadow(0 0 0.6rem var(--hero-wordmark-glow))
+      drop-shadow(0 0.4rem 0.7rem rgba(0, 0, 0, 0.25));
+  }
+
+  .hero-wordmark-stroke-path {
+    fill: none;
+    fill-opacity: 0;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+  }
+
+  .hero-wordmark--ready .hero-wordmark-stroke-path {
+    animation: heroWordmarkDraw var(--dur) cubic-bezier(0.45, 0, 0.25, 1)
+        var(--delay) forwards,
+      heroWordmarkShow 0.01s var(--delay) forwards;
+  }
+
+  .hero-wordmark--ready .hero-wordmark-fill-after {
+    animation: heroWordmarkDraw var(--dur) cubic-bezier(0.45, 0, 0.25, 1)
+        var(--delay) forwards,
+      heroWordmarkShow 0.01s var(--delay) forwards,
+      heroWordmarkFillIn 1.2s ease-out calc(var(--delay) + var(--dur) + 0.2s)
+        forwards;
+  }
+
+  @keyframes heroWordmarkDraw {
+    0% {
+      stroke-dashoffset: var(--len);
+      stroke-width: 3.2;
+    }
+    60% {
+      stroke-width: 2.8;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      stroke-width: 2.6;
+    }
+  }
+
+  @keyframes heroWordmarkShow {
+    0% {
+      opacity: 0;
+    }
+    1% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes heroWordmarkFillIn {
+    0% {
+      fill-opacity: 0;
+    }
+    100% {
+      fill-opacity: 1;
+    }
+  }
+
+  @keyframes heroWordmarkGlowPulse {
+    0%, 100% {
+      opacity: 0.08;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.22;
+      transform: scale(1.03);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .hero-wordmark {
+      top: 5.25rem;
+      right: 0.8rem;
+      width: clamp(12.25rem, 54vw, 15.25rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-wordmark,
+    .hero-wordmark--ready .hero-wordmark-stroke-path,
+    .hero-wordmark--ready .hero-wordmark-fill-after,
+    .hero-wordmark-stroke-path,
+    .hero-wordmark-fill-after {
+      animation: none;
+    }
+
+    .hero-wordmark-stroke-path {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+
+    .hero-wordmark-fill-after {
+      fill-opacity: 1;
+    }
+  }
+
   .about-subtext {
     @apply static mt-3 w-full max-w-96 text-center font-circular-web text-lg md:absolute md:bottom-[-80dvh] md:left-1/2 md:mt-0 md:max-w-[34rem] md:-translate-x-1/2;
   }
@@ -1770,49 +1904,130 @@ body {
 }
 
 .source-arcade-lever button {
-  height: 8.2rem;
-  width: 6.2rem;
+  height: 8.6rem;
+  width: 7rem;
+  cursor: grab;
+  border: 0;
+  background: transparent;
+  position: relative;
+}
+.source-arcade-lever button:active {
+  cursor: grabbing;
 }
 
+/* —— 底座：手绘碟形 + 水彩晕染 —— */
 .source-arcade-lever button::after {
   content: "";
   position: absolute;
   bottom: 0.25rem;
   left: 50%;
-  height: 2.4rem;
-  width: 4.8rem;
+  height: 2.2rem;
+  width: 5.6rem;
   transform: translateX(-50%);
-  border: 0.28rem solid #fff2da;
   border-radius: 50%;
-  background: linear-gradient(180deg, #bf7e69, #8a5961);
-  box-shadow: inset 0 0.45rem 0 rgba(255, 255, 255, 0.25);
-}
-
-.source-lever-stick {
-  bottom: 1.45rem;
-  height: 5.6rem;
-  width: 0.82rem;
-  background: linear-gradient(90deg, #a9655c, #fff0bf 48%, #b66c7c);
-}
-
-.source-lever-ball {
-  height: 3.55rem;
-  width: 3.55rem;
   background:
-    radial-gradient(circle at 32% 26%, #fff 0 0.42rem, transparent 0.44rem),
-    linear-gradient(145deg, #ff6f98, #ffd86e);
+    radial-gradient(ellipse at 50% 40%, #fff8ee 0%, #ffe8d6 35%, #ecc9b0 75%, #c89a85 100%);
+  box-shadow:
+    inset 0 0.4rem 0.7rem rgba(255, 250, 240, 0.7),
+    inset 0 -0.3rem 0.5rem rgba(140, 95, 80, 0.18),
+    0 0.5rem 1.2rem rgba(140, 95, 80, 0.14);
+  filter: blur(0.3px);
+  opacity: 0.96;
+}
+
+/* —— 底座的"墨晕"小阴影点缀（手绘细节） —— */
+.source-arcade-lever button::before {
+  content: "";
+  position: absolute;
+  bottom: 0.55rem;
+  left: 50%;
+  height: 0.45rem;
+  width: 2.6rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(160, 110, 90, 0.24) 0%, transparent 65%);
+  filter: blur(2px);
+  z-index: 1;
+}
+
+/* —— 杆身：水彩笔触感 + 渐变中部高光 —— */
+.source-lever-stick {
+  position: absolute;
+  bottom: 1.4rem;
+  left: 50%;
+  height: 4.8rem;
+  width: 0.78rem;
+  transform: translateX(-50%) rotate(-13deg);
+  transform-origin: bottom center;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 220, 195, 0.6) 0%,
+      #f7c8a8 18%,
+      #fff2dc 48%,
+      #f7c8a8 78%,
+      rgba(220, 165, 140, 0.55) 100%);
+  box-shadow:
+    0 0.3rem 0.6rem rgba(170, 110, 95, 0.18),
+    inset 0 0 0 0.04rem rgba(255, 235, 210, 0.55);
+  filter: blur(0.15px);
+}
+
+/* —— 球头：水彩晕染球，柔和无塑料感 —— */
+.source-lever-ball {
+  position: absolute;
+  left: 50%;
+  top: 0.3rem;
+  height: 2.8rem;
+  width: 2.8rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%,
+      rgba(255, 252, 244, 0.85) 0%,
+      rgba(255, 252, 244, 0.4) 12%,
+      transparent 28%),
+    radial-gradient(circle at 70% 78%,
+      rgba(180, 130, 130, 0.32) 0%,
+      transparent 40%),
+    radial-gradient(circle at 48% 48%,
+      #ffd6c8 0%,
+      #f4a896 50%,
+      #d97f72 100%);
+  box-shadow:
+    inset 0 -0.18rem 0.4rem rgba(160, 80, 75, 0.32),
+    inset 0 0.15rem 0.3rem rgba(255, 240, 225, 0.42),
+    0 0.5rem 1rem rgba(170, 100, 95, 0.28),
+    0 0 0 0.05rem rgba(255, 240, 225, 0.5);
+  filter: blur(0.15px);
+}
+
+/* —— 拉动动画：柔和液体感 —— */
+.source-lever-stick,
+.source-lever-ball {
+  transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .source-arcade-lever.is-pulled .source-lever-stick {
-  transform: translateX(-50%) rotate(26deg);
+  transform: translateX(-50%) rotate(28deg);
 }
 
 .source-arcade-lever.is-pulled .source-lever-ball {
-  transform: translate(1.2rem, 1.65rem);
+  transform: translate(1.25rem, 1.55rem);
 }
 
 .source-arcade-lever::after {
   display: none;
+}
+
+.source-arcade-lever p {
+  margin-top: 0.5rem;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.32em;
+  color: #b27d6b;
+  text-shadow: 0 1px 0 rgba(255, 248, 240, 0.7);
 }
 
 .source-arcade-draw-btn {
