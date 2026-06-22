@@ -34,10 +34,11 @@ This version has been extensively customized for personal use:
 - `/friends`: friend links and friend-page messages.
 - `/gallery`: gallery albums and published image URLs.
 - `/app`: owner console for drafts, article publishing, friend publishing, moment publishing, gallery publishing, and uploads through the backend owner APIs.
+- `/ai-traffic`: data center page for AI traffic and live server status telemetry.
 
 ## 🗓 Follow-Up Plan
 
-- 服务器数据和状态监测
+- 服务器历史趋势与告警
 - 邮箱绑定与发送
 - 设计艺术字主页
 

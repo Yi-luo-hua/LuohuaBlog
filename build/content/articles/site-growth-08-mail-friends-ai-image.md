@@ -1,11 +1,11 @@
 ---
 date: 2026-06-09
 slug: site-growth-08-mail-friends-ai-image
-title_zh: 建站成长记录 08｜留言邮件、友链回复与 AI 生图上线
-title_en: Site Growth Log 08 | Mail Notifications, Friend Replies, and AI Image Generation
-excerpt_zh: 这篇记录最近几次偏后端和交互闭环的更新：留言邮件通知改成 UTF-8 安全发送，友链留言补齐昵称和联系邮箱并支持连续回复，站长后台可以查看注册用户和留言邮箱，AI 小助手也接入 z-image-turbo 生图并把结果保存到腾讯 COS。
-excerpt_en: This post records recent backend and interaction-loop updates: UTF-8-safe mail notifications, friend-page contact collection and threaded replies, owner-only email visibility, and z-image-turbo image generation through the AI assistant with generated images saved to Tencent COS.
-words: 4200
+title_zh: 建站成长记录 08｜留言邮件、友链回复、服务器状态与 AI 生图上线
+title_en: Site Growth Log 08 | Mail, Friend Replies, Server Status, and AI Image Generation
+excerpt_zh: 这篇记录最近几次偏后端和交互闭环的更新：留言邮件通知改成 UTF-8 安全发送，友链留言补齐昵称和联系邮箱并支持连续回复，站长后台可以查看注册用户和留言邮箱，数据中心补上服务器状态监控，AI 小助手也接入 z-image-turbo 生图并把结果保存到腾讯 COS。
+excerpt_en: This post records recent backend and interaction-loop updates: UTF-8-safe mail notifications, friend-page contact collection and threaded replies, owner-only email visibility, a data-center server status panel, and z-image-turbo image generation through the AI assistant with generated images saved to Tencent COS.
+words: 4800
 reads: 18
 minutes: 15
 ---
@@ -95,6 +95,29 @@ minutes: 15
 
 这条边界要非常清楚：邮箱是联系信息，不是公开内容。
 
+## 数据中心里的服务器状态
+
+这次也把之前“后续计划”里的服务器状态监控落到了真实页面里。
+
+主站顶部导航现在有一个“数据中心”入口，对应 `/ai-traffic` 页面。这个页面原本主要看 AI 调用流量，现在也加入了 `ServerInfoPanel`，通过后端 `GET /api/server/info` 每 10 秒刷新一次服务器状态。
+
+这组指标刻意只返回非敏感信息：
+
+| 指标 | 来源/含义 | 说明 |
+| --- | --- | --- |
+| `status` | 服务状态 | 当前返回 `online` |
+| `vendor` / `region` | 环境变量 `SERVER_VENDOR`、`SERVER_REGION` | 用于显示云厂商与区域，例如 UCloud 香港 |
+| `cpuPercent` | Linux `/proc/stat` 两次采样对比 | 修过一次采样缓存逻辑，避免短时间全 idle 误显示 0 |
+| `memory` | Linux `/proc/meminfo` | 优先读系统内存；本地开发环境降级为 Go 进程内存 |
+| `uptime` / `uptimeSecs` | API 进程启动时间 | 展示服务持续运行时长 |
+| `os` / `arch` / `goVersion` | 运行时信息 | 只显示友好的系统名和 Go 版本 |
+| `cpuCores` / `goroutines` | Go runtime | 展示核心数与当前 goroutine 数 |
+| `serverTime` | UTC 时间 | 用于确认遥测刷新时间 |
+
+这里最重要的不是“炫一个仪表盘”，而是边界：接口故意不返回真实 IP、主机名、域名、磁盘路径、进程列表、环境变量等敏感信息。前端展示的是安全摘要，不是服务器控制权。
+
+前端视觉上用了四个圆形 HUD：CPU、内存、运行时长和运行环境。在线状态、云厂商区域和 serverTime 放在底部小状态条里。这样站长不用 SSH 到服务器，也能在页面上快速判断“服务还活着、资源有没有异常、遥测有没有更新”。
+
 ## AI 生图接入
 
 AI 小助手现在不只支持聊天，也支持“生图”模式。
@@ -161,13 +184,14 @@ AI 小助手现在不只支持聊天，也支持“生图”模式。
 - 友链联系邮箱
 - 连续回复
 - 站长后台邮箱查看
+- 数据中心服务器状态监控
 - 百炼生图
 - COS 保存生成图
 - GitHub Actions Secrets 部署配置
 
 如果 README 不更新，后续自己回来看也会误判当前系统状态。
 
-尤其“邮箱通知”和“低成本生图”已经从计划变成了已上线能力，所以后续计划里不应该再保留这两条。
+尤其“邮箱通知”、“服务器状态监控”和“低成本生图”已经从计划变成了已上线能力，所以后续计划里不应该再保留这些已完成项。
 
 ## 接下来的计划
 
@@ -175,7 +199,7 @@ AI 小助手现在不只支持聊天，也支持“生图”模式。
 
 | 计划 | 想解决的问题 |
 | --- | --- |
-| 服务器数据和状态监测 | 在站长控制台里看到服务运行状态、资源使用、同步状态和关键数据趋势 |
+| 服务器历史趋势与告警 | 在当前实时状态面板基础上继续记录 CPU、内存、错误率和同步耗时趋势 |
 | 打造生成图展示页面 | 把已经生成并保存到 COS 的图片整理成一个可浏览、可回看、可管理的展示页 |
 | 设计艺术字主页 | 继续探索更有辨识度的首页标题、艺术字和主视觉表达 |
 
@@ -264,6 +288,29 @@ The backend now exposes owner-only email views:
 
 Public APIs do not return `contactEmail`. Only an owner session can see these fields.
 
+## Server status in the data center
+
+This round also turned the earlier server-status plan into a real page.
+
+The main navigation now has a Data Center entry at `/ai-traffic`. That page already visualizes AI traffic, and now it also renders `ServerInfoPanel`, which refreshes `GET /api/server/info` every 10 seconds.
+
+The endpoint deliberately returns only non-sensitive telemetry:
+
+| Metric | Source / meaning | Notes |
+| --- | --- | --- |
+| `status` | service state | currently returns `online` |
+| `vendor` / `region` | `SERVER_VENDOR` and `SERVER_REGION` env vars | used for cloud vendor and region display, such as UCloud Hong Kong |
+| `cpuPercent` | two-sample Linux `/proc/stat` comparison | the sampling cache was fixed to avoid short all-idle windows showing a misleading 0 |
+| `memory` | Linux `/proc/meminfo` | system memory first; local development falls back to Go process memory |
+| `uptime` / `uptimeSecs` | API process start time | shows how long the service has been running |
+| `os` / `arch` / `goVersion` | runtime metadata | friendly OS name and Go version only |
+| `cpuCores` / `goroutines` | Go runtime | core count and current goroutine count |
+| `serverTime` | UTC time | confirms telemetry freshness |
+
+The key point is the boundary. The endpoint intentionally does not return real IPs, hostnames, domains, disk paths, process lists, environment variables, or other sensitive server details. It is a safe status summary, not server control.
+
+Visually, the frontend presents four circular HUD cards: CPU, memory, uptime, and runtime. Online state, cloud region, and server time sit in a small footer strip. This lets the owner quickly check whether the service is alive, whether resources look abnormal, and whether telemetry is still refreshing, without SSHing into the server.
+
 ## AI image generation
 
 The floating AI assistant now has an image-generation mode.
@@ -315,13 +362,14 @@ These changes affect backend responsibilities and deployment configuration:
 - friend-page contact email
 - threaded replies
 - owner-only email views
+- data-center server status monitoring
 - DashScope image generation
 - COS storage for generated images
 - GitHub Actions Secrets
 
 That is why the README and build log were updated as part of the work.
 
-Email notifications and low-cost image generation are no longer future plans. They are implemented capabilities now.
+Email notifications, server status monitoring, and low-cost image generation are no longer future plans. They are implemented capabilities now.
 
 ## Next steps
 
@@ -329,7 +377,7 @@ The next plan is more focused:
 
 | Plan | Goal |
 | --- | --- |
-| Server data and status monitoring | Surface service health, resource usage, sync state, and key data trends in the owner console |
+| Server history and alerts | keep trend records for CPU, memory, error rate, and sync duration on top of the current live status panel |
 | Generated-image showcase page | turn generated COS images into a browsable, reusable, and manageable site gallery |
 | Artistic lettering homepage | keep exploring a more recognizable title, lettering system, and main visual identity |
 

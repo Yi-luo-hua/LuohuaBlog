@@ -70,7 +70,7 @@ The `build/` page is a build-log subsite created with the help of **vibecoding**
 
 This page is an original/customized page created during my personal learning and practice process. You are welcome to freely reference, study, and use it.
 
-Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, the homepage/page-level double-scroll fix, the AI fixed-answer sync from the owner console into the public site assistant, UTF-8-safe mail notifications, friend-page contact-email collection, threaded friend replies, owner-only email visibility, and AI image generation saved to Tencent COS.
+Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, the homepage/page-level double-scroll fix, the AI fixed-answer sync from the owner console into the public site assistant, UTF-8-safe mail notifications, friend-page contact-email collection, threaded friend replies, owner-only email visibility, data-center server status monitoring, and AI image generation saved to Tencent COS.
 
 ### `main/` Main Site Notes
 
@@ -81,6 +81,8 @@ The latest cleanup also corrected the friend link for `https://930309.xyz/` to `
 The homepage double-scroll issue was fixed by tightening Hero and site-layout overflow behavior, with regression tests covering the expected layout classes.
 
 The owner-console AI answer area now saves fixed answers into the backend instead of keeping them only in local React state. `GET /api/owner/status` returns the saved answers for review, and `/api/chat` checks the fixed-answer table before calling DeepSeek, so matching public-site questions can receive the maintained reply immediately.
+
+The Data Center page (`/ai-traffic`) now combines AI traffic with a live server status panel. `ServerInfoPanel` refreshes `GET /api/server/info` every 10 seconds and shows safe telemetry such as status, cloud vendor/region, CPU usage, memory usage, uptime, OS/runtime, CPU cores, goroutine count, and server time. The endpoint intentionally avoids exposing sensitive server details such as real IPs, hostnames, disk paths, process lists, or environment variables.
 
 The floating AI assistant also has an image-generation mode for logged-in users. It calls the backend `/api/ai/image` route, uses Alibaba Cloud DashScope `z-image-turbo` with prompt rewriting disabled, stores the generated image in Tencent COS, and shows the final result in a centered translucent holographic card with local-save and COS-link copy actions.
 
@@ -100,6 +102,7 @@ Backend controller map:
 | `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | Public/login/owner challenge | Email registration, login, session cookie management, display-name updates, and owner second-step verification. |
 | `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | Public/login/owner quota tiers | AI assistant quota status, fixed-answer lookup, chat requests, DeepSeek proxying, hourly/daily usage statistics, guest/user/owner quota handling. |
 | `ai_image.go` | `GET/POST /api/ai/image` | Login/owner quota tiers | Image-generation quota status, DashScope `z-image-turbo` generation with `promptExtend: false`, provider-image download, Tencent COS upload, and generation-history recording. |
+| `server_info.go` | `GET /api/server/info` | Public safe telemetry | Non-sensitive server status for the Data Center page, including online status, cloud vendor/region labels, CPU usage, memory usage, uptime, runtime metadata, CPU cores, goroutine count, and server time; it intentionally does not expose IPs, hostnames, disk paths, process lists, or environment variables. |
 | `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go`, `mail_notifier.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | Public for visible messages; owner/admin for moderation | Current guestbook and friend-page message controller, including channels, threaded replies, anonymous/login users, required friend-page contact email, UTF-8 mail notifications, rate limits, duplicate checks, IP masking, and soft moderation. |
 | `owner_controller.go` | `GET /api/owner/status`, `GET /api/owner/emails`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | Owner only | Owner console status, registered-user list, unread message inbox, owner-only email directory, AI fixed-answer storage, draft storage, local temporary image uploads, and COS asset uploads. |
 | `owner_publish.go` | `POST /api/owner/publish` | Owner only + GitHub token | Publishes Markdown through the GitHub Contents API into `blog/source/_posts/`, merges front matter, handles filename conflicts, and returns commit information. |
@@ -121,6 +124,7 @@ Important request shapes:
 | `GET /api/owner/emails` | No body | Owner-only directory returning registered user emails and private guestbook contact emails. |
 | `GET /api/ai/image` | No body | Returns image quota, `imageEnabled`, `canGenerate`, selected model, and `promptExtend: false`. |
 | `POST /api/ai/image` | `{ "prompt": "...", "size": "1024*1024" }` | Logged-in users only; normal users are limited to 3 images/day, owner is unlimited. Supported sizes are `1024*1024`, `1280*720`, and `720*1280`; the returned `image.url` is the final Tencent COS URL. |
+| `GET /api/server/info` | No body | Returns non-sensitive live telemetry for `/ai-traffic`, refreshed by the frontend every 10 seconds. |
 | `POST /api/owner/uploads` | `multipart/form-data` with `file` | Stores a temporary local image under `ACG_DATA_DIR/owner-uploads`, max 8 MiB. |
 | `POST /api/owner/assets` | `multipart/form-data` with `file`, `kind` as `gallery` or `article`, optional `album` | Uploads to Tencent COS. Gallery uploads require an album. |
 | `POST /api/owner/publish` | `{ "draftId": 1, "title": "...", "body": "...", "coverUrl": "..." }` | Writes a real GitHub commit through the configured token. |
@@ -152,7 +156,7 @@ If you find any problem while reading, using, or deploying this project, or if y
 
 ## Follow-Up Plan
 
-- Server data and status monitoring: surface service health, resource usage, sync state, and key data trends in the owner console.
+- Server history and alerts: keep trend records for CPU, memory, error rate, and sync duration on top of the current live status panel.
 - Generated-image showcase page: turn generated COS images into a browsable, reusable, and manageable site gallery.
 - Artistic lettering homepage: explore a more recognizable homepage title/typographic art direction for the main visual identity.
 
