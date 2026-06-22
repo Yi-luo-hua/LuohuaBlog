@@ -47,7 +47,7 @@ test("keeps the wordmark stroke outline thin enough to stay legible at hero size
 });
 
 test("uses the build homepage draw and fill animation pattern", () => {
-  assert.match(cssSource, /\.hero-wordmark\s*{[^}]*opacity:\s*0\.96/s);
+  assert.match(cssSource, /\.hero-wordmark\s*{[^}]*opacity:\s*1/s);
   assert.match(
     cssSource,
     /\.hero-wordmark--ready\s+\.hero-wordmark-stroke-path\s*{[^}]*animation:\s*heroWordmarkDraw/s

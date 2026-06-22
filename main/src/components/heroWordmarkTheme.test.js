@@ -7,16 +7,17 @@ import {
   getHeroWordmarkTheme,
 } from "./heroWordmarkTheme.js";
 
-test("provides four wordmark palettes for the hero wallpapers", () => {
+test("provides four wordmark palettes for the hero wallpapers (shifted by one for preview effect)", () => {
   assert.deepEqual(
     Object.keys(HERO_WORDMARK_THEMES).map(Number),
     [1, 2, 3, 4]
   );
 
-  assert.equal(getHeroWordmarkTheme(1).name, "peach-gold");
-  assert.equal(getHeroWordmarkTheme(2).name, "moon-blue");
-  assert.equal(getHeroWordmarkTheme(3).name, "star-violet");
-  assert.equal(getHeroWordmarkTheme(4).name, "rain-mint");
+  // wordmark color is shifted by +1 to preview the next wallpaper
+  assert.equal(getHeroWordmarkTheme(1).name, "moon-blue");
+  assert.equal(getHeroWordmarkTheme(2).name, "star-violet");
+  assert.equal(getHeroWordmarkTheme(3).name, "rain-mint");
+  assert.equal(getHeroWordmarkTheme(4).name, "peach-gold");
 });
 
 test("keeps every wordmark stroke close to white for photo contrast", () => {
@@ -25,19 +26,23 @@ test("keeps every wordmark stroke close to white for photo contrast", () => {
   });
 });
 
-test("falls back to the first wordmark palette for unknown indexes", () => {
-  assert.equal(getHeroWordmarkTheme(99), HERO_WORDMARK_THEMES[1]);
+test("returns a valid palette for any index via the shift formula", () => {
+  // formula: ((index - 1 + 1) % 4) + 1 → 99 maps to slot 4 (rain-mint)
+  assert.equal(getHeroWordmarkTheme(99).name, "rain-mint");
+  // negative / zero also resolves to a real palette
+  assert.ok(Object.values(HERO_WORDMARK_THEMES).includes(getHeroWordmarkTheme(0)));
 });
 
-test("maps a wordmark palette to CSS variables", () => {
+test("maps a wordmark palette to CSS variables (shifted)", () => {
+  // index 4 → shifted to slot 1 (peach-gold)
   assert.deepEqual(getHeroWordmarkStyle(4), {
     "--hero-wordmark-stroke": "rgba(255, 250, 242, 0.96)",
-    "--hero-wordmark-stroke-mid": "rgba(224, 255, 246, 0.94)",
+    "--hero-wordmark-stroke-mid": "rgba(255, 232, 190, 0.94)",
     "--hero-wordmark-stroke-end": "rgba(255, 255, 255, 0.9)",
     "--hero-wordmark-fill": "rgba(255, 250, 242, 0.74)",
-    "--hero-wordmark-fill-mid": "rgba(214, 255, 240, 0.58)",
+    "--hero-wordmark-fill-mid": "rgba(255, 226, 168, 0.56)",
     "--hero-wordmark-fill-end": "rgba(255, 255, 255, 0.5)",
-    "--hero-wordmark-glow": "rgba(214, 255, 240, 0.76)",
-    "--hero-wordmark-veil": "rgba(6, 20, 18, 0.2)",
+    "--hero-wordmark-glow": "rgba(247, 210, 124, 0.76)",
+    "--hero-wordmark-veil": "rgba(38, 18, 26, 0.18)",
   });
 });
