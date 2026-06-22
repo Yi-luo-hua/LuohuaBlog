@@ -2337,40 +2337,126 @@ body {
 }
 
 .source-arcade-lever button {
-  height: 5.2rem;
-  width: 3.5rem;
+  height: 8.6rem;
+  width: 7rem;
+  cursor: grab;
+  position: relative;
+  border: 0;
+  background: transparent;
+}
+.source-arcade-lever button:active {
+  cursor: grabbing;
 }
 
+/* —— 水彩底座（柔和奶油色 + 模糊边缘） —— */
 .source-arcade-lever button::after {
-  bottom: 0.2rem;
-  height: 1.35rem;
-  width: 2.8rem;
-  border-width: 0.16rem;
+  content: "";
+  position: absolute;
+  bottom: 0.25rem;
+  left: 50%;
+  height: 2.2rem;
+  width: 5.6rem;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 50% 40%, #fff8ee 0%, #ffe8d6 35%, #ecc9b0 75%, #c89a85 100%);
+  box-shadow:
+    inset 0 0.4rem 0.7rem rgba(255, 250, 240, 0.7),
+    inset 0 -0.3rem 0.5rem rgba(140, 95, 80, 0.18),
+    0 0.5rem 1.2rem rgba(140, 95, 80, 0.14);
+  filter: blur(0.3px);
+  opacity: 0.96;
 }
 
+/* —— 底座墨晕（小阴影点缀） —— */
+.source-arcade-lever button::before {
+  content: "";
+  position: absolute;
+  bottom: 0.55rem;
+  left: 50%;
+  height: 0.45rem;
+  width: 2.6rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(160, 110, 90, 0.24) 0%, transparent 65%);
+  filter: blur(2px);
+  z-index: 1;
+}
+
+/* —— 水彩杆身 —— */
 .source-lever-stick {
-  bottom: 0.95rem;
-  height: 3.5rem;
-  width: 0.45rem;
-  transform: translateX(-50%) rotate(-14deg);
+  position: absolute;
+  bottom: 1.4rem;
+  left: 50%;
+  height: 4.8rem;
+  width: 0.78rem;
+  transform: translateX(-50%) rotate(-13deg);
+  transform-origin: bottom center;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 220, 195, 0.6) 0%,
+      #f7c8a8 18%,
+      #fff2dc 48%,
+      #f7c8a8 78%,
+      rgba(220, 165, 140, 0.55) 100%);
+  box-shadow:
+    0 0.3rem 0.6rem rgba(170, 110, 95, 0.18),
+    inset 0 0 0 0.04rem rgba(255, 235, 210, 0.55);
+  filter: blur(0.15px);
 }
 
+/* —— 水彩球头 —— */
 .source-lever-ball {
-  height: 2.1rem;
-  width: 2.1rem;
+  position: absolute;
+  left: 50%;
+  top: 0.3rem;
+  height: 2.8rem;
+  width: 2.8rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%,
+      rgba(255, 252, 244, 0.85) 0%,
+      rgba(255, 252, 244, 0.4) 12%,
+      transparent 28%),
+    radial-gradient(circle at 70% 78%,
+      rgba(180, 130, 130, 0.32) 0%,
+      transparent 40%),
+    radial-gradient(circle at 48% 48%,
+      #ffd6c8 0%,
+      #f4a896 50%,
+      #d97f72 100%);
+  box-shadow:
+    inset 0 -0.18rem 0.4rem rgba(160, 80, 75, 0.32),
+    inset 0 0.15rem 0.3rem rgba(255, 240, 225, 0.42),
+    0 0.5rem 1rem rgba(170, 100, 95, 0.28),
+    0 0 0 0.05rem rgba(255, 240, 225, 0.5);
+  filter: blur(0.15px);
+}
+
+.source-lever-stick,
+.source-lever-ball {
+  transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .source-arcade-lever.is-pulled .source-lever-stick {
-  transform: translateX(-50%) rotate(24deg);
+  transform: translateX(-50%) rotate(28deg);
 }
 
 .source-arcade-lever.is-pulled .source-lever-ball {
-  transform: translate(0.72rem, 1rem);
+  transform: translate(1.25rem, 1.55rem);
 }
 
 .source-arcade-lever p {
-  font-size: 0.5rem;
-  letter-spacing: 0.12em;
+  margin-top: 0.5rem;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.32em;
+  color: #b27d6b;
+  text-shadow: 0 1px 0 rgba(255, 248, 240, 0.7);
 }
 
 .source-arcade-draw-btn {
@@ -4294,17 +4380,48 @@ body {
 }
 
 .source-lottery-stage .source-arcade-lever button::after {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 206, 214, 0.84));
+  background:
+    radial-gradient(ellipse at 50% 40%, #fff8ee 0%, #ffe8d6 35%, #ecc9b0 75%, #c89a85 100%);
+  box-shadow:
+    inset 0 0.4rem 0.7rem rgba(255, 250, 240, 0.7),
+    inset 0 -0.3rem 0.5rem rgba(140, 95, 80, 0.18),
+    0 0.5rem 1.2rem rgba(140, 95, 80, 0.14);
+  filter: blur(0.3px);
 }
 
 .source-lottery-stage .source-lever-stick {
-  background: linear-gradient(180deg, #f9db93, #b56b69);
+  background:
+    linear-gradient(180deg,
+      rgba(255, 220, 195, 0.6) 0%,
+      #f7c8a8 18%,
+      #fff2dc 48%,
+      #f7c8a8 78%,
+      rgba(220, 165, 140, 0.55) 100%);
+  box-shadow:
+    0 0.3rem 0.6rem rgba(170, 110, 95, 0.18),
+    inset 0 0 0 0.04rem rgba(255, 235, 210, 0.55);
+  filter: blur(0.15px);
 }
 
 .source-lottery-stage .source-lever-ball {
   background:
-    radial-gradient(circle at 30% 28%, #fff, transparent 16%),
-    linear-gradient(135deg, #ff8fab, #ffd36d);
+    radial-gradient(circle at 32% 28%,
+      rgba(255, 252, 244, 0.85) 0%,
+      rgba(255, 252, 244, 0.4) 12%,
+      transparent 28%),
+    radial-gradient(circle at 70% 78%,
+      rgba(180, 130, 130, 0.32) 0%,
+      transparent 40%),
+    radial-gradient(circle at 48% 48%,
+      #ffd6c8 0%,
+      #f4a896 50%,
+      #d97f72 100%);
+  box-shadow:
+    inset 0 -0.18rem 0.4rem rgba(160, 80, 75, 0.32),
+    inset 0 0.15rem 0.3rem rgba(255, 240, 225, 0.42),
+    0 0.5rem 1rem rgba(170, 100, 95, 0.28),
+    0 0 0 0.05rem rgba(255, 240, 225, 0.5);
+  filter: blur(0.15px);
 }
 
 .source-manual-book {
