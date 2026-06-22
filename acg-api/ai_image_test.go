@@ -159,7 +159,7 @@ func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 					}
 					payload := decodeOwnerJSONMap(t, rr)
 					image := payload["image"].(map[string]any)
-					if image["url"] != "https://cdn.example/ai-images/2026/06/demo.png" {
+					if image["url"] != "/cos/ai-images/2026/06/demo.png" {
 						t.Fatalf("unexpected image url %#v", image["url"])
 					}
 					if payload["model"] != "z-image-turbo" {
@@ -179,7 +179,7 @@ func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 					}
 
 					var count int
-					if err := db.QueryRow(`SELECT COUNT(*) FROM ai_image_generations WHERE user_id = ? AND image_url = ?`, userID, image["url"]).Scan(&count); err != nil {
+					if err := db.QueryRow(`SELECT COUNT(*) FROM ai_image_generations WHERE user_id = ? AND image_url = ?`, userID, uploader.result.URL).Scan(&count); err != nil {
 						t.Fatalf("query ai image generations: %v", err)
 					}
 					if count != 1 {
@@ -189,7 +189,7 @@ func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 					if err := db.QueryRow(
 						`SELECT prompt, created_at FROM ai_image_generations WHERE user_id = ? AND image_url = ?`,
 						userID,
-						image["url"],
+						uploader.result.URL,
 					).Scan(&recordedPrompt, &createdAt); err != nil {
 						t.Fatalf("query generated-image plaza fields: %v", err)
 					}

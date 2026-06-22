@@ -253,8 +253,12 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 	out["size"] = providerResult.Size
 	out["requestId"] = providerResult.RequestID
 	out["promptExtend"] = false
+	imageURL := ownerCOSProxyURL(item.ObjectKey)
+	if imageURL == "" {
+		imageURL = item.URL
+	}
 	out["image"] = map[string]any{
-		"url":      item.URL,
+		"url":      imageURL,
 		"path":     item.ObjectKey,
 		"mimeType": item.MIMEType,
 		"size":     item.Size,

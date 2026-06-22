@@ -60,6 +60,39 @@ func TestAIImageGalleryListsLatestFirst(t *testing.T) {
 	})
 }
 
+func TestAIImageGalleryServesStoredCOSImagesThroughProxy(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		now := time.Date(2026, 6, 22, 12, 0, 0, 0, time.UTC)
+		seedAIImageGeneration(
+			t,
+			"newest star",
+			"https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/ai-images/2026/06/demo.png",
+			"1024*1024",
+			now,
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/api/ai/image/gallery", nil)
+		rr := httptest.NewRecorder()
+		aiImageGalleryHandler(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		var payload struct {
+			Items []map[string]any `json:"items"`
+		}
+		if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		if len(payload.Items) != 1 {
+			t.Fatalf("expected 1 item, got %d", len(payload.Items))
+		}
+		if got := payload.Items[0]["imageUrl"]; got != "/cos/ai-images/test.png" {
+			t.Fatalf("expected same-origin COS proxy URL, got %v", got)
+		}
+	})
+}
+
 func TestAIImageGalleryRespectsLimit(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		base := time.Date(2026, 6, 22, 12, 0, 0, 0, time.UTC)

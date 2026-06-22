@@ -148,9 +148,25 @@ func ownerCOSObjectKey(kind, album, filename string) string {
 }
 
 func ownerCOSPublicURL(cfg ownerCOSConfig, objectKey string) string {
+	escapedPath := ownerCOSEscapedObjectPath(objectKey)
+	if escapedPath == "" {
+		return cfg.baseURL
+	}
+	return cfg.baseURL + "/" + escapedPath
+}
+
+func ownerCOSProxyURL(objectKey string) string {
+	escapedPath := ownerCOSEscapedObjectPath(objectKey)
+	if escapedPath == "" {
+		return ""
+	}
+	return "/cos/" + escapedPath
+}
+
+func ownerCOSEscapedObjectPath(objectKey string) string {
 	parts := strings.Split(strings.TrimLeft(objectKey, "/"), "/")
 	for i, part := range parts {
 		parts[i] = url.PathEscape(part)
 	}
-	return cfg.baseURL + "/" + strings.Join(parts, "/")
+	return strings.Join(parts, "/")
 }

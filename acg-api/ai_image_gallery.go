@@ -48,7 +48,7 @@ func aiImageGalleryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := db.Query(
-		`SELECT g.prompt, g.image_url, g.size, g.created_at,
+		`SELECT g.prompt, g.image_url, g.object_key, g.size, g.created_at,
 		        COALESCE(u.display_name, ''), COALESCE(u.email, '')
 		 FROM ai_image_generations g
 		 LEFT JOIN users u ON u.id = g.user_id
@@ -74,10 +74,14 @@ func aiImageGalleryHandler(w http.ResponseWriter, r *http.Request) {
 	items := make([]item, 0, limit)
 	for rows.Next() {
 		var it item
-		var displayName, email string
-		if err := rows.Scan(&it.Prompt, &it.ImageURL, &it.Size, &it.CreatedAt, &displayName, &email); err != nil {
+		var storedURL, objectKey, displayName, email string
+		if err := rows.Scan(&it.Prompt, &storedURL, &objectKey, &it.Size, &it.CreatedAt, &displayName, &email); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		it.ImageURL = storedURL
+		if proxyURL := ownerCOSProxyURL(objectKey); proxyURL != "" {
+			it.ImageURL = proxyURL
 		}
 		it.Author = displayNameOrEmail(email, displayName)
 		items = append(items, it)
