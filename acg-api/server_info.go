@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -115,11 +116,17 @@ func readLinuxMemoryUsage() (memoryUsage, bool) {
 type cpuSnap struct {
 	idle  uint64
 	total uint64
+	at    time.Time
 }
 
-var lastCPUSnap cpuSnap
+var (
+	cpuMu       sync.Mutex
+	lastCPUSnap cpuSnap
+)
 
 // readCPUUsage 计算 CPU 占用百分比（0-100）
+// 策略：缓存上次快照，本次请求与上次对比 → 得到这段间隔的真实平均占用率。
+// 若距离上次太久（>60s）或第一次，则就地 sleep 1s 采一对儿样保证立即可用。
 func readCPUUsage() float64 {
 	if pct, ok := readLinuxCPUUsage(); ok {
 		return pct
@@ -133,22 +140,42 @@ func readCPUUsage() float64 {
 	return roundTo(pct, 1)
 }
 
-// readLinuxCPUUsage 读取 /proc/stat 第一行（cpu 汇总），两次采样间隔短时差作为占用率
 func readLinuxCPUUsage() (float64, bool) {
-	snap, ok := sampleCPUStat()
+	cpuMu.Lock()
+	defer cpuMu.Unlock()
+
+	now := time.Now()
+	curr, ok := sampleCPUStat()
 	if !ok {
 		return 0, false
 	}
-	// 等待一小段时间再采一次（200ms 足够稳定且不影响响应速度）
-	time.Sleep(200 * time.Millisecond)
-	snap2, ok := sampleCPUStat()
-	if !ok {
-		return 0, false
+	curr.at = now
+
+	// 若没有有效的历史快照（首次或久未访问），就地 sleep 1s 做一对样
+	if lastCPUSnap.at.IsZero() || now.Sub(lastCPUSnap.at) > 60*time.Second {
+		time.Sleep(1 * time.Second)
+		curr2, ok := sampleCPUStat()
+		if !ok {
+			return 0, false
+		}
+		curr2.at = time.Now()
+		pct := diffCPU(curr, curr2)
+		lastCPUSnap = curr2
+		return pct, true
 	}
-	idleDelta := float64(snap2.idle - snap.idle)
-	totalDelta := float64(snap2.total - snap.total)
+
+	// 与上次缓存的快照对比，得到这段间隔的占用率
+	pct := diffCPU(lastCPUSnap, curr)
+	lastCPUSnap = curr
+	return pct, true
+}
+
+// diffCPU 由两次快照计算占用率
+func diffCPU(a, b cpuSnap) float64 {
+	idleDelta := float64(b.idle - a.idle)
+	totalDelta := float64(b.total - a.total)
 	if totalDelta <= 0 {
-		return 0, true
+		return 0
 	}
 	pct := (1 - idleDelta/totalDelta) * 100
 	if pct < 0 {
@@ -157,8 +184,7 @@ func readLinuxCPUUsage() (float64, bool) {
 	if pct > 100 {
 		pct = 100
 	}
-	lastCPUSnap = snap2
-	return roundTo(pct, 1), true
+	return roundTo(pct, 1)
 }
 
 func sampleCPUStat() (cpuSnap, bool) {
@@ -189,11 +215,15 @@ func sampleCPUStat() (cpuSnap, bool) {
 	return snap, true
 }
 
-// osFriendlyName 友好的操作系统名（不暴露具体发行版/内核版本）
+// osFriendlyName 友好的操作系统名（暴露发行版名但不暴露具体内核版本）
 func osFriendlyName() string {
-	switch runtime.GOOS {
-	case "linux":
+	if runtime.GOOS == "linux" {
+		if name := readLinuxDistroName(); name != "" {
+			return name
+		}
 		return "Linux"
+	}
+	switch runtime.GOOS {
 	case "darwin":
 		return "macOS"
 	case "windows":
@@ -201,6 +231,27 @@ func osFriendlyName() string {
 	default:
 		return strings.ToUpper(runtime.GOOS[:1]) + runtime.GOOS[1:]
 	}
+}
+
+// readLinuxDistroName 从 /etc/os-release 读发行版名（如 Ubuntu / Debian），不暴露内核版本
+func readLinuxDistroName() string {
+	data, err := os.ReadFile("/etc/os-release")
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(line, "NAME=") {
+			v := strings.TrimPrefix(line, "NAME=")
+			v = strings.Trim(v, "\"'")
+			v = strings.TrimSpace(v)
+			// 只返回主名（如 "Ubuntu"），不带版本号
+			if i := strings.IndexAny(v, " /"); i > 0 {
+				v = v[:i]
+			}
+			return v
+		}
+	}
+	return ""
 }
 
 // formatUptime 人性化运行时长
