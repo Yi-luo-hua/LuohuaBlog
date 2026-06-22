@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { TiLocationArrow } from "react-icons/ti";
 import LazyVideo from "./LazyVideo";
 import { cosAsset } from "../lib/cosAsset.js";
@@ -338,54 +339,45 @@ const Features = () => {
       <ArchiveBook open={archiveOpen} onClose={() => setArchiveOpen(false)} />
 
       <div className="container mx-auto px-3 md:px-10">
-        <div className="flex flex-col gap-8 px-5 py-32 text-[#241322] md:flex-row md:items-end md:justify-between">
-          <div>
+        <div className="flex flex-col gap-10 px-5 py-32 text-[#241322] md:flex-row md:items-center md:justify-between">
+          <div className="md:max-w-xl">
             <p className="font-general text-xs uppercase tracking-[0.45em] text-[#b76e79]">
-              这里会藏着三份慢慢出现的小惊喜
+              A public corner of imagination
             </p>
-            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#5f4b52]">
-              继续往下看，会遇见博客、构建记录、影像碎片和一些还在路上的新计划。
+            <p className="mt-5 text-lg leading-relaxed text-[#5f4b52]">
+              一个由访客与 AI 共写的视觉档案。每一次提示词的落笔，都会留下一张可被回望的图像。
             </p>
           </div>
 
-          <button
-            type="button"
-            className="archive-pass group relative w-full max-w-xs overflow-visible rounded-[1.5rem] border border-pink-100/30 bg-[#ffe7ef]/80 p-5 text-left text-[#241322] shadow-[0_18px_45px_rgba(255,143,171,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(255,143,171,0.24)] md:min-h-80 md:w-80 md:border-0 md:bg-transparent md:p-0 md:shadow-none"
-            onClick={() => setArchiveOpen(true)}
-          >
-            <span className="archive-pass-bloom" aria-hidden="true">
-              <span className="archive-pass-orbit" />
-              <span className="archive-pass-ticket">
-                <span className="archive-pass-spine" />
-                <span className="archive-pass-stamp">05</span>
-                <span className="archive-pass-rule archive-pass-rule-1" />
-                <span className="archive-pass-rule archive-pass-rule-2" />
-                <span className="archive-pass-rule archive-pass-rule-3" />
-              </span>
-              <span className="archive-pass-fragment archive-pass-fragment-1" />
-              <span className="archive-pass-fragment archive-pass-fragment-2" />
-              <span className="archive-pass-fragment archive-pass-fragment-3" />
-              <span className="archive-pass-fragment archive-pass-fragment-4" />
-              <span className="archive-pass-fragment archive-pass-fragment-5" />
-              <span className="archive-pass-thread" />
+          <Link to="/ai-gallery" className="ai-plaza-card group" aria-label="进入生成图广场">
+            {/* outsized index — breaks the frame */}
+            <span className="ai-plaza-card-numeral" aria-hidden="true">06</span>
+
+            {/* one rule extending from outside the card */}
+            <span className="ai-plaza-card-rule" aria-hidden="true" />
+
+            <div className="ai-plaza-card-inner">
+              <span className="ai-plaza-card-eyebrow">— Plaza</span>
+
+              <h3 className="ai-plaza-card-title">
+                生成图
+                <em>广场</em>
+              </h3>
+
+              <p className="ai-plaza-card-sub">
+                每一次提示词的落笔，<br />都留下一张可被回望的图像。
+              </p>
+            </div>
+
+            {/* asymmetric CTA pinned to bottom-right */}
+            <span className="ai-plaza-card-cta" aria-hidden="true">
+              <span>Enter</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" />
+                <path d="M13 5l7 7-7 7" />
+              </svg>
             </span>
-            <span className="absolute -right-10 -top-10 size-28 rounded-full bg-white/55 blur-2xl md:hidden" />
-            <span className="absolute inset-x-5 top-4 h-px bg-gradient-to-r from-transparent via-[#b76e79]/35 to-transparent md:hidden" />
-            <span className="archive-pass-content relative z-10 block font-general text-[10px] uppercase tracking-[0.35em] text-[#b76e79] md:absolute md:inset-x-8 md:top-[4.2rem] md:text-center">
-              档案通行证
-            </span>
-            <span className="relative z-10 mt-4 block text-3xl font-black leading-none tracking-[-0.04em] text-[#261320] md:absolute md:inset-x-8 md:top-[5.8rem] md:mt-0 md:text-center md:text-[2.35rem]">
-              5 个片段
-            </span>
-            <span className="relative z-10 mt-2 block text-sm font-semibold leading-relaxed text-[#5f4b52] md:absolute md:inset-x-9 md:top-[9.45rem] md:mt-0 md:text-center">
-              打开档案册，重新翻看这些影像碎片。
-            </span>
-            <span className="relative z-10 mt-5 inline-flex items-center gap-2 rounded-full bg-[#241322] px-4 py-2 text-xs font-bold uppercase text-[#ffe7ef] md:absolute md:bottom-9 md:left-1/2 md:mt-0 md:-translate-x-1/2">
-              查看档案
-              <TiLocationArrow />
-            </span>
-            <span className="absolute inset-y-0 -left-1/2 w-1/2 skew-x-[-18deg] bg-white/45 blur-md transition duration-700 group-hover:left-full md:hidden" />
-          </button>
+          </Link>
         </div>
 
         <ExhibitTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-[1.75rem] md:h-[65vh]">

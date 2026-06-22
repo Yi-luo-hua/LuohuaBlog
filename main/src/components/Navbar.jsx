@@ -58,6 +58,8 @@ const NavBar = () => {
     pathname === "/guestbook" || pathname.startsWith("/guestbook/");
   const isGalleryPage =
     pathname === "/gallery" || pathname.startsWith("/gallery/");
+  const isAiGalleryPage =
+    pathname === "/ai-gallery" || pathname.startsWith("/ai-gallery/");
   const isMomentsPage =
     pathname === "/moments" || pathname.startsWith("/moments/");
   const isSubPage =
@@ -66,6 +68,7 @@ const NavBar = () => {
     isFriendsPage ||
     isGuestbookPage ||
     isGalleryPage ||
+    isAiGalleryPage ||
     isMomentsPage;
   const navTheme = getNavTheme(pathname);
   const isLightNav = navTheme !== "dark";
