@@ -16,6 +16,11 @@
   var IMAGE_NOT_CONFIGURED_MSG =
     "生图还没配置 Agnes API Key，站长配好后就能用了。";
 
+  var LOGO_URL =
+    "/cos/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/logo.png";
+  var LIMITS = { chat: 2000, image: 1200 };
+  var API_AVATAR = "/api/auth/avatar";
+
   var state = {
     open: false,
     mode: "chat",
@@ -45,6 +50,85 @@
     if (cls) node.className = cls;
     if (text != null) node.textContent = text;
     return node;
+  }
+
+  function userAvatarURL() {
+    return (state.user && state.user.avatar) || "";
+  }
+
+  function userInitial() {
+    var name = userDisplayName(state.user);
+    return (name || "游").slice(0, 1);
+  }
+
+  // 填充一个头像容器：有 avatar 用图片，否则用首字
+  function fillAvatar(container, opts) {
+    container.innerHTML = "";
+    var url = userAvatarURL();
+    if (url) {
+      var img = el("img");
+      img.src = url;
+      img.alt = "头像";
+      container.appendChild(img);
+    } else {
+      container.textContent = userInitial();
+    }
+    if (opts && opts.clickable) {
+      container.classList.add("is-clickable");
+      container.title = "点击更换头像";
+      container.addEventListener("click", pickAvatar);
+    }
+  }
+
+  function pickAvatar() {
+    if (!state.isLogin) {
+      openAuthModal("login");
+      return;
+    }
+    var input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/png,image/jpeg,image/webp,image/gif";
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      uploadAvatar(file);
+    });
+    input.click();
+  }
+
+  function uploadAvatar(file) {
+    if (!ui.avatarBtn) return;
+    var form = new FormData();
+    form.append("file", file);
+    ui.avatarBtn.disabled = true;
+    var prev = ui.avatarBtn.innerHTML;
+    ui.avatarBtn.innerHTML = "";
+    ui.avatarBtn.appendChild(el("span", "bai-avatar-uploading", "上传中"));
+    authFetchRaw(API_AVATAR, { method: "POST", body: form }).then(function (res) {
+      return res.json().then(function (d) {
+        return { ok: res.ok, status: res.status, data: d };
+      });
+    }).then(function (res) {
+      if (res.ok && res.data && res.data.user) {
+        state.user = res.data.user;
+        updateAuthBar();
+        appendMsg(ui.messages, "system", "头像更新好啦～");
+      } else {
+        appendMsg(ui.messages, "system", (res.data && res.data.message) || "头像上传失败，请稍后再试。");
+      }
+    }).catch(function () {
+      appendMsg(ui.messages, "system", "头像上传失败，请稍后再试。");
+    }).finally(function () {
+      ui.avatarBtn.disabled = false;
+      updateAuthBar();
+    });
+  }
+
+  function authFetchRaw(path, options) {
+    return fetch(API_AUTH + path, Object.assign(
+      { credentials: "include" },
+      options || {}
+    ));
   }
 
   function authFetch(path, options) {
@@ -101,6 +185,10 @@
     if (!ui.authBar) return;
     ui.authBar.innerHTML = "";
     if (state.user) {
+      ui.avatarBtn = el("button", "bai-avatar");
+      ui.avatarBtn.type = "button";
+      ui.avatarBtn.setAttribute("aria-label", "更换头像");
+      fillAvatar(ui.avatarBtn, { clickable: true });
       var who = el("span", "blog-ai-auth-user", userDisplayName(state.user));
       if (state.user.email) who.title = state.user.email;
       var rename = el("button", "blog-ai-auth-link", "改名");
@@ -114,10 +202,16 @@
       var actions = el("span", "blog-ai-auth-actions");
       actions.appendChild(rename);
       actions.appendChild(out);
+      ui.authBar.appendChild(ui.avatarBtn);
       ui.authBar.appendChild(who);
       ui.authBar.appendChild(actions);
       return;
     }
+    ui.avatarBtn = el("button", "bai-avatar");
+    ui.avatarBtn.type = "button";
+    ui.avatarBtn.setAttribute("aria-label", "登录后可更换头像");
+    fillAvatar(ui.avatarBtn, { clickable: true });
+    ui.authBar.appendChild(ui.avatarBtn);
     var login = el("button", "blog-ai-auth-link", "登录 / 注册");
     login.type = "button";
     login.addEventListener("click", function () {
@@ -482,16 +576,24 @@
     state.mode = mode === "image" ? "image" : "chat";
     if (ui.modeChat) ui.modeChat.classList.toggle("is-active", state.mode === "chat");
     if (ui.modeImage) ui.modeImage.classList.toggle("is-active", state.mode === "image");
+    var limit = LIMITS[state.mode] || LIMITS.chat;
     if (ui.input) {
       ui.input.placeholder =
         state.mode === "image" ? "描述想生成的画面…" : "输入你的问题…";
-      ui.input.setAttribute("maxlength", state.mode === "image" ? "400" : "500");
+      ui.input.setAttribute("maxlength", String(limit));
     }
+    if (ui.countMax) ui.countMax.textContent = String(limit);
     if (ui.send) {
       ui.send.textContent = state.mode === "image" ? "生成" : "发送";
     }
+    updateCount();
     updateQuotaLabel();
     if (state.mode === "image") refreshImageQuota();
+  }
+
+  function updateCount() {
+    if (!ui.count || !ui.input) return;
+    ui.count.textContent = String((ui.input.value || "").length);
   }
 
   function mount() {
@@ -502,18 +604,52 @@
     toggle.id = "blog-ai-toggle";
     toggle.type = "button";
     toggle.setAttribute("aria-expanded", "false");
-    toggle.setAttribute("aria-controls", "blog-ai-panel");
+    toggle.setAttribute("aria-controls", "bai-overlay");
 
-    var panel = el("div");
-    panel.id = "blog-ai-panel";
-    panel.setAttribute("role", "dialog");
-    panel.setAttribute("aria-label", "博客小精灵");
+    // —— 中央放大窗口 ——
+    ui.overlay = el("div");
+    ui.overlay.id = "bai-overlay";
+    ui.overlay.className = "bai-overlay";
+    ui.overlay.setAttribute("aria-hidden", "true");
 
-    var header = el("div");
-    header.id = "blog-ai-header";
-    header.appendChild(el("h2", null, "✦ 博客小精灵"));
-    ui.subtitle = el("p", null, "可以问我当前页面相关问题，也可以生成一张小图");
-    header.appendChild(ui.subtitle);
+    var backdrop = el("button", "bai-backdrop");
+    backdrop.type = "button";
+    backdrop.setAttribute("aria-label", "关闭");
+    backdrop.addEventListener("click", function () { setOpen(false); });
+
+    var app = el("div");
+    app.className = "bai-app";
+    app.id = "blog-ai-panel";
+    app.setAttribute("role", "dialog");
+    app.setAttribute("aria-modal", "true");
+    app.setAttribute("aria-label", "博客小精灵");
+
+    // —— 左侧栏 ——
+    var aside = el("aside", "bai-aside");
+
+    var brand = el("div", "bai-brand");
+    var brandMark = el("div", "bai-brand-mark");
+    var logo = el("img");
+    logo.src = LOGO_URL;
+    logo.alt = "博客小精灵";
+    brandMark.appendChild(logo);
+    var brandText = el("div", "bai-brand-text");
+    brandText.appendChild(el("b", null, "博客小精灵"));
+    brandText.appendChild(el("span", null, "taozhiyy · AI"));
+    brand.appendChild(brandMark);
+    brand.appendChild(brandText);
+    aside.appendChild(brand);
+
+    ui.newChat = el("button", "bai-new-chat", "＋ 新对话");
+    ui.newChat.type = "button";
+    ui.newChat.addEventListener("click", function () {
+      if (!ui.messages) return;
+      ui.messages.innerHTML = "";
+      appendMsg(ui.messages, "bot", "新对话已开始～想聊点什么？");
+    });
+    aside.appendChild(ui.newChat);
+
+    aside.appendChild(el("div", "bai-side-label", "模式"));
     ui.modeTabs = el("div", "blog-ai-mode-tabs");
     ui.modeChat = el("button", "blog-ai-mode-tab is-active", "聊天");
     ui.modeChat.type = "button";
@@ -521,51 +657,97 @@
     ui.modeImage.type = "button";
     ui.modeTabs.appendChild(ui.modeChat);
     ui.modeTabs.appendChild(ui.modeImage);
-    header.appendChild(ui.modeTabs);
+    aside.appendChild(ui.modeTabs);
+
+    aside.appendChild(el("div", "bai-side-label", "当前页面"));
+    var ctxCard = el("div", "bai-context-card");
+    ctxCard.appendChild(el("b", null, "Page Context"));
     ui.pageHint = el("p");
     ui.pageHint.id = "blog-ai-page-hint";
     ui.pageHint.className = "blog-ai-page-hint";
-    header.appendChild(ui.pageHint);
+    ctxCard.appendChild(ui.pageHint);
+    aside.appendChild(ctxCard);
+
+    var sideFoot = el("div", "bai-side-foot");
     ui.quota = el("span");
     ui.quota.id = "blog-ai-quota";
+    ui.quota.className = "bai-quota";
     ui.quota.textContent = "今日剩余：—/—";
-    header.appendChild(ui.quota);
+    sideFoot.appendChild(ui.quota);
     ui.authBar = el("div");
     ui.authBar.id = "blog-ai-auth-bar";
     ui.authBar.className = "blog-ai-auth-bar";
-    header.appendChild(ui.authBar);
+    sideFoot.appendChild(ui.authBar);
+    aside.appendChild(sideFoot);
     updatePageHint();
+
+    // —— 主区 ——
+    var main = el("div", "bai-main");
+
+    var topbar = el("div", "bai-topbar");
+    var topTitle = el("div");
+    topTitle.appendChild(el("h2", null, "✦ 博客小精灵"));
+    ui.subtitle = el("p", null, "可以问我当前页面相关问题，也可以生成一张小图");
+    topTitle.appendChild(ui.subtitle);
+    topbar.appendChild(topTitle);
+    var spacer = el("div", "bai-topbar-spacer");
+    topbar.appendChild(spacer);
+    var closeBtn = el("button", "bai-win-btn bai-win-close", "✕");
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", "关闭");
+    closeBtn.title = "关闭";
+    closeBtn.addEventListener("click", function () { setOpen(false); });
+    topbar.appendChild(closeBtn);
+    main.appendChild(topbar);
 
     var body = el("div");
     body.id = "blog-ai-body";
-    body.className = "blog-ai-body";
+    body.className = "bai-body";
 
     ui.messages = el("div");
     ui.messages.id = "blog-ai-messages";
-    appendMsg(ui.messages, "bot", "你好呀～点上方「登录 / 注册」可提升到 50 次/天～");
+    appendMsg(ui.messages, "bot", "你好呀～点左侧「登录 / 注册」可提升到 50 次/天～");
 
     body.appendChild(ui.messages);
+    main.appendChild(body);
 
     ui.chatForm = el("form");
     ui.chatForm.id = "blog-ai-form";
+    ui.chatForm.className = "bai-composer";
+    var shell = el("div", "bai-composer-shell");
     var input = document.createElement("textarea");
     input.id = "blog-ai-input";
     ui.input = input;
     input.rows = 1;
     input.placeholder = "输入你的问题…";
-    input.setAttribute("maxlength", "500");
+    input.setAttribute("maxlength", String(LIMITS.chat));
     var send = el("button", null, "发送");
     ui.send = send;
     send.id = "blog-ai-send";
     send.type = "submit";
-    ui.chatForm.appendChild(input);
-    ui.chatForm.appendChild(send);
+    shell.appendChild(input);
+    shell.appendChild(send);
+    ui.chatForm.appendChild(shell);
+    var hint = el("div", "bai-composer-hint");
+    hint.appendChild(el("span", null, "Enter 发送 · Shift+Enter 换行"));
+    var countWrap = el("span", "bai-count");
+    ui.count = el("span", null, "0");
+    ui.countMax = el("span", null, String(LIMITS.chat));
+    countWrap.appendChild(ui.count);
+    countWrap.appendChild(document.createTextNode(" / "));
+    countWrap.appendChild(ui.countMax);
+    hint.appendChild(countWrap);
+    ui.chatForm.appendChild(hint);
 
-    panel.appendChild(header);
-    panel.appendChild(body);
-    panel.appendChild(ui.chatForm);
+    main.appendChild(ui.chatForm);
+
+    app.appendChild(aside);
+    app.appendChild(main);
+    ui.overlay.appendChild(backdrop);
+    ui.overlay.appendChild(app);
+
     root.appendChild(toggle);
-    root.appendChild(panel);
+    root.appendChild(ui.overlay);
     document.body.appendChild(root);
 
     toggle.addEventListener("click", function () {
@@ -573,6 +755,7 @@
       if (state.open) {
         updatePageHint();
         refreshAuthMe().then(refreshAllQuotas);
+        setTimeout(function () { if (ui.input) ui.input.focus(); }, 120);
       }
     });
 
@@ -603,11 +786,20 @@
       }
     });
 
+    input.addEventListener("input", updateCount);
+    input.addEventListener("input", function () {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 140) + "px";
+    });
     input.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         ui.chatForm.requestSubmit();
       }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && state.open) setOpen(false);
     });
 
     window.addEventListener("popstate", function () {
@@ -637,10 +829,15 @@
   function setOpen(open) {
     state.open = open;
     var toggle = document.getElementById("blog-ai-toggle");
-    var panel = document.getElementById("blog-ai-panel");
-    if (!toggle || !panel) return;
-    toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    panel.classList.toggle("is-open", open);
+    if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    if (!ui.overlay) return;
+    ui.overlay.classList.toggle("is-open", open);
+    ui.overlay.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open) {
+      document.body.classList.add("bai-app-open");
+    } else {
+      document.body.classList.remove("bai-app-open");
+    }
   }
 
   function updateQuotaLabel() {
@@ -665,9 +862,33 @@
   }
 
   function appendMsg(container, role, text) {
-    container.appendChild(el("div", "bai-msg " + role, text));
+    var wrap = el("div", "bai-msg " + role);
+    var avatar = el("div", "bai-msg-role");
+    if (role === "user") {
+      var url = userAvatarURL();
+      if (url) {
+        var uimg = el("img");
+        uimg.src = url;
+        uimg.alt = "我";
+        avatar.appendChild(uimg);
+        avatar.classList.add("is-clickable");
+        avatar.title = "点击更换头像";
+        avatar.addEventListener("click", pickAvatar);
+      } else {
+        avatar.textContent = userInitial();
+      }
+    } else if (role === "bot") {
+      var bimg = el("img");
+      bimg.src = LOGO_URL;
+      bimg.alt = "AI";
+      avatar.appendChild(bimg);
+    }
+    var bubble = el("div", "bai-msg-bubble", text);
+    wrap.appendChild(avatar);
+    wrap.appendChild(bubble);
+    container.appendChild(wrap);
     container.scrollTop = container.scrollHeight;
-    return container.lastElementChild;
+    return wrap;
   }
 
   function ensureImageModal() {
