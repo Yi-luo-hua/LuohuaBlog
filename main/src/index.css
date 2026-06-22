@@ -2338,7 +2338,7 @@ body {
 
 .source-arcade-lever {
   display: grid;
-  justify-items: center;  /* 让 button 在容器内水平居中 */
+  justify-items: center;  /* button 在 lever 容器内水平居中 */
   margin-top: 0;
 }
 
@@ -2413,11 +2413,11 @@ body {
   filter: blur(0.15px);
 }
 
-/* —— 水彩球头 —— */
+/* —— 水彩球头：从底座向上定位，与杆共享水平中心 —— */
 .source-lever-ball {
   position: absolute;
+  bottom: 5.8rem;  /* 1.4(底座底部) + 4.8(杆高) - 0.4(球底部嵌入杆一点点) */
   left: 50%;
-  top: 0.3rem;
   height: 2.8rem;
   width: 2.8rem;
   transform: translateX(-50%);
@@ -2453,8 +2453,10 @@ body {
 
 .source-arcade-lever.is-pulled .source-lever-ball {
   /* 球跟着杆一起旋转，同步保持挂在杆顶，不再歪头。
-     杆长 4.8rem，旋转 28°：sin(28°)×4.8 ≈ 2.25rem (右), (1-cos(28°))×4.8 ≈ 0.56rem (下) */
-  transform: translate(calc(-50% + 2.25rem), 0.56rem) rotate(28deg);
+     杆长 4.8rem，旋转 28°：sin(28°)×4.8 ≈ 2.25rem (右), (1-cos(28°))×4.8 ≈ 0.56rem (下)
+     因为球现在是 bottom 定位，所以 y 轴位移是负方向（向上反而 bottom 变小）
+     我们只需用 translateX 来完成横向位移并旋转，bottom 保持不变即可 */
+  transform: translateX(calc(-50% + 2.25rem)) translateY(0.56rem) rotate(28deg);
 }
 
 .source-arcade-lever p {
