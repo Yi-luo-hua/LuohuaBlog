@@ -2338,6 +2338,7 @@ body {
 
 .source-arcade-lever {
   display: grid;
+  justify-items: center;  /* 让 button 在容器内水平居中 */
   margin-top: 0;
 }
 
