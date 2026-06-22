@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchChatStats } from "../services/chatStatsApi";
+import ServerInfoPanel from "../components/ServerInfoPanel";
 
 const CHART_EMPTY =
   "还没有提问记录，等第一个人来问问博客吧 ✦";
@@ -164,11 +165,15 @@ const AiTrafficPage = () => {
           博客小精灵面板
         </p>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-[#2B2B2B] md:text-5xl">
-          <span className="text-[#FF8FAB]">✦</span> AI 调用流量
+          <span className="text-[#FF8FAB]">✦</span> 数据中心
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#6B7280]">
-          这里把问问博客一路来往的流量痕迹慢慢记下来，留给此刻看看，也留给以后回头翻阅。
+          实时呈现服务器运行状态与 AI 调用流量，让每一次访问都留下可被回看的痕迹。
         </p>
+
+        <div className="mt-8">
+          <ServerInfoPanel />
+        </div>
 
         {loading && (
           <p className="mt-8 text-sm text-[#6B7280]">加载统计中…</p>
@@ -219,6 +224,14 @@ const AiTrafficPage = () => {
                   </span>
                 )}
               </StatCard>
+            </div>
+
+            <div className="mt-10 mb-3 flex items-center gap-3">
+              <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[#F2E6C9] to-transparent" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#FF8FAB]">
+                ✦ AI 调用流量
+              </span>
+              <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[#F2E6C9] to-transparent" />
             </div>
 
             <div className="mt-6 space-y-6">

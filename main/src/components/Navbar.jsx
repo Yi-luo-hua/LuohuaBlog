@@ -11,7 +11,7 @@ const navLinks = [
   { label: "Gallery", to: "/gallery", end: true },
   { label: "碎语", to: "/moments", end: true },
   { label: "Bili Hub", to: "/bili", end: true },
-  { label: "AI 流量", to: "/ai-traffic", end: true },
+  { label: "数据中心", to: "/ai-traffic", end: true },
   { label: "Friends", to: "/friends", end: true },
 ];
 
