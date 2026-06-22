@@ -14,7 +14,7 @@
   var NOT_CONFIGURED_MSG =
     "小精灵还在沉睡中～站长配置 DeepSeek API Key 后就能聊天啦";
   var IMAGE_NOT_CONFIGURED_MSG =
-    "生图还没配置百炼 API Key，站长配好后就能用了。";
+    "生图还没配置 Agnes API Key，站长配好后就能用了。";
 
   var state = {
     open: false,
@@ -587,7 +587,7 @@
           ui.messages,
           "system",
           state.isLogin
-            ? "生图使用 z-image-turbo，默认每天 3 张。"
+            ? "生图使用 Agnes Image，默认每天 3 张。"
             : "生图需要先登录，避免额度被刷。"
         );
         intro.classList.add("bai-image-intro");

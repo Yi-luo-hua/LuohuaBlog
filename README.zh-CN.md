@@ -84,7 +84,7 @@
 
 数据中心页面（`/ai-traffic`）现在把 AI 流量和服务器状态放到同一个页面里。`ServerInfoPanel` 会每 10 秒刷新 `GET /api/server/info`，展示在线状态、云厂商/区域、CPU 占用、内存使用、运行时长、系统/Go 运行时、CPU 核心数、goroutine 数和服务端时间等安全遥测。该接口刻意不暴露真实 IP、主机名、磁盘路径、进程列表、环境变量等敏感服务器信息。
 
-右下角 AI 助手也加入了面向登录用户的生图模式。它会调用后端 `/api/ai/image`，使用阿里云百炼 DashScope 的 `z-image-turbo`，固定关闭提示词改写，把生成图保存到腾讯 COS，并在屏幕中央用透明浅色镭射卡片展示结果，支持保存本地和复制最终 COS 链接。
+右下角 AI 助手也加入了面向登录用户的生图模式。它会调用后端 `/api/ai/image`，使用 Agnes AI 的 `agnes-image-2.1-flash`，把生成图保存到腾讯 COS，并把最终 COS 链接、提示词和生成时间记录给 `/ai-gallery` 生成图广场，同时在屏幕中央用透明浅色镭射卡片展示结果，支持保存本地和复制最终 COS 链接。
 
 ### `acg-api/` 后端与 API
 
@@ -101,7 +101,7 @@
 | `main.go` 旧留言接口 | `GET/POST /api/v1/guestbook` | 公开 | 早期简单留言 API，只包含 `name` 和 `content`，用于兼容旧前端。 |
 | `auth.go` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/verify-security`, `POST /api/auth/logout`, `PATCH /api/auth/profile`, `GET /api/auth/me` | 公开/登录/站长二次验证 | 邮箱注册、登录、会话 cookie、昵称修改、站长二次验证。 |
 | `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | 公开/登录/站长额度 | AI 助手额度查询、固定答案匹配、聊天请求、DeepSeek 转发、小时/日统计、游客/用户/站长额度控制。 |
-| `ai_image.go` | `GET/POST /api/ai/image` | 登录/站长额度 | 生图额度状态、DashScope `z-image-turbo` 生图、固定 `promptExtend: false`、临时图下载、腾讯 COS 上传和生成历史记录。 |
+| `ai_image.go`, `ai_image_gallery.go` | `GET/POST /api/ai/image`, `GET /api/ai/image/gallery` | 生图需登录/站长额度；广场公开 | 生图额度状态、Agnes AI 生图、临时图下载、腾讯 COS 上传、生成历史记录，以及公开生成图广场 feed，包含提示词、图片 URL、作者展示名、尺寸和生成时间。 |
 | `server_info.go` | `GET /api/server/info` | 公开安全遥测 | 数据中心页面使用的非敏感服务器状态，包括在线状态、云厂商/区域标签、CPU 占用、内存使用、运行时长、运行时信息、CPU 核心数、goroutine 数和服务端时间；刻意不暴露 IP、主机名、磁盘路径、进程列表或环境变量。 |
 | `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go`, `mail_notifier.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | 公开可见留言；站长/管理员可审核 | 当前留言板和朋友页留言控制器，支持分区、连续回复、匿名/登录用户、友链联系邮箱必填、UTF-8 邮件通知、限流、防重复、IP 脱敏和软审核。 |
 | `owner_controller.go` | `GET /api/owner/status`, `GET /api/owner/emails`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | 仅站长 | 站长控制台状态、注册用户列表、未读留言收件箱、仅站长可见邮箱目录、AI 固定答案保存、草稿保存、本地临时图片上传、COS 资源上传。 |
@@ -124,6 +124,7 @@
 | `GET /api/owner/emails` | 无请求体 | 仅站长可访问，返回注册用户邮箱和私有留言联系邮箱目录。 |
 | `GET /api/ai/image` | 无请求体 | 返回生图额度、`imageEnabled`、`canGenerate`、当前模型和 `promptExtend: false`。 |
 | `POST /api/ai/image` | `{ "prompt": "...", "size": "1024*1024" }` | 仅登录用户可用；普通用户每天 3 张，站长不限额度。支持 `1024*1024`、`1280*720`、`720*1280`，返回的 `image.url` 是最终腾讯 COS 链接。 |
+| `GET /api/ai/image/gallery?limit=60&before=...` | 可选游标查询 | 公开生成图广场 feed，返回 `prompt`、`imageUrl`、`size`、`createdAt` 和匿名安全的 `author` 展示文本。 |
 | `GET /api/server/info` | 无请求体 | 返回 `/ai-traffic` 使用的非敏感实时遥测，前端每 10 秒刷新一次。 |
 | `POST /api/owner/uploads` | `multipart/form-data`，字段 `file` | 保存本地临时图片到 `ACG_DATA_DIR/owner-uploads`，最大 8 MiB。 |
 | `POST /api/owner/assets` | `multipart/form-data`，字段 `file`、`kind` 为 `gallery` 或 `article`，可选 `album` | 上传到腾讯 COS；相册上传必须带相册。 |
@@ -139,7 +140,7 @@
 - 站长登录：配置 `AUTH_OWNER_PASSWORD` 和 `AUTH_OWNER_SECURITY_ANSWER`；可选配置 `AUTH_SESSION_DAYS` 与 `AUTH_COOKIE_SECURE`。
 - 重要身份说明：`owner.go` 里目前为本站部署保留了站长邮箱和安全问题文案。复用后端的人应该替换这些常量，或进一步改成环境变量。
 - AI 助手：配置 `DEEPSEEK_API_KEY`；可选配置 `DEEPSEEK_BASE_URL` 和 `DEEPSEEK_MODEL`。
-- AI 生图：配置 `DASHSCOPE_API_KEY`；可选配置 `DASHSCOPE_BASE_URL` 和 `AI_IMAGE_MODEL`（默认 `z-image-turbo`）。旧变量 `ALIYUN_BAILIAN_API_KEY` 也可作为百炼 Key 的兼容回退。
+- AI 生图：配置 `AGNES_API_KEY`；可选配置 `AGNES_BASE_URL`（默认 `https://apihub.agnes-ai.com`）以及 `AGNES_IMAGE_MODEL` 或 `AI_IMAGE_MODEL`（默认 `agnes-image-2.1-flash`）。如果没有 `AGNES_API_KEY`，后端仍会回退兼容旧的 DashScope 变量 `DASHSCOPE_API_KEY`、`DASHSCOPE_BASE_URL`、`AI_IMAGE_MODEL` 和 `ALIYUN_BAILIAN_API_KEY`。
 - 邮件通知：配置 `SMTP_HOST`、`SMTP_PORT`、`SMTP_USER`、`SMTP_PASS`、`SMTP_FROM_NAME` 和 `MAIL_NOTIFY_TO`。`SMTP_PASS` 应该使用邮箱服务商的授权码或应用密码，不要使用账号登录密码。
 - GitHub 站长发布：配置 `OWNER_PUBLISH_GITHUB_TOKEN`；可选配置 `OWNER_PUBLISH_GITHUB_API_BASE`、`OWNER_PUBLISH_GITHUB_OWNER`、`OWNER_PUBLISH_GITHUB_REPO`、`OWNER_PUBLISH_GITHUB_BRANCH`。token 需要有写入仓库内容的权限。
 - 腾讯 COS 上传：配置 `TENCENT_COS_SECRET_ID`、`TENCENT_COS_SECRET_KEY`、`TENCENT_COS_BUCKET`、`TENCENT_COS_REGION`，可选配置 `TENCENT_COS_BASE_URL`。也兼容旧变量 `COS_SECRET_ID`、`COS_SECRET_KEY`、`COS_BUCKET`、`COS_REGION`、`COS_BASE_URL`。

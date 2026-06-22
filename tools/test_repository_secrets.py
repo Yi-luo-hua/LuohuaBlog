@@ -59,7 +59,7 @@ class RepositorySecretBaselineTests(unittest.TestCase):
             self.assertNotRegex(
                 line,
                 r"\b(UCLOUD_SUDO_PASSWORD|AUTH_OWNER_PASSWORD|AUTH_OWNER_SECURITY_ANSWER|"
-                r"DASHSCOPE_API_KEY|TENCENT_COS_SECRET|OWNER_PUBLISH_GITHUB_TOKEN|"
+                r"AGNES_API_KEY|DASHSCOPE_API_KEY|TENCENT_COS_SECRET|OWNER_PUBLISH_GITHUB_TOKEN|"
                 r"SMTP_PASS|SYNC_TRIGGER_TOKEN)\b",
                 f"sensitive variable echoed on line {line_no}",
             )

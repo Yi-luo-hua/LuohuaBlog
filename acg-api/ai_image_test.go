@@ -185,6 +185,20 @@ func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 					if count != 1 {
 						t.Fatalf("expected generation record, got %d", count)
 					}
+					var recordedPrompt, createdAt string
+					if err := db.QueryRow(
+						`SELECT prompt, created_at FROM ai_image_generations WHERE user_id = ? AND image_url = ?`,
+						userID,
+						image["url"],
+					).Scan(&recordedPrompt, &createdAt); err != nil {
+						t.Fatalf("query generated-image plaza fields: %v", err)
+					}
+					if recordedPrompt != "一只坐在月亮上的猫" {
+						t.Fatalf("unexpected plaza prompt %q", recordedPrompt)
+					}
+					if _, err := time.Parse(time.RFC3339, createdAt); err != nil {
+						t.Fatalf("created_at should be RFC3339 for plaza sorting, got %q: %v", createdAt, err)
+					}
 				})
 			})
 		})
@@ -194,6 +208,7 @@ func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 func TestAIImageGenerateRequiresConfiguredProvider(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		t.Setenv("DASHSCOPE_API_KEY", "")
+		t.Setenv("AGNES_API_KEY", "")
 		userID := seedOwnerControllerUser(t, "artist@example.com", false)
 		token := seedOwnerControllerSession(t, userID, false)
 		req := httptest.NewRequest(
@@ -215,6 +230,103 @@ func TestAIImageGenerateRequiresConfiguredProvider(t *testing.T) {
 			t.Fatalf("unexpected error %#v", payload["error"])
 		}
 	})
+}
+
+func TestAIImageConfigurationPrefersAgnesOverDashScope(t *testing.T) {
+	t.Setenv("AGNES_API_KEY", "agnes-test")
+	t.Setenv("AGNES_BASE_URL", "https://apihub.example")
+	t.Setenv("DASHSCOPE_API_KEY", "dashscope-test")
+	t.Setenv("DASHSCOPE_BASE_URL", "https://dashscope.example/api/v1")
+	t.Setenv("AI_IMAGE_MODEL", "")
+
+	gen, err := newAIImageGenerator()
+	if err != nil {
+		t.Fatalf("newAIImageGenerator failed: %v", err)
+	}
+	agnes, ok := gen.(agnesImageGenerator)
+	if !ok {
+		t.Fatalf("expected Agnes generator when AGNES_API_KEY is set, got %T", gen)
+	}
+	if agnes.apiKey != "agnes-test" {
+		t.Fatalf("unexpected Agnes key %q", agnes.apiKey)
+	}
+	if agnes.baseURL != "https://apihub.example" {
+		t.Fatalf("unexpected Agnes base URL %q", agnes.baseURL)
+	}
+	if agnes.model != "agnes-image-2.1-flash" {
+		t.Fatalf("unexpected default Agnes model %q", agnes.model)
+	}
+}
+
+func TestAgnesImageGeneratorPostsOpenAIImageRequest(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("Authorization")
+		raw, _ := io.ReadAll(r.Body)
+		if err := json.Unmarshal(raw, &gotBody); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		writeJSON(w, map[string]any{
+			"created": 1780000000,
+			"data": []map[string]any{
+				{
+					"url":            "https://agnes-result.example/generated.png",
+					"b64_json":       nil,
+					"revised_prompt": nil,
+				},
+			},
+		})
+	}))
+	defer server.Close()
+
+	gen := agnesImageGenerator{
+		apiKey:  "agnes-test",
+		baseURL: server.URL,
+		model:   "agnes-image-2.1-flash",
+		http:    server.Client(),
+	}
+	result, err := gen.Generate(context.Background(), "一座彩虹校园", "1024*1024")
+	if err != nil {
+		t.Fatalf("Generate failed: %v", err)
+	}
+	if gotPath != "/v1/images/generations" {
+		t.Fatalf("unexpected path %q", gotPath)
+	}
+	if gotAuth != "Bearer agnes-test" {
+		t.Fatalf("unexpected auth header %q", gotAuth)
+	}
+	if gotBody["model"] != "agnes-image-2.1-flash" {
+		t.Fatalf("unexpected model %#v", gotBody["model"])
+	}
+	if gotBody["prompt"] != "一座彩虹校园" {
+		t.Fatalf("unexpected prompt %#v", gotBody["prompt"])
+	}
+	if gotBody["size"] != "1024x1024" {
+		t.Fatalf("Agnes request size should use x separator, got %#v", gotBody["size"])
+	}
+	extraBody := gotBody["extra_body"].(map[string]any)
+	if extraBody["response_format"] != "url" {
+		t.Fatalf("Agnes URL output must be requested through extra_body, got %#v", extraBody["response_format"])
+	}
+	if _, exists := gotBody["response_format"]; exists {
+		t.Fatalf("response_format must not be top-level for Agnes requests")
+	}
+	if result.ImageURL != "https://agnes-result.example/generated.png" {
+		t.Fatalf("unexpected image URL %#v", result.ImageURL)
+	}
+	if result.Model != "agnes-image-2.1-flash" || result.Size != "1024*1024" {
+		t.Fatalf("unexpected result model/size %#v", result)
+	}
+}
+
+func TestParseAgnesImageResponseRequiresURL(t *testing.T) {
+	_, err := parseAgnesImageResponse([]byte(`{"created":1780000000,"data":[{"b64_json":"abc"}]}`))
+	if err == nil {
+		t.Fatal("expected empty URL Agnes response to fail")
+	}
 }
 
 func TestAIImageGenerateEnforcesDailyLimit(t *testing.T) {

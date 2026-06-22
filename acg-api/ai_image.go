@@ -15,10 +15,14 @@ import (
 )
 
 const (
-	aiImageDailyLimit  = 3
-	aiImageMaxRunes    = 400
-	aiImageDefaultSize = "1024*1024"
-	aiImageMaxBytes    = 12 * 1024 * 1024
+	aiImageDailyLimit              = 3
+	aiImageMaxRunes                = 400
+	aiImageDefaultSize             = "1024*1024"
+	aiImageMaxBytes                = 12 * 1024 * 1024
+	aiImageDefaultAgnesModel       = "agnes-image-2.1-flash"
+	aiImageDefaultDashScopeModel   = "z-image-turbo"
+	aiImageDefaultAgnesBaseURL     = "https://apihub.agnes-ai.com"
+	aiImageDefaultDashScopeBaseURL = "https://dashscope.aliyuncs.com/api/v1"
 )
 
 var (
@@ -42,6 +46,13 @@ type aiImageProviderResult struct {
 }
 
 type dashScopeImageGenerator struct {
+	apiKey  string
+	baseURL string
+	model   string
+	http    *http.Client
+}
+
+type agnesImageGenerator struct {
 	apiKey  string
 	baseURL string
 	model   string
@@ -89,7 +100,7 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 		snap, _ := getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":        "IMAGE_NOT_CONFIGURED",
-			"message":      "生图还没配置百炼 API Key，站长配好后就能用了。",
+			"message":      "生图还没配置 Agnes API Key，站长配好后就能用了。",
 			"imageEnabled": false,
 			"limit":        snap.Limit,
 			"used":         snap.Used,
@@ -153,7 +164,7 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 		snap, _ = getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
 			"error":     "IMAGE_NOT_CONFIGURED",
-			"message":   "生图还没配置百炼 API Key，站长配好后就能用了。",
+			"message":   "生图还没配置 Agnes API Key，站长配好后就能用了。",
 			"limit":     snap.Limit,
 			"used":      snap.Used,
 			"remaining": snap.Remaining,
@@ -172,7 +183,7 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 		snap, _ = getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusBadGateway, map[string]any{
 			"error":     "IMAGE_PROVIDER_ERROR",
-			"message":   "百炼生图暂时失败了，请稍后再试。",
+			"message":   "Agnes 生图暂时失败了，请稍后再试。",
 			"limit":     snap.Limit,
 			"used":      snap.Used,
 			"remaining": snap.Remaining,
@@ -274,35 +285,126 @@ func resolveAIImageIdentity(r *http.Request) (chatIdentity, int64, bool) {
 }
 
 func aiImageConfigured() bool {
-	return aiImageAPIKey() != ""
+	return agnesImageAPIKey() != "" || dashScopeImageAPIKey() != ""
 }
 
-func aiImageAPIKey() string {
+func agnesImageAPIKey() string {
+	return strings.TrimSpace(env("AGNES_API_KEY", ""))
+}
+
+func dashScopeImageAPIKey() string {
 	if v := strings.TrimSpace(env("DASHSCOPE_API_KEY", "")); v != "" {
 		return v
 	}
 	return strings.TrimSpace(env("ALIYUN_BAILIAN_API_KEY", ""))
 }
 
-func aiImageBaseURL() string {
-	return strings.TrimRight(env("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/api/v1"), "/")
+func agnesImageBaseURL() string {
+	return strings.TrimRight(env("AGNES_BASE_URL", aiImageDefaultAgnesBaseURL), "/")
+}
+
+func dashScopeImageBaseURL() string {
+	return strings.TrimRight(env("DASHSCOPE_BASE_URL", aiImageDefaultDashScopeBaseURL), "/")
 }
 
 func aiImageModel() string {
-	return strings.TrimSpace(env("AI_IMAGE_MODEL", "z-image-turbo"))
+	if agnesImageAPIKey() != "" || dashScopeImageAPIKey() == "" {
+		return agnesImageModel()
+	}
+	return dashScopeImageModel()
+}
+
+func agnesImageModel() string {
+	if v := strings.TrimSpace(env("AGNES_IMAGE_MODEL", "")); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(env("AI_IMAGE_MODEL", "")); strings.HasPrefix(strings.ToLower(v), "agnes-") {
+		return v
+	}
+	return aiImageDefaultAgnesModel
+}
+
+func dashScopeImageModel() string {
+	return strings.TrimSpace(env("AI_IMAGE_MODEL", aiImageDefaultDashScopeModel))
 }
 
 func newAIImageGenerator() (aiImageGenerator, error) {
-	key := aiImageAPIKey()
-	if key == "" {
-		return nil, errors.New("dashscope api key not configured")
+	if key := agnesImageAPIKey(); key != "" {
+		return agnesImageGenerator{
+			apiKey:  key,
+			baseURL: agnesImageBaseURL(),
+			model:   agnesImageModel(),
+			http:    &http.Client{Timeout: 90 * time.Second},
+		}, nil
 	}
-	return dashScopeImageGenerator{
-		apiKey:  key,
-		baseURL: aiImageBaseURL(),
-		model:   aiImageModel(),
-		http:    &http.Client{Timeout: 90 * time.Second},
-	}, nil
+	if key := dashScopeImageAPIKey(); key != "" {
+		return dashScopeImageGenerator{
+			apiKey:  key,
+			baseURL: dashScopeImageBaseURL(),
+			model:   dashScopeImageModel(),
+			http:    &http.Client{Timeout: 90 * time.Second},
+		}, nil
+	}
+	return nil, errors.New("ai image provider api key not configured")
+}
+
+func (g agnesImageGenerator) Generate(ctx context.Context, prompt, size string) (aiImageProviderResult, error) {
+	body := map[string]any{
+		"model":  g.model,
+		"prompt": prompt,
+		"size":   agnesImageRequestSize(size),
+		"extra_body": map[string]any{
+			"response_format": "url",
+		},
+	}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return aiImageProviderResult{}, err
+	}
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		agnesImageEndpoint(g.baseURL),
+		bytes.NewReader(raw),
+	)
+	if err != nil {
+		return aiImageProviderResult{}, err
+	}
+	req.Header.Set("Authorization", "Bearer "+g.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	res, err := g.http.Do(req)
+	if err != nil {
+		return aiImageProviderResult{}, err
+	}
+	defer res.Body.Close()
+	respBody, _ := io.ReadAll(res.Body)
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return aiImageProviderResult{}, fmt.Errorf("agnes http %d: %s", res.StatusCode, truncate(string(respBody), 240))
+	}
+
+	result, err := parseAgnesImageResponse(respBody)
+	if err != nil {
+		return aiImageProviderResult{}, err
+	}
+	result.Model = g.model
+	if result.Size == "" {
+		result.Size = size
+	}
+	return result, nil
+}
+
+func agnesImageEndpoint(baseURL string) string {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if strings.HasSuffix(baseURL, "/v1") {
+		return baseURL + "/images/generations"
+	}
+	return baseURL + "/v1/images/generations"
+}
+
+func agnesImageRequestSize(size string) string {
+	return strings.ReplaceAll(strings.TrimSpace(size), "*", "x")
 }
 
 func (g dashScopeImageGenerator) Generate(ctx context.Context, prompt, size string) (aiImageProviderResult, error) {
@@ -418,6 +520,23 @@ func parseDashScopeImageResponse(raw []byte) (aiImageProviderResult, error) {
 		Width:     payload.Usage.Width,
 		Height:    payload.Usage.Height,
 	}, nil
+}
+
+func parseAgnesImageResponse(raw []byte) (aiImageProviderResult, error) {
+	var payload struct {
+		Data []struct {
+			URL string `json:"url"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return aiImageProviderResult{}, err
+	}
+	for _, item := range payload.Data {
+		if imageURL := strings.TrimSpace(item.URL); imageURL != "" {
+			return aiImageProviderResult{ImageURL: imageURL}, nil
+		}
+	}
+	return aiImageProviderResult{}, errors.New("empty agnes image response")
 }
 
 func downloadAIImageURL(ctx context.Context, rawURL string) ([]byte, string, error) {
