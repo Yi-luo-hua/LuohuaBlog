@@ -987,87 +987,185 @@ body {
     @apply right-[9%] top-14 rotate-6 md:right-[14%] md:top-12;
   }
 
+  /* ── Envelope CTA (editorial glass + light arc) ── */
+
   .story-envelope-cta {
-    @apply relative flex w-full max-w-xl flex-col items-center overflow-hidden rounded-[1.65rem] border border-[#e7c5aa]/90 bg-[#fff2df] px-5 pb-7 pt-8 text-center shadow-[0_28px_90px_rgba(183,110,121,0.18)] backdrop-blur-md md:items-start md:rounded-[2rem] md:px-9 md:pb-9 md:pt-10 md:text-left;
+    @apply relative w-full overflow-hidden rounded-[1.25rem] border border-white/60 px-6 py-7 text-left shadow-[0_24px_70px_rgba(255,143,171,0.16),0_6px_20px_rgba(95,75,82,0.07)] md:rounded-[1.5rem] md:px-9 md:py-9;
     isolation: isolate;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 250, 247, 0.45) 100%);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+      box-shadow 0.6s ease;
+    will-change: transform, opacity;
   }
 
+  /* hairline highlight on top edge — premium glass detail */
   .story-envelope-cta::before {
     content: "";
-    @apply pointer-events-none absolute inset-x-0 bottom-0 h-[42%] border-t border-[#dcb797]/75 bg-[#ffe8cf]/90;
-    clip-path: polygon(0 0, 50% 72%, 100% 0, 100% 100%, 0 100%);
-    z-index: -1;
+    @apply pointer-events-none absolute inset-x-8 top-0 h-px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.9) 50%,
+      transparent
+    );
   }
 
-  .story-envelope-cta::after {
-    content: "";
-    @apply pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#ffd9e2]/[0.38] blur-3xl;
-    z-index: -2;
+  .story-envelope-cta--open {
+    animation: storyEnvelopeFadeIn 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   }
 
-  .story-envelope-flap {
-    @apply pointer-events-none absolute inset-x-0 top-0 h-28 border-b border-[#dcb797]/70 bg-[#fff7ea]/90 md:h-32;
-    clip-path: polygon(0 0, 100% 0, 50% 100%);
-    z-index: -1;
+  .story-envelope-cta:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 38px 110px rgba(255, 143, 171, 0.24),
+      0 12px 36px rgba(95, 75, 82, 0.1);
   }
 
-  .story-envelope-letter {
-    @apply relative z-10 w-full rounded-[1.15rem] border border-white/90 bg-[linear-gradient(180deg,#fffdf7_0%,#fff8ed_100%)] px-5 py-5 shadow-[0_18px_48px_rgba(129,87,75,0.13)] md:px-7 md:py-6;
-  }
+  /* ── Light arc (the hero detail) ── */
 
-  .story-envelope-letter::before {
-    content: "";
-    @apply pointer-events-none absolute inset-x-5 top-4 h-px bg-gradient-to-r from-transparent via-[#e7c5aa]/80 to-transparent;
-  }
-
-  .story-envelope-kicker {
-    @apply mb-3 block font-general text-[10px] uppercase tracking-[0.34em] text-[#b76e79] md:text-[11px];
-  }
-
-  .story-envelope-letter p {
-    @apply font-circular-web text-xl leading-8 text-[#4d3941] md:text-3xl md:leading-[1.42];
-  }
-
-  .story-envelope-stamp {
-    @apply absolute right-5 top-5 z-20 grid h-10 w-14 place-items-center rounded-[0.55rem] border border-dashed border-[#d7a778] bg-[#fffaf1] font-general text-[9px] font-bold uppercase tracking-[0.18em] text-[#b76e79] shadow-[0_10px_26px_rgba(199,121,131,0.15)] md:right-7 md:top-7 md:h-11 md:w-16;
-    transform: rotate(7deg);
-  }
-
-  .story-envelope-pocket {
-    @apply pointer-events-none absolute inset-x-0 bottom-0 h-[43%] border-t border-[#dcb797]/70;
+  .story-envelope-arc {
+    @apply pointer-events-none absolute -right-24 -top-32 h-[20rem] w-[20rem] md:-right-28 md:-top-36 md:h-[24rem] md:w-[24rem];
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 196, 213, 0.55) 0%,
+      rgba(255, 220, 232, 0.32) 28%,
+      rgba(255, 235, 240, 0.16) 48%,
+      transparent 68%
+    );
+    filter: blur(8px);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: transform 1.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+      opacity 1.2s ease;
     z-index: 0;
   }
 
-  .story-envelope-pocket::before,
-  .story-envelope-pocket::after {
-    content: "";
-    @apply absolute bottom-0 h-full w-1/2 border-[#dcb797]/65;
+  .story-envelope-cta--open .story-envelope-arc {
+    opacity: 1;
+    transform: scale(1);
+    animation: storyEnvelopeArcBreath 8s ease-in-out 1.5s infinite;
   }
 
-  .story-envelope-pocket::before {
-    @apply left-0 border-r;
-    clip-path: polygon(0 0, 100% 100%, 0 100%);
+  /* ── Body / Typography (editorial) ── */
+
+  .story-envelope-body {
+    @apply relative z-10 flex flex-col items-start;
   }
 
-  .story-envelope-pocket::after {
-    @apply right-0 border-l;
-    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  .story-envelope-meta {
+    @apply mb-3 font-general text-[9px] uppercase tracking-[0.42em] text-[#b76e79]/60 md:mb-4 md:text-[10px];
   }
 
-  .story-envelope-line {
-    @apply absolute left-6 right-6 h-px bg-[#dcb797]/45;
+  .story-envelope-salutation {
+    font-family: "Zentry", "PingFang SC", "Microsoft YaHei", serif;
+    font-style: italic;
+    font-size: clamp(0.95rem, 1.6vw, 1.2rem);
+    line-height: 1.3;
+    color: #5a4750;
+    margin-bottom: clamp(0.35rem, 0.7vw, 0.55rem);
   }
 
-  .story-envelope-line-1 {
-    @apply bottom-14 md:bottom-16;
+  .story-envelope-title {
+    font-family: "Zentry", "PingFang SC", "Microsoft YaHei", serif;
+    font-weight: 400;
+    font-size: clamp(1.85rem, 3.8vw, 2.9rem);
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    color: #2b1f24;
+    margin-bottom: clamp(1rem, 2vw, 1.5rem);
   }
 
-  .story-envelope-line-2 {
-    @apply bottom-11 opacity-70 md:bottom-12;
+  .story-envelope-desc {
+    @apply max-w-md font-circular-web text-sm leading-[1.7] text-[#5a4750] md:text-base md:leading-[1.65];
+    margin-bottom: clamp(1rem, 1.8vw, 1.4rem);
   }
+
+  /* ── Sign-off (letter signature) ── */
+
+  .story-envelope-signoff {
+    font-family: "Zentry", "PingFang SC", "Microsoft YaHei", serif;
+    font-style: italic;
+    font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+    line-height: 1.4;
+    color: #5a4750;
+    margin-bottom: clamp(1rem, 1.8vw, 1.4rem);
+  }
+
+  .story-envelope-signoff-line {
+    display: block;
+  }
+
+  .story-envelope-signoff-name {
+    display: block;
+    font-style: normal;
+    font-weight: 400;
+    font-size: clamp(1rem, 1.7vw, 1.25rem);
+    color: #3b2a30;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Button (text-link style, editorial) ── */
 
   .story-envelope-btn {
-    @apply relative z-20 mt-9 border border-[#dcb797] bg-[#fffdf7] text-[#7b4b53] shadow-[0_14px_34px_rgba(199,121,131,0.18)] transition duration-300 hover:-translate-y-1 hover:border-[#ff9fb2] hover:bg-[#fff5e5] md:mt-10;
+    @apply relative z-20 inline-flex items-center border-b border-[#2b1f24]/30 bg-transparent px-0 py-2 text-[#2b1f24] transition duration-300 hover:border-[#2b1f24]/70;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .story-envelope-btn:hover {
+    transform: none;
+  }
+
+  .story-envelope-btn span {
+    @apply font-general text-[13px] uppercase tracking-[0.22em] md:text-sm;
+  }
+
+  .story-envelope-btn:focus-visible {
+    outline: 2px solid #b76e79;
+    outline-offset: 6px;
+    border-radius: 4px;
+  }
+
+  /* ── Keyframes ── */
+
+  @keyframes storyEnvelopeFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes storyEnvelopeArcBreath {
+    0%,
+    100% {
+      transform: scale(1) translate(0, 0);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.04) translate(-1rem, 0.5rem);
+      opacity: 0.85;
+    }
+  }
+
+  /* ── Reduced motion ── */
+
+  @media (prefers-reduced-motion: reduce) {
+    .story-envelope-cta,
+    .story-envelope-arc {
+      opacity: 1;
+      transform: none;
+      animation: none;
+      transition: none;
+    }
   }
 
   .gallery-img-container {
