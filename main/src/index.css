@@ -1372,7 +1372,7 @@ body {
   left: 50%;
   height: 4.8rem;
   width: 0.7rem;
-  transform: translateX(-50%) rotate(-13deg);
+  transform: translateX(-50%) rotate(0deg);
   transform-origin: bottom center;
   border-radius: 999px;
   background: linear-gradient(90deg, #d99b73, #fff0c5 48%, #b76e79);
@@ -1957,7 +1957,7 @@ body {
   left: 50%;
   height: 4.8rem;
   width: 0.78rem;
-  transform: translateX(-50%) rotate(-13deg);
+  transform: translateX(-50%) rotate(0deg);
   transform-origin: bottom center;
   border-radius: 999px;
   background:
@@ -2391,7 +2391,7 @@ body {
   left: 50%;
   height: 4.8rem;
   width: 0.78rem;
-  transform: translateX(-50%) rotate(-13deg);
+  transform: translateX(-50%) rotate(0deg);
   transform-origin: bottom center;
   border-radius: 999px;
   background:
