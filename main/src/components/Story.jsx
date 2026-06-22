@@ -1,5 +1,6 @@
+import clsx from "clsx";
 import gsap from "gsap";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Button from "./Button";
 import AnimatedTitle from "./AnimatedTitle";
@@ -11,6 +12,33 @@ const entranceImageSrc = cosAsset(
 
 const FloatingImage = () => {
   const frameRef = useRef(null);
+  const envelopeRef = useRef(null);
+  const [envelopeOpen, setEnvelopeOpen] = useState(false);
+
+  useEffect(() => {
+    const node = envelopeRef.current;
+    if (!node) return undefined;
+
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+      setEnvelopeOpen(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setEnvelopeOpen(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.35 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   const handleMouseMove = (e) => {
     const { clientX, clientY } = e;
@@ -114,28 +142,37 @@ const FloatingImage = () => {
         </div>
 
         <div className="relative z-30 -mt-48 flex w-full justify-center px-6 md:-mt-72 md:me-36 md:justify-end">
-          <div className="story-envelope-cta">
-            <div className="story-envelope-flap" aria-hidden="true" />
-            <div className="story-envelope-stamp">POST</div>
-            <div className="story-envelope-letter">
-              <span className="story-envelope-kicker">A LETTER TO VISITORS</span>
-              <p>
-                Thank you for watching. If there are any areas that need
-                correction, you are sincerely invited to provide feedback below.
-              </p>
-            </div>
-            <div className="story-envelope-pocket" aria-hidden="true">
-              <span className="story-envelope-line story-envelope-line-1" />
-              <span className="story-envelope-line story-envelope-line-2" />
-            </div>
+          <section aria-labelledby="story-envelope-heading" className="w-full max-w-md md:max-w-lg">
+            <article
+              ref={envelopeRef}
+              className={clsx("story-envelope-cta", envelopeOpen && "story-envelope-cta--open")}
+            >
+              <div className="story-envelope-arc" aria-hidden="true" />
 
-            <Button
-              id="realm-btn"
-              title="LEAVE A MESSAGE"
-              containerClass="story-envelope-btn"
-              to="/guestbook"
-            />
-          </div>
+              <div className="story-envelope-body">
+                <p className="story-envelope-meta">№ 01 · A letter</p>
+                <p className="story-envelope-salutation">Dear visitor,</p>
+                <h2 id="story-envelope-heading" className="story-envelope-title">
+                  thank you<br />
+                  for stopping by.
+                </h2>
+                <p className="story-envelope-desc">
+                  If anything here needs correction, or you just want to say
+                  hello — please drop me a line.
+                </p>
+                <p className="story-envelope-signoff">
+                  <span className="story-envelope-signoff-line">Yours,</span>
+                  <span className="story-envelope-signoff-name">taozhiyo</span>
+                </p>
+                <Button
+                  id="realm-btn"
+                  title="Leave a message →"
+                  containerClass="story-envelope-btn"
+                  to="/guestbook"
+                />
+              </div>
+            </article>
+          </section>
         </div>
       </div>
     </div>

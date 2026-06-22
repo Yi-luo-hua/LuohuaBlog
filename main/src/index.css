@@ -568,6 +568,140 @@ body {
     @apply uppercase font-bold tracking-tight text-4xl sm:right-10 sm:text-6xl md:text-8xl lg:text-[10rem];
   }
 
+  .hero-wordmark {
+    position: absolute;
+    top: clamp(4.7rem, 7vw, 6.15rem);
+    right: clamp(0.9rem, 3.7vw, 3rem);
+    z-index: 45;
+    width: clamp(13.25rem, 24vw, 21.75rem);
+    pointer-events: none;
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .hero-wordmark::before {
+    content: "";
+    position: absolute;
+    inset: 18% -5% 14% 0%;
+    border-radius: 999px;
+    background: radial-gradient(
+      ellipse at center,
+      var(--hero-wordmark-glow) 0%,
+      transparent 70%
+    );
+    filter: blur(1.2rem);
+    opacity: 0;
+    animation: heroWordmarkGlowPulse 4.5s ease-in-out infinite;
+    animation-delay: 3s;
+  }
+
+  .hero-wordmark-svg {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    filter: drop-shadow(0 0 0.35rem var(--hero-wordmark-glow))
+      drop-shadow(0 0 0.6rem var(--hero-wordmark-glow))
+      drop-shadow(0 0.4rem 0.7rem rgba(0, 0, 0, 0.25));
+  }
+
+  .hero-wordmark-stroke-path {
+    fill: none;
+    fill-opacity: 0;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+  }
+
+  .hero-wordmark--ready .hero-wordmark-stroke-path {
+    animation: heroWordmarkDraw var(--dur) cubic-bezier(0.45, 0, 0.25, 1)
+        var(--delay) forwards,
+      heroWordmarkShow 0.01s var(--delay) forwards;
+  }
+
+  .hero-wordmark--ready .hero-wordmark-fill-after {
+    animation: heroWordmarkDraw var(--dur) cubic-bezier(0.45, 0, 0.25, 1)
+        var(--delay) forwards,
+      heroWordmarkShow 0.01s var(--delay) forwards,
+      heroWordmarkFillIn 1.2s ease-out calc(var(--delay) + var(--dur) + 0.2s)
+        forwards;
+  }
+
+  @keyframes heroWordmarkDraw {
+    0% {
+      stroke-dashoffset: var(--len);
+      stroke-width: 3.2;
+    }
+    60% {
+      stroke-width: 2.8;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      stroke-width: 2.6;
+    }
+  }
+
+  @keyframes heroWordmarkShow {
+    0% {
+      opacity: 0;
+    }
+    1% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes heroWordmarkFillIn {
+    0% {
+      fill-opacity: 0;
+    }
+    100% {
+      fill-opacity: 1;
+    }
+  }
+
+  @keyframes heroWordmarkGlowPulse {
+    0%, 100% {
+      opacity: 0.08;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.22;
+      transform: scale(1.03);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .hero-wordmark {
+      top: 5.25rem;
+      right: 0.8rem;
+      width: clamp(12.25rem, 54vw, 15.25rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-wordmark,
+    .hero-wordmark--ready .hero-wordmark-stroke-path,
+    .hero-wordmark--ready .hero-wordmark-fill-after,
+    .hero-wordmark-stroke-path,
+    .hero-wordmark-fill-after {
+      animation: none;
+    }
+
+    .hero-wordmark-stroke-path {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+
+    .hero-wordmark-fill-after {
+      fill-opacity: 1;
+    }
+  }
+
   .about-subtext {
     @apply static mt-3 w-full max-w-96 text-center font-circular-web text-lg md:absolute md:bottom-[-80dvh] md:left-1/2 md:mt-0 md:max-w-[34rem] md:-translate-x-1/2;
   }
@@ -853,87 +987,185 @@ body {
     @apply right-[9%] top-14 rotate-6 md:right-[14%] md:top-12;
   }
 
+  /* ── Envelope CTA (editorial glass + light arc) ── */
+
   .story-envelope-cta {
-    @apply relative flex w-full max-w-xl flex-col items-center overflow-hidden rounded-[1.65rem] border border-[#e7c5aa]/90 bg-[#fff2df] px-5 pb-7 pt-8 text-center shadow-[0_28px_90px_rgba(183,110,121,0.18)] backdrop-blur-md md:items-start md:rounded-[2rem] md:px-9 md:pb-9 md:pt-10 md:text-left;
+    @apply relative w-full overflow-hidden rounded-[1.25rem] border border-white/60 px-6 py-7 text-left shadow-[0_24px_70px_rgba(255,143,171,0.16),0_6px_20px_rgba(95,75,82,0.07)] md:rounded-[1.5rem] md:px-9 md:py-9;
     isolation: isolate;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 250, 247, 0.45) 100%);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+      box-shadow 0.6s ease;
+    will-change: transform, opacity;
   }
 
+  /* hairline highlight on top edge — premium glass detail */
   .story-envelope-cta::before {
     content: "";
-    @apply pointer-events-none absolute inset-x-0 bottom-0 h-[42%] border-t border-[#dcb797]/75 bg-[#ffe8cf]/90;
-    clip-path: polygon(0 0, 50% 72%, 100% 0, 100% 100%, 0 100%);
-    z-index: -1;
+    @apply pointer-events-none absolute inset-x-8 top-0 h-px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.9) 50%,
+      transparent
+    );
   }
 
-  .story-envelope-cta::after {
-    content: "";
-    @apply pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#ffd9e2]/[0.38] blur-3xl;
-    z-index: -2;
+  .story-envelope-cta--open {
+    animation: storyEnvelopeFadeIn 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   }
 
-  .story-envelope-flap {
-    @apply pointer-events-none absolute inset-x-0 top-0 h-28 border-b border-[#dcb797]/70 bg-[#fff7ea]/90 md:h-32;
-    clip-path: polygon(0 0, 100% 0, 50% 100%);
-    z-index: -1;
+  .story-envelope-cta:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 38px 110px rgba(255, 143, 171, 0.24),
+      0 12px 36px rgba(95, 75, 82, 0.1);
   }
 
-  .story-envelope-letter {
-    @apply relative z-10 w-full rounded-[1.15rem] border border-white/90 bg-[linear-gradient(180deg,#fffdf7_0%,#fff8ed_100%)] px-5 py-5 shadow-[0_18px_48px_rgba(129,87,75,0.13)] md:px-7 md:py-6;
-  }
+  /* ── Light arc (the hero detail) ── */
 
-  .story-envelope-letter::before {
-    content: "";
-    @apply pointer-events-none absolute inset-x-5 top-4 h-px bg-gradient-to-r from-transparent via-[#e7c5aa]/80 to-transparent;
-  }
-
-  .story-envelope-kicker {
-    @apply mb-3 block font-general text-[10px] uppercase tracking-[0.34em] text-[#b76e79] md:text-[11px];
-  }
-
-  .story-envelope-letter p {
-    @apply font-circular-web text-xl leading-8 text-[#4d3941] md:text-3xl md:leading-[1.42];
-  }
-
-  .story-envelope-stamp {
-    @apply absolute right-5 top-5 z-20 grid h-10 w-14 place-items-center rounded-[0.55rem] border border-dashed border-[#d7a778] bg-[#fffaf1] font-general text-[9px] font-bold uppercase tracking-[0.18em] text-[#b76e79] shadow-[0_10px_26px_rgba(199,121,131,0.15)] md:right-7 md:top-7 md:h-11 md:w-16;
-    transform: rotate(7deg);
-  }
-
-  .story-envelope-pocket {
-    @apply pointer-events-none absolute inset-x-0 bottom-0 h-[43%] border-t border-[#dcb797]/70;
+  .story-envelope-arc {
+    @apply pointer-events-none absolute -right-24 -top-32 h-[20rem] w-[20rem] md:-right-28 md:-top-36 md:h-[24rem] md:w-[24rem];
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 196, 213, 0.55) 0%,
+      rgba(255, 220, 232, 0.32) 28%,
+      rgba(255, 235, 240, 0.16) 48%,
+      transparent 68%
+    );
+    filter: blur(8px);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: transform 1.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+      opacity 1.2s ease;
     z-index: 0;
   }
 
-  .story-envelope-pocket::before,
-  .story-envelope-pocket::after {
-    content: "";
-    @apply absolute bottom-0 h-full w-1/2 border-[#dcb797]/65;
+  .story-envelope-cta--open .story-envelope-arc {
+    opacity: 1;
+    transform: scale(1);
+    animation: storyEnvelopeArcBreath 8s ease-in-out 1.5s infinite;
   }
 
-  .story-envelope-pocket::before {
-    @apply left-0 border-r;
-    clip-path: polygon(0 0, 100% 100%, 0 100%);
+  /* ── Body / Typography (editorial) ── */
+
+  .story-envelope-body {
+    @apply relative z-10 flex flex-col items-start;
   }
 
-  .story-envelope-pocket::after {
-    @apply right-0 border-l;
-    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  .story-envelope-meta {
+    @apply mb-3 font-general text-[9px] uppercase tracking-[0.42em] text-[#b76e79]/60 md:mb-4 md:text-[10px];
   }
 
-  .story-envelope-line {
-    @apply absolute left-6 right-6 h-px bg-[#dcb797]/45;
+  .story-envelope-salutation {
+    font-family: "Zentry", "PingFang SC", "Microsoft YaHei", serif;
+    font-style: italic;
+    font-size: clamp(0.95rem, 1.6vw, 1.2rem);
+    line-height: 1.3;
+    color: #5a4750;
+    margin-bottom: clamp(0.35rem, 0.7vw, 0.55rem);
   }
 
-  .story-envelope-line-1 {
-    @apply bottom-14 md:bottom-16;
+  .story-envelope-title {
+    font-family: "Zentry", "PingFang SC", "Microsoft YaHei", serif;
+    font-weight: 400;
+    font-size: clamp(1.85rem, 3.8vw, 2.9rem);
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    color: #2b1f24;
+    margin-bottom: clamp(1rem, 2vw, 1.5rem);
   }
 
-  .story-envelope-line-2 {
-    @apply bottom-11 opacity-70 md:bottom-12;
+  .story-envelope-desc {
+    @apply max-w-md font-circular-web text-sm leading-[1.7] text-[#5a4750] md:text-base md:leading-[1.65];
+    margin-bottom: clamp(1rem, 1.8vw, 1.4rem);
   }
+
+  /* ── Sign-off (letter signature) ── */
+
+  .story-envelope-signoff {
+    font-family: "Zentry", "PingFang SC", "Microsoft YaHei", serif;
+    font-style: italic;
+    font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+    line-height: 1.4;
+    color: #5a4750;
+    margin-bottom: clamp(1rem, 1.8vw, 1.4rem);
+  }
+
+  .story-envelope-signoff-line {
+    display: block;
+  }
+
+  .story-envelope-signoff-name {
+    display: block;
+    font-style: normal;
+    font-weight: 400;
+    font-size: clamp(1rem, 1.7vw, 1.25rem);
+    color: #3b2a30;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Button (text-link style, editorial) ── */
 
   .story-envelope-btn {
-    @apply relative z-20 mt-9 border border-[#dcb797] bg-[#fffdf7] text-[#7b4b53] shadow-[0_14px_34px_rgba(199,121,131,0.18)] transition duration-300 hover:-translate-y-1 hover:border-[#ff9fb2] hover:bg-[#fff5e5] md:mt-10;
+    @apply relative z-20 inline-flex items-center border-b border-[#2b1f24]/30 bg-transparent px-0 py-2 text-[#2b1f24] transition duration-300 hover:border-[#2b1f24]/70;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .story-envelope-btn:hover {
+    transform: none;
+  }
+
+  .story-envelope-btn span {
+    @apply font-general text-[13px] uppercase tracking-[0.22em] md:text-sm;
+  }
+
+  .story-envelope-btn:focus-visible {
+    outline: 2px solid #b76e79;
+    outline-offset: 6px;
+    border-radius: 4px;
+  }
+
+  /* ── Keyframes ── */
+
+  @keyframes storyEnvelopeFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes storyEnvelopeArcBreath {
+    0%,
+    100% {
+      transform: scale(1) translate(0, 0);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.04) translate(-1rem, 0.5rem);
+      opacity: 0.85;
+    }
+  }
+
+  /* ── Reduced motion ── */
+
+  @media (prefers-reduced-motion: reduce) {
+    .story-envelope-cta,
+    .story-envelope-arc {
+      opacity: 1;
+      transform: none;
+      animation: none;
+      transition: none;
+    }
   }
 
   .gallery-img-container {
@@ -1238,7 +1470,7 @@ body {
   left: 50%;
   height: 4.8rem;
   width: 0.7rem;
-  transform: translateX(-50%) rotate(-13deg);
+  transform: translateX(-50%) rotate(0deg);
   transform-origin: bottom center;
   border-radius: 999px;
   background: linear-gradient(90deg, #d99b73, #fff0c5 48%, #b76e79);
@@ -1770,49 +2002,135 @@ body {
 }
 
 .source-arcade-lever button {
-  height: 8.2rem;
-  width: 6.2rem;
+  height: 8.6rem;
+  width: 7rem;
+  cursor: grab;
+  border: 0;
+  background: transparent;
+  position: relative;
+}
+.source-arcade-lever button:active {
+  cursor: grabbing;
 }
 
+/* —— 底座：手绘碟形 + 水彩晕染 —— */
 .source-arcade-lever button::after {
   content: "";
   position: absolute;
   bottom: 0.25rem;
   left: 50%;
-  height: 2.4rem;
-  width: 4.8rem;
+  height: 2.2rem;
+  width: 5.6rem;
   transform: translateX(-50%);
-  border: 0.28rem solid #fff2da;
   border-radius: 50%;
-  background: linear-gradient(180deg, #bf7e69, #8a5961);
-  box-shadow: inset 0 0.45rem 0 rgba(255, 255, 255, 0.25);
-}
-
-.source-lever-stick {
-  bottom: 1.45rem;
-  height: 5.6rem;
-  width: 0.82rem;
-  background: linear-gradient(90deg, #a9655c, #fff0bf 48%, #b66c7c);
-}
-
-.source-lever-ball {
-  height: 3.55rem;
-  width: 3.55rem;
   background:
-    radial-gradient(circle at 32% 26%, #fff 0 0.42rem, transparent 0.44rem),
-    linear-gradient(145deg, #ff6f98, #ffd86e);
+    radial-gradient(ellipse at 50% 40%, #fff8ee 0%, #ffe8d6 35%, #ecc9b0 75%, #c89a85 100%);
+  box-shadow:
+    inset 0 0.4rem 0.7rem rgba(255, 250, 240, 0.7),
+    inset 0 -0.3rem 0.5rem rgba(140, 95, 80, 0.18),
+    0 0.5rem 1.2rem rgba(140, 95, 80, 0.14);
+  filter: blur(0.3px);
+  opacity: 0.96;
+}
+
+/* —— 底座的"墨晕"小阴影点缀（手绘细节） —— */
+.source-arcade-lever button::before {
+  content: "";
+  position: absolute;
+  bottom: 0.55rem;
+  left: 50%;
+  height: 0.45rem;
+  width: 2.6rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(160, 110, 90, 0.24) 0%, transparent 65%);
+  filter: blur(2px);
+  z-index: 1;
+}
+
+/* —— 杆身：水彩笔触感 + 渐变中部高光 —— */
+.source-lever-stick {
+  position: absolute;
+  bottom: 1.4rem;
+  left: 50%;
+  height: 4.8rem;
+  width: 0.78rem;
+  transform: translateX(-50%) rotate(0deg);
+  transform-origin: bottom center;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 220, 195, 0.6) 0%,
+      #f7c8a8 18%,
+      #fff2dc 48%,
+      #f7c8a8 78%,
+      rgba(220, 165, 140, 0.55) 100%);
+  box-shadow:
+    0 0.3rem 0.6rem rgba(170, 110, 95, 0.18),
+    inset 0 0 0 0.04rem rgba(255, 235, 210, 0.55);
+  filter: blur(0.15px);
+}
+
+/* —— 球头：水彩晕染球，柔和无塑料感 —— */
+.source-lever-ball {
+  position: absolute;
+  left: 50%;
+  top: 0.3rem;
+  height: 2.8rem;
+  width: 2.8rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%,
+      rgba(255, 252, 244, 0.85) 0%,
+      rgba(255, 252, 244, 0.4) 12%,
+      transparent 28%),
+    radial-gradient(circle at 70% 78%,
+      rgba(180, 130, 130, 0.32) 0%,
+      transparent 40%),
+    radial-gradient(circle at 48% 48%,
+      #ffd6c8 0%,
+      #f4a896 50%,
+      #d97f72 100%);
+  box-shadow:
+    inset 0 -0.18rem 0.4rem rgba(160, 80, 75, 0.32),
+    inset 0 0.15rem 0.3rem rgba(255, 240, 225, 0.42),
+    0 0.5rem 1rem rgba(170, 100, 95, 0.28),
+    0 0 0 0.05rem rgba(255, 240, 225, 0.5);
+  filter: blur(0.15px);
+}
+
+/* —— 拉动动画：柔和液体感 —— */
+.source-lever-stick,
+.source-lever-ball {
+  transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .source-arcade-lever.is-pulled .source-lever-stick {
-  transform: translateX(-50%) rotate(26deg);
+  transform: translateX(-50%) rotate(28deg);
 }
 
 .source-arcade-lever.is-pulled .source-lever-ball {
-  transform: translate(1.2rem, 1.65rem);
+  /* 球需要跟着杆顶端的轨迹移动，并保持球本身和杆同步旋转。
+     杆长 4.8rem，旋转 28° 后杆顶位移：
+     - x: sin(28°) × 4.8 ≈ 2.25rem
+     - y: (1 - cos(28°)) × 4.8 ≈ 0.56rem
+     球本身也旋转 28° 视觉才正常（不歪头）。 */
+  transform: translate(calc(-50% + 2.25rem), 0.56rem) rotate(28deg);
 }
 
 .source-arcade-lever::after {
   display: none;
+}
+
+.source-arcade-lever p {
+  margin-top: 0.5rem;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.32em;
+  color: #b27d6b;
+  text-shadow: 0 1px 0 rgba(255, 248, 240, 0.7);
 }
 
 .source-arcade-draw-btn {
@@ -2118,44 +2436,135 @@ body {
 
 .source-arcade-lever {
   display: grid;
+  justify-items: center;  /* button 在 lever 容器内水平居中 */
   margin-top: 0;
 }
 
 .source-arcade-lever button {
-  height: 5.2rem;
-  width: 3.5rem;
+  height: 8.6rem;
+  width: 7rem;
+  cursor: grab;
+  position: relative;
+  border: 0;
+  background: transparent;
+}
+.source-arcade-lever button:active {
+  cursor: grabbing;
 }
 
+/* —— 水彩底座（柔和奶油色 + 模糊边缘） —— */
 .source-arcade-lever button::after {
-  bottom: 0.2rem;
-  height: 1.35rem;
-  width: 2.8rem;
-  border-width: 0.16rem;
+  content: "";
+  position: absolute;
+  bottom: 0.25rem;
+  left: 50%;
+  height: 2.2rem;
+  width: 5.6rem;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 50% 40%, #fff8ee 0%, #ffe8d6 35%, #ecc9b0 75%, #c89a85 100%);
+  box-shadow:
+    inset 0 0.4rem 0.7rem rgba(255, 250, 240, 0.7),
+    inset 0 -0.3rem 0.5rem rgba(140, 95, 80, 0.18),
+    0 0.5rem 1.2rem rgba(140, 95, 80, 0.14);
+  filter: blur(0.3px);
+  opacity: 0.96;
 }
 
+/* —— 底座墨晕（小阴影点缀） —— */
+.source-arcade-lever button::before {
+  content: "";
+  position: absolute;
+  bottom: 0.55rem;
+  left: 50%;
+  height: 0.45rem;
+  width: 2.6rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(160, 110, 90, 0.24) 0%, transparent 65%);
+  filter: blur(2px);
+  z-index: 1;
+}
+
+/* —— 水彩杆身 —— */
 .source-lever-stick {
-  bottom: 0.95rem;
-  height: 3.5rem;
-  width: 0.45rem;
-  transform: translateX(-50%) rotate(-14deg);
+  position: absolute;
+  bottom: 1.4rem;
+  left: 50%;
+  height: 4.8rem;
+  width: 0.78rem;
+  transform: translateX(-50%) rotate(0deg);
+  transform-origin: bottom center;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 220, 195, 0.6) 0%,
+      #f7c8a8 18%,
+      #fff2dc 48%,
+      #f7c8a8 78%,
+      rgba(220, 165, 140, 0.55) 100%);
+  box-shadow:
+    0 0.3rem 0.6rem rgba(170, 110, 95, 0.18),
+    inset 0 0 0 0.04rem rgba(255, 235, 210, 0.55);
+  filter: blur(0.15px);
 }
 
+/* —— 水彩球头：从底座向上定位，与杆共享水平中心 —— */
 .source-lever-ball {
-  height: 2.1rem;
-  width: 2.1rem;
+  position: absolute;
+  bottom: 5.8rem;  /* 1.4(底座底部) + 4.8(杆高) - 0.4(球底部嵌入杆一点点) */
+  left: 50%;
+  height: 2.8rem;
+  width: 2.8rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%,
+      rgba(255, 252, 244, 0.85) 0%,
+      rgba(255, 252, 244, 0.4) 12%,
+      transparent 28%),
+    radial-gradient(circle at 70% 78%,
+      rgba(180, 130, 130, 0.32) 0%,
+      transparent 40%),
+    radial-gradient(circle at 48% 48%,
+      #ffd6c8 0%,
+      #f4a896 50%,
+      #d97f72 100%);
+  box-shadow:
+    inset 0 -0.18rem 0.4rem rgba(160, 80, 75, 0.32),
+    inset 0 0.15rem 0.3rem rgba(255, 240, 225, 0.42),
+    0 0.5rem 1rem rgba(170, 100, 95, 0.28),
+    0 0 0 0.05rem rgba(255, 240, 225, 0.5);
+  filter: blur(0.15px);
+}
+
+.source-lever-stick,
+.source-lever-ball {
+  transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .source-arcade-lever.is-pulled .source-lever-stick {
-  transform: translateX(-50%) rotate(24deg);
+  transform: translateX(-50%) rotate(28deg);
 }
 
 .source-arcade-lever.is-pulled .source-lever-ball {
-  transform: translate(0.72rem, 1rem);
+  /* 球跟着杆一起旋转，同步保持挂在杆顶，不再歪头。
+     杆长 4.8rem，旋转 28°：sin(28°)×4.8 ≈ 2.25rem (右), (1-cos(28°))×4.8 ≈ 0.56rem (下)
+     因为球现在是 bottom 定位，所以 y 轴位移是负方向（向上反而 bottom 变小）
+     我们只需用 translateX 来完成横向位移并旋转，bottom 保持不变即可 */
+  transform: translateX(calc(-50% + 2.25rem)) translateY(0.56rem) rotate(28deg);
 }
 
 .source-arcade-lever p {
-  font-size: 0.5rem;
-  letter-spacing: 0.12em;
+  margin-top: 0.5rem;
+  font-family: "General Sans", system-ui, sans-serif;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.32em;
+  color: #b27d6b;
+  text-shadow: 0 1px 0 rgba(255, 248, 240, 0.7);
 }
 
 .source-arcade-draw-btn {
@@ -4079,17 +4488,48 @@ body {
 }
 
 .source-lottery-stage .source-arcade-lever button::after {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 206, 214, 0.84));
+  background:
+    radial-gradient(ellipse at 50% 40%, #fff8ee 0%, #ffe8d6 35%, #ecc9b0 75%, #c89a85 100%);
+  box-shadow:
+    inset 0 0.4rem 0.7rem rgba(255, 250, 240, 0.7),
+    inset 0 -0.3rem 0.5rem rgba(140, 95, 80, 0.18),
+    0 0.5rem 1.2rem rgba(140, 95, 80, 0.14);
+  filter: blur(0.3px);
 }
 
 .source-lottery-stage .source-lever-stick {
-  background: linear-gradient(180deg, #f9db93, #b56b69);
+  background:
+    linear-gradient(180deg,
+      rgba(255, 220, 195, 0.6) 0%,
+      #f7c8a8 18%,
+      #fff2dc 48%,
+      #f7c8a8 78%,
+      rgba(220, 165, 140, 0.55) 100%);
+  box-shadow:
+    0 0.3rem 0.6rem rgba(170, 110, 95, 0.18),
+    inset 0 0 0 0.04rem rgba(255, 235, 210, 0.55);
+  filter: blur(0.15px);
 }
 
 .source-lottery-stage .source-lever-ball {
   background:
-    radial-gradient(circle at 30% 28%, #fff, transparent 16%),
-    linear-gradient(135deg, #ff8fab, #ffd36d);
+    radial-gradient(circle at 32% 28%,
+      rgba(255, 252, 244, 0.85) 0%,
+      rgba(255, 252, 244, 0.4) 12%,
+      transparent 28%),
+    radial-gradient(circle at 70% 78%,
+      rgba(180, 130, 130, 0.32) 0%,
+      transparent 40%),
+    radial-gradient(circle at 48% 48%,
+      #ffd6c8 0%,
+      #f4a896 50%,
+      #d97f72 100%);
+  box-shadow:
+    inset 0 -0.18rem 0.4rem rgba(160, 80, 75, 0.32),
+    inset 0 0.15rem 0.3rem rgba(255, 240, 225, 0.42),
+    0 0.5rem 1rem rgba(170, 100, 95, 0.28),
+    0 0 0 0.05rem rgba(255, 240, 225, 0.5);
+  filter: blur(0.15px);
 }
 
 .source-manual-book {
