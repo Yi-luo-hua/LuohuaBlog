@@ -200,6 +200,20 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 	providerResult, err := generator.Generate(ctx, prompt, size)
 	if err != nil {
 		logAIImageProviderError(err)
+		if rejection := aiImageProviderPromptRejection(err); rejection != "" {
+			rollbackQuota(db, id)
+			snap, _ = getQuotaSnapshot(db, id)
+			writeJSONStatus(w, http.StatusBadRequest, map[string]any{
+				"error":     "IMAGE_PROMPT_REJECTED",
+				"message":   rejection,
+				"limit":     snap.Limit,
+				"used":      snap.Used,
+				"remaining": snap.Remaining,
+				"isLogin":   id.IsLogin,
+				"unlimited": snap.Unlimited,
+			})
+			return
+		}
 		rollbackQuota(db, id)
 		snap, _ = getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusBadGateway, map[string]any{
@@ -506,6 +520,25 @@ func logAIImageProviderError(err error) {
 		return
 	}
 	log.Printf("ai-image: provider error message=%q", sanitizeProviderLogValue(err.Error(), 180))
+}
+
+func aiImageProviderPromptRejection(err error) string {
+	var providerErr *aiImageProviderHTTPError
+	if !errors.As(err, &providerErr) {
+		return ""
+	}
+	if providerErr.Provider != "agnes" {
+		return ""
+	}
+	code := strings.ToLower(strings.TrimSpace(providerErr.Code))
+	message := strings.ToLower(strings.TrimSpace(providerErr.Message))
+	if providerErr.StatusCode != http.StatusBadRequest {
+		return ""
+	}
+	if !strings.Contains(code, "policy") && !strings.Contains(code, "safety") && !strings.Contains(message, "content policy") {
+		return ""
+	}
+	return "提示词被 Agnes 拒绝了，可能包含不适合的内容或过于接近敏感描述。请修改为更安全、更中性的说法后重试。"
 }
 
 func sanitizeProviderLogValue(value string, maxLen int) string {

@@ -364,7 +364,7 @@ func TestAgnesImageGeneratorReturnsStructuredHTTPError(t *testing.T) {
 	}
 }
 
-func TestAIImageProviderFailureLogsSanitizedSummary(t *testing.T) {
+func TestAIImageContentPolicyFailureTellsUserToRevisePrompt(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		t.Setenv("AGNES_API_KEY", "agnes-test")
 		userID := seedOwnerControllerUser(t, "artist@example.com", false)
@@ -399,8 +399,18 @@ func TestAIImageProviderFailureLogsSanitizedSummary(t *testing.T) {
 
 			aiImageHandler(rr, req)
 
-			if rr.Code != http.StatusBadGateway {
-				t.Fatalf("expected 502, got %d body=%s", rr.Code, rr.Body.String())
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400, got %d body=%s", rr.Code, rr.Body.String())
+			}
+			payload := decodeOwnerJSONMap(t, rr)
+			if payload["error"] != "IMAGE_PROMPT_REJECTED" {
+				t.Fatalf("unexpected error %#v", payload["error"])
+			}
+			message, _ := payload["message"].(string)
+			if !strings.Contains(message, "提示词") ||
+				!strings.Contains(message, "拒绝") ||
+				!strings.Contains(message, "修改") {
+				t.Fatalf("expected actionable prompt rejection message, got %q", message)
 			}
 		})
 
