@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -320,6 +322,99 @@ func TestAgnesImageGeneratorPostsOpenAIImageRequest(t *testing.T) {
 	if result.Model != "agnes-image-2.1-flash" || result.Size != "1024*1024" {
 		t.Fatalf("unexpected result model/size %#v", result)
 	}
+}
+
+func TestAgnesImageGeneratorReturnsStructuredHTTPError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		writeJSON(w, map[string]any{
+			"error": map[string]any{
+				"code":    "content_policy_violation",
+				"message": "Request blocked by content policy.",
+			},
+			"prompt":        "SECRET_PROMPT_SHOULD_NOT_APPEAR",
+			"authorization": "Bearer SECRET_KEY_SHOULD_NOT_APPEAR",
+		})
+	}))
+	defer server.Close()
+
+	gen := agnesImageGenerator{
+		apiKey:  "agnes-test",
+		baseURL: server.URL,
+		model:   "agnes-image-2.1-flash",
+		http:    server.Client(),
+	}
+	_, err := gen.Generate(context.Background(), "SECRET_PROMPT_SHOULD_NOT_APPEAR", "1024*1024")
+	if err == nil {
+		t.Fatal("expected Agnes HTTP error")
+	}
+	var providerErr *aiImageProviderHTTPError
+	if !errors.As(err, &providerErr) {
+		t.Fatalf("expected structured provider error, got %T %v", err, err)
+	}
+	if providerErr.Provider != "agnes" || providerErr.StatusCode != http.StatusBadRequest {
+		t.Fatalf("unexpected provider/status: %#v", providerErr)
+	}
+	if providerErr.Code != "content_policy_violation" {
+		t.Fatalf("unexpected code %q", providerErr.Code)
+	}
+	if strings.Contains(err.Error(), "SECRET_PROMPT_SHOULD_NOT_APPEAR") ||
+		strings.Contains(err.Error(), "SECRET_KEY_SHOULD_NOT_APPEAR") {
+		t.Fatalf("provider error leaked request data: %q", err.Error())
+	}
+}
+
+func TestAIImageProviderFailureLogsSanitizedSummary(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		t.Setenv("AGNES_API_KEY", "agnes-test")
+		userID := seedOwnerControllerUser(t, "artist@example.com", false)
+		token := seedOwnerControllerSession(t, userID, false)
+		gen := &fakeAIImageGenerator{
+			err: &aiImageProviderHTTPError{
+				Provider:   "agnes",
+				StatusCode: http.StatusBadRequest,
+				Code:       "content_policy_violation",
+				Message:    "Request blocked by content policy.",
+			},
+		}
+		var logs bytes.Buffer
+		prevWriter := log.Writer()
+		prevFlags := log.Flags()
+		log.SetOutput(&logs)
+		log.SetFlags(0)
+		t.Cleanup(func() {
+			log.SetOutput(prevWriter)
+			log.SetFlags(prevFlags)
+		})
+
+		withAIImageGenerator(t, gen, func() {
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/api/ai/image",
+				bytes.NewBufferString(`{"prompt":"SECRET_PROMPT_SHOULD_NOT_APPEAR","size":"1024*1024"}`),
+			)
+			req.Header.Set("Content-Type", "application/json")
+			req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+			rr := httptest.NewRecorder()
+
+			aiImageHandler(rr, req)
+
+			if rr.Code != http.StatusBadGateway {
+				t.Fatalf("expected 502, got %d body=%s", rr.Code, rr.Body.String())
+			}
+		})
+
+		got := logs.String()
+		if !strings.Contains(got, "provider=agnes") ||
+			!strings.Contains(got, "status=400") ||
+			!strings.Contains(got, "code=content_policy_violation") {
+			t.Fatalf("missing structured provider log, got %q", got)
+		}
+		if strings.Contains(got, "SECRET_PROMPT_SHOULD_NOT_APPEAR") ||
+			strings.Contains(got, "agnes-test") {
+			t.Fatalf("provider log leaked sensitive data: %q", got)
+		}
+	})
 }
 
 func TestParseAgnesImageResponseRequiresURL(t *testing.T) {

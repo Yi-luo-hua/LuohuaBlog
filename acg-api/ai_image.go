@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -43,6 +44,25 @@ type aiImageProviderResult struct {
 	Size      string
 	Width     int
 	Height    int
+}
+
+type aiImageProviderHTTPError struct {
+	Provider   string
+	StatusCode int
+	Code       string
+	Message    string
+}
+
+func (e *aiImageProviderHTTPError) Error() string {
+	code := e.Code
+	if code == "" {
+		code = "upstream_error"
+	}
+	message := sanitizeProviderLogValue(e.Message, 180)
+	if message == "" {
+		message = "upstream request failed"
+	}
+	return fmt.Sprintf("%s http %d code=%s message=%s", e.Provider, e.StatusCode, code, message)
 }
 
 type dashScopeImageGenerator struct {
@@ -179,6 +199,7 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 
 	providerResult, err := generator.Generate(ctx, prompt, size)
 	if err != nil {
+		logAIImageProviderError(err)
 		rollbackQuota(db, id)
 		snap, _ = getQuotaSnapshot(db, id)
 		writeJSONStatus(w, http.StatusBadGateway, map[string]any{
@@ -385,7 +406,7 @@ func (g agnesImageGenerator) Generate(ctx context.Context, prompt, size string) 
 	defer res.Body.Close()
 	respBody, _ := io.ReadAll(res.Body)
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return aiImageProviderResult{}, fmt.Errorf("agnes http %d: %s", res.StatusCode, truncate(string(respBody), 240))
+		return aiImageProviderResult{}, newAIImageProviderHTTPError("agnes", res.StatusCode, respBody)
 	}
 
 	result, err := parseAgnesImageResponse(respBody)
@@ -409,6 +430,90 @@ func agnesImageEndpoint(baseURL string) string {
 
 func agnesImageRequestSize(size string) string {
 	return strings.ReplaceAll(strings.TrimSpace(size), "*", "x")
+}
+
+func newAIImageProviderHTTPError(provider string, statusCode int, body []byte) *aiImageProviderHTTPError {
+	code, message := aiImageProviderErrorSummary(body)
+	if code == "" {
+		code = "upstream_error"
+	}
+	if message == "" {
+		message = http.StatusText(statusCode)
+	}
+	if message == "" {
+		message = "upstream request failed"
+	}
+	return &aiImageProviderHTTPError{
+		Provider:   provider,
+		StatusCode: statusCode,
+		Code:       sanitizeProviderLogValue(code, 80),
+		Message:    sanitizeProviderLogValue(message, 180),
+	}
+}
+
+func aiImageProviderErrorSummary(body []byte) (string, string) {
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return "", "provider returned non-JSON error response"
+	}
+
+	code := ""
+	message := ""
+	if rawErr, ok := payload["error"]; ok {
+		switch errValue := rawErr.(type) {
+		case map[string]any:
+			code = firstJSONString(errValue, "code", "type", "error_code")
+			message = firstJSONString(errValue, "message", "msg", "detail", "error_description")
+		case string:
+			message = errValue
+		}
+	}
+	if code == "" {
+		code = firstJSONString(payload, "code", "type", "error_code")
+	}
+	if message == "" {
+		message = firstJSONString(payload, "message", "msg", "detail", "error_description")
+	}
+	if message == "" {
+		message = "provider returned error response without message"
+	}
+	return code, message
+}
+
+func firstJSONString(payload map[string]any, keys ...string) string {
+	for _, key := range keys {
+		if value, ok := payload[key]; ok {
+			if text, ok := value.(string); ok {
+				if text = strings.TrimSpace(text); text != "" {
+					return text
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func logAIImageProviderError(err error) {
+	var providerErr *aiImageProviderHTTPError
+	if errors.As(err, &providerErr) {
+		log.Printf(
+			"ai-image: provider error provider=%s status=%d code=%s message=%q",
+			sanitizeProviderLogValue(providerErr.Provider, 40),
+			providerErr.StatusCode,
+			sanitizeProviderLogValue(providerErr.Code, 80),
+			sanitizeProviderLogValue(providerErr.Message, 180),
+		)
+		return
+	}
+	log.Printf("ai-image: provider error message=%q", sanitizeProviderLogValue(err.Error(), 180))
+}
+
+func sanitizeProviderLogValue(value string, maxLen int) string {
+	value = strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
+	if value == "" {
+		return ""
+	}
+	return truncate(value, maxLen)
 }
 
 func (g dashScopeImageGenerator) Generate(ctx context.Context, prompt, size string) (aiImageProviderResult, error) {
@@ -455,7 +560,7 @@ func (g dashScopeImageGenerator) Generate(ctx context.Context, prompt, size stri
 	defer res.Body.Close()
 	respBody, _ := io.ReadAll(res.Body)
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return aiImageProviderResult{}, fmt.Errorf("dashscope http %d: %s", res.StatusCode, truncate(string(respBody), 240))
+		return aiImageProviderResult{}, newAIImageProviderHTTPError("dashscope", res.StatusCode, respBody)
 	}
 
 	result, err := parseDashScopeImageResponse(respBody)
