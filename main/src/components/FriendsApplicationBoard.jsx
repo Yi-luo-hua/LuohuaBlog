@@ -10,6 +10,8 @@ import {
   postGuestbookMessage,
   postGuestbookReply,
 } from "../services/guestbookMessagesApi";
+import EmojiPicker from "./EmojiPicker";
+import { appendEmojiToText } from "./emojiInput.js";
 import { buildFriendsApplicationPayload } from "./friendsApplicationContactForm";
 import {
   appendReplyToFriendsThreads,
@@ -19,6 +21,8 @@ import {
 } from "./friendsApplicationThreads";
 
 const FRIENDS_CHANNEL = "friends";
+const FRIEND_COMMENT_MAX_LENGTH = 500;
+const FRIEND_REPLY_MAX_LENGTH = 300;
 
 const FRIEND_COMMENT_PLACEHOLDER =
   "写下你的留言、站点介绍，或者想对桃之夭夭说的话...";
@@ -225,6 +229,23 @@ const FriendsApplicationBoard = () => {
     setNotice("回复已经贴在这条留言下面啦。");
   };
 
+  const onPickCommentEmoji = (emoji) => {
+    setContent((current) =>
+      appendEmojiToText(current, emoji, FRIEND_COMMENT_MAX_LENGTH),
+    );
+  };
+
+  const onPickReplyEmoji = (targetId, emoji) => {
+    setReplyDrafts((prev) => ({
+      ...prev,
+      [targetId]: appendEmojiToText(
+        prev[targetId] || "",
+        emoji,
+        FRIEND_REPLY_MAX_LENGTH,
+      ),
+    }));
+  };
+
   const displayName = nameFromUser(user);
 
   return (
@@ -304,7 +325,7 @@ const FriendsApplicationBoard = () => {
             <textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              maxLength={500}
+              maxLength={FRIEND_COMMENT_MAX_LENGTH}
               rows={4}
               required
               disabled={submitting}
@@ -313,7 +334,12 @@ const FriendsApplicationBoard = () => {
             />
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-[#8A7C74]">{content.length}/500</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <EmojiPicker disabled={submitting} onPick={onPickCommentEmoji} />
+                <p className="text-xs text-[#8A7C74]">
+                  {content.length}/{FRIEND_COMMENT_MAX_LENGTH}
+                </p>
+              </div>
               <button
                 type="submit"
                 disabled={submitting}
@@ -434,12 +460,20 @@ const FriendsApplicationBoard = () => {
                               [item.id]: event.target.value,
                             }))
                           }
-                          maxLength={300}
+                          maxLength={FRIEND_REPLY_MAX_LENGTH}
                           rows={3}
                           placeholder="在这条申请下面回复..."
                           className="w-full resize-y rounded-2xl border border-[#D8E9F8] bg-white/70 px-4 py-3 text-sm leading-7 text-[#2B2B2B] outline-none transition focus:border-[#74C0FC]"
                         />
-                        <div className="mt-3 flex flex-wrap gap-3">
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <EmojiPicker
+                            disabled={replySubmittingId === item.id}
+                            onPick={(emoji) => onPickReplyEmoji(item.id, emoji)}
+                          />
+                          <p className="text-xs text-[#8A7C74]">
+                            {(replyDrafts[item.id] || "").length}/
+                            {FRIEND_REPLY_MAX_LENGTH}
+                          </p>
                           <button
                             type="button"
                             onClick={() => onReplySubmit(item.id)}
@@ -535,12 +569,22 @@ const FriendsApplicationBoard = () => {
                                         [reply.id]: event.target.value,
                                       }))
                                     }
-                                    maxLength={300}
+                                    maxLength={FRIEND_REPLY_MAX_LENGTH}
                                     rows={3}
                                     placeholder="接着这条回复往下说..."
                                     className="w-full resize-y rounded-2xl border border-[#D8E9F8] bg-white/70 px-4 py-3 text-sm leading-7 text-[#2B2B2B] outline-none transition focus:border-[#74C0FC]"
                                   />
-                                  <div className="mt-3 flex flex-wrap gap-3">
+                                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                                    <EmojiPicker
+                                      disabled={replySubmittingId === reply.id}
+                                      onPick={(emoji) =>
+                                        onPickReplyEmoji(reply.id, emoji)
+                                      }
+                                    />
+                                    <p className="text-xs text-[#8A7C74]">
+                                      {(replyDrafts[reply.id] || "").length}/
+                                      {FRIEND_REPLY_MAX_LENGTH}
+                                    </p>
                                     <button
                                       type="button"
                                       onClick={() => onReplySubmit(reply.id)}

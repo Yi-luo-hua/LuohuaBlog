@@ -1,5 +1,7 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
+import EmojiPicker from "../components/EmojiPicker";
+import { appendEmojiToText } from "../components/emojiInput.js";
 import { flattenGuestbookThreads } from "../components/friendsApplicationThreads";
 import { asList } from "../lib/asList";
 import { authMe } from "../services/authApi";
@@ -11,6 +13,7 @@ import {
 } from "../services/guestbookMessagesApi";
 
 const GUESTBOOK_CHANNEL = "guestbook";
+const GUESTBOOK_MESSAGE_MAX_LENGTH = 300;
 
 const cardTone = (item) => {
   if (item.isAdminUser) return "admin";
@@ -115,6 +118,12 @@ const GuestbookPage = () => {
     }
   };
 
+  const onPickEmoji = (emoji) => {
+    setContent((current) =>
+      appendEmojiToText(current, emoji, GUESTBOOK_MESSAGE_MAX_LENGTH),
+    );
+  };
+
   const onHide = async (id) => {
     const { ok } = await hideGuestbookMessage(id);
     if (ok) setItems((prev) => prev.filter((x) => x.id !== id));
@@ -173,12 +182,18 @@ const GuestbookPage = () => {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            maxLength={300}
+            maxLength={GUESTBOOK_MESSAGE_MAX_LENGTH}
             rows={4}
             required
             placeholder="写点什么吧～"
             className="w-full resize-y rounded-xl border border-[#F2E6C9] bg-[#FFFBF5] px-4 py-3 text-base leading-relaxed text-[#2B2B2B] outline-none focus:border-[#FFD43B]"
           />
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <EmojiPicker onPick={onPickEmoji} />
+            <p className="text-xs font-semibold text-[#8A7C74]">
+              {content.length}/{GUESTBOOK_MESSAGE_MAX_LENGTH}
+            </p>
+          </div>
           <button
             type="submit"
             disabled={submitting}
