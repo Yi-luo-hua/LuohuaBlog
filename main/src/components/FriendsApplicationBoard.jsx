@@ -244,7 +244,7 @@ const FriendsApplicationBoard = () => {
           </p>
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6B7280]">
-          友链留言需要先用邮箱登录，再留下公开昵称和联系邮箱；邮箱仅用于回复通知，不会公开显示。想随便聊，可以前往
+          友链留言必须留下昵称和邮箱，邮箱仅用于回复通知，不会公开显示。想随便聊，可以前往
           <Link
             to="/guestbook"
             className="font-semibold text-[#4D8FC6] hover:text-[#FF8FAB]"
@@ -256,32 +256,14 @@ const FriendsApplicationBoard = () => {
       </div>
 
       <form onSubmit={onSubmit} className="mt-6">
-        {!user ? (
-          <div className="rounded-[22px] border border-dashed border-[#D8E9F8] bg-white/72 p-5 shadow-[0_16px_36px_rgba(95,75,82,0.08)] backdrop-blur">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-bold text-[#5F4B52]">
-                  请先用邮箱登录后再留言。
-                </p>
-                <p className="mt-1 text-sm leading-7 text-[#6B7280]">
-                  登录后提交的友链留言会绑定账号，后续回复通知也更稳。
-                </p>
-              </div>
-              <Link
-                to="/login"
-                className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-[#74C0FC] bg-white px-5 py-2 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(116,192,252,0.14)] transition hover:border-[#FF8FAB]"
-              >
-                去登录 / 注册
-              </Link>
-            </div>
-          </div>
-        ) : (
         <div>
           <div className="min-w-0 flex-1 rounded-[22px] border border-[#D8E9F8] bg-[linear-gradient(135deg,rgba(255,255,255,0.86),rgba(241,248,255,0.72))] p-4 shadow-[0_16px_36px_rgba(95,75,82,0.08)] backdrop-blur md:p-5">
             <div className="mb-4">
               <div className="mb-3 flex flex-col gap-3 rounded-[16px] border border-dashed border-[#D8E9F8] bg-white/65 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm leading-7 text-[#6B7280]">
-                  当前以 {displayName} 身份登录，友链留言仍需要填写公开昵称和私密邮箱。
+                  {user
+                    ? `当前以 ${displayName} 身份登录，友链留言仍需要填写公开昵称和私密邮箱。`
+                    : "不用登录账号也可以发友链，但必须填写公开昵称和邮箱；邮箱只用于收到回复通知。"}
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -350,7 +332,6 @@ const FriendsApplicationBoard = () => {
             {error && <p className="mt-3 text-sm text-[#E67700]">{error}</p>}
           </div>
         </div>
-        )}
       </form>
 
       <div className="mt-8 space-y-5">

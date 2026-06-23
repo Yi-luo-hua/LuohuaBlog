@@ -1,6 +1,5 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { flattenGuestbookThreads } from "../components/friendsApplicationThreads";
 import { asList } from "../lib/asList";
 import { authMe } from "../services/authApi";
@@ -33,6 +32,7 @@ const GuestbookPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [nickname, setNickname] = useState("");
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState("");
@@ -87,14 +87,12 @@ const GuestbookPage = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!user) {
-      setError("请先用邮箱登录后再留言。");
-      return;
-    }
     setSubmitting(true);
     setNotice("");
     setError("");
-    const payload = { content: content.trim() };
+    const payload = user
+      ? { content: content.trim() }
+      : { nickname: nickname.trim(), content: content.trim() };
     const { ok, data } = await postGuestbookMessage(payload, {
       channel: GUESTBOOK_CHANNEL,
     });
@@ -150,47 +148,44 @@ const GuestbookPage = () => {
           onSubmit={onSubmit}
           className="mt-8 rounded-[20px] border border-[#F2E6C9] bg-white p-5 shadow-[0_12px_30px_rgba(255,143,171,0.12)] md:p-6"
         >
-          {!user ? (
-            <div className="rounded-2xl border border-dashed border-[#F2E6C9] bg-[#FFFBF5] p-4">
-              <p className="text-sm font-semibold text-[#2B2B2B]">
-                请先用邮箱登录后再留言。
-              </p>
-              <p className="mt-1 text-sm leading-7 text-[#6B7280]">
-                登录后留言会绑定你的账号，站长回复时也更容易追踪。
-              </p>
-              <Link
-                to="/login"
-                className="mt-3 inline-flex min-h-[40px] items-center justify-center rounded-full border border-[#FFD43B] bg-white px-5 py-2 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(255,212,59,0.18)] transition hover:border-[#FF8FAB]"
-              >
-                去登录 / 注册
-              </Link>
-            </div>
-          ) : (
-            <>
+          {user ? (
             <p className="mb-3 text-sm font-semibold text-[#74C0FC]">
               以 {displayName} 身份留言
             </p>
-            <label className="mb-1 block text-xs font-semibold text-[#6B7280]">
-              留言
-            </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              maxLength={300}
-              rows={4}
-              required
-              placeholder="写点什么吧～"
-              className="w-full resize-y rounded-xl border border-[#F2E6C9] bg-[#FFFBF5] px-4 py-3 text-base leading-relaxed text-[#2B2B2B] outline-none focus:border-[#FFD43B]"
-            />
-            <button
-              type="submit"
-              disabled={submitting}
-              className="mt-4 min-h-[44px] w-full rounded-full border-2 border-[#FFD43B] bg-gradient-to-r from-[#FFFDF5] to-[#FFF8E7] px-6 py-3 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(255,212,59,0.25)] transition hover:border-[#FF8FAB] hover:shadow-[0_10px_28px_rgba(255,143,171,0.2)] disabled:opacity-60 sm:w-auto"
-            >
-              {submitting ? "贴上中…" : "贴上小纸条"}
-            </button>
+          ) : (
+            <>
+              <label className="mb-1 block text-xs font-semibold text-[#6B7280]">
+                昵称
+              </label>
+              <input
+                type="text"
+                maxLength={12}
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="给自己取个名字吧"
+                className="mb-4 w-full rounded-xl border border-[#F2E6C9] bg-[#FFFBF5] px-4 py-3 text-base text-[#2B2B2B] outline-none focus:border-[#FFD43B]"
+              />
             </>
           )}
+          <label className="mb-1 block text-xs font-semibold text-[#6B7280]">
+            留言
+          </label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            maxLength={300}
+            rows={4}
+            required
+            placeholder="写点什么吧～"
+            className="w-full resize-y rounded-xl border border-[#F2E6C9] bg-[#FFFBF5] px-4 py-3 text-base leading-relaxed text-[#2B2B2B] outline-none focus:border-[#FFD43B]"
+          />
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-4 min-h-[44px] w-full rounded-full border-2 border-[#FFD43B] bg-gradient-to-r from-[#FFFDF5] to-[#FFF8E7] px-6 py-3 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(255,212,59,0.25)] transition hover:border-[#FF8FAB] hover:shadow-[0_10px_28px_rgba(255,143,171,0.2)] disabled:opacity-60 sm:w-auto"
+          >
+            {submitting ? "贴上中…" : "贴上小纸条"}
+          </button>
           {notice && (
             <p className="mt-3 text-sm font-semibold text-[#51CF66]">{notice}</p>
           )}

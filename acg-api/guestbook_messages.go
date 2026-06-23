@@ -300,10 +300,6 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 		writeGuestbookErr(w, http.StatusBadRequest, "INVALID_CHANNEL", "留言分区不正确")
 		return
 	}
-	if cu == nil {
-		writeGuestbookErr(w, http.StatusUnauthorized, "LOGIN_REQUIRED", "请先用邮箱登录后再留言。")
-		return
-	}
 	content := strings.TrimSpace(body.Content)
 	if guestbookLooksUnsafe(content) {
 		writeGuestbookErr(w, http.StatusBadRequest, "UNSAFE_CONTENT", "留言不能包含脚本、HTML 标签或可执行链接")

@@ -3,22 +3,32 @@ import assert from "node:assert/strict";
 
 import { buildFriendsApplicationPayload } from "./friendsApplicationContactForm.js";
 
-test("anonymous friends application requires email login", () => {
+test("visitor friends application requires nickname and contact email", () => {
+  assert.deepEqual(
+    buildFriendsApplicationPayload({
+      user: null,
+      nickname: "",
+      contactEmail: "visitor@example.com",
+      content: "hello",
+    }),
+    { ok: false, error: "请留下昵称。" },
+  );
+
+  assert.deepEqual(
+    buildFriendsApplicationPayload({
+      user: null,
+      nickname: "Visitor",
+      contactEmail: "",
+      content: "hello",
+    }),
+    { ok: false, error: "请留下邮箱，方便收到回复通知。" },
+  );
+});
+
+test("visitor friends application includes private contact email", () => {
 	assert.deepEqual(
 		buildFriendsApplicationPayload({
 			user: null,
-			nickname: "Visitor",
-			contactEmail: "visitor@example.com",
-			content: "hello",
-		}),
-		{ ok: false, error: "请先用邮箱登录后再留言。" },
-	);
-});
-
-test("logged-in friends application includes private contact email", () => {
-	assert.deepEqual(
-		buildFriendsApplicationPayload({
-			user: { email: "account@example.com" },
 			nickname: " Visitor ",
 			contactEmail: " Visitor@Example.COM ",
 			content: " hello friends ",

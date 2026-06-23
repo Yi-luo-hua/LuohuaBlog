@@ -157,7 +157,7 @@ func findMailTo(messages []outboundMail, to string) (outboundMail, bool) {
 	return outboundMail{}, false
 }
 
-func TestGuestbookCreateRequiresLogin(t *testing.T) {
+func TestGuestbookCreateAllowsVisitorTopLevelMessagesWithRequiredFields(t *testing.T) {
 	cases := []struct {
 		name string
 		body string
@@ -177,15 +177,16 @@ func TestGuestbookCreateRequiresLogin(t *testing.T) {
 			withGuestbookTestDB(t, func() {
 				rr := postGuestbookMessageWithSession(t, tc.body, "127.0.0.1:3456", "")
 
-				if rr.Code != http.StatusUnauthorized {
-					t.Fatalf("expected 401 for anonymous %s message, got %d body=%s", tc.name, rr.Code, rr.Body.String())
+				if rr.Code != http.StatusOK {
+					t.Fatalf("expected 200 for visitor %s message, got %d body=%s", tc.name, rr.Code, rr.Body.String())
 				}
 				payload := decodeJSONMap(t, rr)
-				if payload["error"] != "LOGIN_REQUIRED" {
-					t.Fatalf("expected LOGIN_REQUIRED, got %#v", payload["error"])
+				item := payload["item"].(map[string]any)
+				if item["isLoginUser"] != false {
+					t.Fatalf("expected visitor marker, got %#v", item["isLoginUser"])
 				}
-				if count := guestbookMessageCount(t); count != 0 {
-					t.Fatalf("anonymous message should not be stored, found %d rows", count)
+				if count := guestbookMessageCount(t); count != 1 {
+					t.Fatalf("visitor message should be stored once, found %d rows", count)
 				}
 			})
 		})
@@ -202,7 +203,7 @@ func TestGuestbookCreateTopLevelMessage(t *testing.T) {
 	})
 }
 
-func TestFriendsAnonymousTopLevelMessageRequiresLoginBeforeContactEmail(t *testing.T) {
+func TestFriendsVisitorTopLevelMessageRequiresContactEmail(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		rr := postGuestbookMessageWithSession(
 			t,
@@ -211,12 +212,39 @@ func TestFriendsAnonymousTopLevelMessageRequiresLoginBeforeContactEmail(t *testi
 			"",
 		)
 
-		if rr.Code != http.StatusUnauthorized {
-			t.Fatalf("expected 401 for anonymous friends message, got %d body=%s", rr.Code, rr.Body.String())
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400 for missing friends contact email, got %d body=%s", rr.Code, rr.Body.String())
 		}
 		payload := decodeJSONMap(t, rr)
-		if payload["error"] != "LOGIN_REQUIRED" {
-			t.Fatalf("expected LOGIN_REQUIRED, got %#v", payload["error"])
+		if payload["error"] != "INVALID_EMAIL" {
+			t.Fatalf("expected INVALID_EMAIL, got %#v", payload["error"])
+		}
+	})
+}
+
+func TestFriendsVisitorTopLevelMessageStoresPrivateContactEmail(t *testing.T) {
+	withGuestbookTestDB(t, func() {
+		rr := postGuestbookMessageWithSession(
+			t,
+			`{"nickname":"Friend","content":"friends root","channel":"friends","contactEmail":" Visitor@Example.COM "}`,
+			"127.0.0.1:3456",
+			"",
+		)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200 for visitor friends contact email, got %d body=%s", rr.Code, rr.Body.String())
+		}
+		item := decodeJSONMap(t, rr)["item"].(map[string]any)
+		id := int64(item["id"].(float64))
+
+		if stored := guestbookStoredContactEmail(t, id); stored != "visitor@example.com" {
+			t.Fatalf("expected normalized contact email, got %q", stored)
+		}
+		if item["isLoginUser"] != false {
+			t.Fatalf("expected visitor marker, got %#v", item["isLoginUser"])
+		}
+		if _, ok := item["contactEmail"]; ok {
+			t.Fatalf("public response leaked contactEmail: %#v", item)
 		}
 	})
 }

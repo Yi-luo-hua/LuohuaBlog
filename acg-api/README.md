@@ -71,18 +71,18 @@ POST /api/owner/moments
 
 ### 留言小纸条（`/api/guestbook/`）
 
-自研轻量留言板，复用 `acg_session` 登录态；所有创建留言都要求邮箱登录，站长（`is_owner`）可删/隐藏。
+自研轻量留言板，复用 `acg_session` 登录态；支持访客与登录用户留言，顶层友链留言必须填写联系邮箱，站长（`is_owner`）可删/隐藏。
 
 建表：启动时自动创建 `guestbook_messages`（见 `deploy/guestbook.sql`）。
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/api/guestbook/messages?page=1&pageSize=20` | 列表；普通用户仅 `visible`，管理员含 `hidden` |
-| POST | `/api/guestbook/messages` | 发布；需要先登录，普通留言提交 `{ content }`，顶层友链留言提交 `{ nickname, contactEmail, content }` |
+| POST | `/api/guestbook/messages` | 发布；普通留言访客提交 `{ nickname, content }`、登录用户提交 `{ content }`，顶层友链留言提交 `{ nickname, contactEmail, content }` |
 | DELETE | `/api/guestbook/messages/:id` | 软删除（`deleted`），仅 admin |
 | PATCH | `/api/guestbook/messages/:id/status` 或 `/:id` | `{ "status": "hidden" }`，仅 admin |
 
-限流：登录 10/小时、30/天；60 秒内同内容防重复。429 返回 `RATE_LIMITED`。
+限流：访客 3/小时、10/天；登录 10/小时、30/天；60 秒内同内容防重复。429 返回 `RATE_LIMITED`。
 
 IP：仅存 `ip_hash`、`ip_masked`；公开展示 `ipRegion`（依赖 `ip-api.com`，失败时为「未知地区」）。
 
