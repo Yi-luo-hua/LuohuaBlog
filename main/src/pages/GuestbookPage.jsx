@@ -155,7 +155,7 @@ const GuestbookPage = () => {
 
         <form
           onSubmit={onSubmit}
-          className="mt-8 rounded-[20px] border border-[#F2E6C9] bg-white p-5 shadow-[0_12px_30px_rgba(255,143,171,0.12)] md:p-6"
+          className="relative z-20 mt-8 rounded-[20px] border border-[#F2E6C9] bg-white p-5 shadow-[0_12px_30px_rgba(255,143,171,0.12)] md:p-6"
         >
           {user ? (
             <p className="mb-3 text-sm font-semibold text-[#74C0FC]">
@@ -188,19 +188,21 @@ const GuestbookPage = () => {
             placeholder="写点什么吧～"
             className="w-full resize-y rounded-xl border border-[#F2E6C9] bg-[#FFFBF5] px-4 py-3 text-base leading-relaxed text-[#2B2B2B] outline-none focus:border-[#FFD43B]"
           />
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <EmojiPicker onPick={onPickEmoji} />
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold text-[#8A7C74]">
               {content.length}/{GUESTBOOK_MESSAGE_MAX_LENGTH}
             </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <EmojiPicker onPick={onPickEmoji} />
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full border-2 border-[#FFD43B] bg-gradient-to-r from-[#FFFDF5] to-[#FFF8E7] px-6 py-3 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(255,212,59,0.25)] transition hover:border-[#FF8FAB] hover:shadow-[0_10px_28px_rgba(255,143,171,0.2)] disabled:opacity-60 sm:flex-none"
+              >
+                {submitting ? "贴上中…" : "贴上小纸条"}
+              </button>
+            </div>
           </div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-4 min-h-[44px] w-full rounded-full border-2 border-[#FFD43B] bg-gradient-to-r from-[#FFFDF5] to-[#FFF8E7] px-6 py-3 text-sm font-bold text-[#2B2B2B] shadow-[0_8px_24px_rgba(255,212,59,0.25)] transition hover:border-[#FF8FAB] hover:shadow-[0_10px_28px_rgba(255,143,171,0.2)] disabled:opacity-60 sm:w-auto"
-          >
-            {submitting ? "贴上中…" : "贴上小纸条"}
-          </button>
           {notice && (
             <p className="mt-3 text-sm font-semibold text-[#51CF66]">{notice}</p>
           )}

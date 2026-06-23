@@ -276,7 +276,7 @@ const FriendsApplicationBoard = () => {
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="mt-6">
+      <form onSubmit={onSubmit} className="relative z-20 mt-6">
         <div>
           <div className="min-w-0 flex-1 rounded-[22px] border border-[#D8E9F8] bg-[linear-gradient(135deg,rgba(255,255,255,0.86),rgba(241,248,255,0.72))] p-4 shadow-[0_16px_36px_rgba(95,75,82,0.08)] backdrop-blur md:p-5">
             <div className="mb-4">
@@ -334,20 +334,20 @@ const FriendsApplicationBoard = () => {
             />
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-[#8A7C74]">
+                {content.length}/{FRIEND_COMMENT_MAX_LENGTH}
+              </p>
               <div className="flex flex-wrap items-center gap-3">
                 <EmojiPicker disabled={submitting} onPick={onPickCommentEmoji} />
-                <p className="text-xs text-[#8A7C74]">
-                  {content.length}/{FRIEND_COMMENT_MAX_LENGTH}
-                </p>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-full border border-[#74C0FC] bg-[#74C0FC] px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(116,192,252,0.28)] transition hover:border-[#FF8FAB] hover:bg-[#FF8FAB] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FiSend className="h-4 w-4" aria-hidden />
+                  {submitting ? "提交中..." : "评论"}
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-full border border-[#74C0FC] bg-[#74C0FC] px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(116,192,252,0.28)] transition hover:border-[#FF8FAB] hover:bg-[#FF8FAB] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <FiSend className="h-4 w-4" aria-hidden />
-                {submitting ? "提交中..." : "评论"}
-              </button>
             </div>
 
             {notice && (
