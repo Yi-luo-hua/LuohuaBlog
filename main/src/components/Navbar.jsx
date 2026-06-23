@@ -8,9 +8,9 @@ import { cosAsset } from "../lib/cosAsset.js";
 
 const navLinks = [
   { label: "HOME", to: "/", end: true },
-  { label: "Gallery", to: "/gallery", end: true },
+  { label: "相册集", to: "/gallery", end: true },
   { label: "碎语", to: "/moments", end: true },
-  { label: "Bili Hub", to: "/bili", end: true },
+  { label: "哔哩BILI", to: "/bili", end: true },
   { label: "数据中心", to: "/ai-traffic", end: true },
   { label: "Friends", to: "/friends", end: true },
 ];

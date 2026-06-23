@@ -20,7 +20,7 @@ const GalleryPage = () => (
           <span className="block text-[#ff8fab]">Gallery</span>
         </h1>
         <p className="max-w-xl text-base leading-relaxed text-[#5f4b52]">
-          原本分散在 blog 与 build 的相册，现在统一收进主站导航。这里作为整站唯一的视觉档案入口，旧相册入口会回到这里。
+          一处安静的视觉档案。把喜欢的画面，分门别类地收进相册里，留作日后慢慢翻阅。
         </p>
       </div>
     </header>
