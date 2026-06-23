@@ -4,7 +4,11 @@ export function normalizeContactEmail(value = "") {
   return value.trim().toLowerCase();
 }
 
-export function buildFriendsApplicationPayload({ nickname, contactEmail, content }) {
+export function buildFriendsApplicationPayload({ user, nickname, contactEmail, content }) {
+  if (!user) {
+    return { ok: false, error: "请先用邮箱登录后再留言。" };
+  }
+
   const body = content.trim();
   const email = normalizeContactEmail(contactEmail);
   const name = nickname.trim();

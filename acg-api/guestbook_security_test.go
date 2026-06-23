@@ -52,14 +52,16 @@ func TestGuestbookCreateRejectsUnsafePayloads(t *testing.T) {
 		},
 		{
 			name: "svg event handler in nickname",
-			body: `{"nickname":"<svg/onload=alert(1)>","content":"hello","channel":"guestbook"}`,
+			body: `{"nickname":"<svg/onload=alert(1)>","content":"hello","channel":"friends","contactEmail":"friend@example.com"}`,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			withGuestbookTestDB(t, func() {
-				rr := postGuestbookMessageWithSession(t, tc.body, "127.0.0.1:3456", "")
+				userID := seedGuestbookTestUser(t, "safe@example.com", "SafeUser", false)
+				sessionToken := seedGuestbookTestSession(t, userID, false)
+				rr := postGuestbookMessageWithSession(t, tc.body, "127.0.0.1:3456", sessionToken)
 
 				if rr.Code != http.StatusBadRequest {
 					t.Fatalf("expected 400 for unsafe payload, got %d body=%s", rr.Code, rr.Body.String())

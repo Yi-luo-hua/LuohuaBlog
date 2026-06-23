@@ -103,7 +103,7 @@
 | `chat.go`, `chat_quota.go`, `chat_stats.go`, `deepseek_client.go`, `ai_fixed_answers.go` | `GET/POST /api/chat`, `GET /api/chat/stats` | 公开/登录/站长额度 | AI 助手额度查询、固定答案匹配、聊天请求、DeepSeek 转发、小时/日统计、游客/用户/站长额度控制。 |
 | `ai_image.go`, `ai_image_gallery.go` | `GET/POST /api/ai/image`, `GET /api/ai/image/gallery` | 生图需登录/站长额度；广场公开 | 生图额度状态、Agnes AI 生图、临时图下载、腾讯 COS 上传、生成历史记录，以及公开生成图广场 feed，包含提示词、图片 URL、作者展示名、尺寸和生成时间。 |
 | `server_info.go` | `GET /api/server/info` | 公开安全遥测 | 数据中心页面使用的非敏感服务器状态，包括在线状态、云厂商/区域标签、CPU 占用、内存使用、运行时长、运行时信息、CPU 核心数、goroutine 数和服务端时间；刻意不暴露 IP、主机名、磁盘路径、进程列表或环境变量。 |
-| `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go`, `mail_notifier.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | 公开可见留言；站长/管理员可审核 | 当前留言板和朋友页留言控制器，支持分区、连续回复、匿名/登录用户、友链联系邮箱必填、UTF-8 邮件通知、限流、防重复、IP 脱敏和软审核。 |
+| `guestbook_messages.go`, `guestbook_user.go`, `guestbook_ip.go`, `mail_notifier.go` | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id`, `PATCH /api/guestbook/messages/:id/status` | 公开可见留言；登录后才能发布；站长/管理员可审核 | 当前留言板和朋友页留言控制器，支持分区、连续回复、邮箱登录后发布、友链联系邮箱必填、UTF-8 邮件通知、限流、防重复、IP 脱敏和软审核。 |
 | `owner_controller.go` | `GET /api/owner/status`, `GET /api/owner/emails`, `GET/POST /api/owner/drafts`, `POST /api/owner/ai/fixed-answers`, `PATCH /api/owner/notifications/:id/read`, `POST /api/owner/uploads`, `GET /api/owner/uploads/:name`, `POST /api/owner/assets` | 仅站长 | 站长控制台状态、注册用户列表、未读留言收件箱、仅站长可见邮箱目录、AI 固定答案保存、草稿保存、本地临时图片上传、COS 资源上传。 |
 | `owner_publish.go` | `POST /api/owner/publish` | 站长 + GitHub token | 通过 GitHub Contents API 发布 Markdown 到 `blog/source/_posts/`，合并 front matter，处理文件名冲突，并返回 commit 信息。 |
 | `owner_friend_publish.go` | `POST /api/owner/friends` | 站长 + GitHub token | 写入友链到 `main/src/data/friendCards.js`，会检测重复 URL，已有链接不会重复写入。 |
@@ -119,7 +119,7 @@
 | `POST /api/auth/login` | `{ "email": "...", "password": "..." }` | 站长登录会返回 `challengeToken`，还需要调用 `/api/auth/verify-security`。 |
 | `POST /api/auth/verify-security` | `{ "challengeToken": "...", "answer": "..." }` | 私密答案匹配后创建站长会话，并获得无限 AI 额度。 |
 | `GET /api/guestbook/messages?page=1&pageSize=20&channel=guestbook` | `channel` 可为 `guestbook` 或 `friends` | 普通访问者只看可见留言；站长/管理员可看隐藏留言。 |
-| `POST /api/guestbook/messages` | `{ "nickname": "...", "contactEmail": "...", "content": "...", "parentId": 0, "channel": "guestbook" }` | 普通留言墙不强制 `contactEmail`。顶层 `friends` 友链留言不管匿名或登录，都必须提供 `nickname` 和 `contactEmail`；公开响应不会暴露 `contactEmail`。回复会忽略提交的 `contactEmail`，并在可用时通知父留言联系人或账号邮箱。 |
+| `POST /api/guestbook/messages` | `{ "nickname": "...", "contactEmail": "...", "content": "...", "parentId": 0, "channel": "guestbook" }` | 必须先有邮箱登录态 `acg_session`，匿名请求会返回 `401 LOGIN_REQUIRED`。普通留言墙只需要 `content`。顶层 `friends` 友链留言需要提供 `nickname` 和 `contactEmail`；公开响应不会暴露 `contactEmail`。回复会忽略提交的 `contactEmail`，并在可用时通知父留言联系人或账号邮箱。 |
 | `PATCH /api/guestbook/messages/:id` | `{ "status": "visible" \| "hidden" \| "deleted" }` | 仅站长/管理员审核。 |
 | `GET /api/owner/emails` | 无请求体 | 仅站长可访问，返回注册用户邮箱和私有留言联系邮箱目录。 |
 | `GET /api/ai/image` | 无请求体 | 返回生图额度、`imageEnabled`、`canGenerate`、当前模型和 `promptExtend: false`。 |

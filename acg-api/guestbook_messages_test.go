@@ -48,11 +48,17 @@ func decodeJSONMap(t *testing.T, rr *httptest.ResponseRecorder) map[string]any {
 
 func seedGuestbookMessage(t *testing.T, body string, remoteAddr string) map[string]any {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, "/api/guestbook/messages", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.RemoteAddr = remoteAddr
-	rr := httptest.NewRecorder()
-	guestbookCreateHandler(rr, req)
+	var parsed struct {
+		Nickname string `json:"nickname"`
+	}
+	_ = json.Unmarshal([]byte(body), &parsed)
+	displayName := strings.TrimSpace(parsed.Nickname)
+	if displayName == "" {
+		displayName = "Seed"
+	}
+	userID := seedGuestbookTestUser(t, "seed-"+uuid.NewString()+"@example.com", displayName, false)
+	sessionToken := seedGuestbookTestSession(t, userID, false)
+	rr := postGuestbookMessageWithSession(t, body, remoteAddr, sessionToken)
 	if rr.Code != http.StatusOK {
 		t.Fatalf("seed create failed: %d %s", rr.Code, rr.Body.String())
 	}
@@ -151,6 +157,41 @@ func findMailTo(messages []outboundMail, to string) (outboundMail, bool) {
 	return outboundMail{}, false
 }
 
+func TestGuestbookCreateRequiresLogin(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+	}{
+		{
+			name: "guestbook",
+			body: `{"nickname":"Visitor","content":"plain guestbook","channel":"guestbook"}`,
+		},
+		{
+			name: "friends",
+			body: `{"nickname":"Friend","content":"friends root","channel":"friends","contactEmail":"visitor@example.com"}`,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			withGuestbookTestDB(t, func() {
+				rr := postGuestbookMessageWithSession(t, tc.body, "127.0.0.1:3456", "")
+
+				if rr.Code != http.StatusUnauthorized {
+					t.Fatalf("expected 401 for anonymous %s message, got %d body=%s", tc.name, rr.Code, rr.Body.String())
+				}
+				payload := decodeJSONMap(t, rr)
+				if payload["error"] != "LOGIN_REQUIRED" {
+					t.Fatalf("expected LOGIN_REQUIRED, got %#v", payload["error"])
+				}
+				if count := guestbookMessageCount(t); count != 0 {
+					t.Fatalf("anonymous message should not be stored, found %d rows", count)
+				}
+			})
+		})
+	}
+}
+
 func TestGuestbookCreateTopLevelMessage(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		payload := seedGuestbookMessage(t, `{"nickname":"Tao","content":"站点名称：A\n站点链接：https://a.test"}`, "127.0.0.1:3456")
@@ -161,7 +202,7 @@ func TestGuestbookCreateTopLevelMessage(t *testing.T) {
 	})
 }
 
-func TestFriendsAnonymousTopLevelMessageRequiresContactEmail(t *testing.T) {
+func TestFriendsAnonymousTopLevelMessageRequiresLoginBeforeContactEmail(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		rr := postGuestbookMessageWithSession(
 			t,
@@ -170,17 +211,17 @@ func TestFriendsAnonymousTopLevelMessageRequiresContactEmail(t *testing.T) {
 			"",
 		)
 
-		if rr.Code != http.StatusBadRequest {
-			t.Fatalf("expected 400 for missing friends contact email, got %d body=%s", rr.Code, rr.Body.String())
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("expected 401 for anonymous friends message, got %d body=%s", rr.Code, rr.Body.String())
 		}
 		payload := decodeJSONMap(t, rr)
-		if payload["error"] != "INVALID_EMAIL" {
-			t.Fatalf("expected INVALID_EMAIL, got %#v", payload["error"])
+		if payload["error"] != "LOGIN_REQUIRED" {
+			t.Fatalf("expected LOGIN_REQUIRED, got %#v", payload["error"])
 		}
 	})
 }
 
-func TestFriendsAnonymousTopLevelMessageStoresPrivateContactEmail(t *testing.T) {
+func TestFriendsLoggedInTopLevelMessageStoresPrivateContactEmail(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		payload := seedGuestbookMessage(t, `{"nickname":"Friend","content":"friends root","channel":"friends","contactEmail":" Visitor@Example.COM "}`, "127.0.0.1:3456")
 		item := payload["item"].(map[string]any)
@@ -377,12 +418,14 @@ func TestGuestbookMailFailureDoesNotFailMessageCreation(t *testing.T) {
 		t.Setenv("MAIL_NOTIFY_TO", "owner-notify@example.com")
 		mailer := &capturingGuestbookMailer{err: errors.New("smtp unavailable")}
 		useGuestbookTestMailer(t, mailer)
+		userID := seedGuestbookTestUser(t, "guestbook@example.com", "Guestbook", false)
+		sessionToken := seedGuestbookTestSession(t, userID, false)
 
 		rr := postGuestbookMessageWithSession(
 			t,
 			`{"nickname":"Guestbook","content":"mail can fail","channel":"guestbook"}`,
 			"127.0.0.1:3456",
-			"",
+			sessionToken,
 		)
 
 		if rr.Code != http.StatusOK {
@@ -429,6 +472,8 @@ func TestGuestbookRejectsReplyAcrossChannels(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		first := seedGuestbookMessage(t, `{"nickname":"Friend","content":"friends root","channel":"friends","contactEmail":"friend@example.com"}`, "127.0.0.1:3456")
 		parentID := int(first["item"].(map[string]any)["id"].(float64))
+		userID := seedGuestbookTestUser(t, "reply@example.com", "Reply", false)
+		sessionToken := seedGuestbookTestSession(t, userID, false)
 
 		req := httptest.NewRequest(
 			http.MethodPost,
@@ -437,6 +482,7 @@ func TestGuestbookRejectsReplyAcrossChannels(t *testing.T) {
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.RemoteAddr = "127.0.0.1:4567"
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionToken})
 		rr := httptest.NewRecorder()
 
 		guestbookCreateHandler(rr, req)
@@ -463,6 +509,8 @@ func TestGuestbookCreateReplyWithParentID(t *testing.T) {
 
 func TestGuestbookRejectsReplyToMissingParent(t *testing.T) {
 	withGuestbookTestDB(t, func() {
+		userID := seedGuestbookTestUser(t, "reply@example.com", "Reply", false)
+		sessionToken := seedGuestbookTestSession(t, userID, false)
 		req := httptest.NewRequest(
 			http.MethodPost,
 			"/api/guestbook/messages",
@@ -470,6 +518,7 @@ func TestGuestbookRejectsReplyToMissingParent(t *testing.T) {
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.RemoteAddr = "127.0.0.1:5678"
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: sessionToken})
 		rr := httptest.NewRecorder()
 
 		guestbookCreateHandler(rr, req)
