@@ -37,6 +37,8 @@ I have made many original and site-specific changes around my own personal websi
 - A visual postcard-style scrolling About section.
 - A gallery layout and archive-book page-flipping interaction for the Features section.
 - Custom routing and integrations for Blog, Build Log, Bili Hub, AI assistant, guestbook, friends, gallery, and the `/moments` Moments page.
+- A first-class `/about` page that integrates the About preview into the main React site, uses Tencent COS-hosted images, and presents project, game, and tool cards as part of the personal-site identity.
+- A deployed project showcase for AI QuizCard, including `/showcase/quizcard.html` and a visitor-playable static app under `/web/` with seed decks for direct practice.
 - Backend APIs for comments, mail notifications, AI context, AI image generation, Bili data caching, owner-only publishing, friend links, gallery images, and Moments updates.
 - Engineering configuration for my own domain, UCloud server, and GitHub Actions deployment.
 
@@ -70,11 +72,15 @@ The `build/` page is a build-log subsite created with the help of **vibecoding**
 
 This page is an original/customized page created during my personal learning and practice process. You are welcome to freely reference, study, and use it.
 
-Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, the homepage/page-level double-scroll fix, the AI fixed-answer sync from the owner console into the public site assistant, UTF-8-safe mail notifications, friend-page contact-email collection, threaded friend replies, owner-only email visibility, data-center server status monitoring, and AI image generation saved to Tencent COS.
+Recent build-log updates also record the migrated `/moments` page, the owner-console publishing flow for short Moments, the Leyili Garden friend-link correction, the homepage/page-level double-scroll fix, the AI fixed-answer sync from the owner console into the public site assistant, UTF-8-safe mail notifications, friend-page contact-email collection, threaded friend replies, owner-only email visibility, data-center server status monitoring, AI image generation saved to Tencent COS, and the newly deployed `/about` page with the AI QuizCard project showcase.
 
 ### `main/` Main Site Notes
 
 The main site now includes a first-class `/moments` page named `碎语`. It is reachable from the top navigation and renders short notes from `main/src/data/moments.js` with varied holographic card modules such as postcard, ticket, watercolor, poem, journal, and ribbon.
+
+The main site also includes a first-class `/about` page named `关于我`. It loads the production-safe About preview inside the React site through a scoped Shadow DOM wrapper, removes preview-only text, references About images through Tencent COS URLs, keeps the project grid roomy across breakpoints, shows the regular game cards without a horizontal scrollbar, and runs the tool marquee continuously without blank gaps.
+
+The first About project is AI QuizCard. The project card and `/about/projects/quizcard` both lead to `/showcase/quizcard.html`, which ships with its showcase assets, mini-program-style preview pages, and a visitor-playable static QuizCard app under `/web/`. The static visitor app includes seed decks so visitors can practice immediately without backend data, while the report page keeps its summary card non-overlapping on narrow screens and sticky only on wider layouts.
 
 The latest cleanup also corrected the friend link for `https://930309.xyz/` to `Leyili 花园`, using `https://photo.930309.xyz/lcj.svg` and the description `小小后花园~~~`. The separate `090909.top` friend link remains `他说`.
 
@@ -159,6 +165,8 @@ If you find any problem while reading, using, or deploying this project, or if y
 
 - Server history and alerts: keep trend records for CPU, memory, error rate, and sync duration on top of the current live status panel.
 - Generated-image showcase page: turn generated COS images into a browsable, reusable, and manageable site gallery.
+- Project showcase expansion: keep filling the About page project grid with real project pages, screenshots, experience links, and version notes.
+- AI QuizCard import flow: make user content import, parsing, saving, and practice setup smoother after the seed-deck visitor flow.
 - Artistic lettering homepage: explore a more recognizable homepage title/typographic art direction for the main visual identity.
 
 ## Non-Commercial Position
