@@ -61,6 +61,14 @@ test("service worker leaves live API traffic online-first", async () => {
   assert.match(workerSource, /return;/);
 });
 
+test("service worker does not stale-cache deployed showcase pages", async () => {
+  const workerPath = resolve(publicDir, "sw.js");
+  const workerSource = await readFile(workerPath, "utf8");
+
+  assert.match(workerSource, /url\.pathname\.startsWith\("\/showcase\/"\)/);
+  assert.match(workerSource, /url\.pathname\.startsWith\("\/web\/"\)/);
+});
+
 test("service worker uses the app console as the install shell", async () => {
   const workerPath = resolve(publicDir, "sw.js");
   const workerSource = await readFile(workerPath, "utf8");

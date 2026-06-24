@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -32,14 +32,26 @@ test("keeps the about preview production-safe", () => {
   assert.doesNotMatch(aboutPreviewSource, /预览专用|Preview only/i);
   assert.doesNotMatch(aboutPreviewSource, /taozhiyy\.top\/cos/);
   assert.match(aboutPreviewSource, /tzyy-1330068502\.cos\.ap-beijing\.myqcloud\.com/);
+  assert.match(aboutPreviewSource, /href="\/showcase\/quizcard\.html"/);
+  assert.doesNotMatch(aboutPreviewSource, /\/about\/projects\/quizcard/);
 });
 
-test("keeps the about project page off local preview links", () => {
+test("keeps the quizcard project page on the deployed showcase page", () => {
   const projectPageSource = readSource("pages/AboutProjectPage.jsx");
 
-  assert.doesNotMatch(projectPageSource, /127\.0\.0\.1|localhost|localPreview|本地预览/i);
-  assert.doesNotMatch(projectPageSource, /taozhiyy\.top\/cos/);
-  assert.match(projectPageSource, /tzyy-1330068502\.cos\.ap-beijing\.myqcloud\.com/);
+  assert.match(projectPageSource, /showcase\/quizcard\.html/);
+  assert.doesNotMatch(projectPageSource, /Project Notes|回到项目集|localPreview|127\.0\.0\.1|localhost/i);
+});
+
+test("ships the quizcard showcase page and its local assets", () => {
+  const showcasePath = "../public/showcase/quizcard.html";
+  assert.equal(existsSync(resolve(sourceRoot, showcasePath)), true);
+
+  const showcaseSource = readSource(showcasePath);
+  assert.match(showcaseSource, /assets\/showcase\.css/);
+  assert.match(showcaseSource, /assets\/showcase\.js/);
+  assert.match(showcaseSource, /mp-pages\/login\.html/);
+  assert.match(showcaseSource, /\.\.\/web\/index\.html/);
 });
 
 test("names the moments page 碎语", () => {
