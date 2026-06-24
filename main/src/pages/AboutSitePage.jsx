@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { rewriteAboutPreviewAssets } from "./aboutPreviewAssets.js";
+
 const ABOUT_PREVIEW_URL = "/about-preview.html";
 
 const extractBetween = (source, startPattern, endPattern) => {
@@ -31,11 +33,11 @@ const prepareMarkup = (html) => {
     "",
   );
 
-  return `
+  return rewriteAboutPreviewAssets(`
     ${headLinks.join("\n")}
     <style>${scopePreviewCSS(style)}</style>
     <div class="about-shadow-shell">${body}</div>
-  `;
+  `);
 };
 
 const sameTextGroup = (left, right) =>

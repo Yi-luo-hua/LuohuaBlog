@@ -35,6 +35,11 @@ export default defineConfig({
         target: "http://127.0.0.1:8787",
         changeOrigin: true,
       },
+      "/cos": {
+        target: "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/cos/, ""),
+      },
     },
   },
 })

@@ -30,8 +30,8 @@ test("keeps the about preview production-safe", () => {
   const aboutPreviewSource = readSource("../public/about-preview.html");
 
   assert.doesNotMatch(aboutPreviewSource, /预览专用|Preview only/i);
-  assert.doesNotMatch(aboutPreviewSource, /taozhiyy\.top\/cos/);
-  assert.match(aboutPreviewSource, /tzyy-1330068502\.cos\.ap-beijing\.myqcloud\.com/);
+  assert.doesNotMatch(aboutPreviewSource, /cos\.ap-beijing\.myqcloud\.com/);
+  assert.match(aboutPreviewSource, /\/cos\/about-page\/20260624\//);
   assert.match(aboutPreviewSource, /href="\/showcase\/quizcard\.html"/);
   assert.doesNotMatch(aboutPreviewSource, /\/about\/projects\/quizcard/);
 });
