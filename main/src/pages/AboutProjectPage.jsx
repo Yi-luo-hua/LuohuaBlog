@@ -4,7 +4,7 @@ const projects = {
   quizcard: {
     title: "AI QuizCard",
     eyebrow: "About / Projects / 01",
-    cover: "https://taozhiyy.top/cos/about-page/20260624/project-cover-01-c1278fa4f0.svg",
+    cover: "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/about-page/20260624/project-cover-01-c1278fa4f0.svg",
     summary:
       "把题目粘进来，让 AI 识别、拆解、整理成可以复习的知识卡片。Deep 解析负责把脉络讲清楚，Quick 闪练负责把记忆重新点亮。",
     tags: ["Web", "小程序", "AI", "学习工具"],
@@ -13,7 +13,6 @@ const projects = {
       "双端同构：网页和微信小程序共享同一套产品逻辑。",
       "内容优先：把题目、解析、卡片和复习路径都放在主视线里。",
     ],
-    localPreview: "http://127.0.0.1:8765/showcase/quizcard.html",
   },
 };
 
@@ -52,16 +51,16 @@ const AboutProjectPage = () => {
         <div className="about-project-detail">
           <div>
             <p className="about-project-section-label">Project Notes</p>
-            <h2>目前先把核心信息收在这里。</h2>
+            <h2>这个项目详情已经作为本站子页面接入。</h2>
           </div>
           <ul>
             {project.points.map((point) => (
               <li key={point}>{point}</li>
             ))}
           </ul>
-          <a className="about-project-action" href={project.localPreview} target="_blank" rel="noopener noreferrer">
-            打开本地预览
-          </a>
+          <Link className="about-project-action" to="/about">
+            回到项目集
+          </Link>
         </div>
       </div>
     </section>

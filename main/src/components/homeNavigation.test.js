@@ -26,6 +26,22 @@ test("registers the about page and project child route", () => {
   assert.match(appSource, /path="about\/projects\/:projectId"/);
 });
 
+test("keeps the about preview production-safe", () => {
+  const aboutPreviewSource = readSource("../public/about-preview.html");
+
+  assert.doesNotMatch(aboutPreviewSource, /预览专用|Preview only/i);
+  assert.doesNotMatch(aboutPreviewSource, /taozhiyy\.top\/cos/);
+  assert.match(aboutPreviewSource, /tzyy-1330068502\.cos\.ap-beijing\.myqcloud\.com/);
+});
+
+test("keeps the about project page off local preview links", () => {
+  const projectPageSource = readSource("pages/AboutProjectPage.jsx");
+
+  assert.doesNotMatch(projectPageSource, /127\.0\.0\.1|localhost|localPreview|本地预览/i);
+  assert.doesNotMatch(projectPageSource, /taozhiyy\.top\/cos/);
+  assert.match(projectPageSource, /tzyy-1330068502\.cos\.ap-beijing\.myqcloud\.com/);
+});
+
 test("names the moments page 碎语", () => {
   const momentsPageSource = readSource("pages/MomentsPage.jsx");
 

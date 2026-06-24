@@ -26,12 +26,10 @@ const prepareMarkup = (html) => {
     .map((match) => match[0])
     .filter((tag) => /fonts\.googleapis|fonts\.gstatic|preconnect/i.test(tag));
   const style = extractBetween(html, /<style>/i, /<\/style>/i);
-  const body = extractBetween(html, /<body>/i, /<\/body>/i)
-    .replace(/<script\b[\s\S]*?<\/script>/gi, "")
-    .replace(
-      /href="http:\/\/127\.0\.0\.1:8765\/showcase\/quizcard\.html"\s+target="_blank"\s+rel="noopener"/g,
-      'href="/about/projects/quizcard"'
-    );
+  const body = extractBetween(html, /<body>/i, /<\/body>/i).replace(
+    /<script\b[\s\S]*?<\/script>/gi,
+    "",
+  );
 
   return `
     ${headLinks.join("\n")}
