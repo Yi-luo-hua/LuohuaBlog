@@ -54,6 +54,71 @@ test("ships the quizcard showcase page and its local assets", () => {
   assert.match(showcaseSource, /\.\.\/web\/index\.html/);
 });
 
+test("ships the quizcard visitor app with seed data and all required modules", () => {
+  const requiredWebFiles = [
+    "../public/web/index.html",
+    "../public/web/create.html",
+    "../public/web/history.html",
+    "../public/web/practice-setup.html",
+    "../public/web/practice.html",
+    "../public/web/report.html",
+    "../public/web/settings.html",
+    "../public/web/login.html",
+    "../public/web/assets/store.js",
+    "../public/web/assets/seed.js",
+    "../public/web/assets/shell.js",
+    "../public/web/assets/parser.js",
+    "../public/web/assets/auth.js",
+    "../public/web/assets/settings.js",
+    "../public/web/assets/style.css",
+  ];
+
+  for (const filePath of requiredWebFiles) {
+    assert.equal(existsSync(resolve(sourceRoot, filePath)), true, `${filePath} should be deployed`);
+  }
+
+  const storeSource = readSource("../public/web/assets/store.js");
+  const seedSource = readSource("../public/web/assets/seed.js");
+  const guestPages = [
+    "../public/web/index.html",
+    "../public/web/create.html",
+    "../public/web/history.html",
+    "../public/web/practice-setup.html",
+    "../public/web/practice.html",
+    "../public/web/report.html",
+    "../public/web/settings.html",
+  ];
+
+  assert.match(storeSource, /from ['"]\.\/seed\.js['"]/);
+  assert.match(storeSource, /ensureSeed/);
+  assert.match(seedSource, /export const SEED/);
+  for (const deckId of ["deck_seed_neuro", "deck_seed_vocab", "deck_seed_physics"]) {
+    assert.match(seedSource, new RegExp(deckId));
+  }
+
+  for (const pagePath of guestPages) {
+    const pageSource = readSource(pagePath);
+    assert.match(pageSource, /mountShell\([^;]*requireAuth:\s*false[^;]*\)/s);
+  }
+});
+
+test("keeps the about projects grid roomy in the integrated site", () => {
+  const aboutPreviewSource = readSource("../public/about-preview.html");
+
+  assert.match(aboutPreviewSource, /\.page\s*\{\s*max-width:\s*14[0-9]{2}px/);
+  assert.match(aboutPreviewSource, /@media \(min-width:\s*1024px\)\s*\{\s*\.projects\s*\{\s*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(aboutPreviewSource, /@media \(min-width:\s*14[0-9]{2}px\)\s*\{\s*\.projects\s*\{\s*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
+});
+
+test("keeps quizcard settings actions safe for visitors", () => {
+  const settingsSource = readSource("../public/web/settings.html");
+
+  assert.match(settingsSource, /const accountLabel = u \? u\.email : 'guest';/);
+  assert.match(settingsSource, /const accountId = u \? u\.id : 'guest';/);
+  assert.doesNotMatch(settingsSource, /quizcard-backup-\$\{u\.email\}/);
+  assert.doesNotMatch(settingsSource, /localStorage\.removeItem\('quizcard\.' \+ u\.id \+ '\.usage'\)/);
+});
+
 test("names the moments page 碎语", () => {
   const momentsPageSource = readSource("pages/MomentsPage.jsx");
 

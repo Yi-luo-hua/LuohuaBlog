@@ -56,7 +56,7 @@ body::after {
 }
 
 /* ============ 通用 ============ */
-.page { max-width: 1200px; margin: 0 auto; padding: 6rem 1.25rem 6rem; }
+.page { max-width: 1400px; margin: 0 auto; padding: 6rem 1.25rem 6rem; }
 @media (min-width: 768px) { .page { padding: 7rem 2.5rem 7rem; } }
 
 .kicker {
@@ -190,11 +190,12 @@ body::after {
 
 /* ============ 2. 项目展示集（编辑设计感版） ============ */
 .projects {
-  display: grid; gap: 1.1rem; grid-template-columns: 1fr;
+  display: grid; gap: 1.35rem; grid-template-columns: 1fr;
   perspective: 1400px;
 }
-@media (min-width: 700px) { .projects { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) { .projects { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 700px) { .projects { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .projects { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1440px) { .projects { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
 .project {
   position: relative; overflow: hidden;

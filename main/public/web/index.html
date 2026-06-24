@@ -99,7 +99,7 @@
 <script type="module">
 import { Store, fmtDate, fmtDateTime } from './assets/store.js';
 import { mountShell, toast } from './assets/shell.js';
-mountShell('library');
+mountShell('library', { requireAuth: false });
 
 const grid     = document.getElementById('deck-grid');
 const summary  = document.getElementById('summary');

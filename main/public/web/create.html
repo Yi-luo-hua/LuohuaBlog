@@ -268,7 +268,7 @@ C. PV = nRT
 import { Store, fmtDateTime } from './assets/store.js';
 import { parseCards } from './assets/parser.js';
 import { mountShell, toast, qs } from './assets/shell.js';
-mountShell('create');
+mountShell('create', { requireAuth: false });
 
 const editId = qs('deckId');
 

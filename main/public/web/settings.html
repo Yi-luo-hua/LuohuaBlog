@@ -225,10 +225,10 @@
   <section class="glass holo-edge section">
     <h3>数据</h3>
     <button class="btn btn-ghost" id="btn-export-all">导出全部数据</button>
-    <button class="btn btn-ghost" id="btn-reset" style="margin-left:8px;color:var(--error)">清空本账号数据</button>
+    <button class="btn btn-ghost" id="btn-reset" style="margin-left:8px;color:var(--error)">清空当前数据</button>
     <div class="info-banner" style="margin-top:14px">
       <b>导出</b>：把所有卡片集和练习历史下载成 JSON 备份。<br>
-      <b>清空</b>：删除本账号下所有卡片集、历史、AI 用量（账号本身保留）。
+      <b>清空</b>：删除当前访客/账号下所有卡片集、历史、AI 用量。
     </div>
   </section>
 </main>
@@ -238,7 +238,7 @@ import { Theme, Settings } from './assets/settings.js';
 import { Auth } from './assets/auth.js';
 import { Store } from './assets/store.js';
 import { mountShell, toast } from './assets/shell.js';
-mountShell('library');   // 不强制 active，沿用 library 的高亮
+mountShell('library', { requireAuth: false });   // 不强制 active，沿用 library 的高亮
 
 // ---- 主题 ----
 function renderTheme() {
@@ -332,6 +332,8 @@ renderUsage();
 
 // ---- 账号区 ----
 const u = Auth.currentUser();
+const accountLabel = u ? u.email : 'guest';
+const accountId = u ? u.id : 'guest';
 document.getElementById('user-box').innerHTML = u ? `
   <div style="display:flex;align-items:center;gap:14px">
     <div style="width:56px;height:56px;border-radius:50%;background:${u.avatar?.color||'#576065'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">
@@ -343,7 +345,16 @@ document.getElementById('user-box').innerHTML = u ? `
     </div>
     <button class="btn btn-ghost" id="btn-logout" style="color:var(--error)">退出登录</button>
   </div>
-` : '<p>未登录</p>';
+` : `
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="width:56px;height:56px;border-radius:50%;background:#576065;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">访</div>
+    <div style="flex:1;min-width:180px">
+      <div style="font-size:16px;font-weight:600">访客模式</div>
+      <div style="font-size:12px;color:var(--on-surface-variant);margin-top:2px">数据保存在当前浏览器本地。</div>
+    </div>
+    <a class="btn btn-ghost" href="login.html">登录 / 注册</a>
+  </div>
+`;
 
 document.getElementById('btn-logout')?.addEventListener('click', () => {
   if (!confirm('退出登录？数据不会删除，下次登录还在。')) return;
@@ -357,16 +368,16 @@ document.getElementById('btn-export-all').addEventListener('click', async () => 
   const blob = new Blob([txt], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `quizcard-backup-${u.email}-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `quizcard-backup-${accountLabel}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   toast('已导出', 'download_done');
 });
 
 document.getElementById('btn-reset').addEventListener('click', async () => {
-  if (!confirm(`⚠ 确定清空本账号 (${u.email}) 的全部卡片集、练习历史和 AI 用量？账号本身保留，但所有数据无法恢复。`)) return;
+  if (!confirm(`⚠ 确定清空当前数据空间 (${accountLabel}) 的全部卡片集、练习历史和 AI 用量？此操作无法恢复。`)) return;
   if (!confirm('再次确认：此操作不可恢复！')) return;
   await Store.resetAll();
-  localStorage.removeItem('quizcard.' + u.id + '.usage');
+  localStorage.removeItem('quizcard.' + accountId + '.usage');
   toast('已清空，刷新中…', 'delete');
   setTimeout(() => location.reload(), 600);
 });
