@@ -13,6 +13,19 @@ test("keeps the moments entry in the top navbar", () => {
   assert.match(navbarSource, /\{\s*label:\s*"碎语",\s*to:\s*"\/moments"/);
 });
 
+test("keeps the about entry in the top navbar", () => {
+  const navbarSource = readSource("components/Navbar.jsx");
+
+  assert.match(navbarSource, /\{\s*label:\s*"关于我",\s*to:\s*"\/about"/);
+});
+
+test("registers the about page and project child route", () => {
+  const appSource = readSource("App.jsx");
+
+  assert.match(appSource, /path="about"/);
+  assert.match(appSource, /path="about\/projects\/:projectId"/);
+});
+
 test("names the moments page 碎语", () => {
   const momentsPageSource = readSource("pages/MomentsPage.jsx");
 

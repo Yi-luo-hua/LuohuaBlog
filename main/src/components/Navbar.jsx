@@ -8,6 +8,7 @@ import { cosAsset } from "../lib/cosAsset.js";
 
 const navLinks = [
   { label: "HOME", to: "/", end: true },
+  { label: "关于我", to: "/about", end: true },
   { label: "相册集", to: "/gallery", end: true },
   { label: "碎语", to: "/moments", end: true },
   { label: "哔哩BILI", to: "/bili", end: true },
@@ -29,6 +30,7 @@ const getNavTheme = (pathname) => {
   if (pathname === "/guestbook" || pathname.startsWith("/guestbook/")) return "guestbook";
   if (pathname === "/gallery" || pathname.startsWith("/gallery/")) return "gallery";
   if (pathname === "/moments" || pathname.startsWith("/moments/")) return "moments";
+  if (pathname === "/about" || pathname.startsWith("/about/")) return "about";
   return "dark";
 };
 
@@ -62,6 +64,8 @@ const NavBar = () => {
     pathname === "/ai-gallery" || pathname.startsWith("/ai-gallery/");
   const isMomentsPage =
     pathname === "/moments" || pathname.startsWith("/moments/");
+  const isAboutPage =
+    pathname === "/about" || pathname.startsWith("/about/");
   const isSubPage =
     isBiliPage ||
     isAiTrafficPage ||
@@ -69,7 +73,8 @@ const NavBar = () => {
     isGuestbookPage ||
     isGalleryPage ||
     isAiGalleryPage ||
-    isMomentsPage;
+    isMomentsPage ||
+    isAboutPage;
   const navTheme = getNavTheme(pathname);
   const isLightNav = navTheme !== "dark";
 
@@ -144,7 +149,8 @@ const NavBar = () => {
         "floating-nav-friends",
         "floating-nav-guestbook",
         "floating-nav-gallery",
-        "floating-nav-moments"
+        "floating-nav-moments",
+        "floating-nav-about"
       );
     };
 
@@ -161,6 +167,8 @@ const NavBar = () => {
         navContainerRef.current.classList.add("floating-nav-gallery");
       } else if (navTheme === "moments") {
         navContainerRef.current.classList.add("floating-nav-moments");
+      } else if (navTheme === "about") {
+        navContainerRef.current.classList.add("floating-nav-about");
       } else {
         navContainerRef.current.classList.add("floating-nav");
       }
@@ -199,7 +207,8 @@ const NavBar = () => {
         (navTheme === "ai" ||
           navTheme === "guestbook" ||
           navTheme === "gallery" ||
-          navTheme === "moments"),
+          navTheme === "moments" ||
+          navTheme === "about"),
       "text-[#102A24]": active && navTheme === "friends",
       "text-yellow-300": active && navTheme === "dark",
     });
@@ -211,7 +220,8 @@ const NavBar = () => {
     (item.to === "/ai-traffic" && isAiTrafficPage) ||
     (item.to === "/friends" && isFriendsPage) ||
     (item.to === "/guestbook" && isGuestbookPage) ||
-    (item.to === "/moments" && isMomentsPage);
+    (item.to === "/moments" && isMomentsPage) ||
+    (item.to === "/about" && isAboutPage);
 
   const handleNavClick = (item) => {
     if (item.to === "/" && pathname === "/") {
@@ -307,7 +317,8 @@ const NavBar = () => {
           navTheme === "friends" && currentScrollY === 0 && "floating-nav-friends",
           navTheme === "guestbook" && currentScrollY === 0 && "floating-nav-guestbook",
           navTheme === "gallery" && currentScrollY === 0 && "floating-nav-gallery",
-          navTheme === "moments" && currentScrollY === 0 && "floating-nav-moments"
+          navTheme === "moments" && currentScrollY === 0 && "floating-nav-moments",
+          navTheme === "about" && currentScrollY === 0 && "floating-nav-about"
         )}
       >
         <header className="absolute top-1/2 w-full -translate-y-1/2">
@@ -384,7 +395,8 @@ const NavBar = () => {
                         navTheme === "ai" ||
                         navTheme === "guestbook" ||
                         navTheme === "gallery" ||
-                        navTheme === "moments",
+                        navTheme === "moments" ||
+                        navTheme === "about",
                     })}
                     style={{
                       animationDelay: `${bar * 0.1}s`,

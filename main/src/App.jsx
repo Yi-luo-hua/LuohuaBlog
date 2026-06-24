@@ -11,6 +11,8 @@ import GalleryAlbumPage from "./pages/GalleryAlbumPage";
 import GalleryPage from "./pages/GalleryPage";
 import AiGalleryPage from "./pages/AiGalleryPage";
 import MomentsPage from "./pages/MomentsPage";
+import AboutSitePage from "./pages/AboutSitePage";
+import AboutProjectPage from "./pages/AboutProjectPage";
 import {
   shouldExposeAppConsole,
   shouldOpenAppConsoleAtRoot,
@@ -51,6 +53,8 @@ function App() {
             <Route path="gallery/:albumId" element={<GalleryAlbumPage />} />
             <Route path="ai-gallery" element={<AiGalleryPage />} />
             <Route path="moments" element={<MomentsPage />} />
+            <Route path="about" element={<AboutSitePage />} />
+            <Route path="about/projects/:projectId" element={<AboutProjectPage />} />
             <Route path="login" element={<LoginPage />} />
           </Route>
         </Routes>
