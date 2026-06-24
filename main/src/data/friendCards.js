@@ -141,4 +141,11 @@ export const friendCards = [
     avatar: "https://bu.dusays.com/2026/06/20/6a361fc5c68ff.jpg",
     note: "FRIEND",
   },
+  {
+    name: "Lingkaの宝藏之地",
+    desc: "一个在硬件、MCU、FPGA和ARM Linux SoC之间来回折腾的开发者，目标是让每一块板子都乖乖跑起来。",
+    url: "https://www.lingkalab.top/",
+    avatar: "https://bu.dusays.com/2026/06/12/6a2c1cb4f2089.jpg",
+    note: "FRIEND",
+  },
 ];
