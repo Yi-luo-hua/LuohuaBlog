@@ -208,3 +208,15 @@ test("themes the moments and friends footer for their page palettes", () => {
   assert.match(footerSource, /pathname\.startsWith\("\/moments"\)/);
   assert.match(footerSource, /pathname\.startsWith\("\/friends"\)/);
 });
+
+test("keeps quizcard report summary card from overlaying reviews on narrow screens", () => {
+  const reportSource = readSource("../public/web/report.html");
+  const baseStyles = reportSource.split("@media (min-width: 880px)")[0];
+
+  assert.match(reportSource, /\.summary-card\s*\{/);
+  assert.doesNotMatch(baseStyles, /position:\s*sticky/);
+  assert.match(
+    reportSource,
+    /@media \(min-width:\s*880px\)\s*\{[\s\S]*?\.summary-card\s*\{[\s\S]*?position:\s*sticky;[\s\S]*?top:\s*88px;[\s\S]*?\}/,
+  );
+});
