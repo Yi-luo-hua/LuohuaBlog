@@ -374,9 +374,17 @@ const FriendsApplicationBoard = () => {
           const isExpanded = !!expandedThreads[item.id];
           const isReplying = replyTargetId === item.id;
           const replies = flattenThreadReplies(item.replies || []);
+          const activeReplyInThread =
+            isReplying || replies.some((reply) => reply.id === replyTargetId);
 
           return (
-            <article key={item.id} className="flex items-start gap-4">
+            <article
+              key={item.id}
+              className={clsx(
+                "flex items-start gap-4",
+                activeReplyInThread ? "relative z-40" : "relative z-0",
+              )}
+            >
               <CommentAvatar item={item} />
               <div
                 className={clsx(
@@ -437,7 +445,7 @@ const FriendsApplicationBoard = () => {
                 </p>
 
                 {isReplying && (
-                  <div className="mt-4 rounded-[18px] border border-white/70 bg-white/54 p-4">
+                  <div className="relative z-30 mt-4 rounded-[18px] border border-white/70 bg-white/54 p-4">
                     {!user ? (
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <p className="text-sm text-[#6B7280]">
@@ -507,7 +515,10 @@ const FriendsApplicationBoard = () => {
                       return (
                         <div
                           key={reply.id}
-                          className="space-y-3"
+                          className={clsx(
+                            "space-y-3",
+                            isReplyingToReply && "relative z-30",
+                          )}
                           style={{ marginLeft: replyOffset }}
                         >
                           <div className="flex items-start gap-3">
@@ -546,7 +557,7 @@ const FriendsApplicationBoard = () => {
                           </div>
 
                           {isReplyingToReply && (
-                            <div className="rounded-[18px] border border-white/70 bg-white/54 p-4 sm:ml-[60px]">
+                            <div className="relative z-30 rounded-[18px] border border-white/70 bg-white/54 p-4 sm:ml-[60px]">
                               {!user ? (
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                   <p className="text-sm text-[#6B7280]">
