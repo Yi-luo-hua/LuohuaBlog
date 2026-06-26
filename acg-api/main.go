@@ -245,6 +245,11 @@ func imageHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	// Bilibili covers are immutable cached files (hashed names, replaced on
+	// re-sync). A long browser cache avoids refetching the same batch of
+	// covers every time the bili page is opened, which is the main cause of
+	// slow image loading when there are many cards.
+	w.Header().Set("Cache-Control", "public, max-age=604800, immutable")
 	http.ServeFile(w, r, filepath.Join(cacheDir, name))
 }
 

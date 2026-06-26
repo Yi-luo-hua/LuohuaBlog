@@ -20,19 +20,19 @@ test("rewrites direct COS URLs in the about preview to the same-origin proxy", (
   assert.match(rewritten, /url\('\/cos\/about-page\/demo\.webp'\)/);
 });
 
-test("adds async lazy image loading hints without overwriting explicit choices", () => {
+test("forces eager loading for every image to fix shadow DOM visibility", () => {
   const html = `
     <img class="cover" src="/cos/about-page/demo.jpg" alt="demo">
-    <img loading="eager" decoding="sync" src="/cos/about-page/hero.jpg" alt="hero">
+    <img loading="lazy" decoding="sync" src="/cos/about-page/hero.jpg" alt="hero">
   `;
 
   const rewritten = rewriteAboutPreviewAssets(html);
 
-  assert.match(rewritten, /<img loading="lazy" decoding="async" class="cover"/);
+  assert.match(rewritten, /<img loading="eager" decoding="async" class="cover"/);
   assert.match(rewritten, /<img loading="eager" decoding="sync" src="\/cos\/about-page\/hero\.jpg"/);
 });
 
-test("forces eager loading for marquee tech-pill icons to fix shadow DOM visibility", () => {
+test("forces eager loading for marquee tech-pill icons alongside other images", () => {
   const html = `
     <span class="tech-pill"><img class="ti" src="/cos/about-page/simpleicon-react.svg" alt=""/>React</span>
     <span class="tech-pill"><img class="ti ti-emoji" style="background:#fff">emoji</span>
@@ -42,7 +42,7 @@ test("forces eager loading for marquee tech-pill icons to fix shadow DOM visibil
   const rewritten = rewriteAboutPreviewAssets(html);
 
   assert.match(rewritten, /<img loading="eager" decoding="async" class="ti" src="\/cos\/about-page\/simpleicon-react\.svg"/);
-  assert.match(rewritten, /<img loading="lazy" decoding="async" class="cover-img"/);
+  assert.match(rewritten, /<img loading="eager" decoding="async" class="cover-img"/);
 });
 
 test("keeps the local Vite server aligned with the production COS proxy path", () => {

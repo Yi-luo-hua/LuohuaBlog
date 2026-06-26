@@ -9,11 +9,18 @@ export const rewriteAboutPreviewAssets = (markup = "") =>
       if (!/\sdecoding\s*=/i.test(next)) {
         next = next.replace(/<img\b/i, '<img decoding="async"');
       }
-      const isMarqueeIcon = /\bclass\s*=\s*"[^"]*\bti\b/i.test(next);
+      // All about-preview images are injected into a shadow DOM via
+      // innerHTML. Browsers cannot reliably lazy-load <img> elements
+      // inside shadow roots created this way — the IntersectionObserver
+      // root may never see them, so they stay unloaded forever. The whole
+      // page is only ~56 small SVG/JPG assets, so eager loading is cheap
+      // and reliable. (Previously only .ti marquee icons were forced eager,
+      // but project covers, site thumbs, and game cards failed the same way.)
       if (!/\sloading\s*=/i.test(next)) {
-        next = next.replace(/<img\b/i, isMarqueeIcon ? '<img loading="eager"' : '<img loading="lazy"');
-      } else if (isMarqueeIcon) {
+        next = next.replace(/<img\b/i, '<img loading="eager"');
+      } else {
         next = next.replace(/\sloading\s*=\s*"[^"]*"/i, ' loading="eager"');
       }
       return next;
     });
+
