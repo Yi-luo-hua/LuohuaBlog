@@ -1080,26 +1080,55 @@ body.blog-ai-image-open {
     bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     font-size: 13px;
     padding: 8px 14px;
+    max-width: calc(100vw - 28px);
+    box-sizing: border-box;
+  }
+
+  .bai-overlay {
+    padding: max(8px, env(safe-area-inset-top, 0px)) 8px max(8px, env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
   }
 
   .bai-app {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    border-radius: 0;
-    border: 0;
+    width: min(100%, calc(100vw - 16px));
+    height: min(100vh, calc(100vh - 16px));
+    height: min(100dvh, calc(100dvh - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+    min-width: 0;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 212, 59, 0.52);
   }
 
   .bai-aside {
     flex-direction: row;
     align-items: center;
     gap: 10px;
+    max-width: 100%;
+    min-width: 0;
     padding: 10px 12px;
     border-right: 0;
     border-bottom: 1px solid rgba(255, 143, 171, 0.22);
     overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .bai-aside::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bai-brand,
+  .bai-new-chat,
+  .blog-ai-mode-tabs {
+    flex: 0 0 auto;
+  }
+
+  .bai-brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
   }
 
   .bai-brand-text,
@@ -1117,14 +1146,67 @@ body.blog-ai-image-open {
   .blog-ai-mode-tabs {
     grid-auto-flow: column;
     grid-template-columns: none;
+    max-width: max-content;
   }
 
   #blog-ai-messages {
-    padding: 16px;
+    padding: 14px;
   }
 
   .bai-msg {
     max-width: 92%;
+  }
+
+  .bai-topbar {
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  .bai-topbar h2 {
+    font-size: 15px;
+  }
+
+  .bai-topbar p {
+    max-width: 58vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bai-win-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  .bai-composer {
+    padding: 10px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bai-composer-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 8px;
+    padding: 7px 7px 7px 12px;
+    border-radius: 14px;
+  }
+
+  #blog-ai-input {
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  #blog-ai-send {
+    min-width: 4.25rem;
+    padding: 8px 12px;
+    border-radius: 11px;
+    font-size: 12.5px;
+  }
+
+  .bai-composer-hint {
+    gap: 6px;
+    font-size: 10px;
   }
 
   .blog-ai-image-card {

@@ -951,15 +951,37 @@ body::after {
 
 @media (max-width: 540px) {
   .game-shelf-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
   }
 
   .game-shelf-kicker {
     letter-spacing: 0.22em;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 
   .game-slot {
     min-height: 0;
+    border-radius: 0.85rem;
+  }
+
+  .game-slot:first-child {
+    grid-column: 1 / -1;
+    aspect-ratio: 20 / 9;
+  }
+
+  .game-slot:not(:first-child) {
+    aspect-ratio: 9 / 15.5;
+  }
+
+  .game-slot .slot-name {
+    left: 0.45rem;
+    right: 0.45rem;
+    bottom: 0.45rem;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.85rem;
   }
 }
 

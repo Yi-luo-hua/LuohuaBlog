@@ -110,6 +110,71 @@ test("keeps the about projects grid roomy in the integrated site", () => {
   assert.match(aboutPreviewSource, /@media \(min-width:\s*14[0-9]{2}px\)\s*\{\s*\.projects\s*\{\s*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
 });
 
+test("keeps about and friends mobile drawer navigation on their page palettes", () => {
+  const cssSource = readSource("index.css");
+
+  for (const theme of ["about", "friends"]) {
+    assert.match(cssSource, new RegExp(`\\.nav-mobile-backdrop--${theme}`));
+    assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme}\\s*\\{`));
+    assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme} \\.nav-mobile-drawer-head`));
+    assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme} \\.nav-mobile-close`));
+  }
+});
+
+test("keeps the about game cards compact and fully visible on phones", () => {
+  const aboutPreviewSource = readSource("../public/about-preview.html");
+
+  assert.match(
+    aboutPreviewSource,
+    /@media \(max-width:\s*540px\)\s*\{[\s\S]*?\.game-shelf-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/,
+  );
+  assert.match(
+    aboutPreviewSource,
+    /@media \(max-width:\s*540px\)\s*\{[\s\S]*?\.game-slot:first-child\s*\{[\s\S]*?grid-column:\s*1 \/ -1/,
+  );
+  assert.match(
+    aboutPreviewSource,
+    /@media \(max-width:\s*540px\)\s*\{[\s\S]*?\.game-slot\s*\{[\s\S]*?border-radius:\s*0\.85rem/,
+  );
+});
+
+test("keeps the quizcard showcase bounded on phone width", () => {
+  const showcaseCss = readSource("../public/showcase/assets/showcase.css");
+
+  assert.match(
+    showcaseCss,
+    /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.tg-page\s*\{[\s\S]*?padding:\s*48px 14px 72px/,
+  );
+  assert.match(
+    showcaseCss,
+    /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.tg-demo-pc \.frame\s*\{[\s\S]*?min-height:\s*clamp\(360px,\s*110vw,\s*520px\)/,
+  );
+  assert.match(
+    showcaseCss,
+    /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.iphone\s*\{[\s\S]*?width:\s*min\(100%,\s*260px\)/,
+  );
+});
+
+test("keeps the AI data-center layout compact on phones", () => {
+  const cssSource = readSource("index.css");
+  const aiTrafficSource = readSource("pages/AiTrafficPage.jsx");
+  const serverInfoSource = readSource("components/ServerInfoPanel.jsx");
+
+  assert.match(aiTrafficSource, /overflow-x-hidden/);
+  assert.match(aiTrafficSource, /ai-stat-grid/);
+  assert.match(serverInfoSource, /server-info-panel/);
+  assert.match(serverInfoSource, /server-info-grid/);
+  assert.match(serverInfoSource, /server-hud-card/);
+  assert.match(
+    cssSource,
+    /@media \(max-width:\s*639px\)\s*\{[\s\S]*?\.server-info-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/,
+  );
+  assert.match(
+    cssSource,
+    /@media \(max-width:\s*639px\)\s*\{[\s\S]*?\.server-hud-card\s*\{[\s\S]*?max-width:\s*11\.5rem/,
+  );
+});
+
 test("keeps quizcard settings actions safe for visitors", () => {
   const settingsSource = readSource("../public/web/settings.html");
 

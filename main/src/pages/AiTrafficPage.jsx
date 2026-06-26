@@ -82,7 +82,7 @@ const BarChart = ({ rows, pick, compact, emptyLabel = CHART_EMPTY }) => {
 };
 
 const StatCard = ({ label, value, hint, accent, children }) => (
-  <div className="relative overflow-hidden rounded-[20px] border border-[#F2E6C9] bg-white px-4 pb-4 pt-5 shadow-[0_12px_30px_rgba(255,143,171,0.12)]">
+  <div className="ai-stat-card relative overflow-hidden rounded-[20px] border border-[#F2E6C9] bg-white px-3 pb-3 pt-4 shadow-[0_12px_30px_rgba(255,143,171,0.12)] sm:px-4 sm:pb-4 sm:pt-5">
     <div
       className="absolute inset-x-0 top-0 h-1.5 rounded-t-[20px]"
       style={{ background: accent }}
@@ -145,7 +145,7 @@ const AiTrafficPage = () => {
 
   return (
     <section
-      className="ai-traffic-page relative min-h-screen pb-20 pt-16 md:pt-20"
+      className="ai-traffic-page relative min-h-screen overflow-x-hidden pb-16 pt-16 md:pb-20 md:pt-20"
       style={{
         background:
           "linear-gradient(135deg, #FFF8E7 0%, #FFFDF5 45%, #EAF6FF 100%)",
@@ -160,7 +160,7 @@ const AiTrafficPage = () => {
         aria-hidden
       />
 
-      <div className="relative mx-auto w-full max-w-[1100px] px-4 md:px-6">
+      <div className="ai-traffic-shell relative mx-auto w-full max-w-[1100px] px-3 sm:px-4 md:px-6">
         <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#FF8FAB]">
           博客小精灵面板
         </p>
@@ -186,7 +186,7 @@ const AiTrafficPage = () => {
 
         {stats && !error && (
           <>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            <div className="ai-stat-grid mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
               <StatCard
                 label="今日提问"
                 value={summary?.todaySuccess ?? 0}

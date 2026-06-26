@@ -76,7 +76,7 @@ const CircleHUD = ({
 
   return (
     <div
-      className="relative aspect-square w-full overflow-hidden rounded-full"
+      className="server-hud-card relative aspect-square w-full overflow-hidden rounded-full"
       style={{
         // 奶油白底 + 内侧柔光（替代深蓝）
         background:
@@ -163,22 +163,22 @@ const CircleHUD = ({
 
       <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
         <div
-          className="font-zentry text-[10px] font-semibold uppercase tracking-[0.3em]"
+          className="server-hud-label font-zentry text-[10px] font-semibold uppercase tracking-[0.3em]"
           style={{ color: accent }}
         >
           {label}
         </div>
-        <div className="mt-1 font-zentry text-3xl font-black text-[#2B2B2B] md:text-4xl">
+        <div className="server-hud-primary mt-1 font-zentry text-2xl font-black text-[#2B2B2B] sm:text-3xl md:text-4xl">
           {centerPrimary ?? `${animated.toFixed(0)}%`}
         </div>
         {centerSecondary && (
-          <div className="mt-1 text-[10px] font-medium tracking-wider text-[#6B7280] md:text-[11px]">
+          <div className="server-hud-secondary mt-1 text-[10px] font-medium tracking-wider text-[#6B7280] md:text-[11px]">
             {centerSecondary}
           </div>
         )}
         {hint && (
           <div
-            className="absolute bottom-5 left-1/2 -translate-x-1/2 text-[9px] uppercase tracking-[0.25em] md:text-[10px]"
+            className="server-hud-hint absolute bottom-5 left-1/2 -translate-x-1/2 text-[9px] uppercase tracking-[0.25em] md:text-[10px]"
             style={{ color: `${accent}cc` }}
           >
             {hint}
@@ -279,7 +279,7 @@ const ServerInfoPanel = () => {
 
   return (
     <section
-      className="relative overflow-hidden rounded-[24px] border border-[#F2E6C9] p-5 md:p-7"
+      className="server-info-panel relative overflow-hidden rounded-[24px] border border-[#F2E6C9] p-4 sm:p-5 md:p-7"
       style={{
         // 奶油白卡背景（跟 AI KPI 卡同源）
         background:
@@ -339,7 +339,7 @@ const ServerInfoPanel = () => {
       )}
 
       {info && (
-        <div className="relative mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+        <div className="server-info-grid relative mt-5 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-4 lg:gap-5">
           <CircleHUD
             label="CPU"
             percent={cpuPercent}
