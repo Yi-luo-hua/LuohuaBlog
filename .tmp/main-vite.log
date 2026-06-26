@@ -1,0 +1,364 @@
+
+> awwwards-website@0.0.0 dev
+> vite --host 127.0.0.1 --port 5173
+
+
+  [32m[1mVITE[22m v5.4.11[39m  [2mready in [0m[1m196[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+Browserslist: browsers data (caniuse-lite) is 20 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2m13:51:46[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m13:54:30[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Navbar.jsx, /src/index.css[22m
+[2m13:54:30[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Features.jsx, /src/index.css, /src/components/Features.jsx?check=1780897216125, /src/components/Features.jsx?check=1780897253999, /src/components/Features.jsx?fresh=1780897326409[22m
+[2m13:54:52[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m13:57:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m13:58:04[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m14:16:05[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m14:16:32[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.test.js[22m
+[2m14:16:59[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:16:59[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:16:59[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:16:59[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:19:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Navbar.jsx, /src/index.css[22m
+[2m14:19:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/MomentsPage.jsx[22m
+[2m14:19:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m14:22:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m14:24:08[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:24:08[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:24:08[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:24:08[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:24:11[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m14:24:13[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:24:13[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:24:13[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:24:13[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:24:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m14:26:25[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m14:26:27[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:26:27[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:26:27[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:26:27[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m14:27:18[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Footer.jsx, /src/index.css[22m
+[2m14:30:50[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m14:39:02[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m14:39:13[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.test.js[22m
+[2m14:40:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/MomentsPage.jsx[22m
+[2m14:40:43[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m14:41:16[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m14:45:27[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m14:47:23[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m14:50:39[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m14:55:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m14:55:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m14:55:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/SiteLayout.jsx, /src/index.css[22m
+[2m14:55:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Footer.jsx, /src/index.css[22m
+[2m15:05:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m15:07:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Footer.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Navbar.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/SiteLayout.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/MomentsPage.jsx[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.test.js[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Footer.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Navbar.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/SiteLayout.jsx, /src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/homeNavigation.test.js[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.js[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.test.js[22m
+[2m15:21:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m15:35:32[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.test.js[22m
+[2m15:35:32[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/services/ownerApi.test.js[22m
+[2m15:35:32[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pwa/appConsoleBlueprint.test.js[22m
+[2m15:40:00[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.js[22m
+[2m15:40:00[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m15:40:00[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m15:41:23[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m15:47:18[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.test.js[22m
+[2m15:47:18[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/services/ownerApi.test.js[22m
+[2m15:48:34[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.js[22m
+[2m15:49:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m15:49:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m15:51:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.js[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.test.js[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pwa/appConsoleBlueprint.test.js[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/services/ownerApi.test.js[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.js[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/moments.test.js[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MomentsPage.jsx, /src/index.css[22m
+[2m15:58:35[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pwa/appConsoleBlueprint.test.js[22m
+[2m16:09:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m16:17:20[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m16:38:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Hero.jsx, /src/index.css[22m
+[2m16:40:41[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/friendCards.test.js[22m
+[2m16:41:04[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m16:42:55[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/friendCards.test.js[22m
+[2m16:44:14[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/friendCards.test.js[22m
+[2m16:44:32[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m16:50:36[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/bangumi/list[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:36[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/radar/feed[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:36[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/bangumi/list[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:36[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/radar/feed[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:38[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/chat/stats?days=14[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:38[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/chat/stats?days=14[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:40[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:40[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:40[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:40[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:43[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=20&channel=guestbook[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:43[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:43[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=20&channel=guestbook[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:50:43[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:01[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/bangumi/list[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:01[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/radar/feed[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:01[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/bangumi/list[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:01[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/radar/feed[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:03[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/chat/stats?days=14[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:03[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/chat/stats?days=14[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:06[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:06[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:06[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:06[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:08[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:08[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=20&channel=guestbook[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:08[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:51:08[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=20&channel=guestbook[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:52:34[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/SiteLayout.jsx, /src/index.css[22m
+[2m16:54:09[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/bangumi/list[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:09[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/radar/feed[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:09[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/bangumi/list[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:09[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/radar/feed[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:12[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/chat/stats?days=14[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:12[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/chat/stats?days=14[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:14[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:14[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:14[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:14[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:16[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:16[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=20&channel=guestbook[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:16[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:16[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=20&channel=guestbook[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:32[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/bangumi/list[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:32[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/radar/feed[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:32[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/bangumi/list[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:32[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/radar/feed[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:34[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/chat/stats?days=14[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:34[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/chat/stats?days=14[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:37[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:37[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:37[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:37[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=30&channel=friends[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:39[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:39[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=20&channel=guestbook[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:39[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/me[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:54:39[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/guestbook/messages?page=1&pageSize=20&channel=guestbook[39m
+Error: connect ECONNREFUSED 127.0.0.1:8787
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Hero.jsx, /src/index.css[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/SiteLayout.jsx, /src/index.css[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/friendCards.test.js[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/layouts/siteLayout.test.js[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/heroLayout.test.js[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Hero.jsx, /src/index.css[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/SiteLayout.jsx, /src/index.css[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/friendCards.test.js[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/layouts/siteLayout.test.js[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Hero.jsx, /src/index.css[22m
+[2m16:59:57[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/heroLayout.test.js[22m
+[2m17:01:35[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/data/friendCards.test.js[22m
+[2m17:02:29[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/FriendsPage.jsx[22m
+[2m18:07:21[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pwa/pwaAssets.test.js[22m
+[2m18:09:12[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pwa/pwaAssets.test.js[22m
+[2m18:10:43[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pwa/registerServiceWorker.js[22m
+[2m18:35:12[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/services/ownerApi.test.js[22m
+[2m18:35:12[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pwa/appConsoleState.test.js[22m
+[2m18:41:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m18:41:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m18:42:44[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m18:44:14[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m18:45:19[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m18:45:50[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m22:58:11[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m23:12:30[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/friendsApplicationContactForm.test.js[22m
+[2m23:14:31[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m23:14:31[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m23:15:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m00:04:00[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pwa/appConsoleState.test.js[22m
+[2m00:05:47[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/AppConsolePage.jsx[22m
+[2m00:07:21[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m00:09:52[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/AppConsolePage.jsx, /src/index.css[22m
+[2m00:53:34[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/friendsApplicationThreads.test.js[22m
+[2m01:07:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/GuestbookPage.jsx, /src/components/FriendsApplicationBoard.jsx[22m
+[2m01:08:07[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m01:08:44[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m01:09:42[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m01:10:16[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m01:10:55[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/friendsApplicationThreads.test.js[22m
+[2m01:11:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m
+[2m01:11:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/GuestbookPage.jsx, /src/components/FriendsApplicationBoard.jsx[22m
+[2m01:11:59[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/friendsApplicationThreads.test.js[22m
+[2m01:14:49[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/FriendsApplicationBoard.jsx, /src/index.css[22m

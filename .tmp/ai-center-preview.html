@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>AI 中心窗口 · 预览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700;800&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet" />
+<style>
+  /* ============ 设计令牌（沿用线上糖果色 AI 助手） ============ */
+  :root {
+    --bai-bg: #fff8e7;
+    --bai-primary: #ffd43b;
+    --bai-pink: #ff8fab;
+    --bai-blue: #74c0fc;
+    --bai-text: #2b2b2b;
+    --bai-shadow: 0 12px 40px rgba(255, 143, 171, 0.22);
+    --app-radius: 22px;
+    --font-body: "General Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-display: "ZCOOL XiaoWei", "General Sans", serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    font-family: var(--font-body);
+    color: var(--bai-text);
+    background:
+      radial-gradient(900px 600px at 12% 8%, rgba(255, 212, 59, 0.18), transparent 60%),
+      radial-gradient(820px 560px at 88% 92%, rgba(116, 192, 252, 0.20), transparent 62%),
+      radial-gradient(700px 500px at 78% 12%, rgba(255, 143, 171, 0.16), transparent 60%),
+      linear-gradient(135deg, #fffdf6 0%, #fff3ef 55%, #f3f8ff 100%);
+  }
+
+  /* 预览页占位内容，好让背景不是空的 */
+  .preview-note {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: clamp(28px, 6vw, 64px) 20px 120px;
+    color: rgba(43, 43, 43, 0.6);
+  }
+  .preview-note h1 {
+    font-family: var(--font-display);
+    font-size: clamp(22px, 4vw, 30px);
+    margin: 0 0 10px;
+    color: var(--bai-text);
+  }
+  .preview-note p { font-size: 14px; line-height: 1.7; margin: 6px 0; }
+  .preview-note kbd {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 7px;
+    background: #fff;
+    border: 1px solid rgba(255, 143, 171, 0.4);
+    box-shadow: 0 2px 0 rgba(255, 143, 171, 0.25);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* ============ 右下角触发按钮（沿用线上样式） ============ */
+  #blog-ai-toggle {
+    position: fixed;
+    right: 20px;
+    bottom: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border: 2px solid var(--bai-primary);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fff 0%, var(--bai-bg) 100%);
+    color: var(--bai-text);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: var(--bai-shadow);
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    z-index: 99999;
+  }
+  #blog-ai-toggle:hover {
+    transform: translateY(-3px);
+    border-color: var(--bai-pink);
+    box-shadow: 0 16px 44px rgba(116, 192, 252, 0.28);
+  }
+  #blog-ai-toggle[aria-expanded="true"] {
+    border-color: var(--bai-blue);
+    opacity: 0.92;
+  }
+  #blog-ai-toggle .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--bai-pink);
+    box-shadow: 0 0 0 0 rgba(255, 143, 171, 0.55);
+    animation: pulse 2.4s infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255, 143, 171, 0.5); }
+    70%  { box-shadow: 0 0 0 10px rgba(255, 143, 171, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 143, 171, 0); }
+  }
+
+  /* ============ 中央放大窗口 ============ */
+  body.ai-app-open { overflow: hidden; }
+
+  .ai-app-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: grid;
+    place-items: center;
+    padding: clamp(0px, 0vw, 0px) clamp(0px, 0vw, 0px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+  .ai-app-overlay.is-open { opacity: 1; pointer-events: auto; }
+
+  .ai-app-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background:
+      radial-gradient(circle at 50% 38%, rgba(255, 248, 231, 0.30), transparent 40rem),
+      rgba(33, 22, 30, 0.42);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: default;
+  }
+
+  .ai-app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 268px 1fr;
+    width: min(1120px, 94vw);
+    height: min(780px, 90vh);
+    overflow: hidden;
+    border-radius: var(--app-radius);
+    background: var(--bai-bg);
+    border: 1.5px solid rgba(255, 212, 59, 0.6);
+    box-shadow:
+      0 40px 120px rgba(78, 45, 60, 0.4),
+      0 0 0 6px rgba(255, 255, 255, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transform: scale(0.92) translateY(18px);
+    opacity: 0;
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+  }
+  .ai-app-overlay.is-open .ai-app {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+
+  /* —— 左侧栏 —— */
+  .ai-app-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px 16px;
+    background:
+      linear-gradient(180deg, rgba(255, 243, 191, 0.7) 0%, rgba(255, 216, 232, 0.5) 55%, rgba(208, 235, 255, 0.45) 100%);
+    border-right: 1px solid rgba(255, 143, 171, 0.22);
+  }
+
+  .ai-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ai-brand-mark {
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    border-radius: 13px; overflow: hidden;
+    background: linear-gradient(145deg, #fff3bf 0%, #ffd8e8 54%, #d0ebff 100%);
+    box-shadow: 0 8px 18px rgba(255, 143, 171, 0.3);
+  }
+  .ai-brand-mark img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ai-brand-text b { display: block; font-size: 15px; font-weight: 800; }
+  .ai-brand-text span { font-size: 11px; color: rgba(43, 43, 43, 0.6); }
+
+  .ai-new-chat {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px 12px;
+    border: 1.5px dashed rgba(255, 143, 171, 0.5);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--bai-text);
+    font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  }
+  .ai-new-chat:hover { background: rgba(255, 255, 255, 0.85); border-color: var(--bai-pink); }
+  .ai-new-chat:active { transform: scale(0.98); }
+
+  .ai-side-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.16em;
+    text-transform: uppercase; color: rgba(43, 43, 43, 0.45);
+    padding: 0 4px;
+  }
+
+  .ai-mode-tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    padding: 4px; border-radius: 13px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+  }
+  .ai-mode-tab {
+    min-height: 34px; border: none; border-radius: 10px;
+    background: transparent; color: rgba(43, 43, 43, 0.68);
+    font-size: 12.5px; font-weight: 800; cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  .ai-mode-tab.is-active {
+    background: rgba(255, 255, 255, 0.92); color: var(--bai-text);
+    box-shadow: 0 8px 18px rgba(116, 192, 252, 0.2);
+  }
+
+  .ai-context-card {
+    padding: 11px 12px; border-radius: 13px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 212, 59, 0.5);
+    font-size: 11.5px; line-height: 1.5;
+  }
+  .ai-context-card b { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(43,43,43,0.5); display:block; margin-bottom: 3px; }
+  .ai-context-card .ctx-title { font-weight: 700; color: var(--bai-text); }
+  .ai-context-card .ctx-url { color: rgba(43,43,43,0.55); word-break: break-all; }
+
+  .ai-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+  .ai-quota {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 11px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 212, 59, 0.55);
+    font-size: 11.5px; font-weight: 700;
+  }
+  .ai-quota i { width: 7px; height: 7px; border-radius: 50%; background: var(--bai-primary); box-shadow: 0 0 8px rgba(255,212,59,0.8); }
+  .ai-account {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px; border-radius: 13px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 143, 171, 0.28);
+  }
+  .ai-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center; overflow: hidden; position: relative;
+    background: linear-gradient(145deg, #ffd8e8, #d0ebff);
+    color: #b5608a; font-weight: 800; font-size: 13px;
+    cursor: pointer; border: 1px solid rgba(255,255,255,0.8);
+  }
+  .ai-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ai-avatar:hover::after {
+    content: "换"; position: absolute; inset: 0;
+    display: grid; place-items: center; background: rgba(43,43,43,0.55); color: #fff; font-size: 11px;
+  }
+  .ai-account b { font-size: 12px; font-weight: 700; display: block; }
+  .ai-account span { font-size: 10.5px; color: rgba(43,43,43,0.55); }
+  .ai-account button {
+    margin-left: auto; border: none; background: rgba(255, 143, 171, 0.18);
+    color: var(--bai-text); font-size: 10.5px; font-weight: 700;
+    padding: 4px 9px; border-radius: 999px; cursor: pointer;
+  }
+
+  /* —— 主区 —— */
+  .ai-app-main {
+    display: flex; flex-direction: column;
+    min-width: 0;
+    background: linear-gradient(180deg, #fffdf6 0%, #fff8e7 100%);
+  }
+
+  .ai-topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px;
+    background: linear-gradient(120deg, #fff3bf 0%, #ffd8e8 55%, #d0ebff 100%);
+    border-bottom: 1px solid rgba(255, 143, 171, 0.22);
+  }
+  .ai-topbar h2 { margin: 0; font-size: 16px; font-weight: 800; }
+  .ai-topbar .sub { font-size: 11.5px; color: rgba(43,43,43,0.6); }
+  .ai-topbar .spacer { flex: 1; }
+  .ai-win-btn {
+    width: 30px; height: 30px; border-radius: 9px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.6);
+    color: rgba(43,43,43,0.7); font-size: 14px; cursor: pointer;
+    display: grid; place-items: center;
+    transition: background 0.2s, color 0.2s;
+  }
+  .ai-win-btn:hover { background: rgba(255, 143, 171, 0.22); color: var(--bai-text); }
+  .ai-win-btn.close:hover { background: rgba(229, 77, 66, 0.16); color: #e54d42; }
+
+  /* —— 消息区 —— */
+  .ai-messages {
+    flex: 1; min-height: 0; overflow-y: auto;
+    padding: 22px clamp(16px, 4vw, 40px);
+    display: flex; flex-direction: column; gap: 16px;
+    scroll-behavior: smooth;
+  }
+  .ai-messages::-webkit-scrollbar { width: 8px; }
+  .ai-messages::-webkit-scrollbar-thumb { background: rgba(255, 143, 171, 0.3); border-radius: 99px; }
+
+  .ai-empty {
+    margin: auto; text-align: center; padding: 20px;
+    color: rgba(43, 43, 43, 0.6);
+  }
+  .ai-empty .big {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 4vw, 34px);
+    color: var(--bai-text); margin-bottom: 8px;
+    background: linear-gradient(120deg, #ff8fab, #ffb347 50%, #74c0fc);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .ai-empty .small { font-size: 13px; line-height: 1.7; max-width: 420px; margin: 0 auto; }
+  .ai-suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+  .ai-suggest {
+    padding: 8px 14px; border-radius: 999px;
+    border: 1px solid rgba(255, 143, 171, 0.35);
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s, transform 0.15s, border-color 0.2s;
+  }
+  .ai-suggest:hover { background: #fff; border-color: var(--bai-pink); transform: translateY(-1px); }
+
+  .ai-msg { display: flex; gap: 10px; max-width: 78%; animation: msgIn 0.3s ease both; }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .ai-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .ai-msg .role {
+    flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 13px; font-weight: 800;
+    overflow: hidden; background: #fff;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+  }
+  .ai-msg .role img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ai-msg.bot .role { background: linear-gradient(145deg, #fff3bf, #ffd8e8 55%, #d0ebff); }
+  .ai-msg.user .role {
+    background: linear-gradient(145deg, #b3dcff, #74c0fc); color: #1f6aa0;
+    cursor: pointer; position: relative;
+  }
+  .ai-msg.user .role:hover::after {
+    content: "换"; position: absolute; inset: 0;
+    display: grid; place-items: center; background: rgba(31,106,160,0.6); color: #fff;
+    font-size: 11px; border-radius: 50%;
+  }
+  .ai-msg.user .role img { background: #fff; }
+  .ai-msg .bubble {
+    padding: 11px 14px; border-radius: 16px; font-size: 13.5px; line-height: 1.65;
+    word-break: break-word; white-space: pre-wrap;
+  }
+  .ai-msg.bot .bubble {
+    background: rgba(255, 143, 171, 0.16);
+    border: 1px solid rgba(255, 143, 171, 0.3);
+    border-top-left-radius: 5px;
+  }
+  .ai-msg.user .bubble {
+    background: rgba(116, 192, 252, 0.32);
+    border: 1px solid rgba(116, 192, 252, 0.42);
+    border-top-right-radius: 5px;
+  }
+  .ai-msg.system { align-self: center; max-width: 90%; }
+  .ai-msg.system .bubble {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px dashed rgba(255, 212, 59, 0.6);
+    font-size: 12px; text-align: center;
+  }
+  .ai-msg.system .role { display: none; }
+
+  .typing .bubble { display: inline-flex; gap: 4px; align-items: center; }
+  .typing .bubble i {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--bai-pink);
+    animation: blink 1.2s infinite;
+  }
+  .typing .bubble i:nth-child(2) { animation-delay: 0.2s; }
+  .typing .bubble i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+  /* —— 输入区 —— */
+  .ai-composer {
+    padding: 14px clamp(16px, 4vw, 24px) 18px;
+    border-top: 1px solid rgba(255, 143, 171, 0.2);
+    background: #fff;
+  }
+  .ai-composer-shell {
+    display: flex; align-items: flex-end; gap: 10px;
+    padding: 8px 8px 8px 14px;
+    border: 1.5px solid rgba(116, 192, 252, 0.45);
+    border-radius: 16px;
+    background: #fffefb;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .ai-composer-shell:focus-within {
+    border-color: var(--bai-pink);
+    box-shadow: 0 0 0 3px rgba(255, 143, 171, 0.15);
+  }
+  #ai-input {
+    flex: 1; resize: none; border: none; outline: none;
+    min-height: 26px; max-height: 140px;
+    font-family: inherit; font-size: 13.5px; line-height: 1.55; color: var(--bai-text);
+    background: transparent; padding: 6px 0;
+  }
+  #ai-send {
+    flex: 0 0 auto; padding: 9px 18px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, var(--bai-primary), #ffb347);
+    color: var(--bai-text); font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: transform 0.18s, opacity 0.18s;
+  }
+  #ai-send:disabled { opacity: 0.5; cursor: not-allowed; }
+  #ai-send:not(:disabled):hover { transform: scale(1.04); }
+  .ai-composer-hint {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 8px; padding: 0 4px;
+    font-size: 11px; color: rgba(43, 43, 43, 0.5);
+  }
+  .ai-composer-hint kbd {
+    padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255, 143, 171, 0.3); font-size: 10px; font-weight: 700;
+  }
+
+  /* ============ 移动端：侧栏折叠为顶部条，窗口接近全屏 ============ */
+  @media (max-width: 768px) {
+    .ai-app {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+      width: 100vw; height: 100vh; height: 100dvh;
+      border-radius: 0; border: 0;
+    }
+    .ai-app-aside {
+      flex-direction: row; align-items: center; gap: 10px;
+      padding: 10px 12px; border-right: 0; border-bottom: 1px solid rgba(255, 143, 171, 0.22);
+      overflow-x: auto;
+    }
+    .ai-brand-text, .ai-side-label, .ai-context-card, .ai-side-foot { display: none; }
+    .ai-new-chat { padding: 8px 12px; white-space: nowrap; }
+    .ai-mode-tabs { grid-auto-flow: column; grid-template-columns: none; }
+    .ai-messages { padding: 16px; }
+    .ai-msg { max-width: 92%; }
+    #blog-ai-toggle { right: 14px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); font-size: 13px; padding: 8px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-note">
+  <h1>AI 中心窗口 · 预览</h1>
+  <p>这是把右下角"✦ 问问博客"按钮升级为<strong>屏幕中央放大版</strong>的方案预览，样式沿用线上糖果色 AI 助手。</p>
+  <p>点击右下角按钮（或按 <kbd>Enter</kbd> 打开 / <kbd>Esc</kbd> 关闭）体验。本页为独立预览，未改动任何源文件。</p>
+</div>
+
+<!-- 触发按钮 -->
+<button id="blog-ai-toggle" aria-expanded="false" aria-controls="ai-app-overlay">
+  <span class="dot"></span>✦ 问问博客
+</button>
+
+<!-- 中央放大窗口 -->
+<div class="ai-app-overlay" id="ai-app-overlay" aria-hidden="true">
+  <button class="ai-app-backdrop" id="ai-app-backdrop" aria-label="关闭"></button>
+
+  <div class="ai-app" role="dialog" aria-modal="true" aria-label="博客小精灵">
+    <!-- 侧栏 -->
+    <aside class="ai-app-aside">
+      <div class="ai-brand">
+        <div class="ai-brand-mark"><img id="ai-logo" src="https://taozhiyy.top/cos/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/logo.png" alt="logo" /></div>
+        <div class="ai-brand-text"><b>博客小精灵</b><span>taozhiyy · AI</span></div>
+      </div>
+
+      <button class="ai-new-chat" id="ai-new-chat">＋ 新对话</button>
+
+      <div class="ai-side-label">模式</div>
+      <div class="ai-mode-tabs">
+        <button class="ai-mode-tab is-active" data-mode="chat">聊天</button>
+        <button class="ai-mode-tab" data-mode="image">生图</button>
+      </div>
+
+      <div class="ai-side-label">当前页面</div>
+      <div class="ai-context-card">
+        <b>Page Context</b>
+        <div class="ctx-title" id="ctx-title">桃之夭夭 · 首页</div>
+        <div class="ctx-url" id="ctx-url">https://taozhiyy.top/</div>
+      </div>
+
+      <div class="ai-side-foot">
+        <span class="ai-quota"><i></i><span id="quota-text">今日剩余：10 / 10</span></span>
+        <div class="ai-account">
+          <div class="ai-avatar" id="ai-avatar" title="点击更换头像">游</div>
+          <div><b>游客</b><span>登录后 50 次/天</span></div>
+          <button id="ai-login">登录</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主区 -->
+    <div class="ai-app-main">
+      <div class="ai-topbar">
+        <div>
+          <h2>✦ 博客小精灵</h2>
+          <div class="sub" id="topbar-sub">可以问我当前页面相关问题，也可以生成一张小图</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="ai-win-btn" title="收起为角标" id="ai-minimize">—</button>
+        <button class="ai-win-btn close" title="关闭" id="ai-close">✕</button>
+      </div>
+
+      <div class="ai-messages" id="ai-messages">
+        <div class="ai-empty" id="ai-empty">
+          <div class="big">你好呀～</div>
+          <div class="small">点上方「登录 / 注册」可提升到 50 次/天。试着问我当前页面的内容，或直接描述想生成的画面。</div>
+          <div class="ai-suggestions">
+            <button class="ai-suggest">这个网站是用什么技术做的？</button>
+            <button class="ai-suggest">帮我总结一下当前页面</button>
+            <button class="ai-suggest">画一张水彩风的小狐狸</button>
+          </div>
+        </div>
+      </div>
+
+      <form class="ai-composer" id="ai-form">
+        <div class="ai-composer-shell">
+          <textarea id="ai-input" rows="1" placeholder="输入你的问题…" maxlength="2000"></textarea>
+          <button type="submit" id="ai-send">发送</button>
+        </div>
+        <div class="ai-composer-hint">
+          <span><kbd>Enter</kbd> 发送 · <kbd>Shift+Enter</kbd> 换行</span>
+          <span style="margin-left:auto"><span id="ai-count">0</span> / <span id="ai-count-max">2000</span></span>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var toggle = document.getElementById("blog-ai-toggle");
+  var overlay = document.getElementById("ai-app-overlay");
+  var backdrop = document.getElementById("ai-app-backdrop");
+  var closeBtn = document.getElementById("ai-close");
+  var minBtn = document.getElementById("ai-minimize");
+  var messages = document.getElementById("ai-messages");
+  var empty = document.getElementById("ai-empty");
+  var form = document.getElementById("ai-form");
+  var input = document.getElementById("ai-input");
+  var send = document.getElementById("ai-send");
+  var mode = "chat";
+  var LIMITS = { chat: 2000, image: 1200 };
+
+  function applyLimit() {
+    var max = LIMITS[mode];
+    input.setAttribute("maxlength", max);
+    document.getElementById("ai-count-max").textContent = max;
+    updateCount();
+  }
+  function updateCount() {
+    document.getElementById("ai-count").textContent = (input.value || "").length;
+  }
+
+  function open() {
+    overlay.classList.add("is-open");
+    overlay.setAttribute("aria-hidden", "false");
+    toggle.setAttribute("aria-expanded", "true");
+    document.body.classList.add("ai-app-open");
+    setTimeout(function () { input.focus(); }, 120);
+  }
+  function close() {
+    overlay.classList.remove("is-open");
+    overlay.setAttribute("aria-hidden", "true");
+    toggle.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("ai-app-open");
+  }
+
+  toggle.addEventListener("click", function () {
+    overlay.classList.contains("is-open") ? close() : open();
+  });
+  backdrop.addEventListener("click", close);
+  closeBtn.addEventListener("click", close);
+  minBtn.addEventListener("click", close);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") close();
+  });
+
+  // 模式切换
+  document.querySelectorAll(".ai-mode-tab").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      document.querySelectorAll(".ai-mode-tab").forEach(function (t) { t.classList.remove("is-active"); });
+      tab.classList.add("is-active");
+      mode = tab.dataset.mode;
+      input.placeholder = mode === "image" ? "描述想生成的画面…" : "输入你的问题…";
+      send.textContent = mode === "image" ? "生成" : "发送";
+      document.getElementById("topbar-sub").textContent =
+        mode === "image" ? "描述画面，生成一张小图（登录后可用）" : "可以问我当前页面相关问题，也可以生成一张小图";
+      applyLimit();
+    });
+  });
+
+  // 建议词
+  document.querySelectorAll(".ai-suggest").forEach(function (s) {
+    s.addEventListener("click", function () {
+      input.value = s.textContent;
+      input.focus();
+      autoGrow();
+    });
+  });
+
+  // 新对话
+  document.getElementById("ai-new-chat").addEventListener("click", function () {
+    messages.innerHTML = "";
+    messages.appendChild(empty);
+    input.value = "";
+    autoGrow();
+  });
+
+  // 输入框自适应高度
+  function autoGrow() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 140) + "px";
+  }
+  input.addEventListener("input", autoGrow);
+  input.addEventListener("input", updateCount);
+  applyLimit();
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+
+  // 用户头像：默认昵称首字，可上传更换
+  var LOGO_URL = "https://taozhiyy.top/cos/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/img/logo.png";
+  var userAvatar = null; // dataURL 或 null
+  var userName = "游客";
+  var sideAvatar = document.getElementById("ai-avatar");
+
+  function renderSideAvatar() {
+    sideAvatar.innerHTML = "";
+    if (userAvatar) {
+      var img = document.createElement("img");
+      img.src = userAvatar;
+      sideAvatar.appendChild(img);
+    } else {
+      sideAvatar.textContent = (userName || "游").slice(0, 1);
+    }
+  }
+
+  // 点击头像上传更换（预览：本地 FileReader）
+  function pickAvatar() {
+    var f = document.createElement("input");
+    f.type = "file"; f.accept = "image/*";
+    f.addEventListener("change", function () {
+      var file = f.files && f.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () { userAvatar = reader.result; renderSideAvatar(); };
+      reader.readAsDataURL(file);
+    });
+    f.click();
+  }
+  sideAvatar.addEventListener("click", pickAvatar);
+
+  function appendMsg(role, text) {
+    if (empty.parentNode) empty.remove();
+    var wrap = document.createElement("div");
+    wrap.className = "ai-msg " + role;
+    var r = document.createElement("div");
+    r.className = "role";
+    if (role === "user") {
+      if (userAvatar) {
+        var uimg = document.createElement("img");
+        uimg.src = userAvatar;
+        r.appendChild(uimg);
+        r.addEventListener("click", pickAvatar);
+      } else {
+        r.textContent = (userName || "我").slice(0, 1);
+      }
+    } else {
+      var bimg = document.createElement("img");
+      bimg.src = LOGO_URL;
+      bimg.alt = "AI";
+      r.appendChild(bimg);
+    }
+    var b = document.createElement("div");
+    b.className = "bubble";
+    if (role === "bot" && text === "__typing__") {
+      b.innerHTML = "<i></i><i></i><i></i>";
+      wrap.classList.add("typing");
+    } else {
+      b.textContent = text;
+    }
+    wrap.appendChild(r);
+    wrap.appendChild(b);
+    messages.appendChild(wrap);
+    messages.scrollTop = messages.scrollHeight;
+    return wrap;
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = (input.value || "").trim();
+    if (!text) return;
+    appendMsg("user", text);
+    input.value = "";
+    autoGrow();
+    send.disabled = true;
+
+    var typing = appendMsg("bot", "__typing__");
+    setTimeout(function () {
+      typing.remove();
+      var reply = mode === "image"
+        ? "（预览模式）已收到画面描述「" + text + "」，正式版会在这里生成并展示图片。"
+        : "（预览模式）关于「" + text + "」—— 这是中心窗口的演示回复，正式版会接入 DeepSeek 返回真实答案。";
+      appendMsg("bot", reply);
+      send.disabled = false;
+      input.focus();
+    }, 900);
+  });
+})();
+</script>
+</body>
+</html>
