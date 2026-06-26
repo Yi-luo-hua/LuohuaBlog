@@ -30,14 +30,7 @@ func clientNetworkRegion(ip string) string {
 		return ""
 	}
 	ipHash := hashKey("ip", ip)
-	if env("CLIENT_NETWORK_REGION_LOOKUP", "") == "1" {
-		return lookupIPRegion(db, ip, ipHash)
-	}
-	var region string
-	if err := db.QueryRow(`SELECT ip_region FROM guestbook_ip_cache WHERE ip_hash = ?`, ipHash).Scan(&region); err == nil {
-		return region
-	}
-	return ""
+	return lookupIPRegion(db, ip, ipHash)
 }
 
 func compactClientRegionLabel(region string) string {
@@ -50,8 +43,8 @@ func compactClientRegionLabel(region string) string {
 		region = fields[len(fields)-1]
 	}
 	runes := []rune(region)
-	if len(runes) > 6 {
-		return string(runes[:6])
+	if len(runes) > 5 {
+		return string(runes[:5])
 	}
 	return region
 }

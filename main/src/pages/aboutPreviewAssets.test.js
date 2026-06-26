@@ -32,6 +32,19 @@ test("adds async lazy image loading hints without overwriting explicit choices",
   assert.match(rewritten, /<img loading="eager" decoding="sync" src="\/cos\/about-page\/hero\.jpg"/);
 });
 
+test("forces eager loading for marquee tech-pill icons to fix shadow DOM visibility", () => {
+  const html = `
+    <span class="tech-pill"><img class="ti" src="/cos/about-page/simpleicon-react.svg" alt=""/>React</span>
+    <span class="tech-pill"><img class="ti ti-emoji" style="background:#fff">emoji</span>
+    <img class="cover-img" src="/cos/about-page/cover.jpg" alt=""/>
+  `;
+
+  const rewritten = rewriteAboutPreviewAssets(html);
+
+  assert.match(rewritten, /<img loading="eager" decoding="async" class="ti" src="\/cos\/about-page\/simpleicon-react\.svg"/);
+  assert.match(rewritten, /<img loading="lazy" decoding="async" class="cover-img"/);
+});
+
 test("keeps the local Vite server aligned with the production COS proxy path", () => {
   const viteConfig = readFileSync(resolve("vite.config.js"), "utf8");
 

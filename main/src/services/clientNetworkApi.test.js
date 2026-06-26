@@ -25,7 +25,7 @@ test("measureClientNetwork returns compact visitor network data and request late
 
   assert.match(requestedUrl, /^\/api\/client\/network\?ts=\d+/);
   assert.deepEqual(result, {
-    addressLabel: "123.45.*.*",
+    addressLabel: "杭州",
     regionLabel: "杭州",
     ipMasked: "123.45.*.*",
     serverTime: "2026-06-26T00:00:00Z",
@@ -33,7 +33,7 @@ test("measureClientNetwork returns compact visitor network data and request late
   });
 });
 
-test("measureClientNetwork prefers the masked IP for the compact address label", async () => {
+test("measureClientNetwork falls back to masked IP when region is generic visitor label", async () => {
   const result = await measureClientNetwork({
     fetchImpl: async () => ({
       ok: true,
