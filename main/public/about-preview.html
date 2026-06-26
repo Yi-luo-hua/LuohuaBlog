@@ -965,15 +965,12 @@ body::after {
   .game-slot {
     min-height: 0;
     border-radius: 0.85rem;
+    aspect-ratio: 9 / 13;
   }
 
-  .game-slot:first-child {
-    grid-column: 1 / -1;
-    aspect-ratio: 20 / 9;
-  }
-
-  .game-slot:not(:first-child) {
-    aspect-ratio: 9 / 15.5;
+  .game-slot:first-child .slot-image {
+    object-fit: contain;
+    padding: 0.28rem;
   }
 
   .game-slot .slot-name {

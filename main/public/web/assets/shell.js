@@ -11,8 +11,17 @@ const NAV_ITEMS = [
   { key: 'history',  href: 'history.html',  icon: 'history',      text: '历史' },
 ];
 
+function isShowcaseEmbed() {
+  return new URLSearchParams(location.search).get('embed') === 'showcase';
+}
+
 export function mountShell(activeKey = 'library', opts = {}) {
   const requireAuth = opts.requireAuth !== false;
+  const showcaseEmbed = isShowcaseEmbed();
+
+  if (showcaseEmbed) {
+    document.documentElement.classList.add('embed-showcase');
+  }
 
   // 登录拦截
   if (requireAuth && !Auth.isLoggedIn()) {

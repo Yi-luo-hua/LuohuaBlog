@@ -126,24 +126,35 @@ test("keeps about, moments, and friends mobile drawer navigation on their page p
 
 test("keeps the about game cards compact and fully visible on phones", () => {
   const aboutPreviewSource = readSource("../public/about-preview.html");
+  const mobileGameBlock = aboutPreviewSource.match(
+    /@media \(max-width:\s*540px\)\s*\{(?<rules>[\s\S]*?)\/\* ============ 5\./,
+  );
+
+  assert.ok(mobileGameBlock, "missing mobile game card rules");
 
   assert.match(
     aboutPreviewSource,
     /@media \(max-width:\s*540px\)\s*\{[\s\S]*?\.game-shelf-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/,
   );
-  assert.match(
-    aboutPreviewSource,
-    /@media \(max-width:\s*540px\)\s*\{[\s\S]*?\.game-slot:first-child\s*\{[\s\S]*?grid-column:\s*1 \/ -1/,
-  );
+  assert.doesNotMatch(mobileGameBlock.groups.rules, /grid-column:\s*1 \/ -1/);
   assert.match(
     aboutPreviewSource,
     /@media \(max-width:\s*540px\)\s*\{[\s\S]*?\.game-slot\s*\{[\s\S]*?border-radius:\s*0\.85rem/,
   );
+  assert.match(
+    aboutPreviewSource,
+    /@media \(max-width:\s*540px\)\s*\{[\s\S]*?\.game-slot\s*\{[\s\S]*?aspect-ratio:\s*9 \/ 13/,
+  );
 });
 
 test("keeps the quizcard showcase bounded on phone width", () => {
+  const showcaseSource = readSource("../public/showcase/quizcard.html");
   const showcaseCss = readSource("../public/showcase/assets/showcase.css");
   const quizcardCss = readSource("../public/web/assets/style.css");
+  const shellSource = readSource("../public/web/assets/shell.js");
+
+  assert.match(showcaseSource, /src="\.\.\/web\/index\.html\?embed=showcase"/);
+  assert.match(shellSource, /embed-showcase/);
 
   assert.match(
     showcaseCss,
@@ -155,11 +166,19 @@ test("keeps the quizcard showcase bounded on phone width", () => {
   );
   assert.match(
     showcaseCss,
-    /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.tg-demo-pc \.frame\s*\{[\s\S]*?height:\s*min\(620px,\s*132vw\)/,
+    /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.tg-demo-pc \.frame\s*\{[\s\S]*?height:\s*min\(560px,\s*118vw\)/,
   );
   assert.match(
     showcaseCss,
     /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.iphone\s*\{[\s\S]*?width:\s*min\(100%,\s*260px\)/,
+  );
+  assert.match(
+    quizcardCss,
+    /html\.embed-showcase \.nav-mobile\s*\{[\s\S]*?display:\s*none\s*!important/,
+  );
+  assert.match(
+    quizcardCss,
+    /html\.embed-showcase \.page\s*\{[\s\S]*?padding:\s*64px 12px 18px/,
   );
   assert.match(
     quizcardCss,
