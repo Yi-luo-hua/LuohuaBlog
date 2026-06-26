@@ -28,8 +28,8 @@ test("forces eager loading for every image to fix shadow DOM visibility", () => 
 
   const rewritten = rewriteAboutPreviewAssets(html);
 
-  assert.match(rewritten, /<img loading="eager" decoding="async" class="cover"/);
-  assert.match(rewritten, /<img loading="eager" decoding="sync" src="\/cos\/about-page\/hero\.jpg"/);
+  assert.match(rewritten, /<img loading="eager" decoding="async" referrerpolicy="no-referrer" class="cover"/);
+  assert.match(rewritten, /<img referrerpolicy="no-referrer" loading="eager" decoding="sync" src="\/cos\/about-page\/hero\.jpg"/);
 });
 
 test("forces eager loading for marquee tech-pill icons alongside other images", () => {
@@ -41,8 +41,21 @@ test("forces eager loading for marquee tech-pill icons alongside other images", 
 
   const rewritten = rewriteAboutPreviewAssets(html);
 
-  assert.match(rewritten, /<img loading="eager" decoding="async" class="ti" src="\/cos\/about-page\/simpleicon-react\.svg"/);
-  assert.match(rewritten, /<img loading="eager" decoding="async" class="cover-img"/);
+  assert.match(rewritten, /<img loading="eager" decoding="async" referrerpolicy="no-referrer" class="ti" src="\/cos\/about-page\/simpleicon-react\.svg"/);
+  assert.match(rewritten, /<img loading="eager" decoding="async" referrerpolicy="no-referrer" class="cover-img"/);
+});
+
+
+test("strips inline onerror handlers and adds referrerpolicy for shadow DOM safety", () => {
+  const html = `
+    <img class="slot-image" src="/cos/about-page/game.jpg" alt="game" onerror="this.style.display='none'"/>
+    <img class="slot-blur" src="/cos/about-page/game.jpg" alt="" onerror="this.style.display='none'"/>
+  `;
+
+  const rewritten = rewriteAboutPreviewAssets(html);
+
+  assert.doesNotMatch(rewritten, /onerror/);
+  assert.match(rewritten, /referrerpolicy="no-referrer"/);
 });
 
 test("keeps the local Vite server aligned with the production COS proxy path", () => {

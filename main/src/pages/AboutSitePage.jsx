@@ -21,7 +21,7 @@ const scopePreviewCSS = (css) =>
     .replace(/html,\s*body\s*\{/g, ":host, .about-shadow-shell {")
     .replace(/body::before/g, ".about-shadow-shell::before")
     .replace(/body::after/g, ".about-shadow-shell::after")
-    .replace(/body\s*\{/g, ".about-shadow-shell {");
+    .replace(/\bbody\s*\{/g, ".about-shadow-shell {");
 
 const prepareMarkup = (html) => {
   const headLinks = [...html.matchAll(/<link\b[^>]*>/gi)]
