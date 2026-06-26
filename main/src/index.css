@@ -484,7 +484,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    max-width: min(38vw, 11rem);
+    max-width: min(42vw, 12rem);
     flex: 0 1 auto;
     min-width: 0;
   }
@@ -514,11 +514,11 @@ body {
     backdrop-filter: blur(14px);
   }
 
-  .visitor-network-chip--region {
-    max-width: 5.4rem;
+  .visitor-network-chip--address {
+    max-width: 6.6rem;
   }
 
-  .visitor-network-chip--region span:last-child {
+  .visitor-network-chip--address span:last-child {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;

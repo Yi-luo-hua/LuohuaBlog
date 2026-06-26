@@ -25,11 +25,31 @@ test("measureClientNetwork returns compact visitor network data and request late
 
   assert.match(requestedUrl, /^\/api\/client\/network\?ts=\d+/);
   assert.deepEqual(result, {
+    addressLabel: "123.45.*.*",
     regionLabel: "杭州",
     ipMasked: "123.45.*.*",
     serverTime: "2026-06-26T00:00:00Z",
     latencyMs: 38,
   });
+});
+
+test("measureClientNetwork prefers the masked IP for the compact address label", async () => {
+  const result = await measureClientNetwork({
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        regionLabel: "访客",
+        ipMasked: "203.0.*.*",
+      }),
+    }),
+    now: (() => {
+      const marks = [10, 31];
+      return () => marks.shift();
+    })(),
+  });
+
+  assert.equal(result.addressLabel, "203.0.*.*");
+  assert.equal(result.latencyMs, 21);
 });
 
 test("measureClientNetwork throws readable errors for failed responses", async () => {

@@ -12,9 +12,12 @@ export async function measureClientNetwork({
     throw new Error(data.message || data.error || `HTTP ${res.status}`);
   }
   const latencyMs = Math.max(0, Math.round(now() - startedAt));
+  const regionLabel = data.regionLabel || "访客";
+  const ipMasked = data.ipMasked || "";
   return {
-    regionLabel: data.regionLabel || "访客",
-    ipMasked: data.ipMasked || "",
+    addressLabel: ipMasked || regionLabel || "访客",
+    regionLabel,
+    ipMasked,
     serverTime: data.serverTime || "",
     latencyMs,
   };

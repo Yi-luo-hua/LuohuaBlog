@@ -6,6 +6,7 @@ const REFRESH_MS = 30_000;
 
 const VisitorNetworkBadge = ({ className = "" }) => {
   const [network, setNetwork] = useState({
+    addressLabel: "访客",
     regionLabel: "访客",
     latencyMs: null,
     ipMasked: "",
@@ -23,6 +24,7 @@ const VisitorNetworkBadge = ({ className = "" }) => {
         if (!cancelled) {
           setNetwork((current) => ({
             ...current,
+            addressLabel: current.addressLabel || current.ipMasked || "访客",
             regionLabel: current.regionLabel || "访客",
             latencyMs: null,
           }));
@@ -40,16 +42,18 @@ const VisitorNetworkBadge = ({ className = "" }) => {
 
   const latencyText =
     typeof network.latencyMs === "number" ? `${network.latencyMs}ms` : "--ms";
-  const label = network.regionLabel || "访客";
+  const addressText =
+    network.addressLabel || network.ipMasked || network.regionLabel || "访客";
+  const regionText = network.regionLabel || "访客";
   const title = network.ipMasked
-    ? `${label} · ${latencyText} · IP ${network.ipMasked}`
-    : `${label} · ${latencyText}`;
+    ? `${regionText} · ${latencyText} · IP ${network.ipMasked}`
+    : `${addressText} · ${latencyText}`;
 
   return (
     <span className={`visitor-network-badge ${className}`} title={title} aria-label={title}>
-      <span className="visitor-network-chip visitor-network-chip--region">
+      <span className="visitor-network-chip visitor-network-chip--address">
         <span className="visitor-network-dot" aria-hidden />
-        <span>{label}</span>
+        <span>{addressText}</span>
       </span>
       <span className="visitor-network-chip visitor-network-chip--latency">
         {latencyText}

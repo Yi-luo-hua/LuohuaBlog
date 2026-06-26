@@ -70,7 +70,18 @@ test("keeps the homepage visitor network, avatar, and cover switcher in one top-
   assert.match(navbarSource, /<VisitorNetworkBadge\s+className="nav-left-network"/);
   assert.match(navbarSource, /aria-label="Home"/);
   assert.match(navbarSource, /SWITCH COVER/);
+  assert.ok(
+    navbarSource.indexOf('aria-label="Home"') <
+      navbarSource.indexOf("SWITCH COVER"),
+    "avatar should stay at the far left of the home toolbar"
+  );
+  assert.ok(
+    navbarSource.indexOf("SWITCH COVER") <
+      navbarSource.indexOf('<VisitorNetworkBadge className="nav-left-network"'),
+    "visitor IP and latency should sit to the right of the cover switcher"
+  );
   assert.match(cssSource, /\.nav-left-tools\s*\{[^}]*@apply flex[^}]*flex-wrap:\s*nowrap;/s);
   assert.match(cssSource, /\.visitor-network-badge\s*\{[^}]*display:\s*inline-flex;/s);
+  assert.match(cssSource, /\.visitor-network-chip--address/);
   assert.match(cssSource, /\.visitor-network-chip--latency/);
 });

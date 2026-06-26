@@ -325,9 +325,6 @@ const NavBar = () => {
         <header className="absolute top-1/2 w-full -translate-y-1/2">
           <nav className="flex size-full min-w-0 items-center justify-between gap-2 px-2 sm:gap-3 sm:p-4">
             <div className="nav-left-tools">
-              {currentScrollY === 0 && !isSubPage && (
-                <VisitorNetworkBadge className="nav-left-network" />
-              )}
               <Link
                 to="/"
                 className="block shrink-0"
@@ -341,16 +338,19 @@ const NavBar = () => {
                 />
               </Link>
               {currentScrollY === 0 && !isSubPage && (
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent("showHeroPreview"))}
-                  className={clsx(
-                    "nav-hover-btn hidden md:inline",
-                    isLightNav && `nav-hover-btn--${navTheme}`
-                  )}
-                >
-                  SWITCH COVER
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("showHeroPreview"))}
+                    className={clsx(
+                      "nav-hover-btn hidden md:inline",
+                      isLightNav && `nav-hover-btn--${navTheme}`
+                    )}
+                  >
+                    SWITCH COVER
+                  </button>
+                  <VisitorNetworkBadge className="nav-left-network" />
+                </>
               )}
             </div>
 
