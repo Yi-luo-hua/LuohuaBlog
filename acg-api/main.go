@@ -71,6 +71,7 @@ func main() {
 	})
 	mux.HandleFunc("/api/chat/stats", chatStatsHandler)
 	mux.HandleFunc("/api/server/info", serverInfoHandler)
+	mux.HandleFunc("/api/client/network", clientNetworkHandler)
 	mux.HandleFunc("/api/chat", chatHandler)
 	mux.HandleFunc("/api/ai/image/gallery", aiImageGalleryHandler)
 	mux.HandleFunc("/api/ai/image", aiImageHandler)

@@ -475,6 +475,72 @@ body {
     @apply relative shrink-0 whitespace-nowrap px-1.5 font-general text-[10px] uppercase text-blue-50 sm:px-2 sm:text-xs md:ms-6 md:px-0 lg:ms-10 after:absolute after:-bottom-0.5 after:left-0 after:h-[2px] after:w-full after:origin-bottom-right after:scale-x-0 after:bg-neutral-800 after:transition-transform after:duration-300 after:ease-[cubic-bezier(0.65_0.05_0.36_1)] hover:after:origin-bottom-left hover:after:scale-x-100 dark:after:bg-white cursor-pointer;
   }
 
+  .nav-left-tools {
+    @apply flex min-w-0 shrink-0 items-center gap-2 sm:gap-3 md:gap-4;
+    flex-wrap: nowrap;
+  }
+
+  .visitor-network-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    max-width: min(38vw, 11rem);
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .visitor-network-chip {
+    display: inline-flex;
+    min-width: 0;
+    height: 2rem;
+    align-items: center;
+    gap: 0.32rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.32),
+      0 10px 28px rgba(0, 0, 0, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    font-family: "General Sans", system-ui, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    padding: 0 0.58rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    backdrop-filter: blur(14px);
+  }
+
+  .visitor-network-chip--region {
+    max-width: 5.4rem;
+  }
+
+  .visitor-network-chip--region span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .visitor-network-chip--latency {
+    color: rgba(255, 237, 160, 0.94);
+  }
+
+  .visitor-network-dot {
+    width: 0.42rem;
+    height: 0.42rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: #51cf66;
+    box-shadow: 0 0 0 0.18rem rgba(81, 207, 102, 0.18);
+  }
+
+  .nav-left-tools .nav-hover-btn {
+    margin-left: 0;
+  }
+
 
   .floating-nav {
     @apply bg-black rounded-lg border;

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useWindowScroll } from "react-use";
 import { cosAsset } from "../lib/cosAsset.js";
+import VisitorNetworkBadge from "./VisitorNetworkBadge";
 
 const navLinks = [
   { label: "HOME", to: "/", end: true },
@@ -323,7 +324,10 @@ const NavBar = () => {
       >
         <header className="absolute top-1/2 w-full -translate-y-1/2">
           <nav className="flex size-full min-w-0 items-center justify-between gap-2 px-2 sm:gap-3 sm:p-4">
-            <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-7">
+            <div className="nav-left-tools">
+              {currentScrollY === 0 && !isSubPage && (
+                <VisitorNetworkBadge className="nav-left-network" />
+              )}
               <Link
                 to="/"
                 className="block shrink-0"

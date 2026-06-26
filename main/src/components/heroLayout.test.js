@@ -61,3 +61,16 @@ test("uses the build homepage draw and fill animation pattern", () => {
   assert.match(cssSource, /@keyframes heroWordmarkFillIn\s*{/);
   assert.match(cssSource, /fill-opacity:\s*1/);
 });
+
+test("keeps the homepage visitor network, avatar, and cover switcher in one top-left row", () => {
+  const navbarSource = readFileSync(new URL("./Navbar.jsx", import.meta.url), "utf8");
+
+  assert.match(navbarSource, /import VisitorNetworkBadge from "\.\/VisitorNetworkBadge"/);
+  assert.match(navbarSource, /className="nav-left-tools"/);
+  assert.match(navbarSource, /<VisitorNetworkBadge\s+className="nav-left-network"/);
+  assert.match(navbarSource, /aria-label="Home"/);
+  assert.match(navbarSource, /SWITCH COVER/);
+  assert.match(cssSource, /\.nav-left-tools\s*\{[^}]*@apply flex[^}]*flex-wrap:\s*nowrap;/s);
+  assert.match(cssSource, /\.visitor-network-badge\s*\{[^}]*display:\s*inline-flex;/s);
+  assert.match(cssSource, /\.visitor-network-chip--latency/);
+});
