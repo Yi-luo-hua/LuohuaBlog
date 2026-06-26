@@ -753,12 +753,14 @@ body {
 
   @media (max-width: 767px) {
     .hero-wordmark {
-      top: 5.45rem;
-      left: 50%;
-      right: auto;
-      width: clamp(11rem, 72vw, 16rem);
-      max-width: calc(100vw - 2rem);
-      transform: translate3d(-50%, 0, 0);
+      top: 4.85rem;
+      left: auto;
+      right: 0.75rem;
+      z-index: 34;
+      width: clamp(7.5rem, 38vw, 10.5rem);
+      max-width: calc(100vw - 1.5rem);
+      opacity: 0.88;
+      transform: translate3d(0, 0, 0);
     }
   }
 
@@ -3481,6 +3483,10 @@ body {
   background: rgba(16, 42, 36, 0.24);
 }
 
+.nav-mobile-backdrop--moments {
+  background: rgba(92, 67, 79, 0.24);
+}
+
 .nav-mobile-backdrop--gallery {
   background: rgba(43, 43, 43, 0.22);
 }
@@ -3567,6 +3573,17 @@ body {
   box-shadow: -8px 0 34px rgba(111, 174, 155, 0.17);
 }
 
+.nav-mobile-drawer--moments {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 249, 236, 0.97) 0%,
+    rgba(255, 239, 247, 0.97) 46%,
+    rgba(236, 251, 246, 0.97) 100%
+  );
+  border-left: 1px solid #f3d9df;
+  box-shadow: -8px 0 34px rgba(188, 137, 165, 0.17);
+}
+
 .nav-mobile-drawer--bili {
   background: linear-gradient(
     180deg,
@@ -3611,6 +3628,10 @@ body {
   border-bottom: 1px solid rgba(207, 228, 219, 0.95);
 }
 
+.nav-mobile-drawer--moments .nav-mobile-drawer-head {
+  border-bottom: 1px solid rgba(243, 217, 223, 0.95);
+}
+
 .nav-mobile-drawer--bili .nav-mobile-drawer-head {
   border-bottom: 1px solid rgba(232, 223, 251, 0.95);
 }
@@ -3639,6 +3660,10 @@ body {
 
 .nav-mobile-drawer--friends .nav-mobile-drawer-title {
   color: rgba(16, 42, 36, 0.72);
+}
+
+.nav-mobile-drawer--moments .nav-mobile-drawer-title {
+  color: rgba(156, 95, 120, 0.82);
 }
 
 .nav-mobile-drawer--bili .nav-mobile-drawer-title {
@@ -3683,6 +3708,12 @@ body {
   color: #102a24;
 }
 
+.nav-mobile-drawer--moments .nav-mobile-close {
+  border: 1px solid #f3d9df;
+  background: rgba(255, 255, 255, 0.86);
+  color: #5c434f;
+}
+
 .nav-mobile-drawer--light .nav-mobile-close:hover,
 .nav-mobile-drawer--light .nav-mobile-close:focus-visible,
 .nav-mobile-drawer--ai .nav-mobile-close:hover,
@@ -3709,6 +3740,14 @@ body {
   border-color: #6fae9b;
   background: #fff;
   color: #102a24;
+  outline: none;
+}
+
+.nav-mobile-drawer--moments .nav-mobile-close:hover,
+.nav-mobile-drawer--moments .nav-mobile-close:focus-visible {
+  border-color: #c66f91;
+  background: #fff;
+  color: #9c5f78;
   outline: none;
 }
 
@@ -3811,6 +3850,21 @@ body {
   color: #ff8fab;
 }
 
+/* Moments - soft scrapbook tones */
+.nav-mobile-link--moments {
+  color: #5c434f;
+}
+.nav-mobile-link--moments:hover,
+.nav-mobile-link--moments:focus-visible {
+  background: rgba(255, 255, 255, 0.86);
+  color: #9c5f78;
+  outline: none;
+}
+.nav-mobile-link--active-moments {
+  background: rgba(255, 255, 255, 0.96);
+  color: #9c5f78;
+}
+
 /* Friends - calm signal station */
 .nav-mobile-link--friends {
   color: #102a24;
@@ -3877,14 +3931,16 @@ body {
 .nav-hover-btn--ai,
 .nav-hover-btn--guestbook,
 .nav-hover-btn--gallery,
-.nav-hover-btn--about {
+.nav-hover-btn--about,
+.nav-hover-btn--moments {
   color: #2b2b2b;
 }
 .nav-hover-btn-light::after,
 .nav-hover-btn--ai::after,
 .nav-hover-btn--guestbook::after,
 .nav-hover-btn--gallery::after,
-.nav-hover-btn--about::after {
+.nav-hover-btn--about::after,
+.nav-hover-btn--moments::after {
   background-color: #ff8fab;
 }
 .nav-hover-btn--friends {
@@ -3906,7 +3962,8 @@ body {
 .nav-menu-btn--ai,
 .nav-menu-btn--guestbook,
 .nav-menu-btn--gallery,
-.nav-menu-btn--about {
+.nav-menu-btn--about,
+.nav-menu-btn--moments {
   border-color: #f2e6c9;
   background: rgba(255, 255, 255, 0.9);
   color: #2b2b2b;

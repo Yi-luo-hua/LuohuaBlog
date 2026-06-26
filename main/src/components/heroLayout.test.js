@@ -51,16 +51,18 @@ test("keeps the wordmark stroke outline thin enough to stay legible at hero size
   assert.doesNotMatch(cssSource, /vector-effect:\s*non-scaling-stroke/);
 });
 
-test("keeps the taozhiyo wordmark centered and bounded on phones", () => {
+test("keeps the taozhiyo wordmark out of the main phone hero content", () => {
   const mobileBlock = cssSource.match(
     /@media \(max-width:\s*767px\)\s*\{[\s\S]*?\.hero-wordmark\s*\{(?<rules>[\s\S]*?)\n\s*\}/
   );
 
   assert.ok(mobileBlock, "missing mobile hero wordmark rules");
-  assert.match(mobileBlock.groups.rules, /left:\s*50%/);
-  assert.match(mobileBlock.groups.rules, /right:\s*auto/);
-  assert.match(mobileBlock.groups.rules, /transform:\s*translate3d\(-50%,\s*0,\s*0\)/);
-  assert.match(mobileBlock.groups.rules, /max-width:\s*calc\(100vw - 2rem\)/);
+  assert.match(mobileBlock.groups.rules, /top:\s*4\.85rem/);
+  assert.match(mobileBlock.groups.rules, /left:\s*auto/);
+  assert.match(mobileBlock.groups.rules, /right:\s*0\.75rem/);
+  assert.match(mobileBlock.groups.rules, /width:\s*clamp\(7\.5rem,\s*38vw,\s*10\.5rem\)/);
+  assert.match(mobileBlock.groups.rules, /z-index:\s*34/);
+  assert.match(mobileBlock.groups.rules, /transform:\s*translate3d\(0,\s*0,\s*0\)/);
 });
 
 test("uses the build homepage draw and fill animation pattern", () => {

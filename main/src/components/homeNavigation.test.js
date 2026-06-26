@@ -110,14 +110,17 @@ test("keeps the about projects grid roomy in the integrated site", () => {
   assert.match(aboutPreviewSource, /@media \(min-width:\s*14[0-9]{2}px\)\s*\{\s*\.projects\s*\{\s*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
 });
 
-test("keeps about and friends mobile drawer navigation on their page palettes", () => {
+test("keeps about, moments, and friends mobile drawer navigation on their page palettes", () => {
   const cssSource = readSource("index.css");
 
-  for (const theme of ["about", "friends"]) {
+  for (const theme of ["about", "moments", "friends"]) {
     assert.match(cssSource, new RegExp(`\\.nav-mobile-backdrop--${theme}`));
     assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme}\\s*\\{`));
     assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme} \\.nav-mobile-drawer-head`));
     assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme} \\.nav-mobile-close`));
+    assert.match(cssSource, new RegExp(`\\.nav-mobile-link--${theme}`));
+    assert.match(cssSource, new RegExp(`\\.nav-mobile-link--active-${theme}`));
+    assert.match(cssSource, new RegExp(`\\.nav-menu-btn--${theme}`));
   }
 });
 
@@ -140,6 +143,7 @@ test("keeps the about game cards compact and fully visible on phones", () => {
 
 test("keeps the quizcard showcase bounded on phone width", () => {
   const showcaseCss = readSource("../public/showcase/assets/showcase.css");
+  const quizcardCss = readSource("../public/web/assets/style.css");
 
   assert.match(
     showcaseCss,
@@ -147,11 +151,27 @@ test("keeps the quizcard showcase bounded on phone width", () => {
   );
   assert.match(
     showcaseCss,
-    /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.tg-demo-pc \.frame\s*\{[\s\S]*?min-height:\s*clamp\(360px,\s*110vw,\s*520px\)/,
+    /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.tg-demo\s*\{[\s\S]*?gap:\s*18px/,
+  );
+  assert.match(
+    showcaseCss,
+    /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.tg-demo-pc \.frame\s*\{[\s\S]*?height:\s*min\(620px,\s*132vw\)/,
   );
   assert.match(
     showcaseCss,
     /@media \(max-width:\s*640px\)\s*\{[\s\S]*?\.iphone\s*\{[\s\S]*?width:\s*min\(100%,\s*260px\)/,
+  );
+  assert.match(
+    quizcardCss,
+    /@media \(max-width:\s*520px\)\s*\{[\s\S]*?\.page\s*\{[\s\S]*?padding:\s*68px 12px calc\(env\(safe-area-inset-bottom,\s*0\) \+ 88px\)/,
+  );
+  assert.match(
+    quizcardCss,
+    /@media \(max-width:\s*520px\)\s*\{[\s\S]*?\.deck-card\s*\{[\s\S]*?padding:\s*14px/,
+  );
+  assert.match(
+    quizcardCss,
+    /@media \(max-width:\s*520px\)\s*\{[\s\S]*?\.deck-card \.footer\s*\{[\s\S]*?align-items:\s*stretch/,
   );
 });
 
