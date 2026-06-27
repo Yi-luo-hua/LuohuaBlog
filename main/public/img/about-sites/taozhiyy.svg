@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="taozhiyy.top preview">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff7ed"/>
+      <stop offset="0.5" stop-color="#ffe1eb"/>
+      <stop offset="1" stop-color="#d9f4ff"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff6f91"/>
+      <stop offset="1" stop-color="#7c5cff"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#4c253b" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <rect width="960" height="540" fill="url(#sky)"/>
+  <circle cx="790" cy="90" r="120" fill="#ffffff" opacity=".55"/>
+  <circle cx="120" cy="450" r="140" fill="#ffd1dc" opacity=".45"/>
+  <rect x="88" y="68" width="784" height="404" rx="28" fill="#fffaf5" opacity=".9" filter="url(#shadow)"/>
+  <rect x="88" y="68" width="784" height="74" rx="28" fill="#ffffff"/>
+  <circle cx="132" cy="105" r="9" fill="#ff8fab"/>
+  <circle cx="162" cy="105" r="9" fill="#ffd166"/>
+  <circle cx="192" cy="105" r="9" fill="#80ed99"/>
+  <rect x="238" y="92" width="300" height="26" rx="13" fill="#f3edf7"/>
+  <text x="480" y="240" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="70" font-weight="800" fill="#241322">桃之夭夭</text>
+  <text x="480" y="294" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="600" fill="#7a6170">taozhiyy.top</text>
+  <rect x="316" y="334" width="328" height="16" rx="8" fill="url(#brand)" opacity=".9"/>
+  <rect x="236" y="382" width="136" height="34" rx="17" fill="#ff8fab" opacity=".18"/>
+  <rect x="412" y="382" width="136" height="34" rx="17" fill="#7c5cff" opacity=".16"/>
+  <rect x="588" y="382" width="136" height="34" rx="17" fill="#48cae4" opacity=".18"/>
+</svg>

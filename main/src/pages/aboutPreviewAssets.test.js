@@ -20,6 +20,23 @@ test("rewrites direct COS URLs in the about preview to the same-origin proxy", (
   assert.match(rewritten, /url\('\/cos\/about-page\/demo\.webp'\)/);
 });
 
+test("rewrites about site thumbnails to local deployable assets", () => {
+  const html = `
+    <img src="/cos/about-page/20260624/sites-taozhiyy-3616e0f19f.jpg" alt="taozhiyy.top">
+    <img src="/cos/about-page/20260624/sites-butterfly-3b2fb61396.jpg" alt="bistutzyy.github.io">
+    <img src="/cos/about-page/20260624/sites-reimu-a3d1934027.jpg" alt="blog1-reimu.vercel.app">
+    <img src="/cos/about-page/20260624/sites-tzyy11-41ead66835.jpg" alt="tzyy11.vercel.app">
+  `;
+
+  const rewritten = rewriteAboutPreviewAssets(html);
+
+  assert.match(rewritten, /src="\/img\/about-sites\/taozhiyy\.svg"/);
+  assert.match(rewritten, /src="\/img\/about-sites\/butterfly\.svg"/);
+  assert.match(rewritten, /src="\/img\/about-sites\/reimu\.svg"/);
+  assert.match(rewritten, /src="\/img\/about-sites\/tzyy11\.svg"/);
+  assert.doesNotMatch(rewritten, /sites-taozhiyy-3616e0f19f\.jpg/);
+});
+
 test("forces eager loading for every image to fix shadow DOM visibility", () => {
   const html = `
     <img class="cover" src="/cos/about-page/demo.jpg" alt="demo">
