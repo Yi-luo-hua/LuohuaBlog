@@ -20,7 +20,7 @@ test("rewrites direct COS URLs in the about preview to the same-origin proxy", (
   assert.match(rewritten, /url\('\/cos\/about-page\/demo\.webp'\)/);
 });
 
-test("rewrites about site thumbnails to local deployable assets", () => {
+test("keeps the original about site thumbnails on the COS proxy", () => {
   const html = `
     <img src="/cos/about-page/20260624/sites-taozhiyy-3616e0f19f.jpg" alt="taozhiyy.top">
     <img src="/cos/about-page/20260624/sites-butterfly-3b2fb61396.jpg" alt="bistutzyy.github.io">
@@ -30,11 +30,11 @@ test("rewrites about site thumbnails to local deployable assets", () => {
 
   const rewritten = rewriteAboutPreviewAssets(html);
 
-  assert.match(rewritten, /src="\/img\/about-sites\/taozhiyy\.svg"/);
-  assert.match(rewritten, /src="\/img\/about-sites\/butterfly\.svg"/);
-  assert.match(rewritten, /src="\/img\/about-sites\/reimu\.svg"/);
-  assert.match(rewritten, /src="\/img\/about-sites\/tzyy11\.svg"/);
-  assert.doesNotMatch(rewritten, /sites-taozhiyy-3616e0f19f\.jpg/);
+  assert.match(rewritten, /src="\/cos\/about-page\/20260624\/sites-taozhiyy-3616e0f19f\.jpg"/);
+  assert.match(rewritten, /src="\/cos\/about-page\/20260624\/sites-butterfly-3b2fb61396\.jpg"/);
+  assert.match(rewritten, /src="\/cos\/about-page\/20260624\/sites-reimu-a3d1934027\.jpg"/);
+  assert.match(rewritten, /src="\/cos\/about-page\/20260624\/sites-tzyy11-41ead66835\.jpg"/);
+  assert.doesNotMatch(rewritten, /\/img\/about-sites\//);
 });
 
 test("forces eager loading for every image to fix shadow DOM visibility", () => {
@@ -73,6 +73,19 @@ test("strips inline onerror handlers and adds referrerpolicy for shadow DOM safe
 
   assert.doesNotMatch(rewritten, /onerror/);
   assert.match(rewritten, /referrerpolicy="no-referrer"/);
+});
+
+test("keeps the original Genshin image visible instead of hiding it after a transient error", () => {
+  const html = `
+    <img loading="lazy" decoding="async" class="slot-image" src="/cos/about-page/20260624/games-genshin.jpg-card-4f646b6651.jpg" alt="原神" onerror="this.style.display='none'" />
+  `;
+
+  const rewritten = rewriteAboutPreviewAssets(html);
+
+  assert.match(rewritten, /src="\/cos\/about-page\/20260624\/games-genshin\.jpg-card-4f646b6651\.jpg"/);
+  assert.match(rewritten, /loading="eager"/);
+  assert.match(rewritten, /referrerpolicy="no-referrer"/);
+  assert.doesNotMatch(rewritten, /onerror/);
 });
 
 test("keeps the local Vite server aligned with the production COS proxy path", () => {
