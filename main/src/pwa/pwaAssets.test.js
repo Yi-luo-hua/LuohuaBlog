@@ -61,6 +61,15 @@ test("service worker leaves live API traffic online-first", async () => {
   assert.match(workerSource, /return;/);
 });
 
+test("service worker does not stale-cache deployed app assets or about media", async () => {
+  const workerPath = resolve(publicDir, "sw.js");
+  const workerSource = await readFile(workerPath, "utf8");
+
+  assert.match(workerSource, /url\.pathname\.startsWith\("\/assets\/"\)/);
+  assert.match(workerSource, /url\.pathname\.startsWith\("\/cos\/"\)/);
+  assert.match(workerSource, /url\.pathname === "\/about-preview\.html"/);
+});
+
 test("service worker does not stale-cache deployed showcase pages", async () => {
   const workerPath = resolve(publicDir, "sw.js");
   const workerSource = await readFile(workerPath, "utf8");

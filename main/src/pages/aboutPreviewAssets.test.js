@@ -102,3 +102,12 @@ test("uses asset rewriting before mounting the about preview markup", () => {
   assert.match(routeSource, /import \{ rewriteAboutPreviewAssets \}/);
   assert.match(routeSource, /return rewriteAboutPreviewAssets\(`/);
 });
+
+test("about preview source eagerly loads image assets without hiding failed Genshin images", () => {
+  const previewHtml = readFileSync(resolve("public/about-preview.html"), "utf8");
+
+  assert.doesNotMatch(previewHtml, /loading="lazy"/);
+  assert.doesNotMatch(previewHtml, /onerror="this\.style\.display='none'"/);
+  assert.match(previewHtml, /simpleicon-react-61dafb-7c601a5c00\.svg/);
+  assert.match(previewHtml, /games-genshin\.jpg-card-4f646b6651\.jpg/);
+});

@@ -1,4 +1,4 @@
-const CACHE_NAME = "taozhiyy-pwa-v4";
+const CACHE_NAME = "taozhiyy-pwa-v5";
 const APP_START_URL = "/app";
 const APP_SHELL = [APP_START_URL, "/manifest.webmanifest", "/pwa-icon-192.png", "/pwa-icon-512.png"];
 
@@ -31,6 +31,9 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
+  if (url.pathname.startsWith("/assets/")) return;
+  if (url.pathname.startsWith("/cos/")) return;
+  if (url.pathname === "/about-preview.html") return;
   if (url.pathname.startsWith("/showcase/") || url.pathname.startsWith("/web/")) return;
 
   if (request.mode === "navigate") {
