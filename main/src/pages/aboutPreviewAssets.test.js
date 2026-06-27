@@ -103,6 +103,14 @@ test("uses asset rewriting before mounting the about preview markup", () => {
   assert.match(routeSource, /return rewriteAboutPreviewAssets\(`/);
 });
 
+test("fetches the about preview with a versioned no-store request", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+
+  assert.match(routeSource, /ABOUT_PREVIEW_VERSION/);
+  assert.match(routeSource, /new URLSearchParams\(\{ v: ABOUT_PREVIEW_VERSION \}\)/);
+  assert.match(routeSource, /fetch\(getAboutPreviewUrl\(\), \{ cache: "no-store" \}\)/);
+});
+
 test("about preview source eagerly loads image assets without hiding failed Genshin images", () => {
   const previewHtml = readFileSync(resolve("public/about-preview.html"), "utf8");
 

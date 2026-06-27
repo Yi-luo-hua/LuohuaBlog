@@ -4,6 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { rewriteAboutPreviewAssets } from "./aboutPreviewAssets.js";
 
 const ABOUT_PREVIEW_URL = "/about-preview.html";
+const ABOUT_PREVIEW_VERSION = "20260627-icons-genshin";
+
+const getAboutPreviewUrl = () =>
+  `${ABOUT_PREVIEW_URL}?${new URLSearchParams({ v: ABOUT_PREVIEW_VERSION })}`;
 
 const extractBetween = (source, startPattern, endPattern) => {
   const start = source.match(startPattern);
@@ -154,7 +158,7 @@ const AboutSitePage = () => {
 
     shadow.innerHTML = '<div class="about-route-loading">正在打开关于本站...</div>';
 
-    fetch(ABOUT_PREVIEW_URL)
+    fetch(getAboutPreviewUrl(), { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.text();
