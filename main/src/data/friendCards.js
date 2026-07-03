@@ -148,4 +148,11 @@ export const friendCards = [
     avatar: "https://bu.dusays.com/2026/06/12/6a2c1cb4f2089.jpg",
     note: "FRIEND",
   },
+  {
+    name: "JustPureH2O 的博客",
+    desc: "穷方圆平直之情，尽规矩准绳之用",
+    url: "https://justpureh2o.cn",
+    avatar: "https://justpureh2o.cn/avatar.jpg",
+    note: "FRIEND",
+  },
 ];
