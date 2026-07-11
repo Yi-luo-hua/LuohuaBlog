@@ -155,4 +155,11 @@ export const friendCards = [
     avatar: "https://justpureh2o.cn/avatar.jpg",
     note: "FRIEND",
   },
+  {
+    name: "SengokuCola",
+    desc: "随着风的轨迹 在那耀眼的午后",
+    url: "https://home.nibutupaopao.top",
+    avatar: "https://lsky.nibutupaopao.top/i/2026/07/09/6a4fc40211f69.png",
+    note: "FRIEND",
+  },
 ];
