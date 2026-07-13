@@ -162,4 +162,11 @@ export const friendCards = [
     avatar: "https://lsky.nibutupaopao.top/i/2026/07/09/6a4fc40211f69.png",
     note: "FRIEND",
   },
+  {
+    name: "笔尖代码",
+    desc: "笔尖代码 - 一份汇聚前端、后端、数据库、运维、系统知识的个人技术文档库",
+    url: "https://123456l.com",
+    avatar: "https://123456l.com/assets/images/logo.png",
+    note: "FRIEND",
+  },
 ];
