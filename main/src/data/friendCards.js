@@ -176,4 +176,11 @@ export const friendCards = [
     avatar: "https://blog.zuodev.top/file/picture/UserPicture.png",
     note: "FRIEND",
   },
+  {
+    name: "深渊园丁",
+    desc: "这个网站是我送给互联网的一本手绘笔记。如果你在这里找到了什么让你停留的东西，那我们就已经是朋友了",
+    url: "https://www.minedensity.top",
+    avatar: "https://www.minedensity.top/favicon.svg",
+    note: "FRIEND",
+  },
 ];
