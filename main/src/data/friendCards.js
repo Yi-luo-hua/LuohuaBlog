@@ -169,4 +169,11 @@ export const friendCards = [
     avatar: "https://123456l.com/assets/images/logo.png",
     note: "FRIEND",
   },
+  {
+    name: "Zorro",
+    desc: "记录生活、分享技术",
+    url: "https://blog.zuodev.top",
+    avatar: "https://blog.zuodev.top/file/picture/UserPicture.png",
+    note: "FRIEND",
+  },
 ];
