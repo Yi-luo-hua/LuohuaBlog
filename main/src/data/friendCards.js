@@ -183,4 +183,11 @@ export const friendCards = [
     avatar: "https://www.minedensity.top/favicon.svg",
     note: "FRIEND",
   },
+  {
+    name: "Keiyan的小栈",
+    desc: "梦没有终点！",
+    url: "https://keiyan.top",
+    avatar: "https://keiyan.top/static/userAvatar/KeKiyoan11783906090819170.png",
+    note: "FRIEND",
+  },
 ];
