@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { rewriteAboutPreviewAssets } from "./aboutPreviewAssets.js";
+import {
+  deferAboutPreviewImagesBySection,
+  rewriteAboutPreviewAssets,
+} from "./aboutPreviewAssets.js";
 
 const ABOUT_PREVIEW_URL = "/about-preview.html";
 const ABOUT_PREVIEW_VERSION = "20260627-icons-genshin";
@@ -37,11 +40,45 @@ const prepareMarkup = (html) => {
     "",
   );
 
-  return rewriteAboutPreviewAssets(`
+  return deferAboutPreviewImagesBySection(rewriteAboutPreviewAssets(`
     ${headLinks.join("\n")}
     <style>${scopePreviewCSS(style)}</style>
     <div class="about-shadow-shell">${body}</div>
-  `);
+  `));
+};
+
+const wireDeferredAboutImages = (root) => {
+  const sections = Array.from(root.querySelectorAll("[data-about-deferred-section]"));
+  if (!sections.length) return () => {};
+
+  const restoreSectionImages = (section) => {
+    section.querySelectorAll("img[data-about-deferred-src]").forEach((img) => {
+      const src = img.getAttribute("data-about-deferred-src");
+      if (src) img.setAttribute("src", src);
+      img.removeAttribute("data-about-deferred-src");
+      img.removeAttribute("data-about-deferred-img");
+    });
+    section.removeAttribute("data-about-deferred-section");
+  };
+
+  if (typeof IntersectionObserver === "undefined") {
+    sections.forEach(restoreSectionImages);
+    return () => {};
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        restoreSectionImages(entry.target);
+        observer.unobserve(entry.target);
+      });
+    },
+    { rootMargin: "900px 0px", threshold: 0.01 },
+  );
+
+  sections.forEach((section) => observer.observe(section));
+  return () => observer.disconnect();
 };
 
 const sameTextGroup = (left, right) =>
@@ -175,11 +212,13 @@ const AboutSitePage = () => {
           navigate(href);
         };
         shadow.addEventListener("click", onClick);
+        const removeDeferredImages = wireDeferredAboutImages(shadow);
         const removeMarquees = wireMarquees(shadow);
         const removeProjectCards = wireProjectCards(shadow);
         const removeGameShelf = wireGameShelf(shadow);
         cleanup = () => {
           shadow.removeEventListener("click", onClick);
+          removeDeferredImages();
           removeMarquees();
           removeProjectCards();
           removeGameShelf();

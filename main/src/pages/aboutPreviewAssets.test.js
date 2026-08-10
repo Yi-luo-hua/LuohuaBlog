@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { rewriteAboutPreviewAssets } from "./aboutPreviewAssets.js";
+import {
+  deferAboutPreviewImagesBySection,
+  rewriteAboutPreviewAssets,
+} from "./aboutPreviewAssets.js";
 
 test("rewrites direct COS URLs in the about preview to the same-origin proxy", () => {
   const html = `
@@ -62,6 +65,29 @@ test("forces eager loading for marquee tech-pill icons alongside other images", 
   assert.match(rewritten, /<img loading="eager" decoding="async" referrerpolicy="no-referrer" class="cover-img"/);
 });
 
+test("defers about preview images after the first two content sections", () => {
+  const html = rewriteAboutPreviewAssets(`
+    <section class="section first">
+      <img class="hero" src="/cos/about-page/first.jpg" alt="first">
+    </section>
+    <section class="section second">
+      <img class="project" src="/cos/about-page/second.jpg" alt="second">
+    </section>
+    <section class="section third">
+      <img class="site" src="/cos/about-page/third.jpg" alt="third">
+    </section>
+  `);
+
+  const deferred = deferAboutPreviewImagesBySection(html);
+
+  assert.match(deferred, /class="hero" src="\/cos\/about-page\/first\.jpg"/);
+  assert.match(deferred, /class="project" src="\/cos\/about-page\/second\.jpg"/);
+  assert.match(deferred, /data-about-deferred-section="true" class="section third"/);
+  assert.match(deferred, /data-about-deferred-src="\/cos\/about-page\/third\.jpg"/);
+  assert.match(deferred, /data-about-deferred-img="true"/);
+  assert.doesNotMatch(deferred, /class="site" src="\/cos\/about-page\/third\.jpg"/);
+});
+
 
 test("strips inline onerror handlers and adds referrerpolicy for shadow DOM safety", () => {
   const html = `
@@ -99,8 +125,15 @@ test("keeps the local Vite server aligned with the production COS proxy path", (
 test("uses asset rewriting before mounting the about preview markup", () => {
   const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
 
-  assert.match(routeSource, /import \{ rewriteAboutPreviewAssets \}/);
-  assert.match(routeSource, /return rewriteAboutPreviewAssets\(`/);
+  assert.match(routeSource, /rewriteAboutPreviewAssets/);
+  assert.match(routeSource, /deferAboutPreviewImagesBySection\(rewriteAboutPreviewAssets\(`/);
+});
+
+test("wires deferred about preview images after mounting the shadow markup", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+
+  assert.match(routeSource, /deferAboutPreviewImagesBySection/);
+  assert.match(routeSource, /wireDeferredAboutImages\(shadow\)/);
 });
 
 test("fetches the about preview with a versioned no-store request", () => {
