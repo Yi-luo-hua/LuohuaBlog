@@ -190,4 +190,11 @@ export const friendCards = [
     avatar: "https://keiyan.top/static/userAvatar/KeKiyoan11783906090819170.png",
     note: "FRIEND",
   },
+  {
+    name: "D-blog",
+    desc: "跑路的duck的技术分享和生活随笔",
+    url: "https://blog.pldduck.com",
+    avatar: "https://blog.pldduck.com/logo.png",
+    note: "FRIEND",
+  },
 ];
