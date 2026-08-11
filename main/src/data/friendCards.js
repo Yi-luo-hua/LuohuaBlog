@@ -197,4 +197,11 @@ export const friendCards = [
     avatar: "https://blog.pldduck.com/logo.png",
     note: "FRIEND",
   },
+  {
+    name: "Rain",
+    desc: "物物而不物于物，念念而不念于念",
+    url: "http://rainzt.cn",
+    avatar: "https://rainzt.cn/zzty.png",
+    note: "FRIEND",
+  },
 ];
