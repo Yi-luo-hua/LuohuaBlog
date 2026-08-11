@@ -1,6 +1,10 @@
 node_modules/
 dist/
 public/
+.worktrees/
+.tmp/
+__pycache__/
+*.pyc
 !main/public/
 main/public/**
 !main/public/assets/
