@@ -1041,13 +1041,15 @@ func TestOwnerGalleryPublishWritesGalleryDataViaGitHubContentsAPI(t *testing.T) 
 	})
 }
 
-func TestOwnerFriendPublishWritesFriendCardsViaGitHubContentsAPI(t *testing.T) {
+func TestOwnerFriendPublishCreatesPullRequestInsteadOfWritingMaster(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		token := seedUnlimitedOwnerSession(t)
 		var (
-			gotMethods []string
-			gotPaths   []string
-			gotPutBody map[string]any
+			gotMethods       []string
+			gotPaths         []string
+			gotCreateRefBody map[string]any
+			gotPutBody       map[string]any
+			gotPullBody      map[string]any
 		)
 		github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			gotMethods = append(gotMethods, r.Method)
@@ -1056,14 +1058,16 @@ func TestOwnerFriendPublishWritesFriendCardsViaGitHubContentsAPI(t *testing.T) {
 
 			switch r.Method {
 			case http.MethodGet:
-				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/friendCards.js" {
-					t.Fatalf("unexpected github GET path: %q", r.URL.RequestURI())
-				}
-				writeJSON(w, map[string]any{
-					"path":     "main/src/data/friendCards.js",
-					"sha":      "friends-sha",
-					"encoding": "base64",
-					"content": base64.StdEncoding.EncodeToString([]byte(`export const friendCards = [
+				switch r.URL.Path {
+				case "/repos/octo/taozhiyy/contents/main/src/data/friendCards.js":
+					if r.URL.Query().Get("ref") != "master" {
+						t.Fatalf("expected friendCards GET from master, got %q", r.URL.RequestURI())
+					}
+					writeJSON(w, map[string]any{
+						"path":     "main/src/data/friendCards.js",
+						"sha":      "friends-sha",
+						"encoding": "base64",
+						"content": base64.StdEncoding.EncodeToString([]byte(`export const friendCards = [
   {
     name: "KoBariDev",
     desc: "Ciallo",
@@ -1073,7 +1077,38 @@ func TestOwnerFriendPublishWritesFriendCardsViaGitHubContentsAPI(t *testing.T) {
   },
 ];
 `)),
-				})
+					})
+				case "/repos/octo/taozhiyy/git/ref/heads/master":
+					writeJSON(w, map[string]any{
+						"ref": "refs/heads/master",
+						"object": map[string]any{
+							"sha": "master-head-sha",
+						},
+					})
+				default:
+					t.Fatalf("unexpected github GET path: %q", r.URL.RequestURI())
+				}
+			case http.MethodPost:
+				switch r.URL.Path {
+				case "/repos/octo/taozhiyy/git/refs":
+					if err := json.NewDecoder(r.Body).Decode(&gotCreateRefBody); err != nil {
+						t.Fatalf("decode github create ref request: %v", err)
+					}
+					writeJSONStatus(w, http.StatusCreated, map[string]any{
+						"ref":    gotCreateRefBody["ref"],
+						"object": map[string]any{"sha": "master-head-sha"},
+					})
+				case "/repos/octo/taozhiyy/pulls":
+					if err := json.NewDecoder(r.Body).Decode(&gotPullBody); err != nil {
+						t.Fatalf("decode github pull request: %v", err)
+					}
+					writeJSONStatus(w, http.StatusCreated, map[string]any{
+						"number":   42,
+						"html_url": "https://github.com/octo/taozhiyy/pull/42",
+					})
+				default:
+					t.Fatalf("unexpected github POST path: %q", r.URL.RequestURI())
+				}
 			case http.MethodPut:
 				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/friendCards.js" {
 					t.Fatalf("unexpected github PUT path: %q", r.URL.RequestURI())
@@ -1116,11 +1151,21 @@ func TestOwnerFriendPublishWritesFriendCardsViaGitHubContentsAPI(t *testing.T) {
 		if rr.Code != http.StatusOK {
 			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
 		}
-		if strings.Join(gotMethods, ",") != "GET,PUT" {
-			t.Fatalf("expected github GET then PUT, got methods=%v paths=%v", gotMethods, gotPaths)
+		if strings.Join(gotMethods, ",") != "GET,GET,POST,PUT,POST" {
+			t.Fatalf("expected github GET file, GET master ref, POST branch ref, PUT file, POST pull, got methods=%v paths=%v", gotMethods, gotPaths)
 		}
-		if gotPutBody["branch"] != "master" {
-			t.Fatalf("expected master branch, got %#v", gotPutBody["branch"])
+		refRaw, ok := gotCreateRefBody["ref"].(string)
+		if !ok || !strings.HasPrefix(refRaw, "refs/heads/owner/friend-") {
+			t.Fatalf("expected owner friend branch ref, got %#v", gotCreateRefBody["ref"])
+		}
+		if gotCreateRefBody["sha"] != "master-head-sha" {
+			t.Fatalf("expected new branch from master head, got %#v", gotCreateRefBody["sha"])
+		}
+		if gotPutBody["branch"] == "master" {
+			t.Fatalf("must not write friend cards directly to protected master")
+		}
+		if gotPutBody["branch"] != strings.TrimPrefix(refRaw, "refs/heads/") {
+			t.Fatalf("expected file PUT to new owner branch, got %#v ref=%q", gotPutBody["branch"], refRaw)
 		}
 		if gotPutBody["sha"] != "friends-sha" {
 			t.Fatalf("expected existing file sha, got %#v", gotPutBody["sha"])
@@ -1147,6 +1192,21 @@ func TestOwnerFriendPublishWritesFriendCardsViaGitHubContentsAPI(t *testing.T) {
 		}
 		if item["commitSha"] != "friend-commit-sha" {
 			t.Fatalf("unexpected commit sha: %#v", item["commitSha"])
+		}
+		if item["branch"] != strings.TrimPrefix(refRaw, "refs/heads/") {
+			t.Fatalf("expected response branch to be new owner branch, got %#v", item["branch"])
+		}
+		if item["pullRequestURL"] != "https://github.com/octo/taozhiyy/pull/42" {
+			t.Fatalf("expected pull request URL in response, got %#v", item["pullRequestURL"])
+		}
+		if item["pullRequestNumber"] != float64(42) {
+			t.Fatalf("expected pull request number in response, got %#v", item["pullRequestNumber"])
+		}
+		if gotPullBody["base"] != "master" {
+			t.Fatalf("expected PR base master, got %#v", gotPullBody["base"])
+		}
+		if gotPullBody["head"] != strings.TrimPrefix(refRaw, "refs/heads/") {
+			t.Fatalf("expected PR head owner branch, got %#v", gotPullBody["head"])
 		}
 	})
 }

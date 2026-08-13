@@ -130,6 +130,11 @@ type ownerGitHubFile struct {
 	Content string
 }
 
+type ownerGitHubPullRequestResult struct {
+	Number  int
+	HTMLURL string
+}
+
 func (p *ownerGitHubPublisher) getGitHubFile(path string) (ownerGitHubFile, error) {
 	endpoint := fmt.Sprintf(
 		"%s/repos/%s/%s/contents/%s?ref=%s",
@@ -187,10 +192,14 @@ func (p *ownerGitHubPublisher) getGitHubFile(path string) (ownerGitHubFile, erro
 }
 
 func (p *ownerGitHubPublisher) putGitHubFile(path, message, content, sha string) (ownerPublishResult, error) {
+	return p.putGitHubFileToBranch(path, message, content, sha, p.branch)
+}
+
+func (p *ownerGitHubPublisher) putGitHubFileToBranch(path, message, content, sha, branch string) (ownerPublishResult, error) {
 	payload := map[string]any{
 		"message": message,
 		"content": base64.StdEncoding.EncodeToString([]byte(content)),
-		"branch":  p.branch,
+		"branch":  branch,
 		"sha":     sha,
 	}
 	raw, err := json.Marshal(payload)
@@ -243,6 +252,148 @@ func (p *ownerGitHubPublisher) putGitHubFile(path, message, content, sha string)
 	return ownerPublishResult{
 		Path:      payloadResp.Content.Path,
 		CommitSHA: payloadResp.Commit.SHA,
+	}, nil
+}
+
+func (p *ownerGitHubPublisher) getGitHubBranchHeadSHA(branch string) (string, error) {
+	endpoint := fmt.Sprintf(
+		"%s/repos/%s/%s/git/ref/heads/%s",
+		p.baseURL,
+		url.PathEscape(p.owner),
+		url.PathEscape(p.repo),
+		escapeGitHubContentPath(branch),
+	)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+p.token)
+
+	res, err := p.http.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	respBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return "", &ownerPublishError{
+			StatusCode: res.StatusCode,
+			Message:    ownerPublishAPIMessage(respBody, res.StatusCode),
+		}
+	}
+
+	var payload struct {
+		Object struct {
+			SHA string `json:"sha"`
+		} `json:"object"`
+	}
+	if err := json.Unmarshal(respBody, &payload); err != nil {
+		return "", err
+	}
+	if payload.Object.SHA == "" {
+		return "", errors.New("GitHub 分支响应缺少 sha")
+	}
+	return payload.Object.SHA, nil
+}
+
+func (p *ownerGitHubPublisher) createGitHubBranch(branch, sha string) error {
+	payload := map[string]any{
+		"ref": "refs/heads/" + branch,
+		"sha": sha,
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	endpoint := fmt.Sprintf(
+		"%s/repos/%s/%s/git/refs",
+		p.baseURL,
+		url.PathEscape(p.owner),
+		url.PathEscape(p.repo),
+	)
+	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(raw))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+p.token)
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := p.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	respBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return &ownerPublishError{
+			StatusCode: res.StatusCode,
+			Message:    ownerPublishAPIMessage(respBody, res.StatusCode),
+		}
+	}
+	return nil
+}
+
+func (p *ownerGitHubPublisher) createGitHubPullRequest(title, body, head, base string) (ownerGitHubPullRequestResult, error) {
+	payload := map[string]any{
+		"title": title,
+		"body":  body,
+		"head":  head,
+		"base":  base,
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return ownerGitHubPullRequestResult{}, err
+	}
+
+	endpoint := fmt.Sprintf(
+		"%s/repos/%s/%s/pulls",
+		p.baseURL,
+		url.PathEscape(p.owner),
+		url.PathEscape(p.repo),
+	)
+	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(raw))
+	if err != nil {
+		return ownerGitHubPullRequestResult{}, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+p.token)
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := p.http.Do(req)
+	if err != nil {
+		return ownerGitHubPullRequestResult{}, err
+	}
+	defer res.Body.Close()
+	respBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return ownerGitHubPullRequestResult{}, err
+	}
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return ownerGitHubPullRequestResult{}, &ownerPublishError{
+			StatusCode: res.StatusCode,
+			Message:    ownerPublishAPIMessage(respBody, res.StatusCode),
+		}
+	}
+
+	var payloadResp struct {
+		Number  int    `json:"number"`
+		HTMLURL string `json:"html_url"`
+	}
+	if err := json.Unmarshal(respBody, &payloadResp); err != nil {
+		return ownerGitHubPullRequestResult{}, err
+	}
+	return ownerGitHubPullRequestResult{
+		Number:  payloadResp.Number,
+		HTMLURL: payloadResp.HTMLURL,
 	}, nil
 }
 

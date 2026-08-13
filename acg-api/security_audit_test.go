@@ -402,32 +402,58 @@ func mockOwnerPublishGitHubFile(t *testing.T, path, source string) {
 	github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		wantPath := "/repos/octo/taozhiyy/contents/" + path
-		if r.URL.Path != wantPath {
-			t.Fatalf("unexpected github path: got %q want %q", r.URL.Path, wantPath)
-		}
 		if r.Header.Get("Authorization") != "Bearer secret-token" {
 			t.Fatalf("expected bearer token auth, got %q", r.Header.Get("Authorization"))
 		}
-		switch r.Method {
-		case http.MethodGet:
+
+		if r.URL.Path == wantPath {
+			switch r.Method {
+			case http.MethodGet:
+				writeJSON(w, map[string]any{
+					"path":     path,
+					"sha":      "existing-sha",
+					"encoding": "base64",
+					"content":  base64.StdEncoding.EncodeToString([]byte(source)),
+				})
+			case http.MethodPut:
+				writeJSON(w, map[string]any{
+					"content": map[string]any{
+						"path": path,
+						"sha":  "new-sha",
+					},
+					"commit": map[string]any{
+						"sha": "commit-sha",
+					},
+				})
+			default:
+				t.Fatalf("unexpected github method for contents API: %s", r.Method)
+			}
+			return
+		}
+
+		if path != ownerFriendCardsDataPath {
+			t.Fatalf("unexpected github path: got %q want %q", r.URL.Path, wantPath)
+		}
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/repos/octo/taozhiyy/git/ref/heads/master":
 			writeJSON(w, map[string]any{
-				"path":     path,
-				"sha":      "existing-sha",
-				"encoding": "base64",
-				"content":  base64.StdEncoding.EncodeToString([]byte(source)),
+				"ref": "refs/heads/master",
+				"object": map[string]any{
+					"sha": "master-head-sha",
+				},
 			})
-		case http.MethodPut:
-			writeJSON(w, map[string]any{
-				"content": map[string]any{
-					"path": path,
-					"sha":  "new-sha",
-				},
-				"commit": map[string]any{
-					"sha": "commit-sha",
-				},
+		case r.Method == http.MethodPost && r.URL.Path == "/repos/octo/taozhiyy/git/refs":
+			writeJSONStatus(w, http.StatusCreated, map[string]any{
+				"ref":    "refs/heads/owner/friend-audit",
+				"object": map[string]any{"sha": "master-head-sha"},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/repos/octo/taozhiyy/pulls":
+			writeJSONStatus(w, http.StatusCreated, map[string]any{
+				"number":   42,
+				"html_url": "https://github.com/octo/taozhiyy/pull/42",
 			})
 		default:
-			t.Fatalf("unexpected github method: %s", r.Method)
+			t.Fatalf("unexpected github request: %s %s", r.Method, r.URL.Path)
 		}
 	}))
 	t.Cleanup(github.Close)
