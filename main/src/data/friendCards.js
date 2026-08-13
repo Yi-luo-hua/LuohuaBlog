@@ -204,4 +204,11 @@ export const friendCards = [
     avatar: "https://rainzt.cn/zzty.png",
     note: "FRIEND",
   },
+  {
+    name: "xiaomo的小破站",
+    desc: "愛をもって長き年月に立ち向かい、継続をもって心の遠き彼方へ赴く。",
+    url: "https://xiaomo477.pages.dev/",
+    avatar: "https://xiaomo477.pages.dev/images/dog.jpg",
+    note: "FRIEND",
+  },
 ];
