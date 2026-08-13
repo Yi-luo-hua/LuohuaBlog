@@ -16,6 +16,7 @@ import {
   uploadOwnerAsset,
 } from "../services/ownerApi";
 import { parseFriendQuickInput } from "../lib/friendQuickInput";
+import { ownerFriendPublishToast } from "../lib/ownerPublishMessages";
 import {
   buildMobileArticleDraft,
   getNotificationTotal,
@@ -656,16 +657,13 @@ const AppConsolePage = () => {
     try {
       const data = await publishOwnerFriend({ name, desc, url, avatar: avatarUrl });
       const item = data.item || {};
-      const commitSha = item.commitSha ? `（commit ${item.commitSha.slice(0, 7)}）` : "";
       setPublishState({
         open: true,
         title: "发布友链",
         activeIndex: publishSteps.length,
         failIndex: null,
         simulated: false,
-        toast: item.changed === false
-          ? `这条友链已经存在于 ${item.path || "友链数据"}。`
-          : `已写入 ${item.path || "友链数据"}${commitSha}，GitHub Actions 会从 ${item.branch || "master"} 部署。`,
+        toast: ownerFriendPublishToast(item),
       });
       await loadConsole();
     } catch (e) {

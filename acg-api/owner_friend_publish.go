@@ -20,12 +20,15 @@ type ownerFriendPublishRequest struct {
 }
 
 type ownerFriendPublishResult struct {
-	Name          string
-	URL           string
-	Path          string
-	CommitSHA     string
-	Changed       bool
-	CommitMessage string
+	Name              string
+	URL               string
+	Path              string
+	CommitSHA         string
+	Changed           bool
+	CommitMessage     string
+	PublishBranch     string
+	PullRequestURL    string
+	PullRequestNumber int
 }
 
 func ownerFriendPublishHandler(w http.ResponseWriter, r *http.Request) {
@@ -72,22 +75,28 @@ func ownerFriendPublishHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recordSecurityAudit(r, "owner.friend_publish", "success", ownerSess.UserID, "owner_publish", result.Path, fmt.Sprintf("branch=%s changed=%t", publisher.branch, result.Changed))
+	publishBranch := result.PublishBranch
+	if publishBranch == "" {
+		publishBranch = publisher.branch
+	}
+	recordSecurityAudit(r, "owner.friend_publish", "success", ownerSess.UserID, "owner_publish", result.Path, fmt.Sprintf("branch=%s changed=%t", publishBranch, result.Changed))
 	writeJSON(w, map[string]any{
 		"ok": true,
 		"item": map[string]any{
-			"name":          result.Name,
-			"url":           result.URL,
-			"path":          result.Path,
-			"commitSha":     result.CommitSHA,
-			"changed":       result.Changed,
-			"branch":        publisher.branch,
-			"commitMessage": result.CommitMessage,
+			"name":              result.Name,
+			"url":               result.URL,
+			"path":              result.Path,
+			"commitSha":         result.CommitSHA,
+			"changed":           result.Changed,
+			"branch":            publishBranch,
+			"commitMessage":     result.CommitMessage,
+			"pullRequestURL":    result.PullRequestURL,
+			"pullRequestNumber": result.PullRequestNumber,
 			"repoURL": fmt.Sprintf(
 				"https://github.com/%s/%s/blob/%s/%s",
 				publisher.owner,
 				publisher.repo,
-				publisher.branch,
+				publishBranch,
 				result.Path,
 			),
 		},
@@ -109,15 +118,37 @@ func (p *ownerGitHubPublisher) publishFriendCard(req ownerFriendPublishRequest) 
 	}
 	result.Path = ownerFriendCardsDataPath
 	result.CommitMessage = ownerFriendPublishCommitMessage(result.Name)
+	result.PublishBranch = p.branch
 	if !result.Changed {
 		return result, nil
 	}
-	putResult, err := p.putGitHubFile(ownerFriendCardsDataPath, result.CommitMessage, updated, file.SHA)
+
+	branch := ownerFriendPublishBranch(result.Name, time.Now().UTC())
+	baseSHA, err := p.getGitHubBranchHeadSHA(p.branch)
+	if err != nil {
+		return ownerFriendPublishResult{}, err
+	}
+	if err := p.createGitHubBranch(branch, baseSHA); err != nil {
+		return ownerFriendPublishResult{}, err
+	}
+	putResult, err := p.putGitHubFileToBranch(ownerFriendCardsDataPath, result.CommitMessage, updated, file.SHA, branch)
+	if err != nil {
+		return ownerFriendPublishResult{}, err
+	}
+	prResult, err := p.createGitHubPullRequest(
+		ownerFriendPullRequestTitle(result.Name),
+		ownerFriendPullRequestBody(result.Name, result.URL),
+		branch,
+		p.branch,
+	)
 	if err != nil {
 		return ownerFriendPublishResult{}, err
 	}
 	result.Path = putResult.Path
 	result.CommitSHA = putResult.CommitSHA
+	result.PublishBranch = branch
+	result.PullRequestURL = prResult.HTMLURL
+	result.PullRequestNumber = prResult.Number
 	return result, nil
 }
 
@@ -191,4 +222,51 @@ func ownerFriendDefaultAvatar(friendURL string) string {
 
 func ownerFriendPublishCommitMessage(name string) string {
 	return "feat: publish friend link " + name + " " + time.Now().UTC().Format("20060102-150405")
+}
+
+func ownerFriendPublishBranch(name string, now time.Time) string {
+	slug := ownerFriendBranchSlug(name)
+	if slug == "" {
+		slug = "link"
+	}
+	return fmt.Sprintf("owner/friend-%s-%06d-%s", now.Format("20060102-150405"), now.Nanosecond()/1000, slug)
+}
+
+func ownerFriendBranchSlug(value string) string {
+	var b strings.Builder
+	lastDash := false
+	for _, r := range strings.ToLower(strings.TrimSpace(value)) {
+		switch {
+		case r >= 'a' && r <= 'z':
+			b.WriteRune(r)
+			lastDash = false
+		case r >= '0' && r <= '9':
+			b.WriteRune(r)
+			lastDash = false
+		case r == ' ' || r == '-' || r == '_':
+			if !lastDash && b.Len() > 0 {
+				b.WriteByte('-')
+				lastDash = true
+			}
+		default:
+			if !lastDash && b.Len() > 0 {
+				b.WriteByte('-')
+				lastDash = true
+			}
+		}
+	}
+	return strings.Trim(b.String(), "-")
+}
+
+func ownerFriendPullRequestTitle(name string) string {
+	return "Publish friend link: " + name
+}
+
+func ownerFriendPullRequestBody(name, friendURL string) string {
+	return strings.Join([]string{
+		"Created from the owner console friend link publish flow.",
+		"",
+		"Friend: " + name,
+		"URL: " + friendURL,
+	}, "\n")
 }
