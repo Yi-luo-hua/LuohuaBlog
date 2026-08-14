@@ -45,6 +45,15 @@ test("keeps the 090909 friend link as Tashuo", () => {
   assert.equal(tashuo.avatar, "https://090909.top/assets/images/logo.ico");
 });
 
+test("keeps xiaomo friend link on the canonical domain", () => {
+  const xiaomo = friendCards.find((friend) => friend.name === "xiaomo的小破站");
+
+  assert.ok(xiaomo);
+  assert.equal(xiaomo.desc, "愛をもって長き年月に立ち向かい、継続をもって心の遠き彼方へ赴く。");
+  assert.equal(xiaomo.url, "https://xiaomoo.top/");
+  assert.equal(xiaomo.avatar, "https://xiaomoo.top/images/dog.jpg");
+});
+
 test("keeps friend links published after Lingka", () => {
   const urls = new Set(friendCards.map((friend) => friend.url));
 
