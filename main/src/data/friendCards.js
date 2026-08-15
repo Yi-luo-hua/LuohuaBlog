@@ -211,4 +211,11 @@ export const friendCards = [
     avatar: "https://xiaomoo.top/images/dog.jpg",
     note: "FRIEND",
   },
+  {
+    name: "Voocii",
+    desc: "顺木之天，以致其性",
+    url: "https://voocii.com/",
+    avatar: "https://voocii.com/uploads/voocii-avatar.svg",
+    note: "FRIEND",
+  },
 ];
