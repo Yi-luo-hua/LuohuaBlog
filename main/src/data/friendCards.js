@@ -218,4 +218,11 @@ export const friendCards = [
     avatar: "https://voocii.com/uploads/voocii-avatar.svg",
     note: "FRIEND",
   },
+  {
+    name: "Jack",
+    desc: "Jackの宝藏之地",
+    url: "https://www.treasureland.top/",
+    avatar: "https://bee-reg-ab.imagency.cn/p/d16766955fb710fd813d9edb0ef18067.jpg",
+    note: "FRIEND",
+  },
 ];
