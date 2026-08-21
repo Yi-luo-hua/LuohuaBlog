@@ -225,4 +225,11 @@ export const friendCards = [
     avatar: "https://bee-reg-ab.imagency.cn/p/d16766955fb710fd813d9edb0ef18067.jpg",
     note: "FRIEND",
   },
+  {
+    name: "日和",
+    desc: "想把一些代码笔记、阅读碎片和日常里的小幸福慢慢留下来，以及分享一些有趣的东西",
+    url: "https://codevfun.work",
+    avatar: "https://i0.hdslb.com/bfs/face/a09cb25595f69324ed7da361391de337dbe47601.jpg",
+    note: "FRIEND",
+  },
 ];
