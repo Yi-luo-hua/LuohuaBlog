@@ -5,32 +5,29 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useWindowScroll } from "react-use";
 import { cosAsset } from "../lib/cosAsset.js";
-import VisitorNetworkBadge from "./VisitorNetworkBadge";
 
 const navLinks = [
   { label: "HOME", to: "/", end: true },
   { label: "关于我", to: "/about", end: true },
   { label: "相册集", to: "/gallery", end: true },
-  { label: "碎语", to: "/moments", end: true },
-  { label: "哔哩BILI", to: "/bili", end: true },
-  { label: "数据中心", to: "/ai-traffic", end: true },
-  { label: "Friends", to: "/friends", end: true },
+  { label: "博客", to: "/moments", end: true },
+  { label: "BANGUMI", to: "/bangumi", end: true },
 ];
 
 const DRAWER_MS = 220;
 const MAIN_ASSET_BASE = cosAsset(
-  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main"
+  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main",
 );
-const logoSrc = `${MAIN_ASSET_BASE}/img/logo.png`;
+const githubAvatarSrc = "/github-avatar.png";
 const loopAudioSrc = `${MAIN_ASSET_BASE}/audio/loop.mp3`;
 
 const getNavTheme = (pathname) => {
-  if (pathname === "/bili" || pathname.startsWith("/bili/")) return "bili";
-  if (pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/")) return "ai";
-  if (pathname === "/friends" || pathname.startsWith("/friends/")) return "friends";
-  if (pathname === "/guestbook" || pathname.startsWith("/guestbook/")) return "guestbook";
-  if (pathname === "/gallery" || pathname.startsWith("/gallery/")) return "gallery";
-  if (pathname === "/moments" || pathname.startsWith("/moments/")) return "moments";
+  if (pathname === "/bangumi" || pathname.startsWith("/bangumi/"))
+    return "bili";
+  if (pathname === "/gallery" || pathname.startsWith("/gallery/"))
+    return "gallery";
+  if (pathname === "/moments" || pathname.startsWith("/moments/"))
+    return "moments";
   if (pathname === "/about" || pathname.startsWith("/about/")) return "about";
   return "dark";
 };
@@ -52,30 +49,15 @@ const NavBar = () => {
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  const isBiliPage = pathname === "/bili" || pathname.startsWith("/bili/");
-  const isAiTrafficPage =
-    pathname === "/ai-traffic" || pathname.startsWith("/ai-traffic/");
-  const isFriendsPage =
-    pathname === "/friends" || pathname.startsWith("/friends/");
-  const isGuestbookPage =
-    pathname === "/guestbook" || pathname.startsWith("/guestbook/");
+  const isBangumiPage =
+    pathname === "/bangumi" || pathname.startsWith("/bangumi/");
   const isGalleryPage =
     pathname === "/gallery" || pathname.startsWith("/gallery/");
-  const isAiGalleryPage =
-    pathname === "/ai-gallery" || pathname.startsWith("/ai-gallery/");
   const isMomentsPage =
     pathname === "/moments" || pathname.startsWith("/moments/");
-  const isAboutPage =
-    pathname === "/about" || pathname.startsWith("/about/");
+  const isAboutPage = pathname === "/about" || pathname.startsWith("/about/");
   const isSubPage =
-    isBiliPage ||
-    isAiTrafficPage ||
-    isFriendsPage ||
-    isGuestbookPage ||
-    isGalleryPage ||
-    isAiGalleryPage ||
-    isMomentsPage ||
-    isAboutPage;
+    isBangumiPage || isGalleryPage || isMomentsPage || isAboutPage;
   const navTheme = getNavTheme(pathname);
   const isLightNav = navTheme !== "dark";
 
@@ -146,24 +128,15 @@ const NavBar = () => {
       navContainerRef.current.classList.remove(
         "floating-nav",
         "floating-nav-bili",
-        "floating-nav-ai",
-        "floating-nav-friends",
-        "floating-nav-guestbook",
         "floating-nav-gallery",
         "floating-nav-moments",
-        "floating-nav-about"
+        "floating-nav-about",
       );
     };
 
     const addThemeClass = () => {
       if (navTheme === "bili") {
         navContainerRef.current.classList.add("floating-nav-bili");
-      } else if (navTheme === "ai") {
-        navContainerRef.current.classList.add("floating-nav-ai");
-      } else if (navTheme === "friends") {
-        navContainerRef.current.classList.add("floating-nav-friends");
-      } else if (navTheme === "guestbook") {
-        navContainerRef.current.classList.add("floating-nav-guestbook");
       } else if (navTheme === "gallery") {
         navContainerRef.current.classList.add("floating-nav-gallery");
       } else if (navTheme === "moments") {
@@ -205,22 +178,16 @@ const NavBar = () => {
       "text-[#7C5CFF]": active && navTheme === "bili",
       "text-[#FF8FAB]":
         active &&
-        (navTheme === "ai" ||
-          navTheme === "guestbook" ||
-          navTheme === "gallery" ||
+        (navTheme === "gallery" ||
           navTheme === "moments" ||
           navTheme === "about"),
-      "text-[#102A24]": active && navTheme === "friends",
       "text-yellow-300": active && navTheme === "dark",
     });
 
   const isLinkActive = (item) =>
     (item.to === "/" && pathname === "/") ||
     (item.to === "/gallery" && isGalleryPage) ||
-    (item.to === "/bili" && isBiliPage) ||
-    (item.to === "/ai-traffic" && isAiTrafficPage) ||
-    (item.to === "/friends" && isFriendsPage) ||
-    (item.to === "/guestbook" && isGuestbookPage) ||
+    (item.to === "/bangumi" && isBangumiPage) ||
     (item.to === "/moments" && isMomentsPage) ||
     (item.to === "/about" && isAboutPage);
 
@@ -250,7 +217,7 @@ const NavBar = () => {
         className={clsx(
           "nav-mobile-link",
           `nav-mobile-link--${navTheme}`,
-          active && `nav-mobile-link--active-${navTheme}`
+          active && `nav-mobile-link--active-${navTheme}`,
         )}
         onClick={() => {
           handleNavClick(item);
@@ -271,7 +238,7 @@ const NavBar = () => {
           className={clsx(
             "nav-mobile-backdrop",
             `nav-mobile-backdrop--${navTheme}`,
-            drawerVisible && "is-open"
+            drawerVisible && "is-open",
           )}
           aria-label="关闭导航菜单"
           tabIndex={drawerVisible ? 0 : -1}
@@ -286,7 +253,7 @@ const NavBar = () => {
           className={clsx(
             "nav-mobile-drawer",
             `nav-mobile-drawer--${navTheme}`,
-            drawerVisible && "is-open"
+            drawerVisible && "is-open",
           )}
         >
           <div className="nav-mobile-drawer-head">
@@ -301,10 +268,12 @@ const NavBar = () => {
               <span aria-hidden>x</span>
             </button>
           </div>
-          <nav className="nav-mobile-links">{navLinks.map((item) => renderMobileLink(item))}</nav>
+          <nav className="nav-mobile-links">
+            {navLinks.map((item) => renderMobileLink(item))}
+          </nav>
         </div>
       </div>,
-      document.body
+      document.body,
     );
 
   return (
@@ -314,12 +283,13 @@ const NavBar = () => {
         className={clsx(
           "fixed inset-x-0 top-2 z-50 h-14 border-none transition-all duration-700 sm:inset-x-4 sm:top-4 sm:h-16 md:inset-x-6",
           navTheme === "bili" && currentScrollY === 0 && "floating-nav-bili",
-          navTheme === "ai" && currentScrollY === 0 && "floating-nav-ai",
-          navTheme === "friends" && currentScrollY === 0 && "floating-nav-friends",
-          navTheme === "guestbook" && currentScrollY === 0 && "floating-nav-guestbook",
-          navTheme === "gallery" && currentScrollY === 0 && "floating-nav-gallery",
-          navTheme === "moments" && currentScrollY === 0 && "floating-nav-moments",
-          navTheme === "about" && currentScrollY === 0 && "floating-nav-about"
+          navTheme === "gallery" &&
+            currentScrollY === 0 &&
+            "floating-nav-gallery",
+          navTheme === "moments" &&
+            currentScrollY === 0 &&
+            "floating-nav-moments",
+          navTheme === "about" && currentScrollY === 0 && "floating-nav-about",
         )}
       >
         <header className="absolute top-1/2 w-full -translate-y-1/2">
@@ -332,24 +302,25 @@ const NavBar = () => {
                 onClick={() => handleNavClick({ to: "/" })}
               >
                 <img
-                  src={logoSrc}
-                  alt="logo"
-                  className="h-8 w-8 sm:h-10 sm:w-10"
+                  src={githubAvatarSrc}
+                  alt="Yi-luo-hua 的 GitHub 头像"
+                  className="h-8 w-8 rounded-full object-cover sm:h-10 sm:w-10"
                 />
               </Link>
               {currentScrollY === 0 && !isSubPage && (
                 <>
                   <button
                     type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent("showHeroPreview"))}
+                    onClick={() =>
+                      window.dispatchEvent(new CustomEvent("showHeroPreview"))
+                    }
                     className={clsx(
                       "nav-hover-btn hidden md:inline",
-                      isLightNav && `nav-hover-btn--${navTheme}`
+                      isLightNav && `nav-hover-btn--${navTheme}`,
                     )}
                   >
                     SWITCH COVER
                   </button>
-                  <VisitorNetworkBadge className="nav-left-network" />
                 </>
               )}
             </div>
@@ -364,7 +335,7 @@ const NavBar = () => {
                 type="button"
                 className={clsx(
                   "nav-menu-btn md:hidden",
-                  navTheme !== "dark" && `nav-menu-btn--${navTheme}`
+                  navTheme !== "dark" && `nav-menu-btn--${navTheme}`,
                 )}
                 aria-label="打开导航菜单"
                 aria-expanded={mobileOpen}
@@ -394,10 +365,7 @@ const NavBar = () => {
                     className={clsx("indicator-line", {
                       active: isIndicatorActive,
                       "indicator-line-bili": navTheme === "bili",
-                      "indicator-line-friends": navTheme === "friends",
                       "indicator-line-ai":
-                        navTheme === "ai" ||
-                        navTheme === "guestbook" ||
                         navTheme === "gallery" ||
                         navTheme === "moments" ||
                         navTheme === "about",

@@ -1,20 +1,18 @@
 import clsx from "clsx";
-import { FaGithub, FaEnvelope } from "react-icons/fa";
-import { SiBilibili, SiVercel } from "react-icons/si";
+import { FaGithub } from "react-icons/fa";
+import { SiBilibili } from "react-icons/si";
 import { useLocation } from "react-router-dom";
 
 const socialLinks = [
-  { href: "https://github.com/bistutzyy", icon: <FaGithub />, label: "GitHub" },
   {
-    href: "https://space.bilibili.com/1061280173?spm_id_from=333.1007.0.0",
+    href: "https://github.com/Yi-luo-hua",
+    icon: <FaGithub />,
+    label: "GitHub",
+  },
+  {
+    href: "https://space.bilibili.com/313163065",
     icon: <SiBilibili />,
     label: "Bilibili",
-  },
-  { href: "https://tzyy11.vercel.app/", icon: <SiVercel />, label: "Vercel" },
-  {
-    href: "mailto:nzc173236231@gmail.com",
-    icon: <FaEnvelope />,
-    label: "nzc173236231@gmail.com",
   },
 ];
 
@@ -39,13 +37,6 @@ const footerThemes = {
     icon: "text-[#2B2B2B] hover:text-[#FF8FAB]",
     tip: "border border-[#F2E6C9] bg-white text-[#2B2B2B]",
   },
-  guestbook: {
-    shell:
-      "border-t border-[#F2E6C9] bg-gradient-to-r from-[#FFF8E7] via-[#FFFDF5] to-[#EAF6FF] text-[#2B2B2B]",
-    copy: "text-[#6B7280]",
-    icon: "text-[#2B2B2B] hover:text-[#FF8FAB]",
-    tip: "border border-[#F2E6C9] bg-white text-[#2B2B2B]",
-  },
   friends: {
     shell:
       "border-t border-[#F2E6C9] bg-gradient-to-r from-[#FFF7ED] via-[#FFFDF7] to-[#EEF7FF] text-[#2B2B2B]",
@@ -64,12 +55,11 @@ const footerThemes = {
 
 const Footer = () => {
   const { pathname } = useLocation();
-  const variant = pathname.startsWith("/bili")
-    ? "bili"
-    : pathname.startsWith("/ai-traffic")
-      ? "ai"
-      : pathname.startsWith("/guestbook")
-        ? "guestbook"
+  const variant =
+    pathname.startsWith("/bangumi") || pathname.startsWith("/bili")
+      ? "bili"
+      : pathname.startsWith("/ai-traffic")
+        ? "ai"
         : pathname.startsWith("/friends")
           ? "friends"
           : pathname.startsWith("/moments")
@@ -79,12 +69,17 @@ const Footer = () => {
 
   return (
     <footer className={clsx("w-full py-4 md:py-5", theme.shell)}>
-      <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
-        <p className={clsx("text-center text-sm font-light md:text-left", theme.copy)}>
-          @bistutzyy
+      <div className="container mx-auto flex flex-col items-center gap-4 px-4 md:grid md:grid-cols-[1fr_auto_1fr]">
+        <p
+          className={clsx(
+            "text-center text-sm font-light md:justify-self-start md:text-left",
+            theme.copy,
+          )}
+        >
+          @Yi-luo-hua
         </p>
 
-        <div className="flex justify-center gap-4 md:justify-start">
+        <div className="flex justify-center gap-5 md:justify-self-center">
           {socialLinks.map((link) => (
             <a
               key={link.label}
@@ -93,14 +88,14 @@ const Footer = () => {
               rel="noopener noreferrer"
               className={clsx(
                 "group relative flex items-center gap-2 text-lg transition-colors duration-300 ease-in-out",
-                theme.icon
+                theme.icon,
               )}
             >
               {link.icon}
               <span
                 className={clsx(
                   "pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded px-2 py-0.5 text-xs opacity-0 transition-opacity group-hover:opacity-100",
-                  theme.tip
+                  theme.tip,
                 )}
               >
                 {link.label}
@@ -109,9 +104,7 @@ const Footer = () => {
           ))}
         </div>
 
-        <p className={clsx("text-center text-sm font-light md:text-right", theme.copy)}>
-          本站仅作学习使用，感谢开源
-        </p>
+        <span className="hidden md:block" aria-hidden />
       </div>
     </footer>
   );

@@ -2,14 +2,10 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import SiteLayout from "./layouts/SiteLayout";
 import AppConsolePage from "./pages/AppConsolePage";
 import HomePage from "./pages/HomePage";
-import BiliHubPage from "./pages/BiliHubPage";
+import BangumiPage from "./pages/BangumiPage";
 import LoginPage from "./pages/LoginPage";
-import AiTrafficPage from "./pages/AiTrafficPage";
-import FriendsPage from "./pages/FriendsPage";
-import GuestbookPage from "./pages/GuestbookPage";
 import GalleryAlbumPage from "./pages/GalleryAlbumPage";
 import GalleryPage from "./pages/GalleryPage";
-import AiGalleryPage from "./pages/AiGalleryPage";
 import MomentsPage from "./pages/MomentsPage";
 import AboutSitePage from "./pages/AboutSitePage";
 import AboutProjectPage from "./pages/AboutProjectPage";
@@ -20,7 +16,8 @@ import {
 import PwaOwnerGate from "./pwa/PwaOwnerGate";
 
 const RootEntry = () => {
-  const hostname = typeof window === "undefined" ? "" : window.location.hostname;
+  const hostname =
+    typeof window === "undefined" ? "" : window.location.hostname;
   return shouldOpenAppConsoleAtRoot({ hostname, pathname: "/" }) ? (
     <Navigate to="/app" replace />
   ) : (
@@ -29,7 +26,8 @@ const RootEntry = () => {
 };
 
 const AppConsoleEntry = () => {
-  const hostname = typeof window === "undefined" ? "" : window.location.hostname;
+  const hostname =
+    typeof window === "undefined" ? "" : window.location.hostname;
   return shouldExposeAppConsole({ hostname }) ? (
     <AppConsolePage />
   ) : (
@@ -45,17 +43,25 @@ function App() {
           <Route path="app" element={<AppConsoleEntry />} />
           <Route element={<SiteLayout />}>
             <Route index element={<RootEntry />} />
-            <Route path="bili" element={<BiliHubPage />} />
-            <Route path="ai-traffic" element={<AiTrafficPage />} />
-            <Route path="friends" element={<FriendsPage />} />
-            <Route path="guestbook" element={<GuestbookPage />} />
+            <Route
+              path="bangumi"
+              element={<Navigate to="/bangumi/watching" replace />}
+            />
+            <Route path="bangumi/:status" element={<BangumiPage />} />
+            <Route
+              path="bili"
+              element={<Navigate to="/bangumi/watching" replace />}
+            />
             <Route path="gallery" element={<GalleryPage />} />
             <Route path="gallery/:albumId" element={<GalleryAlbumPage />} />
-            <Route path="ai-gallery" element={<AiGalleryPage />} />
             <Route path="moments" element={<MomentsPage />} />
             <Route path="about" element={<AboutSitePage />} />
-            <Route path="about/projects/:projectId" element={<AboutProjectPage />} />
+            <Route
+              path="about/projects/:projectId"
+              element={<AboutProjectPage />}
+            />
             <Route path="login" element={<LoginPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>

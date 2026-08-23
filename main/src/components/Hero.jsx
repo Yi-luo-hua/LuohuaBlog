@@ -1,10 +1,8 @@
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/all";
-import { TiLocationArrow } from "react-icons/ti";
 import { useEffect, useRef, useState } from "react";
 
-import Button from "./Button";
 import HeroWordmark from "./HeroWordmark";
 import {
   getContinuousCompassRotation,
@@ -24,6 +22,7 @@ const HERO_INDEXES = Array.from(
 const COS = cosAsset(
   "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main"
 );
+const GITHUB_AVATAR = "/github-avatar.png";
 const getImgSrc = (index) => `${COS}/img/hero-${index}.webp`;
 const HERO_CARD_FOCUS = {
   1: "50% 50%",
@@ -138,7 +137,6 @@ const Hero = () => {
   const [hasClicked, setHasClicked] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
-  const [showScrollHint, setShowScrollHint] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadedHeroIndexes, setLoadedHeroIndexes] = useState(() => new Set());
   const [compassRotation, setCompassRotation] = useState(0);
@@ -567,8 +565,8 @@ const Hero = () => {
                   style={{ borderColor: compassTheme.line }}
                 >
                   <img
-                    src={`${COS}/img/compass-avatar.jpg`}
-                    alt="桃之夭夭头像罗盘"
+                    src={GITHUB_AVATAR}
+                    alt="Yi-luo-hua 的 GitHub 头像罗盘"
                     className="size-full object-cover"
                     style={{ objectPosition: "50% 43%" }}
                     draggable="false"
@@ -767,7 +765,7 @@ const Hero = () => {
         )}
 
         <h1 className="special-font hero-heading absolute bottom-5 right-5 z-40 text-blue-75">
-          桃之<b>夭</b>夭
+          伊洛华
         </h1>
 
         <div className="absolute left-0 top-0 z-40 size-full">
@@ -780,27 +778,15 @@ const Hero = () => {
               This is only the beginning
             </p>
 
-            <div className="flex items-center gap-4">
-              <div onClick={() => setShowScrollHint(true)}>
-                <Button
-                  id="explore"
-                  title="EXPLORE"
-                  leftIcon={<TiLocationArrow />}
-                  containerClass="bg-yellow-300 flex-center gap-1 cursor-pointer"
-                />
-              </div>
-              {showScrollHint && (
-                <span className="text-sm md:text-base font-circular-web text-blue-75/85 tracking-[0.3em] animate-pulse">
-                  ↓ 下滑探索
-                </span>
-              )}
-            </div>
+            <p className="hero-scroll-note font-general text-[10px] uppercase tracking-[0.38em] text-blue-75/75">
+              Scroll to continue
+            </p>
           </div>
         </div>
       </div>
 
       <h1 className="special-font hero-heading absolute bottom-5 right-5 text-black">
-        桃之<b>夭</b>夭
+        伊洛华
       </h1>
     </div>
   );

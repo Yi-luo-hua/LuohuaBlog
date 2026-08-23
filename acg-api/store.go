@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -45,11 +46,21 @@ func migrateAll(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS bangumi_items (
 			id TEXT PRIMARY KEY,
 			title TEXT NOT NULL,
+			original_title TEXT NOT NULL DEFAULT '',
+			summary TEXT NOT NULL DEFAULT '',
+			air_date TEXT NOT NULL DEFAULT '',
+			tags_json TEXT NOT NULL DEFAULT '[]',
+			collection_type INTEGER NOT NULL DEFAULT 3,
 			watched INTEGER NOT NULL DEFAULT 0,
 			total INTEGER NOT NULL DEFAULT 0,
 			latest_episode INTEGER NOT NULL DEFAULT 0,
+			score REAL NOT NULL DEFAULT 0,
+			my_rating INTEGER NOT NULL DEFAULT 0,
+			rank INTEGER NOT NULL DEFAULT 0,
+			cover_url TEXT NOT NULL DEFAULT '',
 			cover_path TEXT,
 			link_url TEXT,
+			collection_updated_at TEXT NOT NULL DEFAULT '',
 			updated_at TEXT NOT NULL
 		);`,
 		`CREATE TABLE IF NOT EXISTS radar_creators (
@@ -217,6 +228,28 @@ func migrateAll(db *sql.DB) error {
 	if err := ensureColumn(db, "ai_fixed_answers", "normalized_question", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
+	for _, column := range []struct {
+		name string
+		def  string
+	}{
+		{"original_title", "TEXT NOT NULL DEFAULT ''"},
+		{"summary", "TEXT NOT NULL DEFAULT ''"},
+		{"air_date", "TEXT NOT NULL DEFAULT ''"},
+		{"tags_json", "TEXT NOT NULL DEFAULT '[]'"},
+		{"collection_type", "INTEGER NOT NULL DEFAULT 3"},
+		{"score", "REAL NOT NULL DEFAULT 0"},
+		{"my_rating", "INTEGER NOT NULL DEFAULT 0"},
+		{"rank", "INTEGER NOT NULL DEFAULT 0"},
+		{"cover_url", "TEXT NOT NULL DEFAULT ''"},
+		{"collection_updated_at", "TEXT NOT NULL DEFAULT ''"},
+	} {
+		if err := ensureColumn(db, "bangumi_items", column.name, column.def); err != nil {
+			return err
+		}
+	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_bangumi_items_collection_updated ON bangumi_items(collection_type, collection_updated_at DESC)`); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -270,10 +303,17 @@ func replaceBangumiItems(db *sql.DB, items []bangumiItem) error {
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	for _, it := range items {
-		_, err := tx.Exec(
-			`INSERT INTO bangumi_items (id, title, watched, total, latest_episode, cover_path, link_url, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-			it.ID, it.Title, it.Watched, it.Total, it.LatestEpisode, it.CoverPath, it.LinkURL, now,
+		tagsJSON, err := json.Marshal(it.Tags)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(
+			`INSERT INTO bangumi_items (
+				id, title, original_title, summary, air_date, tags_json, collection_type, watched, total, latest_episode,
+				score, my_rating, rank, cover_url, cover_path, link_url, collection_updated_at, updated_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			it.ID, it.Title, it.OriginalTitle, it.Summary, it.AirDate, string(tagsJSON), it.CollectionType, it.Watched, it.Total, it.LatestEpisode,
+			it.Score, it.MyRating, it.Rank, it.CoverURL, it.CoverPath, it.LinkURL, it.UpdatedAt, now,
 		)
 		if err != nil {
 			return err
@@ -304,9 +344,14 @@ func upsertRadarFeed(db *sql.DB, item radarItem) error {
 	return err
 }
 
-func listBangumiFromDB(db *sql.DB) ([]bangumiItem, error) {
+func listBangumiFromDB(db *sql.DB, collectionType int) ([]bangumiItem, error) {
 	rows, err := db.Query(
-		`SELECT id, title, watched, total, latest_episode, cover_path, link_url FROM bangumi_items ORDER BY title`,
+		`SELECT id, title, original_title, summary, air_date, tags_json, collection_type, watched, total, latest_episode,
+		        score, my_rating, rank, cover_url, cover_path, link_url, collection_updated_at
+		 FROM bangumi_items
+		 WHERE collection_type = ?
+		 ORDER BY collection_updated_at DESC, title`,
+		collectionType,
 	)
 	if err != nil {
 		return nil, err
@@ -315,13 +360,23 @@ func listBangumiFromDB(db *sql.DB) ([]bangumiItem, error) {
 	var items []bangumiItem
 	for rows.Next() {
 		var it bangumiItem
+		var coverURL sql.NullString
 		var coverPath sql.NullString
 		var link sql.NullString
-		if err := rows.Scan(&it.ID, &it.Title, &it.Watched, &it.Total, &it.LatestEpisode, &coverPath, &link); err != nil {
+		var tagsJSON string
+		if err := rows.Scan(
+			&it.ID, &it.Title, &it.OriginalTitle, &it.Summary, &it.AirDate, &tagsJSON, &it.CollectionType, &it.Watched, &it.Total,
+			&it.LatestEpisode, &it.Score, &it.MyRating, &it.Rank, &coverURL, &coverPath, &link, &it.UpdatedAt,
+		); err != nil {
 			return nil, err
+		}
+		if tagsJSON != "" {
+			_ = json.Unmarshal([]byte(tagsJSON), &it.Tags)
 		}
 		if coverPath.Valid && coverPath.String != "" {
 			it.CoverURL = "/api/v1/acg/image/" + coverPath.String
+		} else if coverURL.Valid {
+			it.CoverURL = coverURL.String
 		}
 		if link.Valid {
 			it.LinkURL = link.String
@@ -329,6 +384,38 @@ func listBangumiFromDB(db *sql.DB) ([]bangumiItem, error) {
 		items = append(items, it)
 	}
 	return items, nil
+}
+
+func bangumiCollectionCounts(db *sql.DB) (map[string]int, error) {
+	counts := map[string]int{"watching": 0, "watched": 0, "wish": 0}
+	rows, err := db.Query(`SELECT collection_type, COUNT(*) FROM bangumi_items GROUP BY collection_type`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var collectionType, count int
+		if err := rows.Scan(&collectionType, &count); err != nil {
+			return nil, err
+		}
+		if status, ok := bangumiStatusFromCollectionType(collectionType); ok {
+			counts[status] = count
+		}
+	}
+	return counts, rows.Err()
+}
+
+func bangumiStatusFromCollectionType(collectionType int) (string, bool) {
+	switch collectionType {
+	case bangumiCollectionWatching:
+		return "watching", true
+	case bangumiCollectionWatched:
+		return "watched", true
+	case bangumiCollectionWish:
+		return "wish", true
+	default:
+		return "", false
+	}
 }
 
 func listRadarFromDB(db *sql.DB) ([]radarItem, error) {

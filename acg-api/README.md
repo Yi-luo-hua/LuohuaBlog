@@ -1,17 +1,15 @@
 # acg-api (minimal Go)
 
-Lightweight API for guestbook (SQLite) and Bilibili tracker placeholders.
+Lightweight API for the Bangumi watching shelf and the site's other SQLite-backed services.
 
-## Config (built-in defaults)
+## Bangumi config
 
-- Bilibili UID: `1061280173` (override `BILIBILI_UID`)
-- Radar creators:
-  - 罗翔说刑法 `517327498`
-  - 你的影月月 `431073645`
-  - 黑马程序员 `37974444`
-  - 挪威的月亮 `398915225`
+- `BANGUMI_ACCESS_TOKEN` is required for the personal watching shelf.
+- `BANGUMI_API_BASE_URL` defaults to `https://api.bgm.tv`.
+- The backend calls `/v0/me`, then reads anime collections with `subject_type=2` and collection types `3` (在看), `2` (看过), and `1` (想看).
+- Keep the real token in local `acg-api/.env` or server `/opt/acg-api/.env`; never expose it through a `VITE_` variable.
 
-Sync: bangumi every **1h**, radar every **15m**, image cache cleanup **7 days**.
+Sync: Bangumi every **1h**, image cache cleanup **7 days**.
 
 ## Run locally
 
@@ -29,8 +27,7 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 - `GET /api/v1/health`
 - `GET /api/v1/guestbook?limit=50`
 - `POST /api/v1/guestbook` — JSON `{ "name": "...", "content": "..." }`
-- `GET /api/v1/bangumi/list`
-- `GET /api/v1/radar/feed`
+- `GET /api/v1/bangumi/list?status=watching|watched|wish`
 - `GET /api/chat` — quota status (blog AI assistant)
 - `POST /api/chat` — `{ "message": "...", "pageUrl", "pageTitle" }` → DeepSeek-v4-flash (see `blog/AI-ASSISTANT.md`)
 - `POST /api/auth/register` — 邮箱注册（站长邮箱不可注册）
@@ -54,6 +51,12 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 | POST | `/api/owner/friends` | `owner_friend_publish.go` | 生成友链数据变更分支并创建 Pull Request，检测重复 URL，避免直接写入受保护的 `master`。 |
 | POST | `/api/owner/moments` | `owner_moment_publish.go` | 写入碎语到 `main/src/data/moments.js`，校验年份、日期、分类和内容，按日期插入并返回 commit 信息。 |
 | POST | `/api/owner/gallery/images` | `owner_gallery_publish.go` | 写入公开图片 URL 到 `main/src/data/galleryAlbums.js`，必要时创建相册并避免重复图片。 |
+
+### Obsidian / Claudian 发布接口
+
+`POST /api/integrations/obsidian/publish` 接收 Markdown，通过独立的 `OBSIDIAN_PUBLISH_TOKEN` Bearer 令牌鉴权，并复用 GitHub Contents 发布链写入 `blog/source/_posts/`。请求可设置 `dryRun: true`，只验证并返回生成结果，不产生 commit。
+
+Claudian 的 MCP 桥与配置步骤见 `integrations/claudian-blog-mcp/README.md`。真实 GitHub token 与发布 token 均只保存在服务器或本机环境变量中。
 
 常用站长发布请求：
 
@@ -88,7 +91,7 @@ IP：仅存 `ip_hash`、`ip_masked`；公开展示 `ipRegion`（依赖 `ip-api.c
 
 前端页面：`main/` 路由 `/guestbook`，首页 Story「LEAVE A MESSAGE」入口。
 
-Copy `.env.example` → `/opt/acg-api/.env` with `DEEPSEEK_API_KEY`, `AUTH_OWNER_PASSWORD`, `AUTH_OWNER_SECURITY_ANSWER`, and owner publish GitHub settings: `OWNER_PUBLISH_GITHUB_TOKEN` (required), `OWNER_PUBLISH_GITHUB_OWNER`, `OWNER_PUBLISH_GITHUB_REPO`, `OWNER_PUBLISH_GITHUB_BRANCH`（站长 `173236231@qq.com` 学号二次验证）。
+Copy `.env.example` → `/opt/acg-api/.env` and set `BANGUMI_ACCESS_TOKEN` plus the credentials needed by enabled backend features. The Bangumi token is read only by the Go service and is never returned by the public API.
 
 For owner asset uploads to Tencent COS, also set:
 

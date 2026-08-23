@@ -1,4 +1,3 @@
-import { mockBangumiList } from "../data/acgMock.js";
 import { apiUrl } from "../lib/apiBase.js";
 import { asList } from "../lib/asList.js";
 
@@ -15,30 +14,29 @@ async function fetchJson(path, { signal } = {}) {
   return res.json();
 }
 
-export async function getBangumiList() {
-  try {
-    const data = await fetchJson("/api/v1/bangumi/list");
-    const items = asList(data);
-    return items.length > 0 ? items : mockBangumiList;
-  } catch {
-    return mockBangumiList;
-  }
+export async function getBangumiCollection(status = "watching") {
+  const data = await fetchJson(
+    `/api/v1/bangumi/list?status=${encodeURIComponent(status)}`,
+  );
+  return {
+    items: asList(data),
+    counts: {
+      watching: Number(data?.counts?.watching || 0),
+      watched: Number(data?.counts?.watched || 0),
+      wish: Number(data?.counts?.wish || 0),
+    },
+  };
 }
 
-export async function getRadarFeed() {
-  try {
-    const data = await fetchJson("/api/v1/radar/feed");
-    const items = asList(data);
-    return items;
-  } catch {
-    return [];
-  }
+export async function getBangumiList() {
+  const { items } = await getBangumiCollection("watching");
+  return items;
 }
 
 export async function getWallpaperGift({ apiOnly = false, signal } = {}) {
   const data = await fetchJson(
     apiOnly ? "/api/v1/wallpapers/draw?source=api" : "/api/v1/wallpapers/draw",
-    { signal }
+    { signal },
   );
   return data?.item || null;
 }

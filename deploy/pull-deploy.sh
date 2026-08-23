@@ -173,11 +173,10 @@ UNIT
 }
 
 switch_release_dirs() {
-  run_sudo mkdir -p "$ROOT_DIR" "$ROOT_DIR/blog" "$ROOT_DIR/build" "$ROOT_DIR/ai-assistant"
+  run_sudo mkdir -p "$ROOT_DIR" "$ROOT_DIR/blog" "$ROOT_DIR/build"
   run_sudo rsync -a --delete "$TMP_DIR/main/" "$ROOT_DIR/"
   run_sudo rsync -a --delete "$TMP_DIR/blog/" "$ROOT_DIR/blog/"
   run_sudo rsync -a --delete "$TMP_DIR/build/" "$ROOT_DIR/build/"
-  run_sudo rsync -a "$TMP_DIR/ai-assistant/" "$ROOT_DIR/ai-assistant/"
   run_sudo nginx -t
   if ! run_sudo systemctl reload-or-restart nginx; then
     echo "ERROR: nginx reload-or-restart failed" >&2
@@ -231,11 +230,10 @@ BUILD
 
 stage_release() {
   rm -rf "$TMP_DIR"
-  mkdir -p "$TMP_DIR/main" "$TMP_DIR/blog" "$TMP_DIR/build" "$TMP_DIR/acg-api" "$TMP_DIR/ai-assistant"
+  mkdir -p "$TMP_DIR/main" "$TMP_DIR/blog" "$TMP_DIR/build" "$TMP_DIR/acg-api"
   rsync -a --delete "$REPO_DIR/main/dist/" "$TMP_DIR/main/"
   rsync -a --delete "$REPO_DIR/blog/public/" "$TMP_DIR/blog/"
   rsync -a --delete "$REPO_DIR/build/dist/" "$TMP_DIR/build/"
-  rsync -a "$REPO_DIR/shared/ai-assistant/" "$TMP_DIR/ai-assistant/"
   cp "$REPO_DIR/acg-api/acg-api" "$TMP_DIR/acg-api/"
 }
 
@@ -274,7 +272,6 @@ main() {
   require_dir "$REPO_DIR/main"
   require_dir "$REPO_DIR/blog"
   require_dir "$REPO_DIR/build"
-  require_dir "$REPO_DIR/shared/ai-assistant"
 
   trap 'rm -rf "$TMP_DIR"' EXIT
 

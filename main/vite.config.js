@@ -1,34 +1,44 @@
-import { createReadStream, existsSync } from 'node:fs'
-import { extname, join, normalize } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { loadBlogPosts } from "./scripts/blogContent.mjs";
+import { blogStaticMiddleware } from "./scripts/blogStatic.mjs";
 
-const repoRoot = fileURLToPath(new URL('..', import.meta.url))
-const aiAssistantDir = join(repoRoot, 'shared', 'ai-assistant')
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+const postsDirectory = path.resolve(currentDirectory, "../blog/source/_posts");
+const blogPublicDirectory = path.resolve(currentDirectory, "../blog/public");
+const virtualBlogPosts = "virtual:blog-posts";
+const resolvedVirtualBlogPosts = `\0${virtualBlogPosts}`;
 
-function aiAssistantDevAssets() {
-  return {
-    name: 'ai-assistant-dev-assets',
-    configureServer(server) {
-      server.middlewares.use('/ai-assistant', (req, res, next) => {
-        const urlPath = decodeURIComponent((req.url || '').split('?')[0]).replace(/^\/+/, '')
-        const filePath = normalize(join(aiAssistantDir, urlPath))
-        if (!filePath.startsWith(aiAssistantDir) || !existsSync(filePath)) {
-          next()
-          return
-        }
-        const contentType = extname(filePath) === '.css' ? 'text/css; charset=utf-8' : 'application/javascript; charset=utf-8'
-        res.setHeader('Content-Type', contentType)
-        createReadStream(filePath).pipe(res)
-      })
-    },
-  }
-}
+const blogContentPlugin = () => ({
+  name: "yi-luo-hua-blog-content",
+  resolveId(id) {
+    return id === virtualBlogPosts ? resolvedVirtualBlogPosts : null;
+  },
+  async load(id) {
+    if (id !== resolvedVirtualBlogPosts) return null;
+    const posts = await loadBlogPosts(postsDirectory);
+    return `export const blogPosts = ${JSON.stringify(posts)};`;
+  },
+  configureServer(server) {
+    server.middlewares.use(blogStaticMiddleware(blogPublicDirectory));
+    server.watcher.add(postsDirectory);
+    const reloadBlog = (file) => {
+      if (!file.startsWith(postsDirectory) || !file.endsWith(".md")) return;
+      const module = server.moduleGraph.getModuleById(resolvedVirtualBlogPosts);
+      if (module) server.moduleGraph.invalidateModule(module);
+      server.ws.send({ type: "full-reload" });
+    };
+    server.watcher.on("add", reloadBlog);
+    server.watcher.on("change", reloadBlog);
+    server.watcher.on("unlink", reloadBlog);
+  },
+});
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), aiAssistantDevAssets()],
+  plugins: [react(), blogContentPlugin()],
   server: {
     proxy: {
       "/api": {
@@ -42,4 +52,4 @@ export default defineConfig({
       },
     },
   },
-})
+});

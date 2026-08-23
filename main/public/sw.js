@@ -1,6 +1,11 @@
 const CACHE_NAME = "taozhiyy-pwa-v5";
 const APP_START_URL = "/app";
-const APP_SHELL = [APP_START_URL, "/manifest.webmanifest", "/pwa-icon-192.png", "/pwa-icon-512.png"];
+const APP_SHELL = [
+  APP_START_URL,
+  "/manifest.webmanifest",
+  "/github-avatar-192.png",
+  "/github-avatar-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

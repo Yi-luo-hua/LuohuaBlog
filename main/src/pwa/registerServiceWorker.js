@@ -59,7 +59,7 @@ export function applyPwaInstallMetadata({
   setMetaTag(documentRef, "theme-color", "#fffaf2");
   setMetaTag(documentRef, "mobile-web-app-capable", "yes");
   setMetaTag(documentRef, "apple-mobile-web-app-capable", "yes");
-  setMetaTag(documentRef, "apple-mobile-web-app-title", "桃之夭夭");
+  setMetaTag(documentRef, "apple-mobile-web-app-title", "伊洛华");
 }
 
 export function registerServiceWorker({

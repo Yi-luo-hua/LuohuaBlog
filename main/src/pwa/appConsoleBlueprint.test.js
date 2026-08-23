@@ -14,7 +14,17 @@ import {
 test("restores the owner controller screen map from the prototype", () => {
   assert.deepEqual(
     ownerConsoleScreens.map((screen) => screen.id),
-    ["home", "article", "drafts", "gallery", "moments", "friend", "inbox", "ai"],
+    [
+      "home",
+      "article",
+      "drafts",
+      "gallery",
+      "moments",
+      "friend",
+      "inbox",
+      "emails",
+      "ai",
+    ],
   );
   assert.equal(ownerConsoleScreens[0].title, "站长工作台");
   assert.equal(ownerConsoleScreens[1].title, "发布文章");
@@ -23,7 +33,7 @@ test("restores the owner controller screen map from the prototype", () => {
 test("keeps the prototype task modules and notification badge content", () => {
   assert.deepEqual(
     ownerConsoleModules.map((module) => module.title),
-    ["发布文章", "相册图片", "发布碎语", "增加友链", "留言收件箱"],
+    ["发布文章", "相册图片", "发布碎语", "增加友链", "留言收件箱", "邮箱目录"],
   );
   assert.deepEqual(
     ownerConsoleNotifications.map((notification) => notification.title),
@@ -45,7 +55,9 @@ test("defines avatar choices and the original publish automation steps", () => {
 });
 
 test("generates a mobile AI article draft for review before publishing", () => {
-  const draft = buildMobileArticleDraft("今天把图片和文字交给 AI，由 AI 写文章。");
+  const draft = buildMobileArticleDraft(
+    "今天把图片和文字交给 AI，由 AI 写文章。",
+  );
 
   assert.equal(draft.title, "用 AI 代理完成一次移动端发文");
   assert.match(draft.body, /这篇文章由手机端 AI 代理/);

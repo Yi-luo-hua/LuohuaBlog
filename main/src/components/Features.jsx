@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { TiLocationArrow } from "react-icons/ti";
 import LazyVideo from "./LazyVideo";
 import { cosAsset } from "../lib/cosAsset.js";
@@ -335,49 +334,22 @@ const Features = () => {
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   return (
-    <section className="bg-[linear-gradient(180deg,#fff8f1_0%,#ffeef5_46%,#f6fbff_100%)] pb-16 md:pb-52">
+    <section id="features" className="bg-[linear-gradient(180deg,#fff8f1_0%,#ffeef5_46%,#f6fbff_100%)] pb-16 md:pb-52">
       <ArchiveBook open={archiveOpen} onClose={() => setArchiveOpen(false)} />
 
       <div className="container mx-auto px-3 md:px-10">
-        <div className="flex flex-col gap-10 px-5 py-32 text-[#241322] md:flex-row md:items-center md:justify-between">
-          <div className="md:max-w-xl">
-            <p className="font-general text-xs uppercase tracking-[0.45em] text-[#b76e79]">
-              A public corner of imagination
-            </p>
-            <p className="mt-5 text-lg leading-relaxed text-[#5f4b52]">
-              一个由访客与 AI 共写的视觉档案。每一次提示词的落笔，都会留下一张可被回望的图像。
+        <div className="features-intro px-5 py-28 text-[#241322] md:py-40">
+          <p className="font-general text-xs uppercase tracking-[0.45em] text-[#b76e79]">
+            Selected fragments · 2026
+          </p>
+          <div className="mt-7 grid gap-8 border-t border-[#cfaeba]/50 pt-8 md:grid-cols-[1.35fr_0.65fr] md:items-end">
+            <h2 className="max-w-4xl font-zentry text-[clamp(4rem,10vw,9rem)] uppercase leading-[0.78] tracking-[-0.04em]">
+              Things worth<br />remembering
+            </h2>
+            <p className="max-w-md text-base leading-relaxed text-[#5f4b52] md:justify-self-end md:text-lg">
+              收藏正在发生的创作、学习与生活片段。这里不追求完整，只留下真正值得回看的部分。
             </p>
           </div>
-
-          <Link to="/ai-gallery" className="ai-plaza-card group" aria-label="进入生成图广场">
-            {/* outsized index — breaks the frame */}
-            <span className="ai-plaza-card-numeral" aria-hidden="true">06</span>
-
-            {/* one rule extending from outside the card */}
-            <span className="ai-plaza-card-rule" aria-hidden="true" />
-
-            <div className="ai-plaza-card-inner">
-              <span className="ai-plaza-card-eyebrow">— Plaza</span>
-
-              <h3 className="ai-plaza-card-title">
-                生成图
-                <em>广场</em>
-              </h3>
-
-              <p className="ai-plaza-card-sub">
-                每一次提示词的落笔，<br />都留下一张可被回望的图像。
-              </p>
-            </div>
-
-            {/* asymmetric CTA pinned to bottom-right */}
-            <span className="ai-plaza-card-cta" aria-hidden="true">
-              <span>Enter</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14" />
-                <path d="M13 5l7 7-7 7" />
-              </svg>
-            </span>
-          </Link>
         </div>
 
         <ExhibitTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-[1.75rem] md:h-[65vh]">

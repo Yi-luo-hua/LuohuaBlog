@@ -9,20 +9,30 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
 var downloadSem = make(chan struct{}, 2)
 
 type bangumiItem struct {
-	ID            string `json:"id"`
-	Title         string `json:"title"`
-	Watched       int    `json:"watched"`
-	Total         int    `json:"total"`
-	LatestEpisode int    `json:"latestEpisode"`
-	CoverURL      string `json:"coverUrl,omitempty"`
-	CoverPath     string `json:"-"`
-	LinkURL       string `json:"linkUrl,omitempty"`
+	ID             string   `json:"id"`
+	Title          string   `json:"title"`
+	OriginalTitle  string   `json:"originalTitle,omitempty"`
+	Summary        string   `json:"summary,omitempty"`
+	AirDate        string   `json:"airDate,omitempty"`
+	Tags           []string `json:"tags,omitempty"`
+	CollectionType int      `json:"collectionType"`
+	Watched        int      `json:"watched"`
+	Total          int      `json:"total"`
+	LatestEpisode  int      `json:"latestEpisode"`
+	Score          float64  `json:"score,omitempty"`
+	MyRating       int      `json:"myRating,omitempty"`
+	Rank           int      `json:"rank,omitempty"`
+	CoverURL       string   `json:"coverUrl,omitempty"`
+	CoverPath      string   `json:"-"`
+	LinkURL        string   `json:"linkUrl,omitempty"`
+	UpdatedAt      string   `json:"updatedAt,omitempty"`
 }
 
 type radarItem struct {
@@ -38,29 +48,16 @@ type radarItem struct {
 }
 
 func startSyncLoops(db *sql.DB, cfg AppConfig, cacheDir string) {
-	bili := NewBiliClient(cfg)
-	_ = upsertRadarCreators(db, cfg.RadarCreators)
+	bangumi := NewBangumiClient(cfg)
 
 	go func() {
 		runSyncJob("bangumi", func() {
-			runBangumiSync(db, bili, cacheDir)
+			runBangumiSync(db, bangumi, cacheDir)
 		})
 		t := time.NewTicker(1 * time.Hour)
 		for range t.C {
 			runSyncJob("bangumi", func() {
-				runBangumiSync(db, bili, cacheDir)
-			})
-		}
-	}()
-
-	go func() {
-		runSyncJob("radar", func() {
-			runRadarSync(db, bili, cfg, cacheDir)
-		})
-		t := time.NewTicker(15 * time.Minute)
-		for range t.C {
-			runSyncJob("radar", func() {
-				runRadarSync(db, bili, cfg, cacheDir)
+				runBangumiSync(db, bangumi, cacheDir)
 			})
 		}
 	}()
@@ -72,28 +69,35 @@ func runSyncJob(name string, run func()) {
 	}
 }
 
-func runBangumiSync(db *sql.DB, bili *BiliClient, cacheDir string) {
+func runBangumiSync(db *sql.DB, bangumi *BangumiClient, cacheDir string) {
 	log.Println("sync: bangumi start")
-	items, err := bili.FetchBangumi(1, 30)
+	items, err := bangumi.FetchLibrary()
 	if err != nil {
 		log.Println("sync: bangumi fetch error:", err)
 		return
 	}
-	if len(items) == 0 {
-		log.Println("sync: bangumi fetch returned empty list; keeping cached data")
-		return
-	}
+	var covers sync.WaitGroup
 	for i := range items {
 		if items[i].CoverURL == "" {
 			continue
 		}
-		fname := items[i].ID + ".jpg"
-		if err := downloadToCache(items[i].CoverURL, filepath.Join(cacheDir, fname)); err != nil {
-			log.Println("sync: cover", items[i].ID, err)
+		fname := "bangumi_" + items[i].ID + ".jpg"
+		dest := filepath.Join(cacheDir, fname)
+		if info, statErr := os.Stat(dest); statErr == nil && info.Size() > 0 {
+			items[i].CoverPath = fname
 			continue
 		}
-		items[i].CoverPath = fname
+		covers.Add(1)
+		go func(index int, fileName, destination string) {
+			defer covers.Done()
+			if err := downloadToCacheWithHeaders(items[index].CoverURL, destination, bangumiUA, "https://bgm.tv/"); err != nil {
+				log.Println("sync: cover", items[index].ID, err)
+				return
+			}
+			items[index].CoverPath = fileName
+		}(i, fname, dest)
 	}
+	covers.Wait()
 	if err := replaceBangumiItems(db, items); err != nil {
 		log.Println("sync: bangumi db error:", err)
 		return
@@ -141,6 +145,10 @@ func runRadarSync(db *sql.DB, bili *BiliClient, cfg AppConfig, cacheDir string) 
 }
 
 func downloadToCache(remoteURL, dest string) error {
+	return downloadToCacheWithHeaders(remoteURL, dest, biliUA, "https://www.bilibili.com")
+}
+
+func downloadToCacheWithHeaders(remoteURL, dest, userAgent, referer string) error {
 	if remoteURL == "" {
 		return fmt.Errorf("empty url")
 	}
@@ -151,8 +159,10 @@ func downloadToCache(remoteURL, dest string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", biliUA)
-	req.Header.Set("Referer", "https://www.bilibili.com")
+	req.Header.Set("User-Agent", userAgent)
+	if referer != "" {
+		req.Header.Set("Referer", referer)
+	}
 	client := &http.Client{Timeout: biliHTTPTimeout()}
 	res, err := client.Do(req)
 	if err != nil {

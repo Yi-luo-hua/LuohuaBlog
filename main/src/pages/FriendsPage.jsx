@@ -7,8 +7,8 @@ import { cosAsset } from "../lib/cosAsset.js";
 
 const siteAvatarUrl = `https://taozhiyy.top${cosAsset("1.png")}`;
 
-const copyBlock = `name: 桃之夭夭
-desc: 桃之夭夭的小屋
+const copyBlock = `name: 伊洛华
+desc: 伊洛华的小屋
 url: https://taozhiyy.top
 avatar: ${siteAvatarUrl}`;
 

@@ -17,8 +17,10 @@ type RadarCreator struct {
 }
 
 type AppConfig struct {
-	BilibiliUID   string
-	RadarCreators []RadarCreator
+	BilibiliUID        string
+	RadarCreators      []RadarCreator
+	BangumiAccessToken string
+	BangumiAPIBaseURL  string
 }
 
 func loadConfig() AppConfig {
@@ -26,5 +28,7 @@ func loadConfig() AppConfig {
 	if v := env("BILIBILI_UID", ""); v != "" {
 		cfg.BilibiliUID = v
 	}
+	cfg.BangumiAccessToken = env("BANGUMI_ACCESS_TOKEN", "")
+	cfg.BangumiAPIBaseURL = env("BANGUMI_API_BASE_URL", "https://api.bgm.tv")
 	return cfg
 }

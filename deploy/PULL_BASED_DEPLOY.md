@@ -51,6 +51,12 @@ If a new backend feature needs a secret, add it manually to `/opt/acg-api/.env` 
 sudo FORCE_DEPLOY=1 /usr/local/sbin/taozhiyy-pull-deploy.sh
 ```
 
+The Bangumi watching page requires this server-only entry:
+
+```env
+BANGUMI_ACCESS_TOKEN=replace_with_your_personal_access_token
+```
+
 ## Operations
 
 Check timer status:

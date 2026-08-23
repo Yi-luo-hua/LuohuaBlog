@@ -63,9 +63,9 @@ func (c *BiliClient) FetchBangumi(page, pageSize int) ([]bangumiItem, error) {
 				FormalCount int    `json:"formal_ep_count"`
 				Progress    string `json:"progress"`
 				NewEP       struct {
-					Title      string `json:"title"`
-					IndexShow  string `json:"index_show"`
-					LongTitle  string `json:"long_title"`
+					Title     string `json:"title"`
+					IndexShow string `json:"index_show"`
+					LongTitle string `json:"long_title"`
 				} `json:"new_ep"`
 				URL string `json:"url"`
 			} `json:"list"`
@@ -87,13 +87,14 @@ func (c *BiliClient) FetchBangumi(page, pageSize int) ([]bangumiItem, error) {
 		latest := parseEpisodeNum(row.NewEP.Title, row.NewEP.IndexShow)
 		id := fmt.Sprintf("s%d", row.SeasonID)
 		out = append(out, bangumiItem{
-			ID:            id,
-			Title:         row.Title,
-			Watched:       watched,
-			Total:         total,
-			LatestEpisode: latest,
-			CoverURL:      row.Cover,
-			LinkURL:       row.URL,
+			ID:             id,
+			Title:          row.Title,
+			CollectionType: bangumiCollectionWatching,
+			Watched:        watched,
+			Total:          total,
+			LatestEpisode:  latest,
+			CoverURL:       row.Cover,
+			LinkURL:        row.URL,
 		})
 	}
 	return out, nil
@@ -127,10 +128,10 @@ func parseEpisodeNum(parts ...string) int {
 }
 
 type latestVideo struct {
-	Title     string
-	Pic       string
-	Created   int64
-	LinkURL   string
+	Title   string
+	Pic     string
+	Created int64
+	LinkURL string
 }
 
 func (c *BiliClient) FetchLatestVideo(mid string) (*latestVideo, error) {
@@ -139,10 +140,10 @@ func (c *BiliClient) FetchLatestVideo(mid string) (*latestVideo, error) {
 		return nil, err
 	}
 	params := signWBI(map[string]string{
-		"mid":    mid,
-		"pn":     "1",
-		"ps":     "1",
-		"order":  "pubdate",
+		"mid":   mid,
+		"pn":    "1",
+		"ps":    "1",
+		"order": "pubdate",
 	}, img, sub)
 	q := url.Values{}
 	for k, v := range params {

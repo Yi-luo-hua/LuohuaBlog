@@ -26,7 +26,7 @@ const FRIEND_COMMENT_MAX_LENGTH = 500;
 const FRIEND_REPLY_MAX_LENGTH = 300;
 
 const FRIEND_COMMENT_PLACEHOLDER =
-  "写下你的留言、站点介绍，或者想对桃之夭夭说的话...";
+  "写下你的留言、站点介绍，或者想对伊洛华说的话...";
 
 const cardTone = (item) => {
   if (item.isAdminUser) return "admin";
@@ -320,14 +320,7 @@ const FriendsApplicationBoard = () => {
           </p>
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6B7280]">
-          友链留言必须留下昵称和邮箱，邮箱仅用于回复通知，不会公开显示。想随便聊，可以前往
-          <Link
-            to="/guestbook"
-            className="font-semibold text-[#4D8FC6] hover:text-[#FF8FAB]"
-          >
-            留言区
-          </Link>
-          。
+          友链留言必须留下昵称和邮箱，邮箱仅用于回复通知，不会公开显示。
         </p>
       </div>
 

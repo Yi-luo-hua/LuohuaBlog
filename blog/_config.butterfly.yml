@@ -56,10 +56,10 @@ social: false
 # Image Settings
 # --------------------------------------
 
-favicon: /img/favicon.png
+favicon: https://github.com/Yi-luo-hua.png?size=64
 
 avatar:
-  img: https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/1.png
+  img: https://github.com/Yi-luo-hua.png?size=256
   effect: false
 
 # Disable all banner images
@@ -204,7 +204,7 @@ toc:
 post_copyright:
   enable: true
   decode: false
-  author_href:
+  author_href: https://github.com/Yi-luo-hua
   license: CC BY-NC-SA 4.0
   license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
 
@@ -260,8 +260,8 @@ noticeOutdate:
 footer:
   owner:
     enable: true
-    since: 2019
-  custom_text: Hello,welcome to my blog!
+    since: 2026
+  custom_text: 在代码、学习与故事之间，留下自己的轨迹。
   # Copyright of theme and framework
   copyright:
     enable: true
@@ -293,7 +293,7 @@ aside:
       link:
   card_announcement:
     enable: true
-    content: This is my Blog
+    content: 欢迎来到伊洛华的博客。
   card_recent_post:
     enable: true
     # If set 0 will show all
@@ -651,7 +651,7 @@ artalk:
 # --------------------------------------
 
 chat:
-  # Choose: chatra/tidio/crisp — 留空；全站统一用 /ai-assistant/ 小精灵，勿与 Tidio 等同开
+  # Choose: chatra/tidio/crisp — 留空表示不启用第三方聊天组件
   use:
   rightside_button: false
   button_hide_show: false
@@ -1032,10 +1032,8 @@ css_prefix: true
 # Insert the code to head (before '</head>' tag) and the bottom (before '</body>' tag)
 inject:
   head:
-    - <link rel="stylesheet" href="/ai-assistant/ai-assistant.css">
   bottom:
-    - <script src="/ai-assistant/page-context.js" defer></script>
-    - <script src="/ai-assistant/ai-assistant.js" defer></script>
+    - <script src="/blog/js/copyright-personalization.js"></script>
 
 # CDN Settings
 # Don't modify the following settings unless you know how they work

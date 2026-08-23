@@ -20,7 +20,7 @@ test("manifest describes an installable personal app", async () => {
   const manifestPath = resolve(publicDir, "manifest.webmanifest");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 
-  assert.equal(manifest.name, "桃之夭夭");
+  assert.equal(manifest.name, "伊洛华");
   assert.equal(manifest.start_url, "/app");
   assert.equal(manifest.scope, "/");
   assert.equal(manifest.display, "standalone");
@@ -29,7 +29,7 @@ test("manifest describes an installable personal app", async () => {
   assert.ok(
     manifest.icons.some(
       (icon) =>
-        icon.src === "/pwa-icon-192.png" &&
+        icon.src === "/github-avatar-192.png" &&
         icon.sizes === "192x192" &&
         icon.type === "image/png" &&
         icon.purpose === "any",
@@ -38,7 +38,7 @@ test("manifest describes an installable personal app", async () => {
   assert.ok(
     manifest.icons.some(
       (icon) =>
-        icon.src === "/pwa-icon-512.png" &&
+        icon.src === "/github-avatar-512.png" &&
         icon.sizes === "512x512" &&
         icon.type === "image/png" &&
         icon.purpose === "any maskable",

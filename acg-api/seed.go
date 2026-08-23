@@ -7,28 +7,9 @@ import (
 )
 
 func seedDefaultACGData(db *sql.DB) {
-	if err := seedBangumiDefaults(db); err != nil {
-		log.Println("seed: bangumi defaults:", err)
+	if _, err := db.Exec(`DELETE FROM bangumi_items WHERE id IN ('b1', 'b2', 'b3', 'b4')`); err != nil {
+		log.Println("seed: remove legacy bangumi placeholders:", err)
 	}
-	if err := seedRadarDefaults(db); err != nil {
-		log.Println("seed: radar defaults:", err)
-	}
-}
-
-func seedBangumiDefaults(db *sql.DB) error {
-	var count int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM bangumi_items`).Scan(&count); err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
-	return replaceBangumiItems(db, []bangumiItem{
-		{ID: "b1", Title: "A Certain Scientific Railgun", Watched: 12, Total: 24, LatestEpisode: 24},
-		{ID: "b2", Title: "Healing Sketchbook", Watched: 8, Total: 12, LatestEpisode: 10},
-		{ID: "b3", Title: "Chronicles of Creation", Watched: 3, Total: 13, LatestEpisode: 7},
-		{ID: "b4", Title: "Reimu Garden", Watched: 6, Total: 12, LatestEpisode: 9},
-	})
 }
 
 func seedRadarDefaults(db *sql.DB) error {

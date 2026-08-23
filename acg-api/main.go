@@ -63,11 +63,14 @@ func main() {
 	mux.HandleFunc("/api/guestbook/", guestbookRouter)
 	mux.HandleFunc("/api/v1/guestbook", guestbookHandler)
 	mux.HandleFunc("/api/v1/bangumi/list", bangumiListHandler)
-	mux.HandleFunc("/api/v1/radar/feed", radarFeedHandler)
 	mux.HandleFunc("/api/v1/wallpapers/draw", wallpaperDrawHandler)
 	mux.HandleFunc("/api/v1/acg/image/", imageHandler)
 	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, map[string]string{"status": "ok", "uid": cfg.BilibiliUID})
+		bangumiStatus := "not_configured"
+		if strings.TrimSpace(cfg.BangumiAccessToken) != "" {
+			bangumiStatus = "configured"
+		}
+		writeJSON(w, map[string]string{"status": "ok", "bangumi": bangumiStatus})
 	})
 	mux.HandleFunc("/api/chat/stats", chatStatsHandler)
 	mux.HandleFunc("/api/server/info", serverInfoHandler)
@@ -77,20 +80,20 @@ func main() {
 	mux.HandleFunc("/api/ai/image", aiImageHandler)
 	mux.HandleFunc("/api/auth/", authHandler)
 	mux.HandleFunc("/api/owner/", ownerRouter)
+	mux.HandleFunc("/api/integrations/obsidian/publish", obsidianPublishHandler)
 	mux.HandleFunc("/api/v1/sync/trigger", syncTriggerHandler(cfg))
 
 	deepseekReady := chatConfigured()
-	log.Printf("acg-api on %s | bilibili uid=%s | radar=%d creators | deepseek=%v\n", addr, cfg.BilibiliUID, len(cfg.RadarCreators), deepseekReady)
+	log.Printf("acg-api on %s | bangumi=%v | deepseek=%v\n", addr, strings.TrimSpace(cfg.BangumiAccessToken) != "", deepseekReady)
 	log.Fatal(http.ListenAndServe(addr, withCORS(mux)))
 }
 
 var syncRunning atomic.Bool
 
 var syncTriggerQueue = func(cfg AppConfig) bool {
-	bili := NewBiliClient(cfg)
+	bangumi := NewBangumiClient(cfg)
 	return tryStartSyncJob(func() {
-		runBangumiSync(db, bili, cacheDir)
-		runRadarSync(db, bili, cfg, cacheDir)
+		runBangumiSync(db, bangumi, cacheDir)
 	})
 }
 
@@ -221,13 +224,34 @@ func wallpaperDrawHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"item": item})
 }
 
-func bangumiListHandler(w http.ResponseWriter, _ *http.Request) {
-	items, err := listBangumiFromDB(db)
+func bangumiListHandler(w http.ResponseWriter, r *http.Request) {
+	status := strings.TrimSpace(r.URL.Query().Get("status"))
+	if status == "" {
+		status = "watching"
+	}
+	collectionTypes := map[string]int{
+		"watching": bangumiCollectionWatching,
+		"watched":  bangumiCollectionWatched,
+		"wish":     bangumiCollectionWish,
+	}
+	collectionType, ok := collectionTypes[status]
+	if !ok {
+		writeJSONStatus(w, http.StatusBadRequest, map[string]string{
+			"error": "INVALID_BANGUMI_STATUS",
+		})
+		return
+	}
+	items, err := listBangumiFromDB(db, collectionType)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, map[string]any{"items": items})
+	counts, err := bangumiCollectionCounts(db)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, map[string]any{"items": items, "status": status, "counts": counts})
 }
 
 func radarFeedHandler(w http.ResponseWriter, _ *http.Request) {

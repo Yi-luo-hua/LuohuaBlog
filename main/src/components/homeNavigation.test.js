@@ -7,10 +7,10 @@ import { fileURLToPath } from "node:url";
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const readSource = (path) => readFileSync(resolve(sourceRoot, path), "utf8");
 
-test("keeps the moments entry in the top navbar", () => {
+test("labels the former moments route as the blog in the top navbar", () => {
   const navbarSource = readSource("components/Navbar.jsx");
 
-  assert.match(navbarSource, /\{\s*label:\s*"碎语",\s*to:\s*"\/moments"/);
+  assert.match(navbarSource, /\{\s*label:\s*"博客",\s*to:\s*"\/moments"/);
 });
 
 test("keeps the about entry in the top navbar", () => {
@@ -40,7 +40,10 @@ test("keeps the quizcard project page on the deployed showcase page", () => {
   const projectPageSource = readSource("pages/AboutProjectPage.jsx");
 
   assert.match(projectPageSource, /showcase\/quizcard\.html/);
-  assert.doesNotMatch(projectPageSource, /Project Notes|回到项目集|localPreview|127\.0\.0\.1|localhost/i);
+  assert.doesNotMatch(
+    projectPageSource,
+    /Project Notes|回到项目集|localPreview|127\.0\.0\.1|localhost/i,
+  );
 });
 
 test("ships the quizcard showcase page and its local assets", () => {
@@ -74,7 +77,11 @@ test("ships the quizcard visitor app with seed data and all required modules", (
   ];
 
   for (const filePath of requiredWebFiles) {
-    assert.equal(existsSync(resolve(sourceRoot, filePath)), true, `${filePath} should be deployed`);
+    assert.equal(
+      existsSync(resolve(sourceRoot, filePath)),
+      true,
+      `${filePath} should be deployed`,
+    );
   }
 
   const storeSource = readSource("../public/web/assets/store.js");
@@ -92,7 +99,11 @@ test("ships the quizcard visitor app with seed data and all required modules", (
   assert.match(storeSource, /from ['"]\.\/seed\.js['"]/);
   assert.match(storeSource, /ensureSeed/);
   assert.match(seedSource, /export const SEED/);
-  for (const deckId of ["deck_seed_neuro", "deck_seed_vocab", "deck_seed_physics"]) {
+  for (const deckId of [
+    "deck_seed_neuro",
+    "deck_seed_vocab",
+    "deck_seed_physics",
+  ]) {
     assert.match(seedSource, new RegExp(deckId));
   }
 
@@ -106,8 +117,14 @@ test("keeps the about projects grid roomy in the integrated site", () => {
   const aboutPreviewSource = readSource("../public/about-preview.html");
 
   assert.match(aboutPreviewSource, /\.page\s*\{\s*max-width:\s*14[0-9]{2}px/);
-  assert.match(aboutPreviewSource, /@media \(min-width:\s*1024px\)\s*\{\s*\.projects\s*\{\s*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
-  assert.match(aboutPreviewSource, /@media \(min-width:\s*14[0-9]{2}px\)\s*\{\s*\.projects\s*\{\s*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(
+    aboutPreviewSource,
+    /@media \(min-width:\s*1024px\)\s*\{\s*\.projects\s*\{\s*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/,
+  );
+  assert.match(
+    aboutPreviewSource,
+    /@media \(min-width:\s*14[0-9]{2}px\)\s*\{\s*\.projects\s*\{\s*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/,
+  );
 });
 
 test("keeps about, moments, and friends mobile drawer navigation on their page palettes", () => {
@@ -115,9 +132,18 @@ test("keeps about, moments, and friends mobile drawer navigation on their page p
 
   for (const theme of ["about", "moments", "friends"]) {
     assert.match(cssSource, new RegExp(`\\.nav-mobile-backdrop--${theme}`));
-    assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme}\\s*\\{`));
-    assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme} \\.nav-mobile-drawer-head`));
-    assert.match(cssSource, new RegExp(`\\.nav-mobile-drawer--${theme} \\.nav-mobile-close`));
+    assert.match(
+      cssSource,
+      new RegExp(`\\.nav-mobile-drawer--${theme}\\s*\\{`),
+    );
+    assert.match(
+      cssSource,
+      new RegExp(`\\.nav-mobile-drawer--${theme} \\.nav-mobile-drawer-head`),
+    );
+    assert.match(
+      cssSource,
+      new RegExp(`\\.nav-mobile-drawer--${theme} \\.nav-mobile-close`),
+    );
     assert.match(cssSource, new RegExp(`\\.nav-mobile-link--${theme}`));
     assert.match(cssSource, new RegExp(`\\.nav-mobile-link--active-${theme}`));
     assert.match(cssSource, new RegExp(`\\.nav-menu-btn--${theme}`));
@@ -220,75 +246,39 @@ test("keeps quizcard settings actions safe for visitors", () => {
   assert.match(settingsSource, /const accountLabel = u \? u\.email : 'guest';/);
   assert.match(settingsSource, /const accountId = u \? u\.id : 'guest';/);
   assert.doesNotMatch(settingsSource, /quizcard-backup-\$\{u\.email\}/);
-  assert.doesNotMatch(settingsSource, /localStorage\.removeItem\('quizcard\.' \+ u\.id \+ '\.usage'\)/);
-});
-
-test("names the moments page 碎语", () => {
-  const momentsPageSource = readSource("pages/MomentsPage.jsx");
-
-  assert.match(momentsPageSource, /<h1>碎语<\/h1>/);
-  assert.match(
-    momentsPageSource,
-    /<p className="moments-page-subtitle">过往的点点滴滴，且随风而去吧<\/p>/
+  assert.doesNotMatch(
+    settingsSource,
+    /localStorage\.removeItem\('quizcard\.' \+ u\.id \+ '\.usage'\)/,
   );
-  assert.doesNotMatch(momentsPageSource, /<h1>说说<\/h1>/);
 });
 
-test("renders moments with varied visual modules", () => {
+test("renders the blog showcase on the former moments route", () => {
   const momentsPageSource = readSource("pages/MomentsPage.jsx");
-  const cssSource = readSource("index.css");
 
-  assert.match(momentsPageSource, /moments-module--\$\{moment\.module\}/);
-  for (const module of ["photo", "postcard", "ticket", "watercolor", "poem", "journal", "ribbon"]) {
-    assert.match(cssSource, new RegExp(`\\.moments-module--${module}`));
-  }
+  assert.match(momentsPageSource, /from "virtual:blog-posts"/);
+  assert.match(momentsPageSource, /文章与<span>札记<\/span>/);
+  assert.match(momentsPageSource, /className="blog-showcase-layout"/);
+  assert.match(momentsPageSource, /className="blog-post-grid"/);
+  assert.match(momentsPageSource, /className="blog-sidebar"/);
 });
 
-test("keeps varied moments modules in one balanced multicolor holographic card family", () => {
-  const cssSource = readSource("index.css");
-  const moduleNames = ["photo", "postcard", "ticket", "watercolor", "poem", "journal", "ribbon"];
-  const toneNames = ["rainbow", "aurora", "ticket", "watercolor", "mist", "journal", "mint"];
-
-  assert.match(cssSource, /--moment-holo:/);
-  assert.match(cssSource, /--moment-holo-mint:/);
-  assert.match(cssSource, /--moment-holo-blue:/);
-  assert.match(cssSource, /--moment-holo-sun:/);
-  assert.match(cssSource, /--moment-holo-lavender:/);
-  assert.match(cssSource, /--moment-holo-rainbow:/);
-
-  for (const module of moduleNames) {
-    const moduleBlock = cssSource.match(
-      new RegExp(`\\.moments-module--${module} \\{(?<rules>[\\s\\S]*?)\\n\\}`)
-    );
-
-    assert.ok(moduleBlock, `missing CSS block for ${module}`);
-    assert.doesNotMatch(moduleBlock.groups.rules, /--moment-width|--moment-margin-left|--moment-margin-right/);
-  }
-
-  for (const tone of toneNames) {
-    const toneBlock = cssSource.match(
-      new RegExp(`\\.moments-card--${tone} \\{(?<rules>[\\s\\S]*?)\\n\\}`)
-    );
-
-    assert.ok(toneBlock, `missing tone CSS block for ${tone}`);
-    assert.match(toneBlock.groups.rules, /--moment-holo:\s*var\(--moment-holo-/);
-    assert.match(toneBlock.groups.rules, /--moment-accent:/);
-  }
-});
-
-test("renders optional moment images as safe React image elements", () => {
+test("supports searching and filtering the blog source posts", () => {
   const momentsPageSource = readSource("pages/MomentsPage.jsx");
-  const cssSource = readSource("index.css");
-  const photoBlock = cssSource.match(/\.moments-photo \{(?<rules>[\s\S]*?)\n\}/);
 
-  assert.match(momentsPageSource, /\{moment\.image && \(/);
-  assert.match(momentsPageSource, /src=\{moment\.image\.src\}/);
-  assert.match(momentsPageSource, /alt=\{moment\.image\.alt\}/);
-  assert.match(momentsPageSource, /loading="lazy"/);
-  assert.match(cssSource, /\.moments-photo/);
-  assert.ok(photoBlock, "missing moments photo CSS block");
-  assert.match(photoBlock.groups.rules, /width:\s*clamp\(5\.2rem,\s*15vw,\s*6\.6rem\)/);
-  assert.doesNotMatch(photoBlock.groups.rules, /30rem|100%/);
+  assert.match(momentsPageSource, /type="search"/);
+  assert.match(momentsPageSource, /setQuery\(event\.target\.value\)/);
+  assert.match(momentsPageSource, /post\.tags\.includes\(activeTag\)/);
+  assert.match(momentsPageSource, /setActiveTag\(tag\)/);
+});
+
+test("styles the blog showcase responsively", () => {
+  const cssSource = readSource("index.css");
+
+  assert.match(cssSource, /\.blog-showcase-page\s*\{/);
+  assert.match(cssSource, /\.blog-lead-card\s*\{/);
+  assert.match(cssSource, /\.blog-post-card\s*\{/);
+  assert.match(cssSource, /@media \(max-width:\s*1080px\)/);
+  assert.match(cssSource, /@media \(max-width:\s*760px\)/);
 });
 
 test("does not put the moments entry in feature five", () => {
@@ -298,10 +288,27 @@ test("does not put the moments entry in feature five", () => {
   assert.doesNotMatch(featuresSource, /说说入口|碎语入口|进入碎语|进入碎碎念/);
 });
 
-test("does not render moments as a separate homepage section", () => {
+test("keeps the original homepage sections instead of embedding the blog showcase", () => {
   const homePageSource = readSource("pages/HomePage.jsx");
 
-  assert.doesNotMatch(homePageSource, /MomentsHome/);
+  assert.match(homePageSource, /<Hero \/>/);
+  assert.match(homePageSource, /<About \/>/);
+  assert.match(homePageSource, /<Features \/>/);
+  assert.doesNotMatch(homePageSource, /BlogShowcasePage|blog-showcase-page/);
+});
+
+test("links the homepage reveal card to the latest blog post", () => {
+  const aboutSource = readSource("components/About.jsx");
+
+  assert.match(aboutSource, /from "virtual:blog-posts"/);
+  assert.match(aboutSource, /right\.date\.localeCompare\(left\.date\)/);
+  assert.match(aboutSource, /href=\{latestPost\.url\}/);
+  assert.match(aboutSource, /src=\{latestPost\.cover \|\| fallbackPost\.cover\}/);
+  assert.match(aboutSource, /\{latestPost\.title\}/);
+  assert.doesNotMatch(
+    aboutSource,
+    /FEEL FREE|SCROLLING DOWN|Welcome to|Scroll to immerse|Here are more of my creations/i,
+  );
 });
 
 test("themes the moments and friends footer for their page palettes", () => {
