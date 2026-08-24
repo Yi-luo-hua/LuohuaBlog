@@ -288,6 +288,51 @@ test("does not put the moments entry in feature five", () => {
   assert.doesNotMatch(featuresSource, /说说入口|碎语入口|进入碎语|进入碎碎念/);
 });
 
+test("keeps the Misaka showcase fixed above four real homepage destinations", () => {
+  const featuresSource = readSource("components/Features.jsx");
+  const cssSource = readSource("index.css");
+
+  assert.match(
+    featuresSource,
+    /src=\{`\$\{COS\}\/videos\/feature-1\.mp4`\}[\s\S]*?label="御坂美琴 · 固定放映"[\s\S]*?visualOnly/,
+  );
+
+  for (const [title, href] of [
+    ["相册集", "/gallery"],
+    ["番剧收藏", "/bangumi"],
+    ["关于我", "/about"],
+    ["我的项目", "/about/projects/quizcard"],
+  ]) {
+    assert.match(featuresSource, new RegExp(`title="${title}"[\\s\\S]*?linkUrl="${href}"`));
+  }
+
+  assert.match(featuresSource, /去看看，<br \/>我留下的世界/);
+  assert.match(
+    featuresSource,
+    /md:grid-rows-\[16rem_16rem_18rem\][\s\S]*?lg:grid-rows-\[18rem_18rem_20rem\]/,
+  );
+  assert.doesNotMatch(featuresSource, /md:h-\[145vh\]|h-\[24rem\]/);
+  assert.equal(
+    featuresSource.match(/bento-tilt_1[^"\n]*md:col-span-1/g)?.length,
+    3,
+    "the three upper destination cards should occupy one desktop column each",
+  );
+  assert.doesNotMatch(
+    cssSource,
+    /\.bento-tilt_1\s*\{[^}]*col-span-2/s,
+    "the shared card class must not force every destination to span both columns",
+  );
+  assert.ok(
+    featuresSource.indexOf('title="番剧收藏"') <
+      featuresSource.indexOf('title="相册集"'),
+    "the compact bento should begin with the anime collection",
+  );
+  assert.doesNotMatch(
+    featuresSource,
+    /Selected fragments|Things worth remembering|More coming soon|Feature Five/i,
+  );
+});
+
 test("keeps the original homepage sections instead of embedding the blog showcase", () => {
   const homePageSource = readSource("pages/HomePage.jsx");
 

@@ -42,10 +42,10 @@ const ARCHIVE_ITEMS = [
   },
   {
     index: "05",
-    title: "More coming soon.",
-    subtitle: "Feature Five",
+    title: "新的收藏正在路上",
+    subtitle: "待续",
     src: `${COS}/videos/feature-5.mp4`,
-    note: "More coming soon.",
+    note: "下一份值得收藏的内容，会在准备好之后来到这里。",
   },
 ];
 
@@ -84,6 +84,7 @@ export const ExhibitTilt = ({ children, className = "" }) => {
 export const ExhibitCard = ({
   src,
   index,
+  label,
   title,
   description,
   linkUrl,
@@ -91,36 +92,36 @@ export const ExhibitCard = ({
   videoPriority = false,
   visualOnly = false,
 }) => {
-  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
-  const [hoverOpacity, setHoverOpacity] = useState(0);
-  const hoverButtonRef = useRef(null);
-
-  const handleMouseMove = (event) => {
-    if (!hoverButtonRef.current) return;
-    const rect = hoverButtonRef.current.getBoundingClientRect();
-
-    setCursorPosition({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    });
-  };
-
   if (visualOnly) {
     return (
       <div className="group relative size-full overflow-hidden">
         <LazyVideo src={src} priority={videoPriority} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10" />
-        {index && (
+        {(label || index) && (
           <div className="pointer-events-none absolute left-5 top-5 rounded-full border border-white/20 bg-white/12 px-4 py-2 font-general text-[10px] uppercase tracking-[0.35em] text-blue-50/80 backdrop-blur-md">
-            片段 {index}
+            {label || `片段 ${index}`}
           </div>
         )}
       </div>
     );
   }
 
+  const CardShell = linkUrl ? "a" : "div";
+  const linkAttributes = linkUrl
+    ? {
+        href: linkUrl,
+        "aria-label": `打开${title}`,
+        ...(String(linkUrl).startsWith("http")
+          ? { target: "_blank", rel: "noopener noreferrer" }
+          : {}),
+      }
+    : {};
+
   return (
-    <div className="group relative size-full overflow-hidden">
+    <CardShell
+      className="group relative block size-full overflow-hidden focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#ff8fab]"
+      {...linkAttributes}
+    >
       <div className="absolute inset-0 z-0">
         <LazyVideo src={src} priority={videoPriority} />
       </div>
@@ -130,13 +131,13 @@ export const ExhibitCard = ({
       <div className="pointer-events-none absolute -left-1/3 top-0 z-10 h-full w-1/3 skew-x-[-18deg] bg-white/12 blur-xl transition duration-700 group-hover:left-full" />
 
       <div className="absolute inset-0 z-20 flex flex-col justify-between p-4 text-blue-50 md:p-5">
-        <div className="max-w-full rounded-2xl border border-white/15 bg-black/42 px-4 py-3 shadow-[0_18px_58px_rgba(0,0,0,0.25)] backdrop-blur-md">
+        <div className="w-fit max-w-2xl rounded-2xl border border-white/15 bg-black/42 px-4 py-3 shadow-[0_18px_58px_rgba(0,0,0,0.25)] backdrop-blur-md">
           <p className="font-general text-[10px] uppercase tracking-[0.35em] text-pink-100/80">
-            片段 {index}
+            {label || `入口 ${index}`}
           </p>
-          <h1 className="bento-title mt-2 break-words text-2xl font-black leading-none text-[#ffe7ef] md:text-4xl">
+          <h3 className="bento-title mt-2 break-words text-2xl font-black leading-none text-[#ffe7ef] md:text-4xl">
             {title}
-          </h1>
+          </h3>
           {description && (
             <p className="features-bento-card-copy mt-3 break-words text-sm font-semibold leading-relaxed text-white/90 md:text-base">
               {description}
@@ -145,34 +146,13 @@ export const ExhibitCard = ({
         </div>
 
         {linkUrl && (
-          <a
-            className="w-fit"
-            href={linkUrl}
-            {...(String(linkUrl).startsWith("http")
-              ? { target: "_blank", rel: "noopener noreferrer" }
-              : {})}
-          >
-            <div
-              ref={hoverButtonRef}
-              onMouseMove={handleMouseMove}
-              onMouseEnter={() => setHoverOpacity(1)}
-              onMouseLeave={() => setHoverOpacity(0)}
-              className="border-hsla relative flex w-fit cursor-pointer items-center gap-1 overflow-hidden rounded-full bg-[#ffe7ef] px-5 py-2 text-xs font-bold uppercase text-[#241322]"
-            >
-              <div
-                className="pointer-events-none absolute -inset-px opacity-0 transition duration-300"
-                style={{
-                  opacity: hoverOpacity,
-                  background: `radial-gradient(110px circle at ${cursorPosition.x}px ${cursorPosition.y}px, #ffffffcc, #ff9eb866)`,
-                }}
-              />
-              <TiLocationArrow className="relative z-20" />
-              <p className="relative z-20">{linkText}</p>
-            </div>
-          </a>
+          <span className="border-hsla relative flex w-fit items-center gap-2 overflow-hidden rounded-full bg-[#ffe7ef] px-5 py-2 text-xs font-bold text-[#241322] transition duration-300 group-hover:-translate-y-1 group-hover:bg-white">
+            <span>{linkText}</span>
+            <TiLocationArrow className="transition duration-300 group-hover:translate-x-1" />
+          </span>
         )}
       </div>
-    </div>
+    </CardShell>
   );
 };
 
@@ -338,16 +318,16 @@ const Features = () => {
       <ArchiveBook open={archiveOpen} onClose={() => setArchiveOpen(false)} />
 
       <div className="container mx-auto px-3 md:px-10">
-        <div className="features-intro px-5 py-28 text-[#241322] md:py-40">
-          <p className="font-general text-xs uppercase tracking-[0.45em] text-[#b76e79]">
-            Selected fragments · 2026
+        <div className="features-intro px-5 py-20 text-[#241322] md:py-24">
+          <p className="font-general text-xs tracking-[0.38em] text-[#b76e79]">
+            伊洛华的收藏室 · 2026
           </p>
-          <div className="mt-7 grid gap-8 border-t border-[#cfaeba]/50 pt-8 md:grid-cols-[1.35fr_0.65fr] md:items-end">
-            <h2 className="max-w-4xl font-zentry text-[clamp(4rem,10vw,9rem)] uppercase leading-[0.78] tracking-[-0.04em]">
-              Things worth<br />remembering
+          <div className="mt-7 grid gap-8 border-t border-[#cfaeba]/50 pt-8 md:grid-cols-[1.2fr_0.8fr] md:items-end">
+            <h2 className="max-w-4xl text-[clamp(2.75rem,5.5vw,5.5rem)] font-black leading-[1.1] tracking-[-0.045em]">
+              去看看，<br />我留下的世界
             </h2>
             <p className="max-w-md text-base leading-relaxed text-[#5f4b52] md:justify-self-end md:text-lg">
-              收藏正在发生的创作、学习与生活片段。这里不追求完整，只留下真正值得回看的部分。
+              动画、照片、项目与生活片段，都被安静地收藏在这里。挑一扇门，继续认识伊洛华吧。
             </p>
           </div>
         </div>
@@ -355,69 +335,54 @@ const Features = () => {
         <ExhibitTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-[1.75rem] md:h-[65vh]">
           <ExhibitCard
             src={`${COS}/videos/feature-1.mp4`}
-            index="01"
+            label="御坂美琴 · 固定放映"
             videoPriority
             visualOnly
           />
         </ExhibitTilt>
 
-        <div className="features-bento-grid grid h-[135vh] w-full grid-cols-2 grid-rows-3 gap-7">
-          <ExhibitTilt className="bento-tilt_1 row-span-1 rounded-[1.75rem] md:col-span-1 md:row-span-2">
+        <div className="features-bento-grid grid w-full grid-cols-1 gap-5 md:grid-cols-2 md:grid-rows-[16rem_16rem_18rem] md:gap-6 lg:grid-rows-[18rem_18rem_20rem]">
+          <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:row-span-2 md:h-auto">
             <ExhibitCard
               src={`${COS}/videos/feature-2.mp4`}
-              index="02"
-              title={
-                <>
-                  碎片独处
-                </>
-              }
-              description="一个收纳日常念头、随手灵感与短暂心绪的温柔角落，把路过的故事轻轻写下来。"
-              linkUrl="/blog/"
-              linkText="进入花园"
+              label="动画收藏"
+              title="番剧收藏"
+              description="正在追、已经看完与暂时搁置的动画，都按自己的节奏收进这面书架。"
+              linkUrl="/bangumi"
+              linkText="查看番剧"
             />
           </ExhibitTilt>
 
-          <ExhibitTilt className="bento-tilt_1 row-span-1 rounded-[1.75rem] ms-32 md:col-span-1 md:ms-0">
+          <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:h-auto">
             <ExhibitCard
               src={`${COS}/videos/feature-3.mp4`}
-              index="03"
-              title={
-                <>
-                  创造纪事
-                </>
-              }
-              description="这里收着这个网站一路搭起来的过程，页面怎么改、交互怎么调、细节怎么慢慢磨出来，都会安静记在这里。"
-              linkUrl="/build/"
-              linkText="进入实验室"
+              label="照片与生活"
+              title="相册集"
+              description="收藏镜头里留下的风景、日常与心动瞬间，让每一张照片都有自己的位置。"
+              linkUrl="/gallery"
+              linkText="打开相册"
             />
           </ExhibitTilt>
 
-          <ExhibitTilt className="bento-tilt_1 rounded-[1.75rem] me-14 md:col-span-1 md:me-0">
+          <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:h-auto">
             <ExhibitCard
               src={`${COS}/videos/feature-4.mp4`}
-              index="04"
-              visualOnly
+              label="个人档案"
+              title="关于我"
+              description="关于伊洛华的故事、喜欢的事物与一路走来的小小轨迹，都放在这里。"
+              linkUrl="/about"
+              linkText="认识我"
             />
           </ExhibitTilt>
 
-          <ExhibitTilt className="bento-tilt_2 rounded-[1.75rem]">
-            <div className="relative flex size-full flex-col justify-between overflow-hidden bg-[#ffe7ef] p-5 text-[#241322]">
-              <div className="absolute -right-14 -top-14 size-40 rounded-full bg-white/55 blur-2xl" />
-              <p className="font-general text-[10px] uppercase tracking-[0.35em] text-[#b76e79]">
-                片段 05
-              </p>
-              <h1 className="bento-title max-w-72 text-3xl font-black leading-none md:text-5xl">
-                M<b>o</b>re co<b>m</b>ing s<b>o</b>on.
-              </h1>
-              <TiLocationArrow className="m-5 scale-[5] self-end text-[#ff8fab]" />
-            </div>
-          </ExhibitTilt>
-
-          <ExhibitTilt className="bento-tilt_2 rounded-[1.75rem]">
+          <ExhibitTilt className="bento-tilt_2 h-72 rounded-[1.75rem] sm:h-80 md:col-span-2 md:h-auto">
             <ExhibitCard
               src={`${COS}/videos/feature-5.mp4`}
-              index="06"
-              visualOnly
+              label="正在创造"
+              title="我的项目"
+              description="从 AI QuizCard 开始，看看那些从想法变成真实页面的小作品。"
+              linkUrl="/about/projects/quizcard"
+              linkText="查看项目"
             />
           </ExhibitTilt>
         </div>
