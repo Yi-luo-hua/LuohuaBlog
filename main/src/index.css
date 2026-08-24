@@ -8712,6 +8712,19 @@ body {
   }
 }
 
+/* Cards past the first screen. The point of the class is what it does NOT
+   carry: no ripple animation, so no will-change, no blur keyframe and no
+   compositor layer for the ~190 cards nobody is looking at yet.
+
+   It deliberately does not set `content-visibility: auto`. That skips layout
+   for off-screen cards and looked like a large win, but a lazy-loaded <img>
+   inside a skipped subtree never gets its load triggered — scrolling down
+   produced a grid of permanently blank covers. Deferring paint is not worth
+   a page that stops showing images. */
+.bangumi-card-deferred {
+  transform-origin: center center;
+}
+
 @keyframes aiTileDotPulse {
   0%,
   100% {

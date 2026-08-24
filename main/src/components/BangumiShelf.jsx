@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../lib/apiBase";
 import {
   hasRemoteCover,
@@ -52,6 +52,20 @@ const useGridColumns = () => {
   return columns;
 };
 
+// The viewport shows roughly two rows at first glance. Those are the cards
+// worth spending on: they animate in and their covers are fetched eagerly.
+//
+// Everything below the fold used to get the same treatment, and that is what
+// made the entrance stutter — two hundred cards each carrying `will-change`
+// and a blur keyframe means two hundred compositor layers animating while a
+// hundred covers decode. Deferred cards never animate at all; by the time one
+// is scrolled into view the entrance is long finished, so there is nothing to
+// see either way.
+const FIRST_GLANCE_ROWS = 2;
+const FIRST_PAINT_ROWS = 4;
+const APPEND_ROWS = 6;
+const GROW_MARGIN_PX = 900;
+
 const rippleStyle = (index, columns) => {
   const column = index % columns;
   const row = Math.floor(index / columns);
@@ -64,7 +78,7 @@ const rippleStyle = (index, columns) => {
   };
 };
 
-const BangumiCard = ({ item, index }) => {
+const BangumiCard = ({ item, index, priority = false }) => {
   const cover = hasRemoteCover(item)
     ? resolveCoverSrc(item, API_BASE)
     : makePosterDataUri(item.title, "bangumi");
@@ -85,7 +99,12 @@ const BangumiCard = ({ item, index }) => {
         <img
           src={cover}
           alt={`${item.title} 封面`}
-          loading="lazy"
+          // A cover that is already on screen gains nothing from being lazy:
+          // the browser has to finish layout before it will even start the
+          // request, which is exactly the delay the entrance animation runs
+          // into.
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
           decoding="async"
           className="size-full object-cover transition duration-500 group-hover:scale-[1.025]"
         />
@@ -187,10 +206,53 @@ const LoadingShelf = () => (
 const BangumiShelf = ({ status: collectionStatus = "watching", onCounts }) => {
   const [items, setItems] = useState([]);
   const [requestStatus, setRequestStatus] = useState("loading");
+  const [renderRows, setRenderRows] = useState(FIRST_PAINT_ROWS);
   const columns = useGridColumns();
+
+  const sentinelRef = useRef(null);
+  const firstGlanceCount = columns * FIRST_GLANCE_ROWS;
+  const renderCount = columns * renderRows;
+  const visibleItems = useMemo(
+    () => items.slice(0, renderCount),
+    [items, renderCount],
+  );
+
+  // Grow the shelf as it is scrolled rather than mounting all of it up front.
+  //
+  // loading="lazy" is not a substitute: it defers nothing once a card is in the
+  // document, so all 201 covers were being fetched before a single one had been
+  // scrolled to. Controlling how many cards exist is the only reliable lever.
+  //
+  // This measures the sentinel's position on scroll instead of using an
+  // IntersectionObserver. An observer is the tidier tool, but it only reports
+  // while the page is compositing frames, and a shelf that silently stops at
+  // twenty of two hundred entries is a much worse failure than a scroll
+  // listener that costs one getBoundingClientRect per event.
+  useEffect(() => {
+    if (requestStatus !== "ready" || renderCount >= items.length) return undefined;
+    const node = sentinelRef.current;
+    if (!node) return undefined;
+
+    const grow = () => {
+      if (node.getBoundingClientRect().top <= window.innerHeight + GROW_MARGIN_PX) {
+        setRenderRows((rows) => rows + APPEND_ROWS);
+      }
+    };
+
+    // Run once immediately: on a tall window the first batch may not even
+    // reach the fold, and nothing would ever scroll to trigger the rest.
+    grow();
+    window.addEventListener("scroll", grow, { passive: true });
+    window.addEventListener("resize", grow);
+    return () => {
+      window.removeEventListener("scroll", grow);
+      window.removeEventListener("resize", grow);
+    };
+  }, [requestStatus, items.length, renderCount]);
 
   const load = useCallback(async () => {
     setRequestStatus("loading");
+    setRenderRows(FIRST_PAINT_ROWS);
     try {
       const data = await getBangumiCollection(collectionStatus);
       setItems(data.items);
@@ -204,6 +266,7 @@ const BangumiShelf = ({ status: collectionStatus = "watching", onCounts }) => {
   useEffect(() => {
     let active = true;
     setRequestStatus("loading");
+    setRenderRows(FIRST_PAINT_ROWS);
     getBangumiCollection(collectionStatus)
       .then((data) => {
         if (!active) return;
@@ -260,17 +323,29 @@ const BangumiShelf = ({ status: collectionStatus = "watching", onCounts }) => {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {items.map((item, index) => (
-        <div
-          key={item.id}
-          className="bangumi-card-ripple h-full"
-          style={rippleStyle(index, columns)}
-        >
-          <BangumiCard item={item} index={index} />
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {visibleItems.map((item, index) => {
+          const firstGlance = index < firstGlanceCount;
+          return (
+            <div
+              key={item.id}
+              className={
+                firstGlance
+                  ? "bangumi-card-ripple h-full"
+                  : "bangumi-card-deferred h-full"
+              }
+              style={firstGlance ? rippleStyle(index, columns) : undefined}
+            >
+              <BangumiCard item={item} index={index} priority={firstGlance} />
+            </div>
+          );
+        })}
+      </div>
+      {renderCount < items.length && (
+        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+      )}
+    </>
   );
 };
 
