@@ -2,6 +2,7 @@ import { createInterface } from "node:readline";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { createHash } from "node:crypto";
 
 const serverInfo = { name: "yi-luo-hua-blog-publisher", version: "2.1.0" };
 const publishTool = {
@@ -52,12 +53,15 @@ const vaultRoot = path.resolve(
 const githubOwner = String(
   process.env.BLOG_GITHUB_OWNER || "Yi-luo-hua",
 ).trim();
-const githubRepo = String(process.env.BLOG_GITHUB_REPO || "taozhiyy").trim();
+const githubRepo = String(process.env.BLOG_GITHUB_REPO || "LuohuaBlog").trim();
 const githubBranch = String(process.env.BLOG_GITHUB_BRANCH || "master").trim();
 const githubCli = String(process.env.GITHUB_CLI_PATH || "gh").trim();
-const imageHostEndpoint = String(
-  process.env.BLOG_IMAGE_HOST_ENDPOINT || "https://img.scdn.io/api/v1.php",
-).trim();
+// Where committed images land inside the repository, and the URL they get
+// once Hexo copies source/ into public/. Hexo has post_asset_folder off and an
+// empty skip_render, so anything here that it cannot render is copied verbatim.
+const blogImageDir = "blog/source/images";
+const blogImagePrefix = "/blog/images";
+const maxImageBytes = 10 * 1024 * 1024;
 const supportedImageExtensions = new Set([
   ".jpg",
   ".jpeg",
@@ -347,46 +351,94 @@ const mimeTypeFor = (filePath) => {
     ".tiff": "image/tiff",
   };
   if (!supportedImageExtensions.has(extension)) {
-    throw new Error(`图床不支持该图片格式：${extension || filePath}`);
+    throw new Error(`博客不支持该图片格式：${extension || filePath}`);
   }
   return mimeTypes[extension];
 };
 
-const uploadImage = async (filePath) => {
-  const fileBytes = await readFile(filePath);
-  const form = new FormData();
-  form.append(
-    "image",
-    new Blob([fileBytes], { type: mimeTypeFor(filePath) }),
-    path.basename(filePath),
-  );
-  form.append("outputFormat", "auto");
-  const response = await fetch(imageHostEndpoint, {
-    method: "POST",
-    body: form,
-    signal: AbortSignal.timeout(90_000),
-  });
-  const payload = await response.json().catch(() => ({}));
-  const remoteUrl = String(payload.url || payload.data?.url || "").trim();
-  if (!response.ok || payload.success !== true || !isRemoteImage(remoteUrl)) {
+// A published image's filename carries a hash of its own bytes. That makes the
+// path deterministic, so republishing the same note is a no-op instead of
+// piling up duplicates, and it makes the file safe to cache forever.
+const plannedImage = async (filePath) => {
+  const bytes = await readFile(filePath);
+  if (bytes.byteLength > maxImageBytes) {
     throw new Error(
-      payload.message ||
-        payload.error ||
-        `图片上传失败，HTTP ${response.status}`,
+      `图片超过 ${Math.round(maxImageBytes / 1048576)} MB：${path.basename(filePath)}`,
     );
   }
-  return remoteUrl;
+  mimeTypeFor(filePath); // rejects formats the blog will not serve
+  const digest = createHash("sha256").update(bytes).digest("hex").slice(0, 12);
+  const extension = path.extname(filePath).toLowerCase();
+  const stem = path
+    .basename(filePath, path.extname(filePath))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  const now = new Date();
+  const folder = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const name = `${digest}${stem ? `-${stem}` : ""}${extension}`;
+  return {
+    bytes,
+    repoPath: `${blogImageDir}/${folder}/${name}`,
+    publicUrl: `${blogImagePrefix}/${folder}/${name}`,
+  };
 };
 
-const uploadLocalAssets = async (localAssets) => {
-  const uploaded = new Map();
-  let index = 0;
+const planLocalAssets = async (localAssets) => {
+  const planned = new Map();
   for (const filePath of localAssets.keys()) {
-    if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1100));
-    uploaded.set(filePath, await uploadImage(filePath));
-    index += 1;
+    planned.set(filePath, await plannedImage(filePath));
   }
-  return uploaded;
+  return planned;
+};
+
+const repoFileExists = async (repoPath) => {
+  try {
+    await runGitHub([
+      "api",
+      `repos/${githubOwner}/${githubRepo}/contents/${encodedContentPath(repoPath)}?ref=${encodeURIComponent(githubBranch)}`,
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Commit each image into the repository instead of posting it to a third-party
+// image host. The host was outside the site's control: it could expire, rewrite
+// or lose the file, and nothing on this side would know. In the repository the
+// image is versioned with the post that uses it, ships with the ordinary blog
+// deploy, and is restored by a plain checkout.
+const commitLocalAssets = async (planned) => {
+  const urls = new Map();
+  let committed = 0;
+  let reused = 0;
+  for (const [filePath, plan] of planned) {
+    urls.set(filePath, plan.publicUrl);
+    if (await repoFileExists(plan.repoPath)) {
+      // Same bytes, same name — already published by an earlier run.
+      reused += 1;
+      continue;
+    }
+    await runGitHub(
+      [
+        "api",
+        "--method",
+        "PUT",
+        `repos/${githubOwner}/${githubRepo}/contents/${encodedContentPath(plan.repoPath)}`,
+        "--input",
+        "-",
+      ],
+      JSON.stringify({
+        message: `feat: add blog image ${path.basename(plan.repoPath)}`,
+        content: Buffer.from(plan.bytes).toString("base64"),
+        branch: githubBranch,
+      }),
+    );
+    committed += 1;
+  }
+  return { urls, committed, reused };
 };
 
 const rewriteBodyImages = (markdownBody, images, uploaded) => {
@@ -496,11 +548,12 @@ const publishNote = async (args) => {
 
   if (args.dry_run) {
     await runGitHub(["auth", "status", "--hostname", "github.com"]);
+    const plannedPreview = await planLocalAssets(media.localAssets);
     const coverPlan =
       media.cover.mode === "none"
         ? "不设置封面"
         : media.cover.mode === "local"
-          ? `上传本地封面：${media.cover.reference}`
+          ? `提交本地封面：${media.cover.reference}`
           : media.cover.mode === "remote"
             ? "使用现有远程封面"
             : media.bodyImages.length
@@ -512,6 +565,7 @@ const publishNote = async (args) => {
         `目标：${previewPost.postPath}`,
         `仓库：${githubOwner}/${githubRepo} (${githubBranch})`,
         `本地图片：${media.localAssets.size} 张`,
+        ...[...plannedPreview.values()].map((plan) => `  → ${plan.publicUrl}`),
         `封面：${coverPlan}`,
         "尚未提交到 GitHub。",
       ].join("\n"),
@@ -519,7 +573,8 @@ const publishNote = async (args) => {
   }
 
   await runGitHub(["auth", "status", "--hostname", "github.com"]);
-  const uploaded = await uploadLocalAssets(media.localAssets);
+  const planned = await planLocalAssets(media.localAssets);
+  const { urls: uploaded, committed, reused } = await commitLocalAssets(planned);
   const rewrittenBody = rewriteBodyImages(
     media.body,
     media.bodyImages,
@@ -539,8 +594,12 @@ const publishNote = async (args) => {
       `文件：${published.path}`,
       `分支：${githubBranch}`,
       published.commitSha ? `Commit：${published.commitSha}` : "",
-      uploaded.size ? `已上传图片：${uploaded.size} 张` : "",
+      committed ? `已提交图片：${committed} 张` : "",
+      reused ? `复用已有图片：${reused} 张` : "",
       `GitHub：${repoUrl}`,
+      "",
+      "文章已在 GitHub 上，但线上还是旧的——这里没有自动部署。",
+      "拉取并发布：git pull && deploy/deploy-azure.sh blog",
     ]
       .filter(Boolean)
       .join("\n"),

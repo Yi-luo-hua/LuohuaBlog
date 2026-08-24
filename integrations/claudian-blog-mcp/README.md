@@ -2,7 +2,7 @@
 
 这是一条只从本机向博客发布的 MCP 工具链：
 
-`Obsidian Markdown → Claudian → publish_blog_post → GitHub CLI → GitHub → 自动部署`
+`Obsidian Markdown → Claudian → publish_blog_post → GitHub CLI → GitHub → deploy/deploy-azure.sh blog`
 
 ## 1. 文章格式
 
@@ -23,7 +23,7 @@ description: 一句话摘要
 正文……
 ```
 
-`title` 也可省略，发布桥会依次采用第一个一级标题和文件名。正文中的本地图片与封面会在正式发布时自动上传到 `img.scdn.io`，原 Obsidian 笔记不会被改写。
+`title` 也可省略，发布桥会依次采用第一个一级标题和文件名。正文中的本地图片与封面会在正式发布时提交进仓库（见下一节），原 Obsidian 笔记不会被改写。
 
 封面支持四种写法：
 
@@ -41,7 +41,25 @@ cover: auto
 cover: none
 ```
 
-同一张本地图片同时用作正文插图和封面时只上传一次。支持 jpg、jpeg、png、webp、gif、bmp、tif、tiff；单篇文章最多自动上传 40 张。
+同一张本地图片同时用作正文插图和封面时只提交一次。支持 jpg、jpeg、png、webp、gif、bmp、tif、tiff；单张上限 10 MB，单篇文章最多 40 张。
+
+## 图片存在哪里
+
+图片不再传给第三方图床，而是跟文章一起提交进本仓库：
+
+```text
+blog/source/images/<年>/<月>/<内容散列>-<文件名>.png
+        ↓  hexo generate
+线上地址：/blog/images/<年>/<月>/<内容散列>-<文件名>.png
+```
+
+文件名里的散列来自图片自身的字节，所以：
+
+- 同一篇笔记重复发布不会堆出重复文件，已存在就跳过
+- 图片内容变了地址就变，不会被缓存卡住
+- 图片和引用它的文章在同一个仓库里，重装服务器时 checkout 就能恢复
+
+之前的做法是上传到 `img.scdn.io` 再把返回的外链写进文章。那些图片不在你控制范围内：图床过期、改域名或删文件，文章里就多一个死链，而且本地没有任何副本。
 
 ## 2. GitHub 登录
 
@@ -77,11 +95,17 @@ claude mcp add --scope user yi-luo-hua-blog -- node "E:\TOOLS\BLOG\integrations\
 按刚才的内容正式发布，调用 publish_blog_post，dry_run=false。不要改动其他笔记。
 ```
 
-发布工具会先上传本地图片并替换发布副本中的链接，再通过 GitHub Contents API 把文章写到 `blog/source/_posts/`。现有部署链会重新构建主站与 Hexo 文章页。
+发布工具会先把本地图片提交到 `blog/source/images/` 并替换发布副本中的链接，再通过 GitHub Contents API 把文章写到 `blog/source/_posts/`。
+
+注意：**到这一步文章只是进了 GitHub，线上还是旧的。** 本仓库没有自动部署（继承自模板的拉取式部署指向的是别人的服务器，已删除）。发完要自己跑一次：
+
+```bash
+git pull && deploy/deploy-azure.sh blog
+```
 
 ## 安全边界
 
 - MCP 只能读取 `OBSIDIAN_VAULT_ROOT` 内的 `.md` 文件。
 - GitHub 凭据只由 GitHub CLI 钥匙串管理，不会进入 Obsidian 笔记、MCP 配置或仓库。
-- `dry_run=true` 只检查图片、封面与目标路径，不上传图片，也不产生 GitHub commit。
-- 图床没有事务或删除 API；若图片上传后 GitHub 提交失败，已上传图片可能成为未引用资源。
+- `dry_run=true` 只检查图片、封面与目标路径，并列出每张图片将来的线上地址，不产生任何 GitHub commit。
+- 图片先于文章提交；若文章提交失败，已提交的图片会成为仓库里的未引用文件。它们在 git 里看得见、删得掉，不像图床那样无法回收。
