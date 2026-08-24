@@ -17,8 +17,8 @@ import (
 //   - /users/{login}/events/public strips the commit list out of PushEvent
 //     payloads, so it carries no commit messages at all.
 //   - /search/commits has the messages but its index is missing whole
-//     repositories (Yi-luo-hua/taozhiyy returns 0 results for commits that
-//     plainly exist), it returns sporadic 504s, and it allows only 10
+//     repositories (this site's own repo returned 0 results for commits that
+//     plainly existed), it returns sporadic 504s, and it allows only 10
 //     requests/hour unauthenticated.
 //
 // So events are used purely to discover which repositories were pushed to

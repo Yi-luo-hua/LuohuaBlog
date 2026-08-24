@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const bangumiUA = "Yi-luo-hua-Blog/1.0 (https://github.com/Yi-luo-hua/taozhiyy)"
+const bangumiUA = "Yi-luo-hua-Blog/1.0 (https://github.com/Yi-luo-hua/LuohuaBlog)"
 
 type BangumiClient struct {
 	httpClient *http.Client
