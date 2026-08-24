@@ -2,7 +2,7 @@
 
 [中文说明](./README.zh-CN.md) | English
 
-The monorepo behind my personal site **[taozhiyy.top](https://taozhiyy.top)** — main site, blog, build log, and the Go backend that serves them.
+The monorepo behind my personal site — main site, blog, build log, and the Go backend that serves them. Not deployed anywhere yet; see [Deployment](#deployment).
 
 ## Layout
 
@@ -30,7 +30,13 @@ The frontend proxies `/api` to `127.0.0.1:8787`, so start the backend first if y
 
 ## Deployment
 
-Deployment is pull-based: the server runs a systemd timer that fetches `master`, rebuilds every subproject, and restarts the service. Pushing to `master` is the deploy. Details and one-time server setup live in [deploy/PULL_BASED_DEPLOY.md](./deploy/PULL_BASED_DEPLOY.md).
+Nothing here is deployed yet — this repository is developed and run locally.
+
+`deploy/` carries a pull-based setup inherited from the template: a host clones
+this repository, a systemd timer fetches `master` every five minutes, rebuilds
+every subproject and restarts the service. It is written for a server that does
+not exist yet. Before using it, set your own host, domain and `REPO_URL`; see
+[deploy/PULL_BASED_DEPLOY.md](./deploy/PULL_BASED_DEPLOY.md).
 
 ## Backend surface
 

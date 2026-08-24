@@ -2,7 +2,7 @@
 
 中文说明 | [English](./README.md)
 
-我的个人网站 **[taozhiyy.top](https://taozhiyy.top)** 的 monorepo —— 主站、博客、建站日志，以及支撑它们的 Go 后端。
+我的个人网站的 monorepo —— 主站、博客、建站日志，以及支撑它们的 Go 后端。目前尚未部署，见下方[部署](#部署)一节。
 
 ## 目录结构
 
@@ -30,7 +30,12 @@ cd main && npm install && npm run dev
 
 ## 部署
 
-采用拉取式部署：服务器上的 systemd timer 定时拉取 `master`，重建所有子项目并重启服务。**推送到 `master` 就是部署**。首次装机步骤见 [deploy/PULL_BASED_DEPLOY.md](./deploy/PULL_BASED_DEPLOY.md)。
+目前**尚未部署到任何地方**，这个仓库只在本地开发运行。
+
+`deploy/` 下是从模板继承来的一套拉取式部署方案：一台主机克隆本仓库，systemd
+timer 每五分钟拉取一次 `master`，重建所有子项目并重启服务。它是为一台还不存在的
+服务器写的。真正启用前需要换成你自己的主机、域名和 `REPO_URL`，详见
+[deploy/PULL_BASED_DEPLOY.md](./deploy/PULL_BASED_DEPLOY.md)。
 
 ## 后端接口
 
