@@ -36,7 +36,7 @@ func TestOwnerLoginFailureWritesSecurityAuditLog(t *testing.T) {
 		req := httptest.NewRequest(
 			http.MethodPost,
 			"/api/auth/login",
-			bytes.NewBufferString(`{"email":"173236231@qq.com","password":"wrong-password"}`),
+			bytes.NewBufferString(`{"email":"akesakiko@gmail.com","password":"wrong-password"}`),
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.RemoteAddr = "203.0.113.10:1234"
@@ -64,7 +64,7 @@ func TestOwnerLoginFailureWritesSecurityAuditLog(t *testing.T) {
 func TestOwnerSecurityVerifyFailureWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		t.Setenv("AUTH_OWNER_SECURITY_ANSWER", "correct-answer")
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		challenge, err := createLoginChallenge(ownerID)
 		if err != nil {
 			t.Fatalf("create challenge: %v", err)
@@ -171,7 +171,7 @@ func TestGuestbookAdminDeleteWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
@@ -227,7 +227,7 @@ func TestOwnerPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerPublishFailureWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		t.Setenv("OWNER_PUBLISH_GITHUB_TOKEN", "")
 
@@ -265,7 +265,7 @@ func TestOwnerPublishFailureWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerFriendPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		mockOwnerPublishGitHubFile(t, ownerFriendCardsDataPath, `export const friendCards = [
 ];
@@ -302,7 +302,7 @@ func TestOwnerFriendPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerMomentPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		mockOwnerPublishGitHubFile(t, ownerMomentsDataPath, `export const moments = [
 ];
@@ -339,7 +339,7 @@ func TestOwnerMomentPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerGalleryPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		mockOwnerPublishGitHubFile(t, ownerGalleryDataPath, `export const galleryAlbums = [
 ];

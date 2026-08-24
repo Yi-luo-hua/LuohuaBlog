@@ -155,7 +155,7 @@ func seedOwnerChatHourlySuccess(t *testing.T, count int) {
 
 func seedUnlimitedOwnerSession(t *testing.T) string {
 	t.Helper()
-	ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+	ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 	return seedOwnerControllerSession(t, ownerID, true)
 }
 
@@ -224,7 +224,7 @@ func TestOwnerStatusRejectsNonOwner(t *testing.T) {
 
 func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		seedOwnerControllerUser(t, "reader@example.com", false)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		seedOwnerNotificationMessage(t, "guest", guestbookChannelMain, "hello from guestbook")
@@ -321,7 +321,7 @@ func TestOwnerEmailsRequiresLogin(t *testing.T) {
 
 func TestOwnerEmailsReturnsRegisteredUsersAndGuestbookContacts(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		readerID := seedOwnerControllerUser(t, "reader@example.com", false)
 		memberID := seedOwnerControllerUser(t, "member@example.com", false)
 		token := seedOwnerControllerSession(t, ownerID, true)
@@ -390,7 +390,7 @@ func TestOwnerEmailsReturnsRegisteredUsersAndGuestbookContacts(t *testing.T) {
 
 func TestOwnerStatusReturnsNotificationContactEmail(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, "173236231@qq.com", true)
+		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		memberID := seedOwnerControllerUser(t, "member@example.com", false)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		seedOwnerNotificationMessageWithContact(t, 0, "Visitor", guestbookChannelLink, "friend request", "visitor@example.com")

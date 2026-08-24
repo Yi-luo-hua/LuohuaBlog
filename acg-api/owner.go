@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ownerEmail            = "173236231@qq.com"
+	ownerEmail            = "akesakiko@gmail.com"
 	ownerSecurityQuestion = "你现在的学号"
 )
 
