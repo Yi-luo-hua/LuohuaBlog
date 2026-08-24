@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
  * Loads video only when near viewport; plays only while visible.
  * Reduces initial bandwidth vs autoplay on all feature-*.mp4 at once.
  */
-const LazyVideo = ({ src, className = "", priority = false }) => {
+const LazyVideo = ({ src, poster, className = "", priority = false }) => {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const [active, setActive] = useState(priority);
@@ -21,7 +21,7 @@ const LazyVideo = ({ src, className = "", priority = false }) => {
           io.disconnect();
         }
       },
-      { rootMargin: "280px 0px", threshold: 0.01 }
+      { rootMargin: "280px 0px", threshold: 0.01 },
     );
     io.observe(node);
     return () => io.disconnect();
@@ -39,7 +39,7 @@ const LazyVideo = ({ src, className = "", priority = false }) => {
           video.pause();
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0.15 },
     );
     playIo.observe(wrapRef.current);
     return () => playIo.disconnect();
@@ -51,6 +51,7 @@ const LazyVideo = ({ src, className = "", priority = false }) => {
         <video
           ref={videoRef}
           src={src}
+          poster={poster}
           loop
           muted
           playsInline

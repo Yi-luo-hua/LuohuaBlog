@@ -9,7 +9,7 @@ import {
   getHeroIndexFromCompassRotation,
   getSnappedHeroCompassTarget,
 } from "./heroCompassSelection";
-import { areHeroImagesReady, isHeroImageReady } from "./heroImageState";
+import { isHeroImageReady } from "./heroImageState";
 import { cosAsset } from "../lib/cosAsset.js";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -17,13 +17,76 @@ gsap.registerPlugin(ScrollTrigger);
 const TOTAL_HERO_IMAGES = 4;
 const HERO_INDEXES = Array.from(
   { length: TOTAL_HERO_IMAGES },
-  (_, index) => index + 1
-);
-const COS = cosAsset(
-  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main"
+  (_, index) => index + 1,
 );
 const GITHUB_AVATAR = "/github-avatar.png";
-const getImgSrc = (index) => `${COS}/img/hero-${index}.webp`;
+const COS = cosAsset(
+  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main",
+);
+const HERO_MEDIA = {
+  1: {
+    type: "image",
+    src: `${COS}/img/hero-4.webp`,
+    label: "泡水灵梦",
+  },
+  2: {
+    type: "video",
+    src: "/media/hero-atri-4k.mp4",
+    poster: "/media/hero-atri-4k.webp",
+    label: "花海亚托莉",
+  },
+  3: {
+    type: "image",
+    src: `${COS}/img/hero-2.webp`,
+    label: "夏夜烟花",
+  },
+  4: {
+    type: "image",
+    src: `${COS}/img/hero-3.webp`,
+    label: "星海少女",
+  },
+};
+const getHeroMedia = (index) => HERO_MEDIA[index] || HERO_MEDIA[1];
+const getHeroPosterSrc = (index) => {
+  const media = getHeroMedia(index);
+  return media.poster || media.src;
+};
+
+const HeroBackgroundMedia = ({ index, id, className, onReady }) => {
+  const media = getHeroMedia(index);
+
+  if (media.type === "video") {
+    return (
+      <video
+        key={`video-${index}`}
+        src={media.src}
+        poster={media.poster}
+        id={id}
+        className={className}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        onCanPlay={onReady}
+      />
+    );
+  }
+
+  return (
+    <img
+      key={`image-${index}`}
+      src={media.src}
+      id={id}
+      className={className}
+      alt=""
+      aria-hidden="true"
+      loading="eager"
+      onLoad={onReady}
+    />
+  );
+};
 const HERO_CARD_FOCUS = {
   1: "50% 50%",
   2: "50% 50%",
@@ -170,26 +233,51 @@ const Hero = () => {
   };
 
   useEffect(() => {
-    if (areHeroImagesReady([1, 2], loadedHeroIndexes)) {
+    if (isHeroImageReady(1, loadedHeroIndexes)) {
       setLoading(false);
     }
   }, [loadedHeroIndexes]);
 
   useEffect(() => {
     let cancelled = false;
+    const cleanups = [];
+
     HERO_INDEXES.forEach((index) => {
-      const img = new Image();
-      img.onload = () => {
+      const media = getHeroMedia(index);
+      const markReady = () => {
         if (cancelled) return;
         setLoadedHeroIndexes((prev) => {
           if (prev.has(index)) return prev;
           return new Set([...prev, index]);
         });
       };
-      img.src = getImgSrc(index);
+
+      if (media.type === "video") {
+        const video = document.createElement("video");
+        video.preload = "auto";
+        video.muted = true;
+        video.playsInline = true;
+        video.addEventListener("canplay", markReady, { once: true });
+        video.src = media.src;
+        video.load();
+        cleanups.push(() => {
+          video.removeEventListener("canplay", markReady);
+          video.pause();
+          video.removeAttribute("src");
+          video.load();
+        });
+        return;
+      }
+
+      const image = new Image();
+      image.addEventListener("load", markReady, { once: true });
+      image.src = media.src;
+      cleanups.push(() => image.removeEventListener("load", markReady));
     });
+
     return () => {
       cancelled = true;
+      cleanups.forEach((cleanup) => cleanup());
     };
   }, []);
 
@@ -230,7 +318,7 @@ const Hero = () => {
     const nextAngle = getCompassPointerAngle(event);
     const nextRotation = getContinuousCompassRotation(
       compassRotation,
-      nextAngle
+      nextAngle,
     );
     compassDragRef.current = {
       pointerId: event.pointerId,
@@ -244,7 +332,7 @@ const Hero = () => {
     if (compassDragRef.current?.pointerId !== event.pointerId) return;
     const nextRotation = getContinuousCompassRotation(
       compassDragRef.current.rotation,
-      getCompassPointerAngle(event)
+      getCompassPointerAngle(event),
     );
     compassDragRef.current.rotation = nextRotation;
     setCompassRotation(nextRotation);
@@ -254,11 +342,11 @@ const Hero = () => {
     if (compassDragRef.current?.pointerId === event.pointerId) {
       const nextRotation = getContinuousCompassRotation(
         compassDragRef.current.rotation,
-        getCompassPointerAngle(event)
+        getCompassPointerAngle(event),
       );
       const nextTarget = getSnappedHeroCompassTarget(
         nextRotation,
-        HERO_COMPASS_ITEMS
+        HERO_COMPASS_ITEMS,
       );
       compassDragRef.current = null;
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -305,7 +393,7 @@ const Hero = () => {
               duration: 1.05,
               ease: "power2.out",
             },
-            0
+            0,
           )
           .to(
             "#bg-image",
@@ -315,7 +403,7 @@ const Hero = () => {
               duration: 1.28,
               ease: "power3.inOut",
             },
-            0
+            0,
           )
           .to(
             "#hero-transition-wash",
@@ -326,7 +414,7 @@ const Hero = () => {
               duration: 0.48,
               ease: "power2.out",
             },
-            0.04
+            0.04,
           )
           .to(
             "#hero-transition-wash",
@@ -337,14 +425,14 @@ const Hero = () => {
               duration: 0.72,
               ease: "power3.inOut",
             },
-            0.45
+            0.45,
           );
       }
     },
     {
       dependencies: [currentIndex],
       revertOnUpdate: true,
-    }
+    },
   );
 
   useGSAP(() => {
@@ -383,19 +471,18 @@ const Hero = () => {
       >
         <div>
           {isTransitioning && (
-            <img
-              src={getImgSrc(previousIndex)}
+            <HeroBackgroundMedia
+              index={previousIndex}
               id="previous-image"
               className="pointer-events-none absolute left-0 top-0 z-30 size-full object-cover object-center"
-              onLoad={() => markHeroImageLoaded(previousIndex)}
+              onReady={() => markHeroImageLoaded(previousIndex)}
             />
           )}
-          <img
-            src={getImgSrc(currentIndex)}
+          <HeroBackgroundMedia
+            index={currentIndex}
             id="bg-image"
             className="absolute left-0 top-0 size-full object-cover object-center"
-            onLoad={() => markHeroImageLoaded(currentIndex)}
-            fetchPriority="high"
+            onReady={() => markHeroImageLoaded(currentIndex)}
           />
         </div>
 
@@ -414,7 +501,7 @@ const Hero = () => {
             }}
           >
             <img
-              src={getImgSrc(pointedHeroIndex)}
+              src={getHeroPosterSrc(pointedHeroIndex)}
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 size-full scale-110 object-cover opacity-65 blur-xl saturate-[1.25] transition duration-500"
@@ -708,54 +795,54 @@ const Hero = () => {
                       key={index}
                       className={`pointer-events-auto absolute ${HERO_COMPASS_CARD_POSITIONS[index]}`}
                     >
-                        <button
-                          type="button"
-                          disabled={!ready}
-                          onClick={() => handleCompassCardClick(index)}
-                          className={`group relative aspect-video w-[22vw] max-w-[300px] min-w-[190px] overflow-hidden rounded-[1.25rem] border bg-white/70 text-left shadow-[0_28px_80px_rgba(255,182,202,0.2)] transition duration-500 [transform-style:preserve-3d] hover:-translate-y-2 hover:scale-[1.02] xl:max-w-[330px] ${
-                            ready ? "cursor-pointer" : "cursor-wait opacity-60"
-                          } ${active ? "scale-[1.04]" : "opacity-[0.82]"}`}
-                          style={{
-                            borderColor: active
-                              ? compassTheme.accent
-                              : "rgba(255,255,255,0.2)",
-                            boxShadow: active
-                              ? `0 0 0 0.32rem rgba(255,255,255,0.24), 0 0 34px ${compassTheme.accent}, 0 26px 80px rgba(0,0,0,0.24)`
-                              : "0 26px 70px rgba(0,0,0,0.16)",
-                          }}
-                        >
-                      <img
-                        src={getImgSrc(index)}
-                        alt={`Hero scene ${index}`}
-                          className="absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105"
-                        style={{ objectPosition: HERO_CARD_FOCUS[index] }}
-                        onLoad={() => markHeroImageLoaded(index)}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/[0.82] via-black/[0.18] to-white/10" />
-                      <div
-                        className="absolute left-4 top-4 rounded-full border bg-white/70 px-3 py-1 font-general text-[10px] uppercase tracking-[0.25em] backdrop-blur-sm"
+                      <button
+                        type="button"
+                        disabled={!ready}
+                        onClick={() => handleCompassCardClick(index)}
+                        className={`group relative aspect-video w-[22vw] max-w-[300px] min-w-[190px] overflow-hidden rounded-[1.25rem] border bg-white/70 text-left shadow-[0_28px_80px_rgba(255,182,202,0.2)] transition duration-500 [transform-style:preserve-3d] hover:-translate-y-2 hover:scale-[1.02] xl:max-w-[330px] ${
+                          ready ? "cursor-pointer" : "cursor-wait opacity-60"
+                        } ${active ? "scale-[1.04]" : "opacity-[0.82]"}`}
                         style={{
-                          borderColor: compassTheme.line,
-                          color: compassTheme.accent,
+                          borderColor: active
+                            ? compassTheme.accent
+                            : "rgba(255,255,255,0.2)",
+                          boxShadow: active
+                            ? `0 0 0 0.32rem rgba(255,255,255,0.24), 0 0 34px ${compassTheme.accent}, 0 26px 80px rgba(0,0,0,0.24)`
+                            : "0 26px 70px rgba(0,0,0,0.16)",
                         }}
                       >
-                        {item.direction}
-                      </div>
-                      <div className="absolute inset-x-0 bottom-0 p-5 text-blue-50">
-                        <p className="font-general text-[10px] uppercase tracking-[0.35em] text-blue-75/85">
-                          {item.label}
-                        </p>
-                        <p className="mt-2 text-4xl font-black leading-none">
-                          0{index}
-                        </p>
-                        <p
-                          className="mt-3 text-xs uppercase tracking-[0.25em]"
-                          style={{ color: compassTheme.accent }}
+                        <img
+                          src={getHeroPosterSrc(index)}
+                          alt={getHeroMedia(index).label}
+                          className="absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105"
+                          style={{ objectPosition: HERO_CARD_FOCUS[index] }}
+                          onLoad={() => markHeroImageLoaded(index)}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/[0.82] via-black/[0.18] to-white/10" />
+                        <div
+                          className="absolute left-4 top-4 rounded-full border bg-white/70 px-3 py-1 font-general text-[10px] uppercase tracking-[0.25em] backdrop-blur-sm"
+                          style={{
+                            borderColor: compassTheme.line,
+                            color: compassTheme.accent,
+                          }}
                         >
-                          {active ? "Current" : ready ? "Select" : "Loading"}
-                        </p>
-                      </div>
-                        </button>
+                          {item.direction}
+                        </div>
+                        <div className="absolute inset-x-0 bottom-0 p-5 text-blue-50">
+                          <p className="font-general text-[10px] uppercase tracking-[0.35em] text-blue-75/85">
+                            {item.label}
+                          </p>
+                          <p className="mt-2 text-4xl font-black leading-none">
+                            0{index}
+                          </p>
+                          <p
+                            className="mt-3 text-xs uppercase tracking-[0.25em]"
+                            style={{ color: compassTheme.accent }}
+                          >
+                            {active ? "Current" : ready ? "Select" : "Loading"}
+                          </p>
+                        </div>
+                      </button>
                     </div>
                   );
                 })}
@@ -770,9 +857,7 @@ const Hero = () => {
 
         <div className="absolute left-0 top-0 z-40 size-full">
           <div className="mt-24 px-5 sm:px-10">
-            <h1 className="special-font hero-heading text-blue-100">
-              WELCOME
-            </h1>
+            <h1 className="special-font hero-heading text-blue-100">WELCOME</h1>
 
             <p className="mb-5 max-w-64 font-robert-regular text-blue-100">
               This is only the beginning

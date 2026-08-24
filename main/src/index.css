@@ -699,35 +699,61 @@ body {
       drop-shadow(0 0.4rem 0.7rem rgba(0, 0, 0, 0.25));
   }
 
-  .hero-wordmark-text {
-    fill: url(#hero-wordmark-fill-gradient);
-    stroke: var(--hero-wordmark-stroke);
-    stroke-width: 1.15;
-    paint-order: stroke fill;
-    font-family:
-      "Segoe Script", "Brush Script MT", "Lucida Handwriting", cursive;
-    font-size: 72px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+  .hero-wordmark-stroke-path {
+    fill: none;
+    fill-opacity: 0;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
     opacity: 0;
-    transform-origin: center;
   }
 
-  .hero-wordmark--ready .hero-wordmark-text {
-    animation: heroWordmarkReveal 1.45s cubic-bezier(0.22, 1, 0.36, 1) 0.18s
-      forwards;
+  .hero-wordmark--ready .hero-wordmark-stroke-path {
+    animation:
+      heroWordmarkDraw var(--dur) cubic-bezier(0.45, 0, 0.25, 1)
+        var(--delay) forwards,
+      heroWordmarkShow 0.01s var(--delay) forwards;
   }
 
-  @keyframes heroWordmarkReveal {
+  .hero-wordmark--ready .hero-wordmark-fill-after {
+    animation:
+      heroWordmarkDraw var(--dur) cubic-bezier(0.45, 0, 0.25, 1)
+        var(--delay) forwards,
+      heroWordmarkShow 0.01s var(--delay) forwards,
+      heroWordmarkFillIn 1.2s ease-out calc(var(--delay) + var(--dur) + 0.2s)
+        forwards;
+  }
+
+  @keyframes heroWordmarkDraw {
     0% {
-      opacity: 0;
-      transform: translateY(12px) scale(0.96);
-      filter: blur(5px);
+      stroke-dashoffset: var(--len);
+      stroke-width: 3.2;
+    }
+    60% {
+      stroke-width: 2.8;
     }
     100% {
+      stroke-dashoffset: 0;
+      stroke-width: 2.6;
+    }
+  }
+
+  @keyframes heroWordmarkShow {
+    0% {
+      opacity: 0;
+    }
+    1%,
+    100% {
       opacity: 1;
-      transform: translateY(0) scale(1);
-      filter: blur(0);
+    }
+  }
+
+  @keyframes heroWordmarkFillIn {
+    0% {
+      fill-opacity: 0;
+    }
+    100% {
+      fill-opacity: 1;
     }
   }
 
@@ -758,13 +784,20 @@ body {
 
   @media (prefers-reduced-motion: reduce) {
     .hero-wordmark,
-    .hero-wordmark--ready .hero-wordmark-text,
-    .hero-wordmark-text {
+    .hero-wordmark--ready .hero-wordmark-stroke-path,
+    .hero-wordmark--ready .hero-wordmark-fill-after,
+    .hero-wordmark-stroke-path,
+    .hero-wordmark-fill-after {
       animation: none;
     }
 
-    .hero-wordmark-text {
+    .hero-wordmark-stroke-path {
+      stroke-dashoffset: 0;
       opacity: 1;
+    }
+
+    .hero-wordmark-fill-after {
+      fill-opacity: 1;
     }
   }
 
@@ -7818,15 +7851,6 @@ body {
   margin-left: 0.12em;
   color: transparent;
   -webkit-text-stroke: 1.5px var(--blog-accent);
-}
-
-.blog-hero-copy {
-  max-width: 43rem;
-  margin: 1.6rem 0 0;
-  color: var(--blog-muted);
-  font-family: "STKaiti", "KaiTi", serif;
-  font-size: clamp(1rem, 1.5vw, 1.22rem);
-  line-height: 1.85;
 }
 
 .blog-hero-stamp {

@@ -13,7 +13,7 @@ This version has been extensively customized for personal use:
 - **Hero Section**: All background videos replaced with anime-style content. Main video in 4K. "桃之夭夭 / WELCOME" branding.
 - **About Section**: New illustrations. "FEEL FREE TO KEEP SCROLLING DOWN" message.
 - **Story Section**: Anime scene background. "FOLLOW-UP PLAN" and "LOOK FORWARD TO IT TO THE FULLEST".
-- **Features (Bento Grid)**: Three links — [My Blog](https://bistutzyy.github.io/), [Projects](https://tzyy11.vercel.app/), and [Reimu Blog](https://blog1-reimu.vercel.app/) — each with "Let's go!" buttons.
+- **Features (Bento Grid)**: Three links — [My Blog](https://taozhiyy.top/blog/), [Projects](https://tzyy11.vercel.app/), and [Reimu Blog](https://blog1-reimu.vercel.app/) — each with "Let's go!" buttons.
 - **Moments Page**: `/moments` is now a first-class top-nav page named “碎语”, rendering short notes from `src/data/moments.js` with varied holographic card modules.
 - **Friends Page**: Friend cards are maintained in `src/data/friendCards.js`; the `https://930309.xyz/` entry is `Leyili 花园` with icon `https://photo.930309.xyz/lcj.svg`.
 - **Contact Section**: Credits to Adrian Hajdin with a link to the original repo.
@@ -44,16 +44,18 @@ This version has been extensively customized for personal use:
 
 ## 🚀 Run Locally
 
-```bash
-npm install
-npm run dev
+```powershell
+cd E:\TOOLS\BLOG
+.\dev.ps1
 ```
 
 Opens at `http://localhost:5173/`
 
+This command starts both the Vite frontend and the Go backend in detached local processes. See [本地调试说明](../docs/DEBUGGING.md) for status/stop commands, manual startup, logs, and `502 Bad Gateway` troubleshooting.
+
 ## 📄 License
 
-This project is for **learning purposes only**. Original design by [Adrian Hajdin](https://github.com/adrianhajdin/award-winning-website). Personal modifications by [@bistutzyy](https://github.com/bistutzyy).
+This project is for **learning purposes only**. Original design by [Adrian Hajdin](https://github.com/adrianhajdin/award-winning-website). Built from the [bistutzyy/taozhiyy](https://github.com/bistutzyy/taozhiyy) template, then rewritten for this site.
 
 ---
 

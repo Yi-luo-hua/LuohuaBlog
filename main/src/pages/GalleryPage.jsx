@@ -14,14 +14,11 @@ const GalleryPage = () => (
       <p className="font-general text-xs uppercase tracking-[0.45em] text-[#b76e79]">
         Unified Gallery
       </p>
-      <div className="mt-4 grid gap-6 md:grid-cols-[1.05fr_0.95fr] md:items-end">
+      <div className="mt-4">
         <h1 className="font-zentry text-5xl font-black uppercase leading-none text-[#241322] md:text-7xl">
           伊洛华
           <span className="block text-[#ff8fab]">Gallery</span>
         </h1>
-        <p className="max-w-xl text-base leading-relaxed text-[#5f4b52]">
-          一处安静的视觉档案。把喜欢的画面，分门别类地收进相册里，留作日后慢慢翻阅。
-        </p>
       </div>
     </header>
 

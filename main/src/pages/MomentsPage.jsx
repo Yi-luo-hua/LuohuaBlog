@@ -189,9 +189,6 @@ const MomentsPage = () => {
           <h1>
             文章与<span>札记</span>
           </h1>
-          <p className="blog-hero-copy">
-            记录技术试验、学习过程与偶然闪过的念头。这里不追赶信息流，只留下值得重读的东西。
-          </p>
         </div>
         <div className="blog-hero-stamp" aria-hidden="true">
           <strong>{blogPosts.length}</strong>
