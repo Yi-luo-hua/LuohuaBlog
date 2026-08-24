@@ -3,7 +3,6 @@ import SiteLayout from "./layouts/SiteLayout";
 import AppConsolePage from "./pages/AppConsolePage";
 import HomePage from "./pages/HomePage";
 import BangumiPage from "./pages/BangumiPage";
-import LoginPage from "./pages/LoginPage";
 import GalleryAlbumPage from "./pages/GalleryAlbumPage";
 import GalleryPage from "./pages/GalleryPage";
 import MomentsPage from "./pages/MomentsPage";
@@ -60,7 +59,6 @@ function App() {
               path="about/projects/:projectId"
               element={<AboutProjectPage />}
             />
-            <Route path="login" element={<LoginPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

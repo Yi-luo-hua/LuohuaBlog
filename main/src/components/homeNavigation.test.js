@@ -220,26 +220,6 @@ test("keeps the quizcard showcase bounded on phone width", () => {
   );
 });
 
-test("keeps the AI data-center layout compact on phones", () => {
-  const cssSource = readSource("index.css");
-  const aiTrafficSource = readSource("pages/AiTrafficPage.jsx");
-  const serverInfoSource = readSource("components/ServerInfoPanel.jsx");
-
-  assert.match(aiTrafficSource, /overflow-x-hidden/);
-  assert.match(aiTrafficSource, /ai-stat-grid/);
-  assert.match(serverInfoSource, /server-info-panel/);
-  assert.match(serverInfoSource, /server-info-grid/);
-  assert.match(serverInfoSource, /server-hud-card/);
-  assert.match(
-    cssSource,
-    /@media \(max-width:\s*639px\)\s*\{[\s\S]*?\.server-info-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/,
-  );
-  assert.match(
-    cssSource,
-    /@media \(max-width:\s*639px\)\s*\{[\s\S]*?\.server-hud-card\s*\{[\s\S]*?max-width:\s*11\.5rem/,
-  );
-});
-
 test("keeps quizcard settings actions safe for visitors", () => {
   const settingsSource = readSource("../public/web/settings.html");
 
@@ -294,8 +274,9 @@ test("keeps the Misaka showcase fixed above four real homepage destinations", ()
 
   assert.match(
     featuresSource,
-    /src=\{`\$\{COS\}\/videos\/feature-1\.mp4`\}[\s\S]*?label="御坂美琴 · 固定放映"[\s\S]*?visualOnly/,
+    /src="\/media\/feature-misaka-full-loop\.mp4"[\s\S]*?poster="\/media\/feature-misaka-full-loop\.webp"[\s\S]*?visualOnly/,
   );
+  assert.doesNotMatch(featuresSource, /御坂美琴 · 固定放映/);
 
   for (const [title, href] of [
     ["相册集", "/gallery"],
@@ -303,10 +284,14 @@ test("keeps the Misaka showcase fixed above four real homepage destinations", ()
     ["关于我", "/about"],
     ["我的项目", "/about/projects/quizcard"],
   ]) {
-    assert.match(featuresSource, new RegExp(`title="${title}"[\\s\\S]*?linkUrl="${href}"`));
+    assert.match(
+      featuresSource,
+      new RegExp(`title="${title}"[\\s\\S]*?linkUrl="${href}"`),
+    );
   }
 
-  assert.match(featuresSource, /去看看，<br \/>我留下的世界/);
+  assert.doesNotMatch(featuresSource, /伊洛华的收藏室|去看看，|我留下的世界/);
+  assert.match(featuresSource, /container mx-auto px-3 pt-8 md:px-10 md:pt-10/);
   assert.match(
     featuresSource,
     /md:grid-rows-\[16rem_16rem_18rem\][\s\S]*?lg:grid-rows-\[18rem_18rem_20rem\]/,
@@ -348,7 +333,10 @@ test("links the homepage reveal card to the latest blog post", () => {
   assert.match(aboutSource, /from "virtual:blog-posts"/);
   assert.match(aboutSource, /right\.date\.localeCompare\(left\.date\)/);
   assert.match(aboutSource, /href=\{latestPost\.url\}/);
-  assert.match(aboutSource, /src=\{latestPost\.cover \|\| fallbackPost\.cover\}/);
+  assert.match(
+    aboutSource,
+    /src=\{latestPost\.cover \|\| fallbackPost\.cover\}/,
+  );
   assert.match(aboutSource, /\{latestPost\.title\}/);
   assert.doesNotMatch(
     aboutSource,
@@ -356,13 +344,17 @@ test("links the homepage reveal card to the latest blog post", () => {
   );
 });
 
-test("themes the moments and friends footer for their page palettes", () => {
+test("themes the footer only for pages that still exist", () => {
   const footerSource = readSource("components/Footer.jsx");
 
   assert.match(footerSource, /moments:\s*\{/);
-  assert.match(footerSource, /friends:\s*\{/);
   assert.match(footerSource, /pathname\.startsWith\("\/moments"\)/);
-  assert.match(footerSource, /pathname\.startsWith\("\/friends"\)/);
+  assert.match(footerSource, /pathname\.startsWith\("\/bangumi"\)/);
+
+  // /friends and /ai-traffic are gone, so their palettes could never be
+  // selected — a branch that can never be taken is just a wrong map of the site.
+  assert.doesNotMatch(footerSource, /friends:\s*\{|ai:\s*\{/);
+  assert.doesNotMatch(footerSource, /"\/friends"|"\/ai-traffic"/);
 });
 
 test("keeps quizcard report summary card from overlaying reviews on narrow screens", () => {
