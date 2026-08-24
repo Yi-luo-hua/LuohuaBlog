@@ -3,6 +3,7 @@ dist/
 public/
 .worktrees/
 .tmp/
+.dev-runtime/
 .playwright-cli/
 __pycache__/
 *.pyc
@@ -22,6 +23,10 @@ main/public/**
 !main/public/pwa-icon.ico
 !main/public/sw.js
 !main/public/about-preview.html
+!main/public/fonts/
+!main/public/fonts/**
+!main/public/media/
+!main/public/media/**
 **/node_modules/
 **/.cache/
 cos_upload.py

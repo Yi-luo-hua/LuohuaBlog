@@ -28,6 +28,15 @@ export async function getBangumiCollection(status = "watching") {
   };
 }
 
+export async function getGithubCommits() {
+  const data = await fetchJson("/api/v1/github/commits");
+  return {
+    items: asList(data),
+    repoCount: Number(data?.repoCount || 0),
+    profile: data?.profile || "",
+  };
+}
+
 export async function getBangumiList() {
   const { items } = await getBangumiCollection("watching");
   return items;

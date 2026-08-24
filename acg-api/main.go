@@ -63,6 +63,7 @@ func main() {
 	mux.HandleFunc("/api/guestbook/", guestbookRouter)
 	mux.HandleFunc("/api/v1/guestbook", guestbookHandler)
 	mux.HandleFunc("/api/v1/bangumi/list", bangumiListHandler)
+	mux.HandleFunc("/api/v1/github/commits", githubCommitsHandler(cfg))
 	mux.HandleFunc("/api/v1/wallpapers/draw", wallpaperDrawHandler)
 	mux.HandleFunc("/api/v1/acg/image/", imageHandler)
 	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, _ *http.Request) {

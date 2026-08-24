@@ -63,6 +63,16 @@ func migrateAll(db *sql.DB) error {
 			collection_updated_at TEXT NOT NULL DEFAULT '',
 			updated_at TEXT NOT NULL
 		);`,
+		`CREATE TABLE IF NOT EXISTS github_commits (
+			sha TEXT PRIMARY KEY,
+			repo TEXT NOT NULL DEFAULT '',
+			message TEXT NOT NULL DEFAULT '',
+			url TEXT NOT NULL DEFAULT '',
+			committed_at TEXT NOT NULL DEFAULT '',
+			position INTEGER NOT NULL DEFAULT 0,
+			repo_count INTEGER NOT NULL DEFAULT 0,
+			updated_at TEXT NOT NULL
+		);`,
 		`CREATE TABLE IF NOT EXISTS radar_creators (
 			uid TEXT PRIMARY KEY,
 			name TEXT NOT NULL,
@@ -189,6 +199,11 @@ func migrateAll(db *sql.DB) error {
 			return err
 		}
 	}
+	// The cache table shipped once with a total_count column before the data
+	// source changed; add the replacement so an existing database keeps working.
+	if err := ensureColumn(db, "github_commits", "repo_count", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
 	if err := ensureColumn(db, "guestbook_messages", "parent_id", "INTEGER NOT NULL DEFAULT 0"); err != nil {
 		return err
 	}
@@ -290,6 +305,59 @@ func upsertRadarCreators(db *sql.DB, creators []RadarCreator) error {
 		}
 	}
 	return nil
+}
+
+// replaceGithubCommits swaps the cached commit list in one transaction so a
+// reader never sees a half-written list.
+func replaceGithubCommits(db *sql.DB, commits []githubCommit, repoCount int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`DELETE FROM github_commits`); err != nil {
+		return err
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+	for i, c := range commits {
+		if _, err := tx.Exec(
+			`INSERT INTO github_commits (sha, repo, message, url, committed_at, position, repo_count, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			c.SHA, c.Repo, c.Message, c.URL, c.CommittedAt, i, repoCount, now,
+		); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func listGithubCommits(db *sql.DB) ([]githubCommit, int, string, error) {
+	rows, err := db.Query(
+		`SELECT sha, repo, message, url, committed_at, repo_count, updated_at
+		 FROM github_commits ORDER BY position ASC`)
+	if err != nil {
+		return nil, 0, "", err
+	}
+	defer rows.Close()
+
+	commits := []githubCommit{}
+	repoCount := 0
+	syncedAt := ""
+	for rows.Next() {
+		var c githubCommit
+		var rowRepoCount int
+		var rowUpdated string
+		if err := rows.Scan(&c.SHA, &c.Repo, &c.Message, &c.URL, &c.CommittedAt, &rowRepoCount, &rowUpdated); err != nil {
+			return nil, 0, "", err
+		}
+		repoCount = rowRepoCount
+		syncedAt = rowUpdated
+		commits = append(commits, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, "", err
+	}
+	return commits, repoCount, syncedAt, nil
 }
 
 func replaceBangumiItems(db *sql.DB, items []bangumiItem) error {

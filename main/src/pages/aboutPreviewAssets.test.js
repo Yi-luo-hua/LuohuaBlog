@@ -96,19 +96,181 @@ test("keeps the local Vite server aligned with the production COS proxy path", (
   assert.ok(viteConfig.includes('rewrite: (path) => path.replace(/^\\/cos/, "")'));
 });
 
-test("uses asset rewriting before mounting the about preview markup", () => {
+test("renders the about route as a native React dashboard", () => {
   const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
 
-  assert.match(routeSource, /import \{ rewriteAboutPreviewAssets \}/);
-  assert.match(routeSource, /return rewriteAboutPreviewAssets\(`/);
+  assert.match(routeSource, /import \{ blogPosts \} from "virtual:blog-posts"/);
+  assert.match(routeSource, /import \{ galleryAlbums \}/);
+  assert.match(routeSource, /getBangumiCollection\("watching"\)/);
+  assert.doesNotMatch(routeSource, /attachShadow|about-preview\.html/);
 });
 
-test("fetches the about preview with a versioned no-store request", () => {
+test("keeps the compact about dashboard links and real music player wired", () => {
   const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
 
-  assert.match(routeSource, /ABOUT_PREVIEW_VERSION/);
-  assert.match(routeSource, /new URLSearchParams\(\{ v: ABOUT_PREVIEW_VERSION \}\)/);
-  assert.match(routeSource, /fetch\(getAboutPreviewUrl\(\), \{ cache: "no-store" \}\)/);
+  assert.match(routeSource, /to="\/gallery"/);
+  assert.match(routeSource, /to="\/bangumi\/watching"/);
+  assert.match(routeSource, /to="\/about\/projects\/quizcard"/);
+  assert.match(routeSource, /audio\/loop\.mp3/);
+  assert.match(routeSource, /我的相册/);
+  assert.match(routeSource, /番剧收藏/);
+});
+
+test("stages the about bubbles with the reference-style pop sequence", () => {
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  assert.match(styles, /@keyframes about-desk-pop/);
+  assert.match(styles, /scale\(\.6\)/);
+  assert.match(styles, /nth-child\(11\)\s*\{\s*animation-delay:\s*\.84s/);
+  assert.match(styles, /animation:\s*about-desk-pop[^;]+backwards/);
+});
+
+test("uses a seven-segment SVG clock and reference-sized interface icons", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  assert.match(routeSource, /CLOCK_SEGMENTS/);
+  assert.match(routeSource, /viewBox="0 0 29 52"/);
+  assert.doesNotMatch(routeSource, /FiClock/);
+  assert.match(styles, /\.about-desk-clock-digit\s*\{[\s\S]*?width:\s*29px;[\s\S]*?height:\s*52px;/);
+  assert.match(styles, /\.about-desk-greeting span:first-child \{ font-size: 30px; \}/);
+});
+
+test("keeps the about greeting card down to a face and a hello", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  // The nav, the six-way panel switcher and the facts/stack experiment are all
+  // gone; the centre card is just the avatar disc and the greeting.
+  assert.doesNotMatch(routeSource, /NAV_ITEMS|PANEL_CONTENT|activePanel/);
+  assert.doesNotMatch(routeSource, /PROFILE_FACTS|TECH_STACK|PROFILE_TAGLINE/);
+  assert.doesNotMatch(styles, /\.about-desk-nav\b|\.about-desk-facts|\.about-desk-stack/);
+
+  assert.match(routeSource, /className="about-desk-greeting"/);
+  assert.match(routeSource, /I&apos;m <b>\{OWNER_NAME\}<\/b>, Nice to meet you!/);
+  assert.match(styles, /\.about-desk-profile-avatar \{[^}]*border-radius: 50%/);
+});
+
+test("greets by the time of day in the self-hosted handwriting face", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  assert.match(routeSource, /const greetingFor = \(hour\) =>/);
+  assert.match(routeSource, /"Good Morning"/);
+  assert.match(routeSource, /"Good Evening"/);
+  assert.match(routeSource, /greetingFor\(now\.getHours\(\)\)/);
+
+  // Served from our own origin: the Google Fonts CDN is unreliable in China.
+  assert.match(styles, /@font-face \{[\s\S]*?font-family: "Gochi Hand"/);
+  assert.match(styles, /url\("\/fonts\/gochi-hand-latin\.woff2"\) format\("woff2"\)/);
+  assert.doesNotMatch(styles, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
+  assert.match(styles, /\.about-desk-greeting \{[\s\S]*?font-family: "Gochi Hand"/);
+});
+
+test("shows real GitHub commits instead of a hand-written timeline", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const apiSource = readFileSync(resolve("src/services/acgApi.js"), "utf8");
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  // The hard-coded milestone list is gone.
+  assert.doesNotMatch(routeSource, /SITE_MILESTONES|SITE_BORN|daysSince/);
+
+  // Commits come from our own cached endpoint, never straight from GitHub:
+  // api.github.com allows 10 search requests/hour and is unreliable in China.
+  assert.match(apiSource, /"\/api\/v1\/github\/commits"/);
+  assert.doesNotMatch(routeSource, /api\.github\.com/);
+  assert.doesNotMatch(apiSource, /api\.github\.com/);
+
+  assert.match(routeSource, /getGithubCommits\(\)/);
+  assert.match(routeSource, /const COMMIT_ROWS = \d/);
+  // The commit search index silently omits whole repositories, so the card is
+  // fed by per-repository reads instead.
+  assert.doesNotMatch(apiSource, /search\/commits/);
+  assert.match(styles, /\.about-desk-journey-list a \{[\s\S]*?-webkit-line-clamp: 2/);
+});
+
+test("keeps the commit card readable while loading or when the feed is down", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+
+  // A failed fetch must not leave an empty box on the board.
+  assert.match(routeSource, /state: "loading"/);
+  assert.match(routeSource, /state: "error"/);
+  assert.match(routeSource, /about-desk-journey-empty/);
+  assert.match(routeSource, /正在读取提交记录/);
+  assert.match(routeSource, /提交记录暂时取不到/);
+});
+
+test("formats commit times relative to now", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+
+  assert.match(routeSource, /const relativeCommitTime = \(isoDate, now\) =>/);
+  assert.match(routeSource, /"刚刚"/);
+  assert.match(routeSource, /"昨天"/);
+  assert.match(routeSource, /const shortRepoName =/);
+});
+
+test("wires every desktop bubble into the elastic drag physics layer", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const physicsSource = readFileSync(resolve("src/pages/useBubblePhysics.js"), "utf8");
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  assert.equal((routeSource.match(/data-physics-bubble=/g) || []).length, 11);
+  assert.match(routeSource, /useBubblePhysics\(physicsContainerRef\)/);
+  assert.match(physicsSource, /import\("matter-js"\)/);
+  assert.match(physicsSource, /Bodies\.rectangle/);
+  assert.match(physicsSource, /Body\.setVelocity/);
+  assert.match(physicsSource, /DRAG_PUSH_STIFFNESS/);
+  assert.match(physicsSource, /DRAG_PUSH_CLEARANCE\s*=\s*16/);
+  assert.match(physicsSource, /\(min-width: 1200px\)/);
+  assert.match(physicsSource, /prefers-reduced-motion: reduce/);
+  assert.match(styles, /translate:\s*var\(--physics-x[^;]+var\(--physics-y/);
+  assert.match(styles, /@media \(min-width: 1400px\)[\s\S]*?width:\s*min\(100%,\s*1380px\)/);
+});
+
+test("drags a bubble under the cursor rather than snapping it to the centre", () => {
+  const physicsSource = readFileSync(resolve("src/pages/useBubblePhysics.js"), "utf8");
+
+  // Pointer coordinates are screen pixels, the simulation runs in layout pixels.
+  assert.match(physicsSource, /viewportScale = containerRect\.width \/ width/);
+  assert.match(physicsSource, /const pointerToWorld = \(event\) => \(\{/);
+  assert.match(physicsSource, /drag\.grabX = body\.position\.x - grabbed\.x/);
+  // The container rect goes stale as soon as the page scrolls.
+  assert.match(physicsSource, /refreshViewportMetrics\(\);/);
+  assert.match(physicsSource, /addEventListener\("scroll", refreshViewportMetrics/);
+  // Collision boxes must not pick up the resting tilt or the fit scale.
+  assert.match(physicsSource, /element\.offsetLeft \+ visualWidth \/ 2/);
+  assert.doesNotMatch(physicsSource, /element\.getBoundingClientRect\(\)/);
+});
+
+test("settles every bubble back onto its authored coordinates", () => {
+  const physicsSource = readFileSync(resolve("src/pages/useBubblePhysics.js"), "utf8");
+
+  assert.match(physicsSource, /ANCHOR_STIFFNESS\s*=\s*0\.075/);
+  assert.match(physicsSource, /collisionFilter: \{ group: -1 \}/);
+  assert.match(physicsSource, /Body\.setPosition\(record\.body, \{ x: record\.anchor\.x/);
+  // Releasing a card must not re-anchor it where it was dropped.
+  assert.doesNotMatch(physicsSource, /record\.anchor\.x = body\.position\.x/);
+  // No all-pairs spring: nothing pushes while the constellation is at rest.
+  assert.doesNotMatch(physicsSource, /restingDistance/);
+  assert.match(physicsSource, /if \(activeDrags === 0\) return displaced;/);
+});
+
+test("shrinks the desktop constellation until it fits one screen", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const fitSource = readFileSync(resolve("src/pages/useConstellationFit.js"), "utf8");
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  assert.match(routeSource, /useConstellationFit\(pageRef, physicsContainerRef\)/);
+  assert.match(routeSource, /<main ref=\{pageRef\} className="about-desk-page"/);
+  assert.match(fitSource, /page\.style\.setProperty\("--about-fit"/);
+  assert.match(fitSource, /page\.style\.setProperty\("--about-footer"/);
+  assert.match(styles, /transform:\s*scale\(var\(--about-fit, 1\)\)/);
+  assert.match(
+    styles,
+    /margin-bottom:\s*calc\(var\(--about-design-height\) \* \(var\(--about-fit, 1\) - 1\)\)/,
+  );
+  // The page fills the viewport on its own, so it has to hand the footer its room back.
+  assert.match(styles, /min-height:\s*calc\(100dvh - var\(--about-footer, 0px\)\)/);
 });
 
 test("about preview source eagerly loads image assets without hiding failed Genshin images", () => {

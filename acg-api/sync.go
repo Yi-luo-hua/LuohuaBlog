@@ -49,6 +49,18 @@ type radarItem struct {
 
 func startSyncLoops(db *sql.DB, cfg AppConfig, cacheDir string) {
 	bangumi := NewBangumiClient(cfg)
+	github := NewGithubClient(cfg)
+
+	// Deliberately outside runSyncJob: that lock serialises the heavy
+	// image-downloading syncs and simply drops whoever loses the race, which at
+	// boot was always this one. A single lightweight API call needs no lock.
+	go func() {
+		runGithubCommitSync(github)
+		t := time.NewTicker(30 * time.Minute)
+		for range t.C {
+			runGithubCommitSync(github)
+		}
+	}()
 
 	go func() {
 		runSyncJob("bangumi", func() {
