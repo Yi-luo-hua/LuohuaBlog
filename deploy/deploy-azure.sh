@@ -52,14 +52,17 @@ if [ ${#targets[@]} -eq 0 ]; then
   targets=(main blog api cos)
 fi
 
-# npm ci deletes node_modules outright, which Windows refuses while a dev
-# server still holds a native .node binding open. Catch that early.
+# npm ci deletes node_modules outright, which Windows refuses while a process
+# still holds a native .node binding open — it fails with a bare EPERM after
+# having already emptied the directory. Only the project whose modules are
+# locked matters, so check the port that project's dev server uses.
 check_no_dev_server() {
-  if command -v powershell.exe >/dev/null 2>&1 &&
-     powershell.exe -NoProfile -Command        "if (Get-NetTCPConnection -State Listen -LocalPort 5173 -ErrorAction SilentlyContinue) { exit 1 } else { exit 0 }"        >/dev/null 2>&1; then
+  local port="$1" project="$2"
+  command -v powershell.exe >/dev/null 2>&1 || return 0
+  if powershell.exe -NoProfile -Command        "if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) { exit 1 } else { exit 0 }"        >/dev/null 2>&1; then
     return 0
   fi
-  echo "a dev server is listening on 5173; stop it first (npm ci cannot replace locked files)" >&2
+  echo "a dev server is listening on $port; stop it before deploying $project (npm ci cannot replace locked files)" >&2
   exit 1
 }
 
@@ -84,7 +87,8 @@ upload_dir() {
 
 echo "==> deploying [${targets[*]}] to $DEPLOY_USER@$DEPLOY_HOST"
 
-if wants main || wants blog; then check_no_dev_server; fi
+if wants main; then check_no_dev_server 5173 "main"; fi
+if wants blog; then check_no_dev_server 4000 "blog"; fi
 
 if wants api; then
   echo "==> building acg-api (linux/amd64)"
