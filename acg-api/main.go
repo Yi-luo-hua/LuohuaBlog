@@ -67,7 +67,12 @@ func main() {
 	mux.HandleFunc("/api/v1/wallpapers/draw", wallpaperDrawHandler)
 	mux.HandleFunc("/api/v1/acg/image/", imageHandler)
 	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, _ *http.Request) {
+		// The shelf only needs a username; the token merely widens what is
+		// visible, so it is not what decides whether Bangumi is configured.
 		bangumiStatus := "not_configured"
+		if strings.TrimSpace(cfg.BangumiUsername) != "" {
+			bangumiStatus = "public"
+		}
 		if strings.TrimSpace(cfg.BangumiAccessToken) != "" {
 			bangumiStatus = "configured"
 		}
@@ -85,7 +90,8 @@ func main() {
 	mux.HandleFunc("/api/v1/sync/trigger", syncTriggerHandler(cfg))
 
 	deepseekReady := chatConfigured()
-	log.Printf("acg-api on %s | bangumi=%v | deepseek=%v\n", addr, strings.TrimSpace(cfg.BangumiAccessToken) != "", deepseekReady)
+	bangumiReady := strings.TrimSpace(cfg.BangumiUsername) != "" || strings.TrimSpace(cfg.BangumiAccessToken) != ""
+	log.Printf("acg-api on %s | bangumi=%v | deepseek=%v\n", addr, bangumiReady, deepseekReady)
 	log.Fatal(http.ListenAndServe(addr, withCORS(mux)))
 }
 

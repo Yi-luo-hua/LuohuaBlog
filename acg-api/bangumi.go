@@ -17,6 +17,7 @@ type BangumiClient struct {
 	httpClient *http.Client
 	baseURL    string
 	token      string
+	username   string
 }
 
 type bangumiUser struct {
@@ -68,6 +69,7 @@ func NewBangumiClient(cfg AppConfig) *BangumiClient {
 		httpClient: &http.Client{Timeout: bangumiHTTPTimeout()},
 		baseURL:    strings.TrimRight(cfg.BangumiAPIBaseURL, "/"),
 		token:      strings.TrimSpace(cfg.BangumiAccessToken),
+		username:   strings.TrimSpace(cfg.BangumiUsername),
 	}
 }
 
@@ -85,10 +87,10 @@ const (
 	bangumiCollectionWatching = 3
 )
 
-// FetchWatching returns the authenticated user's anime collections marked as
+// FetchWatching returns the shelf owner's anime collections marked as
 // "doing" (subject_type=2, collection type=3).
 func (c *BangumiClient) FetchWatching() ([]bangumiItem, error) {
-	username, err := c.currentUsername()
+	username, err := c.resolveUsername()
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +99,7 @@ func (c *BangumiClient) FetchWatching() ([]bangumiItem, error) {
 
 // FetchLibrary returns the three collections displayed by the site.
 func (c *BangumiClient) FetchLibrary() ([]bangumiItem, error) {
-	username, err := c.currentUsername()
+	username, err := c.resolveUsername()
 	if err != nil {
 		return nil, err
 	}
@@ -117,9 +119,31 @@ func (c *BangumiClient) FetchLibrary() ([]bangumiItem, error) {
 	return items, nil
 }
 
+// resolveUsername decides whose shelf to read.
+//
+// A collection listing is public on Bangumi, so displaying somebody's shelf
+// needs no credentials at all — only their username. The access token was
+// required for one reason: /v0/me was the only way the server learned which
+// username to ask for. Naming the account outright in BANGUMI_USERNAME skips
+// that lookup, which means the shelf works on a deployment that holds no
+// secrets. A token is still honoured when present, since it is what makes
+// collections marked private visible.
+func (c *BangumiClient) resolveUsername() (string, error) {
+	if c == nil {
+		return "", errors.New("Bangumi client is not configured")
+	}
+	if c.baseURL == "" {
+		return "", errors.New("Bangumi API base URL is empty")
+	}
+	if c.username != "" {
+		return c.username, nil
+	}
+	return c.currentUsername()
+}
+
 func (c *BangumiClient) currentUsername() (string, error) {
 	if c == nil || c.token == "" {
-		return "", errors.New("BANGUMI_ACCESS_TOKEN is not configured")
+		return "", errors.New("set BANGUMI_USERNAME, or BANGUMI_ACCESS_TOKEN to look it up")
 	}
 	if c.baseURL == "" {
 		return "", errors.New("Bangumi API base URL is empty")
@@ -210,7 +234,11 @@ func (c *BangumiClient) getJSON(path string, dst any) error {
 		return err
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	// Anonymous reads are the normal case now, and Bangumi rejects an
+	// Authorization header carrying an empty bearer token.
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
 	req.Header.Set("User-Agent", bangumiUA)
 
 	res, err := c.httpClient.Do(req)

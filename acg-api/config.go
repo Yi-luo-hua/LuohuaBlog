@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 // Bilibili sync targets (override via env if needed).
 var defaultConfig = AppConfig{
 	BilibiliUID: "1061280173",
@@ -21,6 +23,7 @@ type AppConfig struct {
 	BilibiliUID        string
 	RadarCreators      []RadarCreator
 	BangumiAccessToken string
+	BangumiUsername    string
 	BangumiAPIBaseURL  string
 	GithubLogin        string
 	GithubToken        string
@@ -33,6 +36,7 @@ func loadConfig() AppConfig {
 		cfg.BilibiliUID = v
 	}
 	cfg.BangumiAccessToken = env("BANGUMI_ACCESS_TOKEN", "")
+	cfg.BangumiUsername = strings.TrimSpace(env("BANGUMI_USERNAME", ""))
 	cfg.BangumiAPIBaseURL = env("BANGUMI_API_BASE_URL", "https://api.bgm.tv")
 	cfg.GithubLogin = env("GITHUB_ACTIVITY_LOGIN", defaultConfig.GithubLogin)
 	// Only public commit data is read, so a token is optional; it exists purely

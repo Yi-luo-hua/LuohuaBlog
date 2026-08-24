@@ -142,9 +142,88 @@ func TestBangumiFetchLibraryLoadsThreeCollectionTypes(t *testing.T) {
 	}
 }
 
-func TestBangumiFetchWatchingRequiresServerSideToken(t *testing.T) {
+func TestBangumiFetchWatchingNeedsAUsernameOrAToken(t *testing.T) {
 	client := NewBangumiClient(AppConfig{BangumiAPIBaseURL: "https://api.bgm.tv"})
 	if _, err := client.FetchWatching(); err == nil {
-		t.Fatal("expected missing-token error")
+		t.Fatal("expected an error when neither username nor token is set")
 	}
+}
+
+// A Bangumi collection listing is public, so a configured username is enough to
+// show the shelf. Requiring a token meant a deployment holding no secrets
+// displayed an empty shelf even though the data was there for the asking.
+func TestBangumiReadsPublicShelfWithoutAToken(t *testing.T) {
+	var sawAuthHeader bool
+	var meCalls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			sawAuthHeader = true
+		}
+		if r.URL.Path == "/v0/me" {
+			meCalls++
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if r.URL.Path != "/v0/users/936756/collections" {
+			t.Errorf("unexpected path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if r.URL.Query().Get("offset") != "0" {
+			writeTestJSON(w, `{"total":1,"limit":50,"offset":50,"data":[]}`)
+			return
+		}
+		writeTestJSON(w, `{"total":1,"limit":50,"offset":0,"data":[
+			{"subject_id":1,"subject":{"id":1,"name":"碧蓝之海","name_cn":"碧蓝之海","images":{"large":"http://img/1.jpg"}}}
+		]}`)
+	}))
+	defer server.Close()
+
+	client := NewBangumiClient(AppConfig{
+		BangumiAPIBaseURL: server.URL,
+		BangumiUsername:   "936756",
+	})
+	items, err := client.FetchWatching()
+	if err != nil {
+		t.Fatalf("FetchWatching with only a username: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+	if meCalls != 0 {
+		t.Fatalf("a configured username must skip the /v0/me lookup, saw %d calls", meCalls)
+	}
+	// Bangumi rejects a bearer header carrying an empty token, so an anonymous
+	// request must not send one at all.
+	if sawAuthHeader {
+		t.Fatal("no Authorization header should be sent when there is no token")
+	}
+}
+
+// The token still matters: it is what makes private collections visible, so a
+// configured username must not stop it from being sent.
+func TestBangumiStillSendsTheTokenWhenBothAreConfigured(t *testing.T) {
+	var authorization string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authorization = r.Header.Get("Authorization")
+		writeTestJSON(w, `{"total":0,"limit":50,"offset":0,"data":[]}`)
+	}))
+	defer server.Close()
+
+	client := NewBangumiClient(AppConfig{
+		BangumiAPIBaseURL:  server.URL,
+		BangumiUsername:    "936756",
+		BangumiAccessToken: "secret-token",
+	})
+	if _, err := client.FetchWatching(); err != nil {
+		t.Fatalf("FetchWatching: %v", err)
+	}
+	if authorization != "Bearer secret-token" {
+		t.Fatalf("expected the token to be sent, got %q", authorization)
+	}
+}
+
+func writeTestJSON(w http.ResponseWriter, body string) {
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(body))
 }

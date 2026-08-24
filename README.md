@@ -66,7 +66,7 @@ Every secret lives on the server, never in this repository. Copy `acg-api/.env.e
 - **Mail** — `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_NOTIFY_TO` (use an app password, never the account password)
 - **Publishing** — `OWNER_PUBLISH_GITHUB_TOKEN`
 - **Storage** — `TENCENT_COS_SECRET_ID`, `TENCENT_COS_SECRET_KEY`, `TENCENT_COS_BUCKET`, `TENCENT_COS_REGION`
-- **Feeds** — `BANGUMI_ACCESS_TOKEN`, `GITHUB_ACTIVITY_LOGIN`, optional `GITHUB_ACTIVITY_TOKEN`
+- **Feeds** — `BANGUMI_USERNAME`, `GITHUB_ACTIVITY_LOGIN`; optional `BANGUMI_ACCESS_TOKEN` (only for private collections) and `GITHUB_ACTIVITY_TOKEN`
 - **Links in mail** — `SITE_PUBLIC_ORIGIN`, the origin notification mail links back to
 
 The frontend's own address comes from build-time variables, resolved in

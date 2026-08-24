@@ -63,7 +63,7 @@ POST 会把密码明文送上公网。所以注册、登录、留言、AI 请求
 - **邮件** —— `SMTP_HOST`、`SMTP_PORT`、`SMTP_USER`、`SMTP_PASS`、`MAIL_NOTIFY_TO`（用授权码，别用账号密码）
 - **发布** —— `OWNER_PUBLISH_GITHUB_TOKEN`
 - **对象存储** —— `TENCENT_COS_SECRET_ID`、`TENCENT_COS_SECRET_KEY`、`TENCENT_COS_BUCKET`、`TENCENT_COS_REGION`
-- **数据源** —— `BANGUMI_ACCESS_TOKEN`、`GITHUB_ACTIVITY_LOGIN`，可选 `GITHUB_ACTIVITY_TOKEN`
+- **数据源** —— `BANGUMI_USERNAME`、`GITHUB_ACTIVITY_LOGIN`；可选 `BANGUMI_ACCESS_TOKEN`（仅用于私有收藏）和 `GITHUB_ACTIVITY_TOKEN`
 - **邮件里的链接** —— `SITE_PUBLIC_ORIGIN`，通知邮件回链使用的源
 
 前端自身的地址由构建期变量决定，统一在 `main/src/lib/siteIdentity.js` 里解析：

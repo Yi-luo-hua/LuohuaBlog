@@ -162,15 +162,20 @@ ACG_DATA_DIR=/var/lib/acg-api
 ACG_ALLOWED_ORIGINS=http://65.52.160.147
 AUTH_COOKIE_SECURE=true
 GITHUB_ACTIVITY_LOGIN=Yi-luo-hua
+BANGUMI_USERNAME=936756
 SERVER_VENDOR=Microsoft Azure
 SERVER_REGION=East Asia - Hong Kong
 ```
+
+`BANGUMI_USERNAME` 不是密钥。Bangumi 的收藏列表是公开的，只要知道用户名就能读，
+所以番剧页在一个不存放任何密钥的部署上也能正常显示（当前 248 条）。
+`BANGUMI_ACCESS_TOKEN` 仍然可选，作用是让标记为私有的收藏也可见。
 
 后端构建绝对链接（目前只有通知邮件里的回链）时读 `SITE_PUBLIC_ORIGIN`；没设置就回退到
 `ACG_ALLOWED_ORIGINS` 的第一项，所以现在不配也是对的。换域名时改 `ACG_ALLOWED_ORIGINS`
 即可，两者会一起跟上。
 
-真实密钥尚未配置，因此 Bangumi 私有数据同步、AI、邮件通知、站长登录、GitHub 发布和 COS 管理能力会处于未配置或降级状态。需要配置时，以 `acg-api/.env.example` 为变量名清单，只在服务器 `/opt/acg-api/.env` 中写真实值，禁止写入仓库或聊天记录。
+真实密钥尚未配置，因此 AI、邮件通知、站长登录、GitHub 发布和 COS 管理能力会处于未配置或降级状态。需要配置时，以 `acg-api/.env.example` 为变量名清单，只在服务器 `/opt/acg-api/.env` 中写真实值，禁止写入仓库或聊天记录。
 
 修改服务器环境后：
 
