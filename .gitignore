@@ -39,6 +39,11 @@ blog/db.json
 
 # Playwright run artifacts (traces, screenshots) from local debugging.
 output/
+
+# Claude Code worktrees. One of these was committed as a bare gitlink with no
+# .gitmodules entry, which made every CI checkout fail its submodule step with
+# "No url found for submodule path".
+.claude/worktrees/
 build/cos_upload.py
 acg-api/data/
 acg-api/acg-api
