@@ -63,7 +63,14 @@ timer 每五分钟拉取一次 `master`，重建所有子项目并重启服务�
 - **对象存储** —— `TENCENT_COS_SECRET_ID`、`TENCENT_COS_SECRET_KEY`、`TENCENT_COS_BUCKET`、`TENCENT_COS_REGION`
 - **数据源** —— `BANGUMI_ACCESS_TOKEN`、`GITHUB_ACTIVITY_LOGIN`，可选 `GITHUB_ACTIVITY_TOKEN`
 
-生产构建需要把 `VITE_API_BASE` 指向部署域名。
+前端自身的地址目前也还是 `example.com` 占位。构建时用下面几个变量覆盖，或者直接改
+`main/src/lib/siteIdentity.js` 里的默认值：
+
+- `VITE_API_BASE` —— 浏览器请求 `/api` 的源
+- `VITE_SITE_HOST` —— 站点公开域名，如 `yourdomain.com`
+- `VITE_SITE_APP_HOST` —— 站长 PWA 控制台的域名，默认为 `app.<VITE_SITE_HOST>`
+
+`blog/_config.yml` 里另有一个 `url:` 占位符，影响 sitemap 和 RSS。
 
 本仓库有意公开路由名、控制器结构和环境变量**名称**，但绝不包含站长密码、验证答案、各类 token、COS 密钥、AI 密钥、服务器凭据或运行时数据库。克隆者需自备。
 

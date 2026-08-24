@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { SITE_HOST } from "../lib/siteIdentity.js";
 import {
   PWA_AUTH_HOSTNAME,
   getAppAccessState,
@@ -13,8 +14,8 @@ import {
 
 test("requires owner login only on the PWA app host", () => {
   assert.equal(shouldRequireOwnerLogin({ hostname: PWA_AUTH_HOSTNAME }), true);
-  assert.equal(shouldRequireOwnerLogin({ hostname: "taozhiyy.top" }), false);
-  assert.equal(shouldRequireOwnerLogin({ hostname: "www.taozhiyy.top" }), false);
+  assert.equal(shouldRequireOwnerLogin({ hostname: SITE_HOST }), false);
+  assert.equal(shouldRequireOwnerLogin({ hostname: `www.${SITE_HOST}` }), false);
   assert.equal(shouldRequireOwnerLogin({ hostname: "localhost" }), false);
 });
 
@@ -37,7 +38,7 @@ test("allows only owner sessions to enter the PWA app", () => {
 test("keeps public site open while blocking non-owner app sessions", () => {
   assert.equal(
     getAppAccessState({
-      hostname: "taozhiyy.top",
+      hostname: SITE_HOST,
       auth: { loggedIn: false },
       isLoading: false,
     }),
@@ -99,7 +100,7 @@ test("opens the app console from the PWA host root only", () => {
     false,
   );
   assert.equal(
-    shouldOpenAppConsoleAtRoot({ hostname: "taozhiyy.top", pathname: "/" }),
+    shouldOpenAppConsoleAtRoot({ hostname: SITE_HOST, pathname: "/" }),
     false,
   );
   assert.equal(
@@ -113,6 +114,6 @@ test("exposes the app console only on the PWA host and local development", () =>
   assert.equal(shouldExposeAppConsole({ hostname: "localhost" }), true);
   assert.equal(shouldExposeAppConsole({ hostname: "127.0.0.1" }), true);
   assert.equal(shouldExposeAppConsole({ hostname: "::1" }), true);
-  assert.equal(shouldExposeAppConsole({ hostname: "taozhiyy.top" }), false);
-  assert.equal(shouldExposeAppConsole({ hostname: "www.taozhiyy.top" }), false);
+  assert.equal(shouldExposeAppConsole({ hostname: SITE_HOST }), false);
+  assert.equal(shouldExposeAppConsole({ hostname: `www.${SITE_HOST}` }), false);
 });

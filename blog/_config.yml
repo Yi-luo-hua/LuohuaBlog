@@ -12,8 +12,9 @@ language: zh-CN
 timezone: ''
 
 # URL
-## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: https://taozhiyy.top/blog
+## Placeholder until a domain is registered. Absolute links, the sitemap and
+## the RSS feed all derive from this, so set it before publishing anywhere.
+url: https://example.com/blog
 root: /blog/
 permalink: :year/:month/:day/:title/
 permalink_defaults:

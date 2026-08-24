@@ -22,7 +22,7 @@ test("rewrites direct COS URLs in the about preview to the same-origin proxy", (
 
 test("keeps the original about site thumbnails on the COS proxy", () => {
   const html = `
-    <img src="/cos/about-page/20260624/sites-taozhiyy-3616e0f19f.jpg" alt="taozhiyy.top">
+    <img src="/cos/about-page/20260624/sites-taozhiyy-3616e0f19f.jpg" alt="本站">
     <img src="/cos/about-page/20260624/sites-butterfly-3b2fb61396.jpg" alt="本站博客">
     <img src="/cos/about-page/20260624/sites-reimu-a3d1934027.jpg" alt="blog1-reimu.vercel.app">
     <img src="/cos/about-page/20260624/sites-tzyy11-41ead66835.jpg" alt="tzyy11.vercel.app">

@@ -16,6 +16,7 @@ import {
   uploadOwnerAsset,
 } from "../services/ownerApi";
 import { parseFriendQuickInput } from "../lib/friendQuickInput";
+import { SITE_ORIGIN } from "../lib/siteIdentity.js";
 import { ownerFriendPublishToast } from "../lib/ownerPublishMessages";
 import {
   buildMobileArticleDraft,
@@ -66,8 +67,8 @@ const defaultMobileMaterial =
 const defaultFriendLink = {
   name: "伊洛华",
   desc: "伊洛华的小屋",
-  url: "https://taozhiyy.top",
-  avatar: `https://taozhiyy.top${cosAsset("1.png")}`,
+  url: SITE_ORIGIN,
+  avatar: `${SITE_ORIGIN}${cosAsset("1.png")}`,
 };
 
 const defaultMoment = {
@@ -1502,7 +1503,7 @@ const AppConsolePage = () => {
                     <p>{friendDesc || "站点描述"}</p>
                   </div>
                 </div>
-                <p>{friendUrl || "https://taozhiyy.top"}</p>
+                <p>{friendUrl || SITE_ORIGIN}</p>
               </aside>
             </div>
           </section>

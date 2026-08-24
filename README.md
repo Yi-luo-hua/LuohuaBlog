@@ -64,7 +64,15 @@ Every secret lives on the server, never in this repository. Copy `acg-api/.env.e
 - **Storage** — `TENCENT_COS_SECRET_ID`, `TENCENT_COS_SECRET_KEY`, `TENCENT_COS_BUCKET`, `TENCENT_COS_REGION`
 - **Feeds** — `BANGUMI_ACCESS_TOKEN`, `GITHUB_ACTIVITY_LOGIN`, optional `GITHUB_ACTIVITY_TOKEN`
 
-The frontend needs `VITE_API_BASE` pointed at the deployed origin in production builds.
+The frontend also needs its own address, which is still a placeholder on
+`example.com`. Set these at build time, or edit the fallbacks in
+`main/src/lib/siteIdentity.js`:
+
+- `VITE_API_BASE` — origin the browser calls for `/api`
+- `VITE_SITE_HOST` — public host, e.g. `yourdomain.com`
+- `VITE_SITE_APP_HOST` — host that gates the owner PWA console, defaults to `app.<VITE_SITE_HOST>`
+
+`blog/_config.yml` carries its own `url:` placeholder for the sitemap and RSS feed.
 
 This repository intentionally exposes route names, controller structure, and environment variable *names*. It never contains the owner password, verification answer, tokens, COS keys, AI keys, server credentials, or the runtime database. Anyone cloning it must supply their own.
 

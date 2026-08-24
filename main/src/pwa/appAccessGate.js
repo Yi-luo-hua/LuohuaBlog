@@ -1,4 +1,6 @@
-export const PWA_AUTH_HOSTNAME = "app.taozhiyy.top";
+import { SITE_APP_HOST } from "../lib/siteIdentity.js";
+
+export const PWA_AUTH_HOSTNAME = SITE_APP_HOST;
 
 function isLocalhost(hostname = "") {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";

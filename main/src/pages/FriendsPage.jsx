@@ -4,12 +4,13 @@ import { FiCopy, FiExternalLink } from "react-icons/fi";
 import FriendsApplicationBoard from "../components/FriendsApplicationBoard";
 import { friendCards } from "../data/friendCards";
 import { cosAsset } from "../lib/cosAsset.js";
+import { SITE_ORIGIN } from "../lib/siteIdentity.js";
 
-const siteAvatarUrl = `https://taozhiyy.top${cosAsset("1.png")}`;
+const siteAvatarUrl = `${SITE_ORIGIN}${cosAsset("1.png")}`;
 
 const copyBlock = `name: 伊洛华
 desc: 伊洛华的小屋
-url: https://taozhiyy.top
+url: ${SITE_ORIGIN}
 avatar: ${siteAvatarUrl}`;
 
 const FriendsPage = () => {

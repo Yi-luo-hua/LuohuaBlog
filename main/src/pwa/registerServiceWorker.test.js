@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { SITE_HOST } from "../lib/siteIdentity.js";
+
 import {
   APP_PWA_HOSTNAME,
   getServiceWorkerUrl,
@@ -45,7 +47,7 @@ test("does not register on the public root domain", () => {
     shouldRegisterServiceWorker({
       isProduction: true,
       navigatorRef: { serviceWorker: {} },
-      windowRef: { location: { protocol: "https:", hostname: "taozhiyy.top" } },
+      windowRef: { location: { protocol: "https:", hostname: SITE_HOST } },
     }),
     false,
   );
@@ -66,7 +68,7 @@ test("exposes install metadata only on the app subdomain and local preview", () 
   );
   assert.equal(
     shouldExposePwaInstallMetadata({
-      windowRef: { location: { hostname: "taozhiyy.top" } },
+      windowRef: { location: { hostname: SITE_HOST } },
     }),
     false,
   );
@@ -76,7 +78,7 @@ test("removes existing service workers on the public root domain only", () => {
   assert.equal(
     shouldUnregisterServiceWorkers({
       navigatorRef: { serviceWorker: {} },
-      windowRef: { location: { hostname: "taozhiyy.top" } },
+      windowRef: { location: { hostname: SITE_HOST } },
     }),
     true,
   );
@@ -90,7 +92,7 @@ test("removes existing service workers on the public root domain only", () => {
   assert.equal(
     shouldUnregisterServiceWorkers({
       navigatorRef: {},
-      windowRef: { location: { hostname: "taozhiyy.top" } },
+      windowRef: { location: { hostname: SITE_HOST } },
     }),
     false,
   );

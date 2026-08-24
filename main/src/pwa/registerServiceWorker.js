@@ -1,4 +1,6 @@
-export const APP_PWA_HOSTNAME = "app.taozhiyy.top";
+import { SITE_APP_HOST } from "../lib/siteIdentity.js";
+
+export const APP_PWA_HOSTNAME = SITE_APP_HOST;
 
 export function getServiceWorkerUrl() {
   return "/sw.js";
