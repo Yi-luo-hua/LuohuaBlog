@@ -261,25 +261,15 @@ func bangumiListHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"items": items, "status": status, "counts": counts})
 }
 
-func radarFeedHandler(w http.ResponseWriter, _ *http.Request) {
-	items, err := listRadarFromDB(db)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, map[string]any{"items": items})
-}
-
 func imageHandler(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimPrefix(r.URL.Path, "/api/v1/acg/image/")
 	if !safeImageName(name) {
 		http.NotFound(w, r)
 		return
 	}
-	// Bilibili covers are immutable cached files (hashed names, replaced on
-	// re-sync). A long browser cache avoids refetching the same batch of
-	// covers every time the bili page is opened, which is the main cause of
-	// slow image loading when there are many cards.
+	// Cached cover files are immutable: the name embeds the subject id and the
+	// file is replaced wholesale on re-sync. A long browser cache is what keeps
+	// a shelf of two hundred cards from refetching every cover on each visit.
 	w.Header().Set("Cache-Control", "public, max-age=604800, immutable")
 	http.ServeFile(w, r, filepath.Join(cacheDir, name))
 }

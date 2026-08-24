@@ -73,22 +73,6 @@ func migrateAll(db *sql.DB) error {
 			repo_count INTEGER NOT NULL DEFAULT 0,
 			updated_at TEXT NOT NULL
 		);`,
-		`CREATE TABLE IF NOT EXISTS radar_creators (
-			uid TEXT PRIMARY KEY,
-			name TEXT NOT NULL,
-			enabled INTEGER NOT NULL DEFAULT 1
-		);`,
-		`CREATE TABLE IF NOT EXISTS radar_feed (
-			id TEXT PRIMARY KEY,
-			up_uid TEXT NOT NULL,
-			creator_name TEXT NOT NULL,
-			latest_text TEXT NOT NULL,
-			cover_path TEXT,
-			link_url TEXT,
-			is_new INTEGER NOT NULL DEFAULT 0,
-			published_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL
-		);`,
 		`CREATE TABLE IF NOT EXISTS ai_chat_quota (
 			identity_key TEXT NOT NULL,
 			quota_date TEXT NOT NULL,
@@ -293,20 +277,6 @@ func ensureColumn(db *sql.DB, table, column, colDef string) error {
 	return err
 }
 
-func upsertRadarCreators(db *sql.DB, creators []RadarCreator) error {
-	for _, c := range creators {
-		_, err := db.Exec(
-			`INSERT INTO radar_creators (uid, name, enabled) VALUES (?, ?, 1)
-			 ON CONFLICT(uid) DO UPDATE SET name=excluded.name`,
-			c.UID, c.Name,
-		)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // replaceGithubCommits swaps the cached commit list in one transaction so a
 // reader never sees a half-written list.
 func replaceGithubCommits(db *sql.DB, commits []githubCommit, repoCount int) error {
@@ -390,28 +360,6 @@ func replaceBangumiItems(db *sql.DB, items []bangumiItem) error {
 	return tx.Commit()
 }
 
-func upsertRadarFeed(db *sql.DB, item radarItem) error {
-	now := time.Now().UTC().Format(time.RFC3339)
-	isNew := 0
-	if item.IsNew {
-		isNew = 1
-	}
-	_, err := db.Exec(
-		`INSERT INTO radar_feed (id, up_uid, creator_name, latest_text, cover_path, link_url, is_new, published_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		 ON CONFLICT(id) DO UPDATE SET
-		   creator_name=excluded.creator_name,
-		   latest_text=excluded.latest_text,
-		   cover_path=excluded.cover_path,
-		   link_url=excluded.link_url,
-		   is_new=excluded.is_new,
-		   published_at=excluded.published_at,
-		   updated_at=excluded.updated_at`,
-		item.ID, item.UpUID, item.CreatorName, item.LatestText, item.CoverPath, item.LinkURL, isNew, item.PublishedAt, now,
-	)
-	return err
-}
-
 func listBangumiFromDB(db *sql.DB, collectionType int) ([]bangumiItem, error) {
 	rows, err := db.Query(
 		`SELECT id, title, original_title, summary, air_date, tags_json, collection_type, watched, total, latest_episode,
@@ -484,32 +432,4 @@ func bangumiStatusFromCollectionType(collectionType int) (string, bool) {
 	default:
 		return "", false
 	}
-}
-
-func listRadarFromDB(db *sql.DB) ([]radarItem, error) {
-	rows, err := db.Query(
-		`SELECT id, creator_name, latest_text, is_new, link_url, cover_path
-		 FROM radar_feed
-		 WHERE up_uid NOT LIKE 'seed_%'
-		 ORDER BY published_at DESC`,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []radarItem
-	for rows.Next() {
-		var it radarItem
-		var isNew int
-		var coverPath sql.NullString
-		if err := rows.Scan(&it.ID, &it.CreatorName, &it.LatestText, &isNew, &it.LinkURL, &coverPath); err != nil {
-			return nil, err
-		}
-		it.IsNew = isNew == 1
-		if coverPath.Valid && coverPath.String != "" {
-			it.CoverURL = "/api/v1/acg/image/" + coverPath.String
-		}
-		items = append(items, it)
-	}
-	return items, nil
 }

@@ -214,9 +214,15 @@ func (c *BangumiClient) fetchCollectionsForUser(username string, collectionType 
 				Score:          subject.Score,
 				MyRating:       collection.Rate,
 				Rank:           subject.Rank,
-				CoverURL:       firstBangumiImage(subject.Images.Large, subject.Images.Common, subject.Images.Medium, subject.Images.Small, subject.Images.Grid),
-				LinkURL:        fmt.Sprintf("https://bgm.tv/subject/%d", subject.ID),
-				UpdatedAt:      collection.UpdatedAt,
+				// Prefer the 400px "common" render over the full-size original.
+				// The shelf shows 3:4 posters a few hundred pixels wide, and the
+				// originals average ~320 KB against ~50 KB for common — on the
+				// 看过 tab that is the difference between roughly 64 MB and 10 MB
+				// of covers. Larger variants remain as fallbacks for the rare
+				// subject that has no common render.
+				CoverURL:  firstBangumiImage(subject.Images.Common, subject.Images.Medium, subject.Images.Large, subject.Images.Small, subject.Images.Grid),
+				LinkURL:   fmt.Sprintf("https://bgm.tv/subject/%d", subject.ID),
+				UpdatedAt: collection.UpdatedAt,
 			})
 		}
 

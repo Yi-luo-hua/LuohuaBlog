@@ -80,50 +80,6 @@ func TestMigrateAllAddsParentIDBeforeParentIndexForLegacyGuestbookMessages(t *te
 	}
 }
 
-func TestListRadarFromDBSkipsSeedRows(t *testing.T) {
-	testDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testDB.Close()
-
-	if err := migrateAll(testDB); err != nil {
-		t.Fatalf("migrateAll failed: %v", err)
-	}
-
-	if err := upsertRadarFeed(testDB, radarItem{
-		ID:          "seed_r1",
-		UpUID:       "seed_placeholder",
-		CreatorName: "UP · Placeholder",
-		LatestText:  "placeholder",
-		PublishedAt: "2026-06-06T00:00:00Z",
-	}); err != nil {
-		t.Fatalf("upsert seed radar item failed: %v", err)
-	}
-
-	if err := upsertRadarFeed(testDB, radarItem{
-		ID:          "r_real",
-		UpUID:       "517327498",
-		CreatorName: "UP · Real Creator",
-		LatestText:  "real update",
-		PublishedAt: "2026-06-06T01:00:00Z",
-	}); err != nil {
-		t.Fatalf("upsert real radar item failed: %v", err)
-	}
-
-	items, err := listRadarFromDB(testDB)
-	if err != nil {
-		t.Fatalf("listRadarFromDB failed: %v", err)
-	}
-
-	if len(items) != 1 {
-		t.Fatalf("expected only real radar items, got %d", len(items))
-	}
-	if items[0].CreatorName != "UP · Real Creator" {
-		t.Fatalf("expected real radar item to remain, got %q", items[0].CreatorName)
-	}
-}
-
 func TestMigrateAllCreatesOwnerDraftsTable(t *testing.T) {
 	testDB, err := sql.Open("sqlite", ":memory:")
 	if err != nil {

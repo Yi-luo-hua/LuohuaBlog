@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -33,18 +34,6 @@ type bangumiItem struct {
 	CoverPath      string   `json:"-"`
 	LinkURL        string   `json:"linkUrl,omitempty"`
 	UpdatedAt      string   `json:"updatedAt,omitempty"`
-}
-
-type radarItem struct {
-	ID          string `json:"id"`
-	UpUID       string `json:"-"`
-	CreatorName string `json:"creatorName"`
-	LatestText  string `json:"latestText"`
-	IsNew       bool   `json:"isNew"`
-	LinkURL     string `json:"linkUrl,omitempty"`
-	CoverURL    string `json:"coverUrl,omitempty"`
-	CoverPath   string `json:"-"`
-	PublishedAt string `json:"-"`
 }
 
 func startSyncLoops(db *sql.DB, cfg AppConfig, cacheDir string) {
@@ -117,47 +106,15 @@ func runBangumiSync(db *sql.DB, bangumi *BangumiClient, cacheDir string) {
 	log.Printf("sync: bangumi done (%d items)\n", len(items))
 }
 
-func runRadarSync(db *sql.DB, bili *BiliClient, cfg AppConfig, cacheDir string) {
-	log.Println("sync: radar start")
-	now := time.Now()
-	synced := 0
-	for _, creator := range cfg.RadarCreators {
-		vid, err := bili.FetchLatestVideo(creator.UID)
-		if err != nil {
-			log.Println("sync: radar", creator.Name, err)
-			continue
-		}
-		published := time.Unix(vid.Created, 0)
-		isNew := now.Sub(published) <= 24*time.Hour
-		coverFile := ""
-		if vid.Pic != "" {
-			coverFile = "radar_" + creator.UID + ".jpg"
-			_ = downloadToCache(vid.Pic, filepath.Join(cacheDir, coverFile))
-		}
-		item := radarItem{
-			ID:          "r_" + creator.UID,
-			UpUID:       creator.UID,
-			CreatorName: "UP · " + creator.Name,
-			LatestText:  vid.Title,
-			IsNew:       isNew,
-			LinkURL:     vid.LinkURL,
-			CoverPath:   coverFile,
-			PublishedAt: published.UTC().Format(time.RFC3339),
-		}
-		if err := upsertRadarFeed(db, item); err != nil {
-			log.Println("sync: radar db", creator.Name, err)
-			continue
-		}
-		synced++
+// coverDownloadTimeout bounds a single cover fetch. It used to be borrowed
+// from the Bilibili client's timeout, which made the Bangumi cover sync depend
+// on a feature that no longer exists.
+func coverDownloadTimeout() time.Duration {
+	seconds, err := strconv.Atoi(env("COVER_TIMEOUT_SECONDS", "15"))
+	if err != nil || seconds < 1 || seconds > 120 {
+		seconds = 15
 	}
-	if synced > 0 {
-		_, _ = db.Exec(`DELETE FROM radar_feed WHERE id LIKE 'seed_%'`)
-	}
-	log.Println("sync: radar done")
-}
-
-func downloadToCache(remoteURL, dest string) error {
-	return downloadToCacheWithHeaders(remoteURL, dest, biliUA, "https://www.bilibili.com")
+	return time.Duration(seconds) * time.Second
 }
 
 func downloadToCacheWithHeaders(remoteURL, dest, userAgent, referer string) error {
@@ -175,7 +132,7 @@ func downloadToCacheWithHeaders(remoteURL, dest, userAgent, referer string) erro
 	if referer != "" {
 		req.Header.Set("Referer", referer)
 	}
-	client := &http.Client{Timeout: biliHTTPTimeout()}
+	client := &http.Client{Timeout: coverDownloadTimeout()}
 	res, err := client.Do(req)
 	if err != nil {
 		return err
