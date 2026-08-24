@@ -10,7 +10,7 @@ Run this from the UCloud web console, VNC, or SSH session:
 
 ```bash
 cd /tmp
-curl -fsSL https://raw.githubusercontent.com/bistutzyy/taozhiyy/master/deploy/install-pull-deploy.sh -o install-pull-deploy.sh
+curl -fsSL https://raw.githubusercontent.com/Yi-luo-hua/LuohuaBlog/master/deploy/install-pull-deploy.sh -o install-pull-deploy.sh
 sudo bash install-pull-deploy.sh
 ```
 
@@ -18,7 +18,7 @@ The installer:
 
 1. Installs required build tools, Node.js 20, Go 1.22, Git, rsync, and Python 3.
 2. Creates a system user named `taozhiyy-deploy`.
-3. Clones `https://github.com/bistutzyy/taozhiyy.git` to `/opt/taozhiyy-source`.
+3. Clones `https://github.com/Yi-luo-hua/LuohuaBlog.git` to `/opt/taozhiyy-source`.
 4. Gives `/opt/taozhiyy-source` to `taozhiyy-deploy`.
 5. Installs a root-owned deploy script at `/usr/local/sbin/taozhiyy-pull-deploy.sh`.
 6. Ensures `/opt/acg-api/.env` is owned by `root:root` and mode `600`.

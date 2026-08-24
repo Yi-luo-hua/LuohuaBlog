@@ -18,7 +18,7 @@ class BlogThemeCleanupTest(unittest.TestCase):
         mobile_sidebar = self.read("themes/butterfly/layout/includes/sidebar.pug")
         nav = self.read("themes/butterfly/layout/includes/header/nav.pug")
 
-        self.assertRegex(hexo_config, r"(?m)^author:\s*Taozhiyo\s*$")
+        self.assertRegex(hexo_config, r"(?m)^author:\s*Yi-luo-hua\s*$")
         self.assertNotRegex(hexo_config, r"(?m)^author:\s*bistutzyy\s*$")
 
         self.assertRegex(theme_config, r"(?m)^social:\s*false\s*$")

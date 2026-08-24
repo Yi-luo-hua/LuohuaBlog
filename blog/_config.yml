@@ -100,10 +100,11 @@ ignore:
 theme: butterfly
 
 # Deployment
-## Docs: https://hexo.io/docs/one-command-deployment
+## Unused: deploy/pull-deploy.sh builds this site and rsyncs it to the server.
+## `hexo deploy` is intentionally left unconfigured.
 deploy:
   type: git
-  repo: https://github.com/bistutzyy/bistutzyy.github.io
+  repo: ''
   branch: main
 search:
   path: search.xml

@@ -16,8 +16,8 @@ import (
 
 const (
 	ownerPublishDefaultAPIBase = "https://api.github.com"
-	ownerPublishDefaultOwner   = "bistutzyy"
-	ownerPublishDefaultRepo    = "taozhiyy"
+	ownerPublishDefaultOwner   = "Yi-luo-hua"
+	ownerPublishDefaultRepo    = "LuohuaBlog"
 	ownerPublishDefaultBranch  = "master"
 	ownerPublishPathPrefix     = "blog/source/_posts/"
 )

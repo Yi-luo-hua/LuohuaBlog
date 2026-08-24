@@ -492,9 +492,9 @@ search:
   # Docsearch
   # https://docsearch.algolia.com/
   docsearch:
-    appId: AVQAENZ4QB
-    apiKey: 1797494608c4d2e528b97d2fdc665c4b
-    indexName: bistutzyyio
+    appId:
+    apiKey:
+    indexName:
     option:
 
 # --------------------------------------
@@ -558,11 +558,11 @@ livere:
 # Gitalk
 # https://github.com/gitalk/gitalk
 gitalk:
-  client_id: Ov23lij7svHadoyycUv5
-  client_secret: Make sure to copy your new client secret now. You won’t be able to see it again
-  repo: https://github.com/bistutzyy/bistutzyy.github.io
-  owner: bistutzyy
-  admin: bistutzyy
+  client_id:
+  client_secret:
+  repo:
+  owner:
+  admin:
   option:
 
 # Valine

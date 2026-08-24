@@ -1,4 +1,4 @@
-module github.com/bistutzyy/taozhiyy/acg-api
+module github.com/Yi-luo-hua/LuohuaBlog/acg-api
 
 go 1.22
 

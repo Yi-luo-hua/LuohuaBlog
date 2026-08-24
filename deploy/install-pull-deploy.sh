@@ -2,7 +2,7 @@
 # Install pull-based Taozhiyy deployment on the UCloud host.
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/bistutzyy/taozhiyy.git}"
+REPO_URL="${REPO_URL:-https://github.com/Yi-luo-hua/LuohuaBlog.git}"
 REPO_DIR="${REPO_DIR:-/opt/taozhiyy-source}"
 BRANCH="${BRANCH:-master}"
 DEPLOY_USER="${DEPLOY_USER:-taozhiyy-deploy}"
