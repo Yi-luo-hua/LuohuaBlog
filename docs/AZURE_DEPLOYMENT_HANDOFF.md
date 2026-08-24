@@ -130,6 +130,35 @@ curl -fsS http://127.0.0.1/api/v1/health
 
 换服务器时记得把 `/var/www/luohua/cos/` 一起搬走——这些文件只在这台机器上，仓库里没有。
 
+## 5.1 压缩（改过 nginx.conf，不在仓库里）
+
+Ubuntu 自带的 `/etc/nginx/nginx.conf` 里只有 `gzip on;` 生效，`gzip_types` 和
+`gzip_proxied` 都是注释掉的。nginx 的 `gzip_types` 默认值只有 `text/html`，
+而不设 `gzip_proxied` 时反代响应（也就是所有 `/api/` 的 JSON）一律不压缩。
+结果是 CSS、JS 和所有接口返回都是明文全量传输。2026-08-25 已打开：
+
+```nginx
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 6;
+gzip_min_length 1024;
+gzip_types text/plain text/css application/json application/javascript
+           application/x-javascript text/xml application/xml
+           application/xml+rss text/javascript image/svg+xml
+           application/manifest+json;
+```
+
+实测效果：CSS 204 KB → 40 KB，JS 455 KB → 150 KB，番剧接口 159 KB → 55 KB。
+
+**这一改动在 `/etc/nginx/nginx.conf`，不在本仓库里**。重装系统或换服务器时
+要记得重新设一次，否则会静默地退回到全明文传输。验证：
+
+```bash
+curl -s -o /dev/null -D - -H "Accept-Encoding: gzip"   http://65.52.160.147/api/v1/bangumi/list?status=watched | grep -i content-encoding
+```
+
+备份在 `/etc/nginx/nginx.conf.bak-*`。
+
 ## 6. 无 HTTPS 时的临时安全限制
 
 目前只通过 `http://65.52.160.147` 提供服务，没有域名和 TLS 证书。为避免密码、登录 Cookie、留言内容或 AI 请求通过明文 HTTP 传输，Nginx 对 `/api/` 仅允许：
