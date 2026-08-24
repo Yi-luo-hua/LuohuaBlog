@@ -1,4 +1,4 @@
-name: Validate Taozhiyy
+name: Validate LuohuaBlog
 
 run-name: Validate ${{ github.sha }}
 
@@ -8,33 +8,26 @@ on:
     paths:
       - "main/**"
       - "blog/**"
-      - "build/**"
       - "acg-api/**"
       - "deploy/**"
-      - "shared/**"
       - ".github/workflows/deploy.yml"
   pull_request:
     paths:
       - "main/**"
       - "blog/**"
-      - "build/**"
       - "acg-api/**"
       - "deploy/**"
-      - "shared/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 concurrency:
-  group: taozhiyy-validate-${{ github.ref }}
+  group: luohuablog-validate-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-
-    env:
-      VITE_API_BASE: https://taozhiyy.top
 
     steps:
       - name: Checkout
@@ -50,7 +43,6 @@ jobs:
           cache-dependency-path: |
             main/package-lock.json
             blog/package-lock.json
-            build/package-lock.json
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -76,8 +68,6 @@ jobs:
           cd main
           npm ci
           npm run build
-        env:
-          VITE_API_BASE: ${{ env.VITE_API_BASE }}
 
       - name: Build blog
         run: |
@@ -86,8 +76,3 @@ jobs:
           npm run clean
           npm run build
 
-      - name: Build build site
-        run: |
-          cd build
-          npm ci
-          npm run build

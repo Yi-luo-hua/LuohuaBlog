@@ -2,7 +2,7 @@
 
 [中文说明](./README.zh-CN.md) | English
 
-The monorepo behind my personal site — main site, blog, build log, and the Go backend that serves them. Not deployed anywhere yet; see [Deployment](#deployment).
+The monorepo behind my personal site — main site, blog, and the Go backend that serves them. Live on an Azure VM; see [Deployment](#deployment).
 
 ## Layout
 
@@ -10,10 +10,9 @@ The monorepo behind my personal site — main site, blog, build log, and the Go 
 | --- | --- |
 | `main/` | Main site. React 18 + Vite + Tailwind + GSAP. |
 | `blog/` | Hexo + Butterfly blog, served at `/blog/`. |
-| `build/` | Build-log subsite recording how this site was made, served at `/build/`. |
 | `acg-api/` | Go + SQLite backend. Nginx exposes it as `/api`. |
 | `integrations/` | Obsidian → GitHub publishing bridge (MCP). |
-| `deploy/` | Pull-based deployment scripts and systemd units. |
+| `deploy/` | systemd units, Nginx snippets, and server install scripts. |
 | `tools/` | Python health-check and repo guard tests. |
 
 ## Running locally
@@ -30,13 +29,18 @@ The frontend proxies `/api` to `127.0.0.1:8787`, so start the backend first if y
 
 ## Deployment
 
-Nothing here is deployed yet — this repository is developed and run locally.
+The site runs on an Azure for Students VM in East Asia and is reachable over
+plain HTTP at its public IP. There is no domain and no TLS certificate yet, so
+Nginx answers `/api/` for `GET`, `HEAD` and `OPTIONS` only and rejects every
+write with `403`. That is deliberate: without HTTPS, a login POST would put a
+password on the wire in clear text. Registration, login, the guestbook, AI
+requests, and owner publishing therefore stay switched off until a domain and a
+certificate are in place.
 
-`deploy/` carries a pull-based setup inherited from the template: a host clones
-this repository, a systemd timer fetches `master` every five minutes, rebuilds
-every subproject and restarts the service. It is written for a server that does
-not exist yet. Before using it, set your own host, domain and `REPO_URL`; see
-[deploy/PULL_BASED_DEPLOY.md](./deploy/PULL_BASED_DEPLOY.md).
+Deployment is a manual build-and-upload, not a timer — there is no automatic
+pull. [docs/AZURE_DEPLOYMENT_HANDOFF.md](./docs/AZURE_DEPLOYMENT_HANDOFF.md)
+carries the host details, directory layout, service names, and the order to
+follow when the domain arrives.
 
 ## Backend surface
 
@@ -63,16 +67,20 @@ Every secret lives on the server, never in this repository. Copy `acg-api/.env.e
 - **Publishing** — `OWNER_PUBLISH_GITHUB_TOKEN`
 - **Storage** — `TENCENT_COS_SECRET_ID`, `TENCENT_COS_SECRET_KEY`, `TENCENT_COS_BUCKET`, `TENCENT_COS_REGION`
 - **Feeds** — `BANGUMI_ACCESS_TOKEN`, `GITHUB_ACTIVITY_LOGIN`, optional `GITHUB_ACTIVITY_TOKEN`
+- **Links in mail** — `SITE_PUBLIC_ORIGIN`, the origin notification mail links back to
 
-The frontend also needs its own address, which is still a placeholder on
-`example.com`. Set these at build time, or edit the fallbacks in
+The frontend's own address comes from build-time variables, resolved in
 `main/src/lib/siteIdentity.js`:
 
-- `VITE_API_BASE` — origin the browser calls for `/api`
-- `VITE_SITE_HOST` — public host, e.g. `yourdomain.com`
+- `VITE_API_BASE` — origin the browser calls for `/api`; leave empty for same-origin
+- `VITE_SITE_HOST` — public host, e.g. `yourdomain.com` (defaults to `example.com`)
 - `VITE_SITE_APP_HOST` — host that gates the owner PWA console, defaults to `app.<VITE_SITE_HOST>`
+- `VITE_SITE_PROTOCOL` — only to override the scheme; by default a bare IP or
+  `localhost` resolves to `http` and a domain name to `https`, so an IP-hosted
+  build needs no post-build patching
 
-`blog/_config.yml` carries its own `url:` placeholder for the sitemap and RSS feed.
+`blog/_config.yml` carries its own `url:` for the sitemap and RSS feed; change it
+alongside `VITE_SITE_HOST`.
 
 This repository intentionally exposes route names, controller structure, and environment variable *names*. It never contains the owner password, verification answer, tokens, COS keys, AI keys, server credentials, or the runtime database. Anyone cloning it must supply their own.
 

@@ -31,19 +31,6 @@ const footerThemes = {
     icon: "text-[#2D2A3A] hover:text-[#7C5CFF]",
     tip: "border border-[#E8DFFB] bg-white/95 text-[#2D2A3A]",
   },
-  ai: {
-    shell: "border-t border-[#F2E6C9] bg-[#FFF8E7] text-[#2B2B2B]",
-    copy: "text-[#6B7280]",
-    icon: "text-[#2B2B2B] hover:text-[#FF8FAB]",
-    tip: "border border-[#F2E6C9] bg-white text-[#2B2B2B]",
-  },
-  friends: {
-    shell:
-      "border-t border-[#F2E6C9] bg-gradient-to-r from-[#FFF7ED] via-[#FFFDF7] to-[#EEF7FF] text-[#2B2B2B]",
-    copy: "text-[#6B7280]",
-    icon: "text-[#5F4B52] hover:text-[#74C0FC]",
-    tip: "border border-[#F2E6C9] bg-[#FFFEFA]/95 text-[#5F4B52]",
-  },
   moments: {
     shell:
       "border-t border-[#E8DFFB] bg-gradient-to-r from-[#FFFDFD] via-[#FFF4F8] to-[#F1FFFC] text-[#4A4456]",
@@ -58,13 +45,9 @@ const Footer = () => {
   const variant =
     pathname.startsWith("/bangumi") || pathname.startsWith("/bili")
       ? "bili"
-      : pathname.startsWith("/ai-traffic")
-        ? "ai"
-        : pathname.startsWith("/friends")
-          ? "friends"
-          : pathname.startsWith("/moments")
-            ? "moments"
-            : "default";
+      : pathname.startsWith("/moments")
+        ? "moments"
+        : "default";
   const theme = footerThemes[variant];
 
   return (

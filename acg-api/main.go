@@ -397,8 +397,22 @@ func allowedCORSOrigin(origin string) string {
 	return ""
 }
 
+// sitePublicOrigin is the scheme+host this deployment is reachable at, used
+// wherever the backend has to build an absolute link back to the site. Empty
+// when nothing is configured, which yields root-relative links rather than a
+// confidently wrong absolute one.
+func sitePublicOrigin() string {
+	if v := strings.TrimSpace(env("SITE_PUBLIC_ORIGIN", "")); v != "" {
+		return strings.TrimRight(v, "/")
+	}
+	if origins := configuredCORSOrigins(); len(origins) > 0 {
+		return strings.TrimRight(origins[0], "/")
+	}
+	return ""
+}
+
 func configuredCORSOrigins() []string {
-	raw := strings.TrimSpace(env("ACG_ALLOWED_ORIGINS", "https://taozhiyy.top,https://www.taozhiyy.top,http://localhost:5173,http://127.0.0.1:5173"))
+	raw := strings.TrimSpace(env("ACG_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"))
 	if raw == "" {
 		return nil
 	}

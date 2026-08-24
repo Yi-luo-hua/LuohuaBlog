@@ -45,10 +45,13 @@ export default defineConfig({
         target: "http://127.0.0.1:8787",
         changeOrigin: true,
       },
+      // Media used to be proxied straight to the template author's Tencent COS
+      // bucket. Production now serves /cos/ from its own disk, so dev borrows it
+      // from production instead — same files, and no third-party bucket left in
+      // the loop. Point VITE_COS_ORIGIN somewhere else to override.
       "/cos": {
-        target: "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com",
+        target: process.env.VITE_COS_ORIGIN || "http://65.52.160.147",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/cos/, ""),
       },
     },
   },

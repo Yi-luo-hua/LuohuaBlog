@@ -32,7 +32,7 @@ const (
 	githubRepoScanLimit   = 6
 	githubPerRepoCommits  = 5
 	githubCommitKeep      = 12
-	githubUserAgent       = "taozhiyy-site/1.0"
+	githubUserAgent       = "LuohuaBlog-site/1.0"
 )
 
 type githubCommit struct {

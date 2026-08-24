@@ -2,7 +2,7 @@
 
 中文说明 | [English](./README.md)
 
-我的个人网站的 monorepo —— 主站、博客、建站日志，以及支撑它们的 Go 后端。目前尚未部署，见下方[部署](#部署)一节。
+我的个人网站的 monorepo —— 主站、博客，以及支撑它们的 Go 后端。已部署在 Azure 虚拟机上，见下方[部署](#部署)一节。
 
 ## 目录结构
 
@@ -10,10 +10,9 @@
 | --- | --- |
 | `main/` | 主站。React 18 + Vite + Tailwind + GSAP。 |
 | `blog/` | Hexo + Butterfly 博客，挂在 `/blog/`。 |
-| `build/` | 建站日志子站，记录这个站是怎么搭起来的，挂在 `/build/`。 |
 | `acg-api/` | Go + SQLite 后端，Nginx 反代为 `/api`。 |
 | `integrations/` | Obsidian → GitHub 发布桥（MCP）。 |
-| `deploy/` | 拉取式部署脚本与 systemd 单元。 |
+| `deploy/` | systemd 单元、Nginx 片段与服务器安装脚本。 |
 | `tools/` | Python 健康检查与仓库守卫测试。 |
 
 ## 本地运行
@@ -30,12 +29,15 @@ cd main && npm install && npm run dev
 
 ## 部署
 
-目前**尚未部署到任何地方**，这个仓库只在本地开发运行。
+站点跑在 Azure for Students 的虚拟机上（East Asia），通过公网 IP 以明文 HTTP
+提供服务。目前还没有域名和 TLS 证书，因此 Nginx 对 `/api/` 只放行 `GET`、`HEAD`
+和 `OPTIONS`，所有写请求一律返回 `403`。这是有意为之：没有 HTTPS 时，一次登录
+POST 会把密码明文送上公网。所以注册、登录、留言、AI 请求和站长发布在拿到域名和
+证书之前都是关着的。
 
-`deploy/` 下是从模板继承来的一套拉取式部署方案：一台主机克隆本仓库，systemd
-timer 每五分钟拉取一次 `master`，重建所有子项目并重启服务。它是为一台还不存在的
-服务器写的。真正启用前需要换成你自己的主机、域名和 `REPO_URL`，详见
-[deploy/PULL_BASED_DEPLOY.md](./deploy/PULL_BASED_DEPLOY.md)。
+部署方式是手工构建后上传，不是定时拉取，也没有启用自动部署。主机信息、目录结构、
+服务名以及拿到域名后的迁移顺序，都在
+[docs/AZURE_DEPLOYMENT_HANDOFF.md](./docs/AZURE_DEPLOYMENT_HANDOFF.md)。
 
 ## 后端接口
 
@@ -62,15 +64,18 @@ timer 每五分钟拉取一次 `master`，重建所有子项目并重启服务�
 - **发布** —— `OWNER_PUBLISH_GITHUB_TOKEN`
 - **对象存储** —— `TENCENT_COS_SECRET_ID`、`TENCENT_COS_SECRET_KEY`、`TENCENT_COS_BUCKET`、`TENCENT_COS_REGION`
 - **数据源** —— `BANGUMI_ACCESS_TOKEN`、`GITHUB_ACTIVITY_LOGIN`，可选 `GITHUB_ACTIVITY_TOKEN`
+- **邮件里的链接** —— `SITE_PUBLIC_ORIGIN`，通知邮件回链使用的源
 
-前端自身的地址目前也还是 `example.com` 占位。构建时用下面几个变量覆盖，或者直接改
-`main/src/lib/siteIdentity.js` 里的默认值：
+前端自身的地址由构建期变量决定，统一在 `main/src/lib/siteIdentity.js` 里解析：
 
-- `VITE_API_BASE` —— 浏览器请求 `/api` 的源
-- `VITE_SITE_HOST` —— 站点公开域名，如 `yourdomain.com`
+- `VITE_API_BASE` —— 浏览器请求 `/api` 的源；同源部署留空即可
+- `VITE_SITE_HOST` —— 站点公开域名，如 `yourdomain.com`（默认 `example.com`）
 - `VITE_SITE_APP_HOST` —— 站长 PWA 控制台的域名，默认为 `app.<VITE_SITE_HOST>`
+- `VITE_SITE_PROTOCOL` —— 仅用于覆盖协议；默认按主机推断：裸 IP 和 `localhost`
+  用 `http`，域名用 `https`，所以用 IP 部署时不需要再手工改构建产物
 
-`blog/_config.yml` 里另有一个 `url:` 占位符，影响 sitemap 和 RSS。
+`blog/_config.yml` 里的 `url:` 影响 sitemap 和 RSS，改域名时要和 `VITE_SITE_HOST`
+一起改。
 
 本仓库有意公开路由名、控制器结构和环境变量**名称**，但绝不包含站长密码、验证答案、各类 token、COS 密钥、AI 密钥、服务器凭据或运行时数据库。克隆者需自备。
 

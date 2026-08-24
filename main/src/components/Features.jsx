@@ -4,7 +4,7 @@ import LazyVideo from "./LazyVideo";
 import { cosAsset } from "../lib/cosAsset.js";
 
 const COS = cosAsset(
-  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main"
+  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main",
 );
 
 const ARCHIVE_ITEMS = [
@@ -26,22 +26,13 @@ const ARCHIVE_ITEMS = [
   },
   {
     index: "03",
-    title: "创造纪事",
-    subtitle: "进入实验室",
-    src: `${COS}/videos/feature-3.mp4`,
-    note: "记录这个网站从想法到落地的搭建过程，也把一路上的调整与打磨慢慢收进来。",
-    linkUrl: "/build/",
-    linkText: "进入实验室",
-  },
-  {
-    index: "04",
     title: "安静影像",
     subtitle: "片段四",
     src: `${COS}/videos/feature-4.mp4`,
     note: "一枚适合停下来多看一会儿的安静影像碎片。",
   },
   {
-    index: "05",
+    index: "04",
     title: "新的收藏正在路上",
     subtitle: "待续",
     src: `${COS}/videos/feature-5.mp4`,
@@ -64,7 +55,7 @@ export const ExhibitTilt = ({ children, className = "" }) => {
     const tiltY = (relativeX - 0.5) * -4;
 
     setTransformStyle(
-      `perspective(900px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-4px) scale3d(.985, .985, .985)`
+      `perspective(900px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-4px) scale3d(.985, .985, .985)`,
     );
   };
 
@@ -83,6 +74,7 @@ export const ExhibitTilt = ({ children, className = "" }) => {
 
 export const ExhibitCard = ({
   src,
+  poster,
   index,
   label,
   title,
@@ -95,7 +87,7 @@ export const ExhibitCard = ({
   if (visualOnly) {
     return (
       <div className="group relative size-full overflow-hidden">
-        <LazyVideo src={src} priority={videoPriority} />
+        <LazyVideo src={src} poster={poster} priority={videoPriority} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10" />
         {(label || index) && (
           <div className="pointer-events-none absolute left-5 top-5 rounded-full border border-white/20 bg-white/12 px-4 py-2 font-general text-[10px] uppercase tracking-[0.35em] text-blue-50/80 backdrop-blur-md">
@@ -123,7 +115,7 @@ export const ExhibitCard = ({
       {...linkAttributes}
     >
       <div className="absolute inset-0 z-0">
-        <LazyVideo src={src} priority={videoPriority} />
+        <LazyVideo src={src} poster={poster} priority={videoPriority} />
       </div>
 
       <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-br from-black/20 via-black/5 to-[#160d14]/78" />
@@ -314,28 +306,17 @@ const Features = () => {
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   return (
-    <section id="features" className="bg-[linear-gradient(180deg,#fff8f1_0%,#ffeef5_46%,#f6fbff_100%)] pb-16 md:pb-52">
+    <section
+      id="features"
+      className="bg-[linear-gradient(180deg,#fff8f1_0%,#ffeef5_46%,#f6fbff_100%)] pb-16 md:pb-52"
+    >
       <ArchiveBook open={archiveOpen} onClose={() => setArchiveOpen(false)} />
 
-      <div className="container mx-auto px-3 md:px-10">
-        <div className="features-intro px-5 py-20 text-[#241322] md:py-24">
-          <p className="font-general text-xs tracking-[0.38em] text-[#b76e79]">
-            伊洛华的收藏室 · 2026
-          </p>
-          <div className="mt-7 grid gap-8 border-t border-[#cfaeba]/50 pt-8 md:grid-cols-[1.2fr_0.8fr] md:items-end">
-            <h2 className="max-w-4xl text-[clamp(2.75rem,5.5vw,5.5rem)] font-black leading-[1.1] tracking-[-0.045em]">
-              去看看，<br />我留下的世界
-            </h2>
-            <p className="max-w-md text-base leading-relaxed text-[#5f4b52] md:justify-self-end md:text-lg">
-              动画、照片、项目与生活片段，都被安静地收藏在这里。挑一扇门，继续认识伊洛华吧。
-            </p>
-          </div>
-        </div>
-
+      <div className="container mx-auto px-3 pt-8 md:px-10 md:pt-10">
         <ExhibitTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-[1.75rem] md:h-[65vh]">
           <ExhibitCard
-            src={`${COS}/videos/feature-1.mp4`}
-            label="御坂美琴 · 固定放映"
+            src="/media/feature-misaka-full-loop.mp4"
+            poster="/media/feature-misaka-full-loop.webp"
             videoPriority
             visualOnly
           />

@@ -92,8 +92,12 @@ test("keeps the local Vite server aligned with the production COS proxy path", (
   const viteConfig = readFileSync(resolve("vite.config.js"), "utf8");
 
   assert.match(viteConfig, /["']\/cos["']\s*:/);
-  assert.match(viteConfig, /tzyy-1330068502\.cos\.ap-beijing\.myqcloud\.com/);
-  assert.ok(viteConfig.includes('rewrite: (path) => path.replace(/^\\/cos/, "")'));
+
+  // Production serves /cos/ from its own disk now, so dev must not reach for
+  // the template author's bucket either — removing that dependency is the
+  // whole point. No rewrite either: the path is identical on both sides.
+  assert.doesNotMatch(viteConfig, /tzyy-1330068502/);
+  assert.match(viteConfig, /VITE_COS_ORIGIN/);
 });
 
 test("renders the about route as a native React dashboard", () => {

@@ -31,6 +31,14 @@ main/public/**
 **/.cache/
 cos_upload.py
 blog/cos_upload.py
+
+# Hexo's generation cache. It is rewritten by every `hexo generate`, so tracking
+# it makes a one-line content change look like a whole-file diff and puts build
+# noise in every deploy commit.
+blog/db.json
+
+# Playwright run artifacts (traces, screenshots) from local debugging.
+output/
 build/cos_upload.py
 acg-api/data/
 acg-api/acg-api

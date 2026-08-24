@@ -548,13 +548,16 @@ func guestbookChannelName(channel string) string {
 	}
 }
 
+// guestbookChannelURL builds the link that notification mail points back at.
+// The origin is never hardcoded: it follows SITE_PUBLIC_ORIGIN, falling back to
+// the first allowed CORS origin, so a deployment that moves to a new host (or
+// from an IP to a real domain) does not keep mailing out the previous address.
 func guestbookChannelURL(channel string) string {
-	switch channel {
-	case guestbookChannelLink:
-		return "https://taozhiyy.top/friends"
-	default:
-		return "https://taozhiyy.top/guestbook"
+	path := "/guestbook"
+	if channel == guestbookChannelLink {
+		path = "/friends"
 	}
+	return sitePublicOrigin() + path
 }
 
 func guestbookParentExists(parentID int64, admin bool, channel string) bool {
