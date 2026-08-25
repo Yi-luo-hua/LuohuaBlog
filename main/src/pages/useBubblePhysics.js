@@ -24,6 +24,20 @@ const clamp = (value, minimum, maximum) =>
 
 const magnitude = (x, y) => Math.sqrt(x * x + y * y) || 0.0001;
 
+const layoutOffsetWithin = (element, container) => {
+  let left = 0;
+  let top = 0;
+  let current = element;
+
+  while (current && current !== container) {
+    left += current.offsetLeft || 0;
+    top += current.offsetTop || 0;
+    current = current.offsetParent;
+  }
+
+  return { left, top };
+};
+
 const resetBubbleTransform = (element) => {
   element.style.removeProperty("--physics-x");
   element.style.removeProperty("--physics-y");
@@ -106,9 +120,10 @@ export const useBubblePhysics = (containerRef) => {
         // tilt, the pop animation nor the fit scale can inflate it.
         const visualWidth = Math.max(36, element.offsetWidth);
         const visualHeight = Math.max(36, element.offsetHeight);
+        const layoutOffset = layoutOffsetWithin(element, container);
         const origin = {
-          x: element.offsetLeft + visualWidth / 2,
-          y: element.offsetTop + visualHeight / 2,
+          x: layoutOffset.left + visualWidth / 2,
+          y: layoutOffset.top + visualHeight / 2,
         };
         const body = Bodies.rectangle(
           origin.x,

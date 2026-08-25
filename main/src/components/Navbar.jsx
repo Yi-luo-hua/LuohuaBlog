@@ -9,9 +9,7 @@ import { cosAsset } from "../lib/cosAsset.js";
 const navLinks = [
   { label: "HOME", to: "/", end: true },
   { label: "关于我", to: "/about", end: true },
-  { label: "相册集", to: "/gallery", end: true },
   { label: "博客", to: "/moments", end: true },
-  { label: "BANGUMI", to: "/bangumi", end: true },
 ];
 
 const DRAWER_MS = 220;
@@ -186,8 +184,6 @@ const NavBar = () => {
 
   const isLinkActive = (item) =>
     (item.to === "/" && pathname === "/") ||
-    (item.to === "/gallery" && isGalleryPage) ||
-    (item.to === "/bangumi" && isBangumiPage) ||
     (item.to === "/moments" && isMomentsPage) ||
     (item.to === "/about" && isAboutPage);
 

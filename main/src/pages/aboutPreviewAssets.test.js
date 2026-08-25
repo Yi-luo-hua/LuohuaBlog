@@ -121,6 +121,34 @@ test("keeps the compact about dashboard links and real music player wired", () =
   assert.match(routeSource, /audio\/loop\.mp3/);
   assert.match(routeSource, /我的相册/);
   assert.match(routeSource, /番剧收藏/);
+  assert.doesNotMatch(routeSource, /FiHeart|toggleLike|about-liked|about-like-count|data-physics-bubble="likes"/);
+});
+
+test("offers Pixiv and copyable email and QQ contacts in the social bubble", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+  const socialSource = routeSource.match(/<nav className="about-desk-social"[\s\S]*?<\/nav>/)?.[0] || "";
+
+  assert.match(socialSource, /href="https:\/\/github\.com\/Yi-luo-hua"/);
+  assert.match(socialSource, /href="https:\/\/space\.bilibili\.com\/313163065"/);
+  assert.match(routeSource, /https:\/\/www\.pixiv\.net\/users\/42846132/);
+  assert.match(routeSource, /akesakiko@gmail\.com/);
+  assert.match(routeSource, /3043882857/);
+  assert.match(routeSource, /copyTextToClipboard\(value\)/);
+  assert.match(routeSource, /\$\{label\}已复制到剪贴板/);
+  assert.match(routeSource, /role="status"/);
+  assert.match(routeSource, /aria-live="polite"/);
+  assert.doesNotMatch(routeSource, /<nav data-physics-bubble="social"/);
+  assert.match(routeSource, /data-physics-bubble="github"/);
+  assert.match(routeSource, /data-physics-bubble="bilibili"/);
+  assert.doesNotMatch(routeSource, /data-physics-bubble="moments"/);
+  assert.match(routeSource, /data-physics-bubble="pixiv"/);
+  assert.match(routeSource, /data-physics-bubble="email"/);
+  assert.match(routeSource, /data-physics-bubble="qq"/);
+  assert.doesNotMatch(socialSource, /to="\/moments"/);
+  assert.doesNotMatch(socialSource, />\s*(?:GitHub|Bilibili|Pixiv|邮箱|QQ)\s*</);
+  assert.match(styles, /\.about-desk-social \.is-pixiv/);
+  assert.match(styles, /\.about-desk-social-toast\.is-visible/);
 });
 
 test("stages the about bubbles with the reference-style pop sequence", () => {
@@ -221,13 +249,14 @@ test("wires every desktop bubble into the elastic drag physics layer", () => {
   const physicsSource = readFileSync(resolve("src/pages/useBubblePhysics.js"), "utf8");
   const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
 
-  assert.equal((routeSource.match(/data-physics-bubble=/g) || []).length, 11);
+  assert.equal((routeSource.match(/data-physics-bubble=/g) || []).length, 14);
   assert.match(routeSource, /useBubblePhysics\(physicsContainerRef\)/);
   assert.match(physicsSource, /import\("matter-js"\)/);
   assert.match(physicsSource, /Bodies\.rectangle/);
   assert.match(physicsSource, /Body\.setVelocity/);
   assert.match(physicsSource, /DRAG_PUSH_STIFFNESS/);
   assert.match(physicsSource, /DRAG_PUSH_CLEARANCE\s*=\s*16/);
+  assert.match(physicsSource, /layoutOffsetWithin\(element, container\)/);
   assert.match(physicsSource, /\(min-width: 1200px\)/);
   assert.match(physicsSource, /prefers-reduced-motion: reduce/);
   assert.match(styles, /translate:\s*var\(--physics-x[^;]+var\(--physics-y/);
@@ -253,8 +282,10 @@ test("drags a bubble under the cursor rather than snapping it to the centre", ()
   // The container rect goes stale as soon as the page scrolls.
   assert.match(physicsSource, /refreshViewportMetrics\(\);/);
   assert.match(physicsSource, /addEventListener\("scroll", refreshViewportMetrics/);
-  // Collision boxes must not pick up the resting tilt or the fit scale.
-  assert.match(physicsSource, /element\.offsetLeft \+ visualWidth \/ 2/);
+  // Collision boxes use layout offsets, including nested social bubbles, and
+  // must not pick up the resting tilt or the fit scale.
+  assert.match(physicsSource, /const layoutOffset = layoutOffsetWithin\(element, container\)/);
+  assert.match(physicsSource, /layoutOffset\.left \+ visualWidth \/ 2/);
   assert.doesNotMatch(physicsSource, /element\.getBoundingClientRect\(\)/);
 });
 

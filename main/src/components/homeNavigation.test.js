@@ -19,6 +19,15 @@ test("keeps the about entry in the top navbar", () => {
   assert.match(navbarSource, /\{\s*label:\s*"关于我",\s*to:\s*"\/about"/);
 });
 
+test("omits gallery and Bangumi from the top navbar only", () => {
+  const navbarSource = readSource("components/Navbar.jsx");
+  const navLinksSource = navbarSource.match(/const navLinks = \[([\s\S]*?)\];/)?.[1] || "";
+
+  assert.doesNotMatch(navLinksSource, /相册集|BANGUMI|\/gallery|\/bangumi/);
+  assert.match(navbarSource, /pathname\.startsWith\("\/gallery\/"\)/);
+  assert.match(navbarSource, /pathname\.startsWith\("\/bangumi\/"\)/);
+});
+
 test("registers the about page and project child route", () => {
   const appSource = readSource("App.jsx");
 

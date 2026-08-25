@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 import {
   FiArrowUpRight,
   FiBookOpen,
-  FiCamera,
   FiCode,
   FiFilm,
-  FiHeart,
   FiImage,
+  FiMail,
   FiMusic,
   FiPause,
   FiPlay,
@@ -15,14 +14,15 @@ import {
   FiSkipForward,
   FiVolume2,
 } from "react-icons/fi";
-import { FaGithub } from "react-icons/fa";
-import { SiBilibili } from "react-icons/si";
+import { FaGithub, FaQq } from "react-icons/fa";
+import { SiBilibili, SiPixiv } from "react-icons/si";
 
 import { blogPosts } from "virtual:blog-posts";
 import { FEATURED_PROJECT } from "../data/featuredProject.js";
 import { galleryAlbums } from "../data/galleryAlbums.js";
 import { API_BASE } from "../lib/apiBase.js";
 import { cosAsset } from "../lib/cosAsset.js";
+import { copyTextToClipboard } from "../lib/copyTextToClipboard.js";
 import { makePosterDataUri, resolveCoverSrc } from "../lib/posterPlaceholder.js";
 import { getBangumiCollection, getGithubCommits } from "../services/acgApi.js";
 import aboutFontsHref from "./aboutFonts.css?url";
@@ -47,6 +47,9 @@ const FALLBACK_POST = {
 
 const OWNER_NAME = "Yi-luo-hua";
 const GITHUB_PROFILE = "https://github.com/Yi-luo-hua";
+const PIXIV_PROFILE = "https://www.pixiv.net/users/42846132";
+const EMAIL_ADDRESS = "akesakiko@gmail.com";
+const QQ_NUMBER = "3043882857";
 const COMMIT_ROWS = 4;
 
 // Repos are shown by their short name; the owner prefix is the same on nearly
@@ -139,19 +142,14 @@ const AboutSitePage = () => {
   const audioRef = useRef(null);
   const pageRef = useRef(null);
   const physicsContainerRef = useRef(null);
+  const copyNoticeTimerRef = useRef(0);
   const [now, setNow] = useState(() => new Date());
   const [bangumi, setBangumi] = useState([]);
   const [commits, setCommits] = useState({ items: [], repoCount: 0, state: "loading" });
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [liked, setLiked] = useState(() =>
-    typeof window === "undefined" ? false : window.localStorage.getItem("about-liked") === "1",
-  );
-  const [likes, setLikes] = useState(() => {
-    if (typeof window === "undefined") return 21900;
-    return Number(window.localStorage.getItem("about-like-count")) || 21900;
-  });
+  const [copyNotice, setCopyNotice] = useState("");
 
   const latestPost = useMemo(
     () =>
@@ -165,6 +163,11 @@ const AboutSitePage = () => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(
+    () => () => window.clearTimeout(copyNoticeTimerRef.current),
+    [],
+  );
 
   useEffect(() => {
     let alive = true;
@@ -215,13 +218,15 @@ const AboutSitePage = () => {
     audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + offset));
   };
 
-  const toggleLike = () => {
-    const nextLiked = !liked;
-    const nextLikes = Math.max(0, likes + (nextLiked ? 1 : -1));
-    setLiked(nextLiked);
-    setLikes(nextLikes);
-    window.localStorage.setItem("about-liked", nextLiked ? "1" : "0");
-    window.localStorage.setItem("about-like-count", String(nextLikes));
+  const copyContact = async (label, value) => {
+    window.clearTimeout(copyNoticeTimerRef.current);
+    try {
+      await copyTextToClipboard(value);
+      setCopyNotice(`${label}已复制到剪贴板`);
+    } catch {
+      setCopyNotice(`复制失败，请手动复制：${value}`);
+    }
+    copyNoticeTimerRef.current = window.setTimeout(() => setCopyNotice(""), 2400);
   };
 
   const fallbackBangumi = HERO_IMAGES.map((cover, index) => ({
@@ -347,14 +352,43 @@ const AboutSitePage = () => {
           <FiArrowUpRight className="about-desk-corner-icon" aria-hidden="true" />
         </Link>
 
-        <nav data-physics-bubble="social" className="about-desk-social about-desk-enter" aria-label="社交链接">
-          <a href="https://github.com/Yi-luo-hua" target="_blank" rel="noreferrer">
-            <FaGithub aria-hidden="true" /> GitHub
+        <nav className="about-desk-social" aria-label="社交链接">
+          <a data-physics-bubble="github" className="about-desk-enter is-github" href="https://github.com/Yi-luo-hua" target="_blank" rel="noreferrer" aria-label="打开 GitHub 主页" title="GitHub">
+            <span className="about-desk-social-icon"><FaGithub aria-hidden="true" /></span>
           </a>
-          <a className="is-bilibili" href="https://space.bilibili.com/313163065" target="_blank" rel="noreferrer">
-            <SiBilibili aria-hidden="true" /> 哔哩哔哩
+          <a data-physics-bubble="bilibili" className="about-desk-enter is-bilibili" href="https://space.bilibili.com/313163065" target="_blank" rel="noreferrer" aria-label="打开 Bilibili 主页" title="Bilibili">
+            <span className="about-desk-social-icon"><SiBilibili aria-hidden="true" /></span>
           </a>
-          <Link to="/moments"><FiCamera aria-hidden="true" /> 动态</Link>
+          <a data-physics-bubble="pixiv" className="about-desk-enter is-pixiv" href={PIXIV_PROFILE} target="_blank" rel="noreferrer" aria-label="打开 Pixiv 主页" title="Pixiv">
+            <span className="about-desk-social-icon"><SiPixiv aria-hidden="true" /></span>
+          </a>
+          <button
+            data-physics-bubble="email"
+            className="about-desk-enter is-email"
+            type="button"
+            title={EMAIL_ADDRESS}
+            aria-label={`复制邮箱 ${EMAIL_ADDRESS}`}
+            onClick={() => copyContact("邮箱", EMAIL_ADDRESS)}
+          >
+            <span className="about-desk-social-icon"><FiMail aria-hidden="true" /></span>
+          </button>
+          <button
+            data-physics-bubble="qq"
+            className="about-desk-enter is-qq"
+            type="button"
+            title={`QQ ${QQ_NUMBER}`}
+            aria-label={`复制 QQ ${QQ_NUMBER}`}
+            onClick={() => copyContact("QQ", QQ_NUMBER)}
+          >
+            <span className="about-desk-social-icon"><FaQq aria-hidden="true" /></span>
+          </button>
+          <span
+            className={`about-desk-social-toast${copyNotice ? " is-visible" : ""}`}
+            role="status"
+            aria-live="polite"
+          >
+            {copyNotice}
+          </span>
         </nav>
 
         <a data-physics-bubble="latest" className="about-desk-card about-desk-latest about-desk-enter" href={latestPost.url}>
@@ -428,17 +462,6 @@ const AboutSitePage = () => {
           </div>
         </section>
 
-        <button
-          type="button"
-          data-physics-bubble="likes"
-          className={`about-desk-likes about-desk-enter${liked ? " is-liked" : ""}`}
-          onClick={toggleLike}
-          aria-pressed={liked}
-          aria-label={liked ? "取消喜欢这个网站" : "喜欢这个网站"}
-        >
-          <FiHeart aria-hidden="true" />
-          <span>{likes.toLocaleString("zh-CN")}</span>
-        </button>
       </div>
     </main>
   );
