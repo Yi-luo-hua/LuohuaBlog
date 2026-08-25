@@ -8677,21 +8677,28 @@ body {
   }
 }
 
-/* Cards surface softly from the top-left in water-like waves. */
+/* Cards surface softly from the top-left in water-like waves.
+
+   Deliberately opacity and transform only. This used to animate
+   `filter: blur(4px)` to 0 as well, and that single property was what made the
+   entrance stutter: opacity and transform are composited on the GPU without
+   repainting, while a blur has to re-rasterise the whole card every frame, and
+   because the radius keeps changing nothing can be cached between frames.
+
+   The about page's card entrance animates the same two cheap properties, moves
+   further, and feels noticeably smoother — that comparison is what pinned the
+   cost on the blur rather than on the amount of motion. */
 @keyframes bangumiCardRipple {
   0% {
     opacity: 0;
-    filter: blur(4px);
     transform: translate3d(var(--ripple-x), var(--ripple-y), 0) scale(0.94);
   }
   68% {
     opacity: 1;
-    filter: blur(0);
     transform: translate3d(0, 2px, 0) scale(1.006);
   }
   100% {
     opacity: 1;
-    filter: blur(0);
     transform: translate3d(0, 0, 0) scale(1);
   }
 }
@@ -8700,14 +8707,13 @@ body {
   transform-origin: center center;
   animation: bangumiCardRipple 920ms cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--ripple-delay);
-  will-change: filter, opacity, transform;
+  will-change: opacity, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .bangumi-card-ripple {
     animation: none;
     opacity: 1;
-    filter: none;
     transform: none;
   }
 }

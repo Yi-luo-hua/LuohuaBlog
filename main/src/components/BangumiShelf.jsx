@@ -90,7 +90,7 @@ const BangumiCard = ({ item, index, priority = false }) => {
   const hiddenTagCount = Math.max(0, tags.length - visibleTags.length);
 
   return (
-    <article className="group relative grid h-full overflow-hidden rounded-3xl border border-[#19324a]/10 bg-[#fffdf8]/85 shadow-[0_18px_45px_rgba(52,72,92,0.10)] backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(52,72,92,0.16)] sm:block">
+    <article className="group relative grid h-full overflow-hidden rounded-3xl border border-[#19324a]/10 bg-[#fffdf8]/85 shadow-[0_18px_45px_rgba(52,72,92,0.10)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(52,72,92,0.16)] sm:block">
       <div className="absolute left-3 top-3 z-10 rounded-full border border-white/70 bg-[#fffdf8]/85 px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-[#19324a]/70 backdrop-blur">
         {String(index + 1).padStart(2, "0")}
       </div>

@@ -220,6 +220,31 @@ test("keeps the quizcard showcase bounded on phone width", () => {
   );
 });
 
+test("animates the bangumi shelf entrance on compositor-only properties", () => {
+  const cssSource = readSource("index.css");
+  const shelfSource = readSource("components/BangumiShelf.jsx");
+  const keyframes = cssSource
+    .split("@keyframes bangumiCardRipple")[1]
+    .split(".bangumi-card-ripple")[0];
+
+  // opacity and transform are composited on the GPU; a blur has to
+  // re-rasterise the card every frame, and an animated radius cannot be
+  // cached. That one property is what made the entrance stutter.
+  assert.doesNotMatch(keyframes, /filter\s*:/);
+  assert.match(keyframes, /opacity\s*:/);
+  assert.match(keyframes, /transform\s*:/);
+  assert.doesNotMatch(cssSource, /will-change:\s*filter/);
+
+  // The card surface sits on a flat page background, so its backdrop-filter
+  // blurred nothing visible while costing a backdrop re-sample per card. The
+  // badges over the cover art keep theirs.
+  const cardSurface = shelfSource.slice(
+    shelfSource.indexOf("<article"),
+    shelfSource.indexOf("<article") + 400,
+  );
+  assert.doesNotMatch(cardSurface, /backdrop-blur/);
+});
+
 test("keeps quizcard settings actions safe for visitors", () => {
   const settingsSource = readSource("../public/web/settings.html");
 
