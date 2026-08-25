@@ -24,6 +24,7 @@ import { API_BASE } from "../lib/apiBase.js";
 import { cosAsset } from "../lib/cosAsset.js";
 import { makePosterDataUri, resolveCoverSrc } from "../lib/posterPlaceholder.js";
 import { getBangumiCollection, getGithubCommits } from "../services/acgApi.js";
+import aboutFontsHref from "./aboutFonts.css?url";
 import "./AboutSitePage.css";
 import { useBubblePhysics } from "./useBubblePhysics.js";
 import { useConstellationFit } from "./useConstellationFit.js";
@@ -122,7 +123,18 @@ const renderClockColon = () => (
   </span>
 );
 
+const useAboutFonts = () => {
+  useEffect(() => {
+    if (document.querySelector(`link[href="${aboutFontsHref}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = aboutFontsHref;
+    document.head.appendChild(link);
+  }, []);
+};
+
 const AboutSitePage = () => {
+  useAboutFonts();
   const audioRef = useRef(null);
   const pageRef = useRef(null);
   const physicsContainerRef = useRef(null);

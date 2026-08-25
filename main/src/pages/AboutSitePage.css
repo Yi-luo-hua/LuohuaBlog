@@ -28,7 +28,13 @@
     radial-gradient(circle at 17% 76%, rgba(225, 236, 136, .62), transparent 28rem),
     radial-gradient(circle at 73% 81%, rgba(96, 225, 197, .42), transparent 31rem),
     linear-gradient(180deg, #f4f5f4 0%, #eff6f2 56%, #edf4d8 100%);
-  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  /* Nunito first so the Latin comes from it and the Chinese falls through to
+     WenKai; both are declared in aboutFonts.css. WenKai ships Regular and
+     Medium only, and no-synthesis keeps the heavier weights in this file from
+     being smeared into a fake bold — they land on Medium instead. */
+  font-family: "Nunito", "LXGW WenKai", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-synthesis: none;
+  font-synthesis-weight: none;
 }
 
 .about-desk-page::before {
@@ -308,7 +314,7 @@
 .about-desk-greeting {
   margin: 0;
   color: #34605c;
-  font-family: "Gochi Hand", "PingFang SC", "Microsoft YaHei", cursive;
+  font-family: "Gochi Hand", "LXGW WenKai", "PingFang SC", "Microsoft YaHei", cursive;
   font-weight: 400;
   line-height: 1.25;
   animation: about-desk-copy .28s both;
