@@ -8691,7 +8691,7 @@ body {
 @keyframes bangumiCardRipple {
   0% {
     opacity: 0;
-    transform: translate3d(var(--ripple-x), var(--ripple-y), 0) scale(0.6);
+    transform: translate3d(var(--ripple-x), var(--ripple-y), 0) scale(0.75);
   }
   68% {
     opacity: 1;
@@ -8707,6 +8707,10 @@ body {
   /* Same spring the about board's cards enter on: an overshooting curve
      (the 1.32 control point carries it past 1 before it settles), a 0.72s
      duration, and a scale that starts small and rebounds through 1.045.
+     The start is 0.75 rather than the board's 0.6: the same drop looks
+     playful on a handful of scattered bubbles and frantic across a tight
+     grid of posters, so the shelf takes a shorter run-up into the same
+     spring.
      transform-origin sits slightly low, as it does there, so the rebound
      reads as weight settling rather than a uniform zoom.
 
