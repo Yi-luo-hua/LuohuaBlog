@@ -75,6 +75,16 @@ test("does not inject the legacy global blog assistant", () => {
   assert.equal(existsSync(new URL("../../../shared", import.meta.url)), false);
 });
 
+test("keeps a clear route from the standalone Hexo blog back to the main site", () => {
+  const blogConfig = read("../../../blog/_config.butterfly.yml");
+
+  assert.match(
+    blogConfig,
+    /主站:\s+https:\/\/yiluohua\.top\/\s+\|\|\s+fas fa-home/,
+  );
+  assert.match(blogConfig, /博客首页:\s+\/\s+\|\|\s+fas fa-blog/);
+});
+
 test("uses the 伊洛华 identity, Yi-luo-hua wordmark, and omits the network badge", () => {
   const html = read("../../index.html");
   const hero = read("./Hero.jsx");

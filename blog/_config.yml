@@ -16,7 +16,7 @@ timezone: ''
 ## the RSS feed all derive from this, so set it before publishing anywhere.
 # Absolute base for the sitemap and RSS feed. Change this together with
 # VITE_SITE_HOST once a real domain replaces the bare Azure IP.
-url: http://65.52.160.147/blog
+url: https://yiluohua.top/blog
 root: /blog/
 permalink: :year/:month/:day/:title/
 permalink_defaults:

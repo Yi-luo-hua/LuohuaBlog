@@ -17,7 +17,8 @@ nav:
   fixed: false
 
 menu:
-  Home: / || fas fa-home
+  主站: https://yiluohua.top/ || fas fa-home
+  博客首页: / || fas fa-blog
   Archives: /archives/ || fas fa-archive
   Tags: /tags/ || fas fa-tags
   Categories: /categories/ || fas fa-folder-open

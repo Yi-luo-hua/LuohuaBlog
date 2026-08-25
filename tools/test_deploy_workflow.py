@@ -9,6 +9,7 @@ subproject without touching production secrets.
 """
 
 from pathlib import Path
+import re
 import unittest
 
 
@@ -61,6 +62,22 @@ class DeployWorkflowTests(unittest.TestCase):
         self.assertIn("npm run build", text)
         self.assertIn("cd blog", text)
         self.assertIn("npm run clean", text)
+
+    def test_hexo_post_media_paths_do_not_duplicate_the_blog_root(self):
+        posts_dir = ROOT / "blog" / "source" / "_posts"
+        posts = list(posts_dir.glob("*.md"))
+
+        self.assertTrue(posts, "the Hexo blog should contain at least one post")
+        for post in posts:
+            text = post.read_text(encoding="utf-8")
+            self.assertNotIn(
+                "/blog/images/",
+                text,
+                f"{post.name} must use /images/... because Hexo root already adds /blog/",
+            )
+
+        cover = ROOT / "blog" / "source" / "images" / "2026" / "08" / "9a3db927692f-6a8b417000732-1787511152.webp"
+        self.assertTrue(cover.is_file(), "the blog test post cover must be versioned")
 
     def test_workflow_does_not_reference_the_deleted_build_subsite(self):
         text = WORKFLOW_PATH.read_text(encoding="utf-8")
@@ -123,6 +140,63 @@ class DeployWorkflowTests(unittest.TestCase):
         # The server's .env holds every real secret; a deploy must never ship
         # one from the working tree or overwrite what is already there.
         self.assertNotIn("acg-api/.env", script)
+
+    def test_azure_deploy_keeps_nginx_config_reproducible_and_rolls_back_invalid_changes(self):
+        script = (ROOT / "deploy" / "deploy-azure.sh").read_text(encoding="utf-8")
+
+        self.assertIn("deploy/nginx-luohua.conf", script)
+        self.assertIn("/tmp/luohua.nginx.new", script)
+        self.assertIn("/var/backups/nginx", script)
+        self.assertIn("if ! sudo nginx -t", script)
+        self.assertIn("if ! sudo systemctl reload nginx", script)
+        self.assertIn('sudo install -o root -g root -m 0644 "$backup"', script)
+        self.assertIn("sudo systemctl reload nginx", script)
+
+    def test_azure_deploy_targets_the_https_domain_and_preserves_hexo_cache(self):
+        script = (ROOT / "deploy" / "deploy-azure.sh").read_text(encoding="utf-8")
+
+        self.assertIn('SITE_HOST="${SITE_HOST:-yiluohua.top}"', script)
+        self.assertIn('SITE_APP_HOST="${SITE_APP_HOST:-app.yiluohua.top}"', script)
+        self.assertIn('VERIFY_ORIGIN="${VERIFY_ORIGIN:-https://$SITE_HOST}"', script)
+        self.assertIn("--retry-all-errors", script)
+        self.assertIn("restore_blog_db", script)
+        self.assertIn("BLOG_DB_STATE", script)
+
+    def test_nginx_serves_the_domain_over_tls_and_redirects_plain_http(self):
+        text = (ROOT / "deploy" / "nginx-luohua.conf").read_text(encoding="utf-8")
+
+        self.assertIn("server_name yiluohua.top www.yiluohua.top app.yiluohua.top", text)
+        self.assertIn("listen 443 ssl default_server;", text)
+        self.assertIn("/etc/letsencrypt/live/yiluohua.top/fullchain.pem", text)
+        self.assertIn("return 308 https://yiluohua.top$request_uri;", text)
+        self.assertNotIn("GET|HEAD|OPTIONS", text)
+
+    def test_nginx_cache_policy_separates_hashed_assets_from_refreshable_content(self):
+        text = (ROOT / "deploy" / "nginx-luohua.conf").read_text(encoding="utf-8")
+
+        pattern_line = next(
+            line for line in text.splitlines()
+            if line.strip().startswith('location ~* "^/assets/')
+        )
+        hashed_asset_pattern = pattern_line.split('"', 2)[1]
+        self.assertRegex("/assets/index-DRkgbflv.js", re.compile(hashed_asset_pattern))
+        self.assertRegex("/assets/index-C2TXMfmA.css", re.compile(hashed_asset_pattern))
+        self.assertNotRegex(
+            "/assets/moments/campus-rainbow-2026-06-13.jpg",
+            re.compile(hashed_asset_pattern),
+        )
+        self.assertIn("expires 1y;", text)
+        self.assertIn('add_header Cache-Control "public, immutable";', text)
+        self.assertNotIn('add_header Cache-Control "public" always;', text)
+        self.assertNotIn('add_header Cache-Control "public, immutable" always;', text)
+        self.assertIn("expires 1h;", text)
+        self.assertIn("expires 30d;", text)
+        self.assertIn("location = /sw.js", text)
+        self.assertGreaterEqual(
+            text.count('add_header Cache-Control "no-cache" always;'),
+            3,
+        )
+        self.assertLess(text.index("expires 1y;"), text.index("location /assets/"))
 
 
 if __name__ == "__main__":

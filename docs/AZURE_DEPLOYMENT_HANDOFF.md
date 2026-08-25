@@ -4,14 +4,15 @@
 
 ## 1. 当前结论
 
-LuohuaBlog 已经部署到 Azure for Students 虚拟机，并可通过公网 IP 访问。
+LuohuaBlog 已经部署到 Azure for Students 虚拟机，并通过 `yiluohua.top` 提供 HTTPS 服务。
 
 | 入口 | 地址 | 最近核验 |
 | --- | --- | --- |
-| 主站（React/Vite） | <http://65.52.160.147/> | HTTP 200，Chrome 实际渲染正常 |
-| Hexo/Butterfly 博客 | <http://65.52.160.147/blog/> | HTTP 200 |
-| API 健康检查 | <http://65.52.160.147/api/v1/health> | HTTP 200，`status: ok` |
-| 服务器信息 | <http://65.52.160.147/api/server/info> | HTTP 200 |
+| 主站（React/Vite） | <https://yiluohua.top/> | HTTPS 200 |
+| 站长 PWA | <https://app.yiluohua.top/> | HTTPS 200，非站长会进入登录门禁 |
+| Hexo/Butterfly 博客 | <https://yiluohua.top/blog/> | HTTPS 200 |
+| API 健康检查 | <https://yiluohua.top/api/v1/health> | HTTPS 200，`status: ok` |
+| 服务器信息 | <https://yiluohua.top/api/server/info> | HTTPS 200 |
 
 两个 README 里“尚未部署”的描述已经改掉，现在与本文档一致。
 
@@ -35,7 +36,7 @@ B 站链接，全部挂在本站 IP 下对外公开。源码、服务器目录�
 | 公网 IPv4 | `65.52.160.147` |
 | 私网 IPv4 | `172.16.0.4` |
 | 虚拟网络 | `vnet-eastasia-1` / `snet-eastasia-1` |
-| 开放端口 | Azure NSG 已开放 22、80、443；当前只有 22 和 80 实际提供服务 |
+| 开放端口 | Azure NSG 已开放 22、80、443；三者均按预期提供服务 |
 
 该学生订阅的区域策略只允许以下区域：
 
@@ -154,32 +155,48 @@ gzip_types text/plain text/css application/json application/javascript
 要记得重新设一次，否则会静默地退回到全明文传输。验证：
 
 ```bash
-curl -s -o /dev/null -D - -H "Accept-Encoding: gzip"   http://65.52.160.147/api/v1/bangumi/list?status=watched | grep -i content-encoding
+curl -s -o /dev/null -D - -H "Accept-Encoding: gzip"   https://yiluohua.top/api/v1/bangumi/list?status=watched | grep -i content-encoding
 ```
 
 备份在 `/etc/nginx/nginx.conf.bak-*`。
 
-## 6. 无 HTTPS 时的临时安全限制
+## 5.2 静态资源缓存
 
-目前只通过 `http://65.52.160.147` 提供服务，没有域名和 TLS 证书。为避免密码、登录 Cookie、留言内容或 AI 请求通过明文 HTTP 传输，Nginx 对 `/api/` 仅允许：
+2026-08-25 已为静态资源补上明确的浏览器缓存策略，配置源文件为
+`deploy/nginx-luohua.conf`，发布脚本会在安装前备份线上站点配置，并在 `nginx -t`
+失败时自动恢复旧配置：
 
-```text
-GET
-HEAD
-OPTIONS
+| 资源 | 策略 |
+| --- | --- |
+| Vite 内容哈希资源、带内容哈希的字体 | `1y`，`public, immutable` |
+| 未哈希的 CSS/JS | `1h`，`public` |
+| 图片、字体、音视频与 `/cos/` | `30d`，`public` |
+| HTML、SPA 回退页、`sw.js` | `no-cache`，每次复用前重新验证 |
+| `/api/` | 不套用静态资源缓存规则 |
+
+不能把全部 JS/CSS 都设成一年不可变缓存：Hexo 和独立工具仍使用固定文件名，重新部署时
+会覆盖原文件；只有 URL 中带内容哈希、内容变化就会换 URL 的文件才适合 `immutable`。
+
+验证示例：
+
+```bash
+curl -I https://yiluohua.top/assets/index-CCfkrm55.js
+curl -I https://yiluohua.top/blog/css/index.css
+curl -I https://yiluohua.top/
 ```
 
-所有 POST/PATCH/DELETE 等写请求统一返回 HTTP 403。最近验证：向 `/api/auth/login` 发送 POST 得到 403。
+## 6. HTTPS 与 API 写请求状态
 
-因此目前以下功能有意不可用：
+`yiluohua.top`、`www.yiluohua.top` 和 `app.yiluohua.top` 共用一张 Let's Encrypt ECDSA
+证书。HTTP 和公网 IP 请求统一以 308 跳转到 `https://yiluohua.top`，443 已实际监听。
+证书由 `certbot.timer` 自动续期，当前证书到期日为 2026-11-23。
 
-- 注册和登录
-- 站长登录与控制台写操作
-- 留言提交和管理
-- AI 对话、生图等 POST 请求
-- 通过后端发布文章、动态、友链或相册
+原先为了防止密码和 Cookie 走明文而设置的 API 只读限制已经移除。POST/PATCH/DELETE
+现在会到达 Go API；无效登录请求返回 401，而不是 Nginx 的 403。`AUTH_COOKIE_SECURE=true`
+保持不变，CORS 只允许三个正式 HTTPS 来源。
 
-不要为了“让按钮能用”直接移除该限制。应先完成域名和 HTTPS，再开放写请求。
+写请求能够到达后端不代表所有动态功能都已配置完成。AI、邮件、GitHub 发布和站长登录等
+仍取决于各自的服务器密钥；未配置时应按后端设计降级或返回明确错误。
 
 ## 7. 当前后端环境状态
 
@@ -188,7 +205,8 @@ OPTIONS
 ```text
 ACG_API_ADDR=127.0.0.1:8787
 ACG_DATA_DIR=/var/lib/acg-api
-ACG_ALLOWED_ORIGINS=http://65.52.160.147
+ACG_ALLOWED_ORIGINS=https://yiluohua.top,https://www.yiluohua.top,https://app.yiluohua.top
+SITE_PUBLIC_ORIGIN=https://yiluohua.top
 AUTH_COOKIE_SECURE=true
 GITHUB_ACTIVITY_LOGIN=Yi-luo-hua
 BANGUMI_USERNAME=936756
@@ -200,9 +218,8 @@ SERVER_REGION=East Asia - Hong Kong
 所以番剧页在一个不存放任何密钥的部署上也能正常显示（当前 248 条）。
 `BANGUMI_ACCESS_TOKEN` 仍然可选，作用是让标记为私有的收藏也可见。
 
-后端构建绝对链接（目前只有通知邮件里的回链）时读 `SITE_PUBLIC_ORIGIN`；没设置就回退到
-`ACG_ALLOWED_ORIGINS` 的第一项，所以现在不配也是对的。换域名时改 `ACG_ALLOWED_ORIGINS`
-即可，两者会一起跟上。
+后端构建绝对链接（目前只有通知邮件里的回链）时读 `SITE_PUBLIC_ORIGIN`；该值已明确设置
+为正式根域名，不再依赖允许来源列表的回退顺序。
 
 真实密钥尚未配置，因此 AI、邮件通知、站长登录、GitHub 发布和 COS 管理能力会处于未配置或降级状态。需要配置时，以 `acg-api/.env.example` 为变量名清单，只在服务器 `/opt/acg-api/.env` 中写真实值，禁止写入仓库或聊天记录。
 
@@ -227,7 +244,8 @@ deploy/deploy-azure.sh blog api     # 任意子集
 
 脚本会构建 acg-api（linux/amd64）、主站和博客，用 `tar` over `ssh` 上传（Windows 的
 Git Bash 没有 rsync），然后 `nginx -t` 通过才 reload，最后逐个 curl 校验。它**不会**碰
-服务器上的 `.env` 和 `/var/lib/acg-api`——这两样丢了没法从仓库恢复。
+服务器上的 `.env` 和 `/var/lib/acg-api`——这两样丢了没法从仓库恢复。脚本还会在 Hexo
+构建前备份 `blog/db.json`，完成或失败退出时恢复，避免生成缓存污染工作树。
 
 原先从模板继承的那套 UCloud 拉取式部署（`pull-deploy.sh`、`install-pull-deploy.sh`、
 `taozhiyy-pull-deploy.service/.timer`、`PULL_BASED_DEPLOY.md`）已删除：它指向
@@ -241,7 +259,7 @@ Git Bash 没有 rsync），然后 `nginx -t` 通过才 reload，最后逐个 cur
 1. 不要假设线上版本等于 `origin/master`。
 2. 不要执行 `git reset --hard`、`git checkout -- .` 或其他会覆盖工作树的命令。
 3. 重新部署前先运行 `git status --short --branch`，确认主人希望发布哪些本地内容。
-4. 构建 Hexo 会改动 `blog/db.json`；它是生成缓存，不应混入提交。部署后应恢复或排除该文件。
+4. `blog/db.json` 是生成缓存，不应混入提交；部署脚本已自动保存并恢复它。
 
 ## 9. 本次构建参数与验证
 
@@ -249,22 +267,24 @@ Git Bash 没有 rsync），然后 `nginx -t` 通过才 reload，最后逐个 cur
 
 ```text
 VITE_API_BASE=
-VITE_SITE_HOST=65.52.160.147
-VITE_SITE_APP_HOST=app.invalid
+VITE_SITE_HOST=yiluohua.top
+VITE_SITE_APP_HOST=app.yiluohua.top
 ```
 
-`VITE_API_BASE` 为空表示浏览器使用同源 `/api`。`VITE_SITE_APP_HOST=app.invalid` 是临时禁用独立 PWA 主机，不能把它设置成与公网 IP 相同，否则访问 `/` 会被识别为站长控制台并显示 `Owner login required`。
+`VITE_API_BASE` 为空表示浏览器使用同源 `/api`。根域名保持公开站点行为；只有
+`app.yiluohua.top` 会启用站长 PWA 门禁和控制台入口。
 
 本次验证结果：
 
-- `main` Node 测试：137/137 通过（`cd main && node --test "src/**/*.test.js"`）
-- `tools/` Python 守卫测试：35/35 通过（`python -m pytest tools/ -q`）
+- `main` Node 测试：138/138 通过（`cd main && node --test "src/**/*.test.js"`）
+- `tools/` Python 守卫测试：53/53 通过（`python -m pytest tools/ -q`）
 - `go test ./...`：通过
 - `main` Vite 生产构建：通过
-- Go Linux amd64 静态二进制构建：通过
 - Nginx 配置测试：通过
-- Nginx 和 `acg-api` 服务：`active`
-- 产物检查：不含 `taozhiyy`，不含 `https://65.52.160.147`
+- Nginx、`acg-api` 和 `certbot.timer`：`active`
+- HTTPS 主站、博客、API 和 PWA：均返回 200
+- HTTP：308 跳转到正式 HTTPS 域名
+- 无效登录 POST：401，证明写请求已到达 Go API
 
 `main` 里剩余的 eslint 报错都在 `main/public/web/` 和 `main/public/showcase/` —— 那是
 随站发布的 QuizCard 独立应用，不是 React 源码，本次没有改动。
@@ -274,22 +294,32 @@ VITE_SITE_APP_HOST=app.invalid
 每次重新构建都得记着做一遍，忘一次就上线一批错链接。现在：
 
 - `main/src/lib/siteIdentity.js` 按主机推断协议——裸 IP 和 `localhost` 用 `http`，
-  域名用 `https`，需要时可用 `VITE_SITE_PROTOCOL` 覆盖。所以 `VITE_SITE_HOST=65.52.160.147`
-  直接产出 `http://65.52.160.147`。
-- `blog/_config.yml` 的 `url` 已经写成当前博客地址，不再是 `example.com` 占位。
+  域名用 `https`，需要时可用 `VITE_SITE_PROTOCOL` 覆盖。当前构建直接产出
+  `https://yiluohua.top` 和 `https://app.yiluohua.top`。
+- `blog/_config.yml` 的 `url` 已经写成 `https://yiluohua.top/blog`。
 
-## 10. 后续获得域名后的正确迁移顺序
+## 10. 域名、DNS 与证书维护
 
-1. 给根域名或子域名添加指向 `65.52.160.147` 的 DNS A 记录。
-2. 将 Nginx `server_name` 改成真实域名，并保留 IP 访问的重定向或默认站点策略。
-3. 使用 Certbot 或其他 ACME 客户端申请证书，确认 443 实际监听且 HTTP 自动跳转 HTTPS。
-4. 用真实值重新部署：`SITE_HOST=<domain> SITE_APP_HOST=app.<domain> deploy/deploy-azure.sh`
-   （协议会自动从 `http` 变成 `https`，不需要额外参数）。
-5. 将 `blog/_config.yml` 的 `url` 改为 `https://<domain>/blog`。
-6. 将服务器 `ACG_ALLOWED_ORIGINS` 改为真实 HTTPS 来源，并继续保持 `AUTH_COOKIE_SECURE=true`。
-7. 验证 HTTPS、Cookie、CORS 和 CSRF/来源边界后，才从 Nginx 移除只读方法限制。
-8. 再逐项配置站长密码、二次验证答案、Bangumi、AI、SMTP、GitHub 和 COS 等服务器密钥。
-9. 最后重新测试注册、登录、留言、AI、站长发布以及 SQLite 备份。
+DNSPod 当前权威 DNS 为 `dance.dnspod.net` 和 `lester.dnspod.net`，记录如下：
+
+| 主机 | 类型 | 值 |
+| --- | --- | --- |
+| `@` | A | `65.52.160.147` |
+| `www` | CNAME | `yiluohua.top` |
+| `app` | CNAME | `yiluohua.top` |
+
+证书文件只存在服务器的 `/etc/letsencrypt/live/yiluohua.top/`，不能提交、下载或输出私钥。
+续期健康检查：
+
+```bash
+sudo certbot certificates
+sudo certbot renew --dry-run
+systemctl status certbot.timer --no-pager
+```
+
+Nginx 的 HTTP ACME webroot 是 `/var/www/letsencrypt`；`deploy/nginx-luohua.conf` 必须保留
+`/.well-known/acme-challenge/` 例外，否则未来自动续期会失败。公网 IP 变化时，应先更新
+DNSPod 的根域名 A 记录，再检查两个 CNAME 是否仍跟随根域名。
 
 ## 11. 交接原则
 

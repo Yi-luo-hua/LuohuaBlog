@@ -85,10 +85,21 @@
 
 .about-desk-enter {
   --about-tilt: 0deg;
+  scale: 1;
   transform: rotate(var(--about-tilt));
   transform-origin: 50% 55%;
+  transition: scale 360ms cubic-bezier(.2, 1.45, .35, 1);
   animation: about-desk-pop .72s cubic-bezier(.2, 1.32, .38, 1) backwards;
-  will-change: transform, opacity, translate;
+  will-change: transform, opacity, translate, scale;
+}
+.about-desk-grid > [data-physics-bubble]:hover,
+.about-desk-grid > [data-physics-bubble]:focus-visible {
+  scale: .96;
+}
+.about-desk-grid > [data-physics-bubble]:active {
+  scale: .9;
+  transition-duration: 90ms;
+  transition-timing-function: ease-out;
 }
 .about-desk-enter:nth-child(1) { animation-delay: .04s; }
 .about-desk-enter:nth-child(2) { animation-delay: .12s; }
@@ -852,4 +863,7 @@
   .about-desk-enter,
   .about-desk-greeting { animation: none; }
   .about-desk-page * { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  .about-desk-grid > [data-physics-bubble]:hover,
+  .about-desk-grid > [data-physics-bubble]:focus-visible,
+  .about-desk-grid > [data-physics-bubble]:active { scale: 1; }
 }

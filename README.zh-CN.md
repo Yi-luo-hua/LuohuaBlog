@@ -29,14 +29,14 @@ cd main && npm install && npm run dev
 
 ## 部署
 
-站点跑在 Azure for Students 的虚拟机上（East Asia），通过公网 IP 以明文 HTTP
-提供服务。目前还没有域名和 TLS 证书，因此 Nginx 对 `/api/` 只放行 `GET`、`HEAD`
-和 `OPTIONS`，所有写请求一律返回 `403`。这是有意为之：没有 HTTPS 时，一次登录
-POST 会把密码明文送上公网。所以注册、登录、留言、AI 请求和站长发布在拿到域名和
-证书之前都是关着的。
+站点跑在 Azure for Students 的虚拟机上（East Asia），正式地址为
+[https://yiluohua.top](https://yiluohua.top)，博客位于 `/blog/`，站长 PWA 位于
+`https://app.yiluohua.top`。Nginx 会把明文 HTTP 和公网 IP 请求重定向到 HTTPS，
+Let's Encrypt 证书由 Certbot 自动续期。API 写请求已经可以通过 TLS 使用；依赖站长、
+AI、SMTP、GitHub 或对象存储密钥的功能仍会保持未配置状态，直到服务器端补齐对应密钥。
 
 部署方式是手工构建后上传，不是定时拉取，也没有启用自动部署。主机信息、目录结构、
-服务名以及拿到域名后的迁移顺序，都在
+服务名、TLS 配置和恢复步骤都在
 [docs/AZURE_DEPLOYMENT_HANDOFF.md](./docs/AZURE_DEPLOYMENT_HANDOFF.md)。
 
 ## 后端接口

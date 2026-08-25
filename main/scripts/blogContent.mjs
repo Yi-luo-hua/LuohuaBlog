@@ -107,6 +107,18 @@ const normalizeDate = (value, fallback) => {
 const publicPostURL = (date, slug) =>
   `/blog/${date.parts.join("/")}/${encodeURIComponent(slug)}/`;
 
+export const normalizeBlogAssetURL = (value) => {
+  const assetURL = String(value || "").trim();
+  if (!assetURL || /^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(assetURL)) {
+    return assetURL;
+  }
+  if (assetURL === "/blog" || assetURL.startsWith("/blog/")) {
+    return assetURL;
+  }
+  if (assetURL.startsWith("/")) return `/blog${assetURL}`;
+  return `/blog/${assetURL.replace(/^\.\//, "")}`;
+};
+
 export const parseBlogPost = ({ source, filename, modifiedAt }) => {
   const { frontMatter, body } = splitFrontMatter(source);
   const meta = parseFrontMatter(frontMatter);
@@ -126,7 +138,7 @@ export const parseBlogPost = ({ source, filename, modifiedAt }) => {
     date: date.iso,
     dateLabel: date.label,
     updated: String(meta.updated || "").slice(0, 10),
-    cover: String(meta.cover || "").trim(),
+    cover: normalizeBlogAssetURL(meta.cover),
     summary: summary || "这篇文章还没有摘要，点开看看正文吧。",
     tags: Array.isArray(meta.tags) ? meta.tags : parseList(meta.tags),
     categories: Array.isArray(meta.categories)

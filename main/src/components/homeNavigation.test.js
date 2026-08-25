@@ -295,6 +295,7 @@ test("does not put the moments entry in feature five", () => {
 
 test("keeps the Misaka showcase fixed above four real homepage destinations", () => {
   const featuresSource = readSource("components/Features.jsx");
+  const featuredProjectSource = readSource("data/featuredProject.js");
   const cssSource = readSource("index.css");
 
   assert.match(
@@ -307,13 +308,18 @@ test("keeps the Misaka showcase fixed above four real homepage destinations", ()
     ["相册集", "/gallery"],
     ["番剧收藏", "/bangumi"],
     ["关于我", "/about"],
-    ["我的项目", "/about/projects/quizcard"],
   ]) {
     assert.match(
       featuresSource,
       new RegExp(`title="${title}"[\\s\\S]*?linkUrl="${href}"`),
     );
   }
+
+  assert.match(featuresSource, /import \{ FEATURED_PROJECT \} from "\.\.\/data\/featuredProject\.js"/);
+  assert.match(featuresSource, /title=\{FEATURED_PROJECT\.name\}/);
+  assert.match(featuresSource, /linkUrl=\{FEATURED_PROJECT\.githubUrl\}/);
+  assert.match(featuredProjectSource, /name:\s*"BilibiliCrawler"/);
+  assert.match(featuredProjectSource, /githubUrl:\s*"https:\/\/github\.com\/Yi-luo-hua\/BilibiliCrawler"/);
 
   assert.doesNotMatch(featuresSource, /伊洛华的收藏室|去看看，|我留下的世界/);
   assert.match(featuresSource, /container mx-auto px-3 pt-8 md:px-10 md:pt-10/);

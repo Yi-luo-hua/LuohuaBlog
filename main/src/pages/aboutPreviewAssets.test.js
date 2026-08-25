@@ -114,7 +114,10 @@ test("keeps the compact about dashboard links and real music player wired", () =
 
   assert.match(routeSource, /to="\/gallery"/);
   assert.match(routeSource, /to="\/bangumi\/watching"/);
-  assert.match(routeSource, /to="\/about\/projects\/quizcard"/);
+  assert.match(routeSource, /import \{ FEATURED_PROJECT \} from "\.\.\/data\/featuredProject\.js"/);
+  assert.match(routeSource, /href=\{FEATURED_PROJECT\.githubUrl\}/);
+  assert.match(routeSource, /\{FEATURED_PROJECT\.name\}/);
+  assert.match(routeSource, /target="_blank"/);
   assert.match(routeSource, /audio\/loop\.mp3/);
   assert.match(routeSource, /我的相册/);
   assert.match(routeSource, /番剧收藏/);
@@ -229,6 +232,15 @@ test("wires every desktop bubble into the elastic drag physics layer", () => {
   assert.match(physicsSource, /prefers-reduced-motion: reduce/);
   assert.match(styles, /translate:\s*var\(--physics-x[^;]+var\(--physics-y/);
   assert.match(styles, /@media \(min-width: 1400px\)[\s\S]*?width:\s*min\(100%,\s*1380px\)/);
+});
+
+test("shrinks bubbles on hover and springs them back after pressing", () => {
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  assert.match(styles, /\[data-physics-bubble\]:hover[\s\S]*?scale:\s*\.96/);
+  assert.match(styles, /\[data-physics-bubble\]:active[\s\S]*?scale:\s*\.9/);
+  assert.match(styles, /transition:\s*scale 360ms cubic-bezier\(\.2, 1\.45, \.35, 1\)/);
+  assert.match(styles, /prefers-reduced-motion:\s*reduce[\s\S]*?\[data-physics-bubble\]:active\s*\{\s*scale:\s*1/);
 });
 
 test("drags a bubble under the cursor rather than snapping it to the centre", () => {

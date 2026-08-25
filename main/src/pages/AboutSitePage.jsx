@@ -19,6 +19,7 @@ import { FaGithub } from "react-icons/fa";
 import { SiBilibili } from "react-icons/si";
 
 import { blogPosts } from "virtual:blog-posts";
+import { FEATURED_PROJECT } from "../data/featuredProject.js";
 import { galleryAlbums } from "../data/galleryAlbums.js";
 import { API_BASE } from "../lib/apiBase.js";
 import { cosAsset } from "../lib/cosAsset.js";
@@ -365,12 +366,18 @@ const AboutSitePage = () => {
           <FiArrowUpRight aria-hidden="true" />
         </a>
 
-        <Link data-physics-bubble="project" className="about-desk-card about-desk-project about-desk-enter" to="/about/projects/quizcard">
+        <a
+          data-physics-bubble="project"
+          className="about-desk-card about-desk-project about-desk-enter"
+          href={FEATURED_PROJECT.githubUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <span><FiCode aria-hidden="true" /> MY PROJECT</span>
-          <strong>AI QuizCard</strong>
-          <small>把文章变成可复习的知识卡片</small>
+          <strong>{FEATURED_PROJECT.name}</strong>
+          <small>{FEATURED_PROJECT.description}</small>
           <FiArrowUpRight aria-hidden="true" />
-        </Link>
+        </a>
 
         <section data-physics-bubble="player" className="about-desk-card about-desk-player about-desk-enter" aria-label="音乐播放器">
           <audio

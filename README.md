@@ -29,18 +29,18 @@ The frontend proxies `/api` to `127.0.0.1:8787`, so start the backend first if y
 
 ## Deployment
 
-The site runs on an Azure for Students VM in East Asia and is reachable over
-plain HTTP at its public IP. There is no domain and no TLS certificate yet, so
-Nginx answers `/api/` for `GET`, `HEAD` and `OPTIONS` only and rejects every
-write with `403`. That is deliberate: without HTTPS, a login POST would put a
-password on the wire in clear text. Registration, login, the guestbook, AI
-requests, and owner publishing therefore stay switched off until a domain and a
-certificate are in place.
+The site runs on an Azure for Students VM in East Asia at
+[https://yiluohua.top](https://yiluohua.top). The blog is served from
+`/blog/`, while the owner PWA host is `https://app.yiluohua.top`. Nginx redirects
+plain HTTP and public-IP requests to HTTPS, and Certbot renews the Let's Encrypt
+certificate automatically. API write methods are available over TLS; features
+that require owner, AI, SMTP, GitHub, or storage credentials still remain
+disabled until those secrets are configured on the server.
 
 Deployment is a manual build-and-upload, not a timer — there is no automatic
 pull. [docs/AZURE_DEPLOYMENT_HANDOFF.md](./docs/AZURE_DEPLOYMENT_HANDOFF.md)
-carries the host details, directory layout, service names, and the order to
-follow when the domain arrives.
+carries the host details, directory layout, service names, TLS configuration,
+and recovery procedure.
 
 ## Backend surface
 

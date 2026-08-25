@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { TiLocationArrow } from "react-icons/ti";
 import LazyVideo from "./LazyVideo";
+import { FEATURED_PROJECT } from "../data/featuredProject.js";
 import { cosAsset } from "../lib/cosAsset.js";
 
 const COS = cosAsset(
@@ -359,11 +360,11 @@ const Features = () => {
           <ExhibitTilt className="bento-tilt_2 h-72 rounded-[1.75rem] sm:h-80 md:col-span-2 md:h-auto">
             <ExhibitCard
               src={`${COS}/videos/feature-5.mp4`}
-              label="正在创造"
-              title="我的项目"
-              description="从 AI QuizCard 开始，看看那些从想法变成真实页面的小作品。"
-              linkUrl="/about/projects/quizcard"
-              linkText="查看项目"
+              label="GitHub 项目"
+              title={FEATURED_PROJECT.name}
+              description={FEATURED_PROJECT.description}
+              linkUrl={FEATURED_PROJECT.githubUrl}
+              linkText="查看 GitHub"
             />
           </ExhibitTilt>
         </div>

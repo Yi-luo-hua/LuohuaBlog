@@ -28,10 +28,30 @@ DATA_DIR="/var/lib/acg-api"
 # The public host the browser will see. A bare IP resolves to http:// on its
 # own (see main/src/lib/siteIdentity.js), so the built files need no patching
 # afterwards; point this at a domain name and the same build turns into https.
-SITE_HOST="${SITE_HOST:-$DEPLOY_HOST}"
-SITE_APP_HOST="${SITE_APP_HOST:-app.invalid}"
+SITE_HOST="${SITE_HOST:-yiluohua.top}"
+SITE_APP_HOST="${SITE_APP_HOST:-app.yiluohua.top}"
+VERIFY_ORIGIN="${VERIFY_ORIGIN:-https://$SITE_HOST}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BLOG_DB="$REPO_ROOT/blog/db.json"
+BLOG_DB_BACKUP=""
+BLOG_DB_STATE="idle"
+
+restore_blog_db() {
+  case "$BLOG_DB_STATE" in
+    present)
+      cp -p "$BLOG_DB_BACKUP" "$BLOG_DB"
+      rm -f "$BLOG_DB_BACKUP"
+      ;;
+    absent)
+      rm -f "$BLOG_DB"
+      ;;
+  esac
+  BLOG_DB_BACKUP=""
+  BLOG_DB_STATE="idle"
+}
+
+trap restore_blog_db EXIT
 
 # Keep known_hosts beside the key rather than under ~/.ssh. Git Bash mangles a
 # Windows home directory whose name is not ASCII, and ssh then fails to record
@@ -85,6 +105,36 @@ upload_dir() {
     remote "sudo tar -C '$dest' -xzf - && sudo chown -R www-data:www-data '$dest'"
 }
 
+sync_nginx_site_config() {
+  local src="$REPO_ROOT/deploy/nginx-luohua.conf"
+  [ -f "$src" ] || { echo "missing nginx site config: $src" >&2; exit 1; }
+
+  echo "==> syncing nginx site config"
+  scp "${SSH_OPTS[@]}" "$src" "$DEPLOY_USER@$DEPLOY_HOST:/tmp/luohua.nginx.new"
+  remote '
+    set -eu
+    backup_dir=/var/backups/nginx
+    backup="$backup_dir/luohua.before-deploy-$(date +%F-%H%M%S)"
+    sudo mkdir -p "$backup_dir"
+    sudo cp /etc/nginx/sites-available/luohua "$backup"
+    sudo install -o root -g root -m 0644 /tmp/luohua.nginx.new /etc/nginx/sites-available/luohua
+    rm -f /tmp/luohua.nginx.new
+    if ! sudo nginx -t; then
+      echo "nginx config invalid; restoring $backup" >&2
+      sudo install -o root -g root -m 0644 "$backup" /etc/nginx/sites-available/luohua
+      sudo nginx -t
+      exit 1
+    fi
+    if ! sudo systemctl reload nginx; then
+      echo "nginx reload failed; restoring $backup" >&2
+      sudo install -o root -g root -m 0644 "$backup" /etc/nginx/sites-available/luohua
+      sudo nginx -t
+      sudo systemctl reload nginx
+      exit 1
+    fi
+  '
+}
+
 echo "==> deploying [${targets[*]}] to $DEPLOY_USER@$DEPLOY_HOST"
 
 if wants main; then check_no_dev_server 5173 "main"; fi
@@ -125,18 +175,27 @@ if wants main; then
 fi
 
 if wants blog; then
+  if [ -f "$BLOG_DB" ]; then
+    BLOG_DB_BACKUP="$(mktemp)"
+    cp -p "$BLOG_DB" "$BLOG_DB_BACKUP"
+    BLOG_DB_STATE="present"
+  else
+    BLOG_DB_STATE="absent"
+  fi
+
   echo "==> building blog"
   ( cd "$REPO_ROOT/blog" && npm ci && npm run clean >/dev/null && npm run build )
   echo "==> uploading blog"
   upload_dir "$REPO_ROOT/blog/public" "$WWW_DIR/blog"
+  restore_blog_db
 fi
 
-echo "==> reloading nginx"
-remote "sudo nginx -t && sudo systemctl reload nginx"
+sync_nginx_site_config
 
 echo "==> verifying"
 for path in / /blog/ /api/v1/health; do
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://$DEPLOY_HOST$path" || true)"
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+    --retry 3 --retry-all-errors --retry-delay 2 "$VERIFY_ORIGIN$path" || true)"
   printf '    %-20s %s\n' "$path" "$code"
   [ "$code" = "200" ] || { echo "    FAILED: $path returned $code" >&2; exit 1; }
 done
