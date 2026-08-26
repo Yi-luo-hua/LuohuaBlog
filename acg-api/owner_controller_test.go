@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"image/png"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -178,11 +179,22 @@ type fakeOwnerAssetUploader struct {
 	err    error
 }
 
-func (f fakeOwnerAssetUploader) UploadImage(kind, album, filename, mimeType string, body []byte) (ownerCOSUploadResult, error) {
+func (f fakeOwnerAssetUploader) UploadImage(kind, filename, mimeType string, body []byte) (ownerCOSUploadResult, error) {
 	if f.err != nil {
 		return ownerCOSUploadResult{}, f.err
 	}
 	return f.result, nil
+}
+
+func (f fakeOwnerAssetUploader) UploadImageAt(objectKey, mimeType string, body []byte) (ownerCOSUploadResult, error) {
+	if f.err != nil {
+		return ownerCOSUploadResult{}, f.err
+	}
+	result := f.result
+	result.ObjectKey = objectKey
+	result.MIMEType = mimeType
+	result.Size = len(body)
+	return result, nil
 }
 
 func withOwnerAssetUploader(t *testing.T, uploader ownerAssetUploader, fn func()) {
@@ -559,7 +571,7 @@ func TestOwnerUploadSavesImageForOwner(t *testing.T) {
 	})
 }
 
-func TestOwnerAssetUploadRejectsMissingAlbumForGallery(t *testing.T) {
+func TestOwnerAssetUploadNoLongerRequiresAnAlbum(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		token := seedUnlimitedOwnerSession(t)
 
@@ -586,8 +598,9 @@ func TestOwnerAssetUploadRejectsMissingAlbumForGallery(t *testing.T) {
 
 		ownerRouter(rr, req)
 
-		if rr.Code != http.StatusBadRequest {
-			t.Fatalf("expected 400, got %d body=%s", rr.Code, rr.Body.String())
+		// 相册不再分册：少了 album 不该再被表单挡下来，只会卡在没配 COS 上。
+		if rr.Code == http.StatusBadRequest {
+			t.Fatalf("gallery upload should no longer require an album, got 400 body=%s", rr.Body.String())
 		}
 	})
 }
@@ -630,8 +643,8 @@ func TestOwnerAssetUploadStoresGalleryImageInCOS(t *testing.T) {
 		token := seedUnlimitedOwnerSession(t)
 		withOwnerAssetUploader(t, fakeOwnerAssetUploader{
 			result: ownerCOSUploadResult{
-				ObjectKey: "gallery/misaka/20260607-010203-uuid.png",
-				URL:       "https://cdn.example/gallery/misaka/20260607-010203-uuid.png",
+				ObjectKey: "gallery/2026/06/20260607-010203-uuid.png",
+				URL:       "https://cdn.example/gallery/2026/06/20260607-010203-uuid.png",
 				MIMEType:  "image/png",
 				Size:      68,
 			},
@@ -646,9 +659,6 @@ func TestOwnerAssetUploadStoresGalleryImageInCOS(t *testing.T) {
 				t.Fatal(err)
 			}
 			if err := writer.WriteField("kind", "gallery"); err != nil {
-				t.Fatal(err)
-			}
-			if err := writer.WriteField("album", "Misaka"); err != nil {
 				t.Fatal(err)
 			}
 			if err := writer.Close(); err != nil {
@@ -668,10 +678,10 @@ func TestOwnerAssetUploadStoresGalleryImageInCOS(t *testing.T) {
 
 			payload := decodeOwnerJSONMap(t, rr)
 			item := payload["item"].(map[string]any)
-			if item["path"] != "gallery/misaka/20260607-010203-uuid.png" {
+			if item["path"] != "gallery/2026/06/20260607-010203-uuid.png" {
 				t.Fatalf("unexpected object key: %#v", item["path"])
 			}
-			if item["url"] != "https://cdn.example/gallery/misaka/20260607-010203-uuid.png" {
+			if item["url"] != "https://cdn.example/gallery/2026/06/20260607-010203-uuid.png" {
 				t.Fatalf("unexpected url: %#v", item["url"])
 			}
 		})
@@ -943,20 +953,20 @@ func TestOwnerGalleryPublishWritesGalleryDataViaGitHubContentsAPI(t *testing.T) 
 
 			switch r.Method {
 			case http.MethodGet:
-				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/galleryAlbums.js" {
+				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/galleryPhotos.js" {
 					t.Fatalf("unexpected github GET path: %q", r.URL.RequestURI())
 				}
 				if r.URL.Query().Get("ref") != "master" {
 					t.Fatalf("expected master ref, got %q", r.URL.Query().Get("ref"))
 				}
 				writeJSON(w, map[string]any{
-					"path":     "main/src/data/galleryAlbums.js",
+					"path":     "main/src/data/galleryPhotos.js",
 					"sha":      "gallery-sha",
 					"encoding": "base64",
 					"content":  base64.StdEncoding.EncodeToString([]byte(ownerGalleryDataFixture)),
 				})
 			case http.MethodPut:
-				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/galleryAlbums.js" {
+				if r.URL.Path != "/repos/octo/taozhiyy/contents/main/src/data/galleryPhotos.js" {
 					t.Fatalf("unexpected github PUT path: %q", r.URL.RequestURI())
 				}
 				if err := json.NewDecoder(r.Body).Decode(&gotPutBody); err != nil {
@@ -964,7 +974,7 @@ func TestOwnerGalleryPublishWritesGalleryDataViaGitHubContentsAPI(t *testing.T) 
 				}
 				writeJSON(w, map[string]any{
 					"content": map[string]any{
-						"path": "main/src/data/galleryAlbums.js",
+						"path": "main/src/data/galleryPhotos.js",
 						"sha":  "new-gallery-sha",
 					},
 					"commit": map[string]any{
@@ -986,7 +996,7 @@ func TestOwnerGalleryPublishWritesGalleryDataViaGitHubContentsAPI(t *testing.T) 
 		req := httptest.NewRequest(
 			http.MethodPost,
 			"/api/owner/gallery/images",
-			bytes.NewBufferString(`{"albumId":"misaka","imageUrl":"https://cdn.example/new.jpg"}`),
+			bytes.NewBufferString(`{"imageUrl":"https://cdn.example/new.jpg","width":4000,"height":3000}`),
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
@@ -1012,7 +1022,7 @@ func TestOwnerGalleryPublishWritesGalleryDataViaGitHubContentsAPI(t *testing.T) 
 			t.Fatalf("expected existing file sha, got %#v", gotPutBody["sha"])
 		}
 		message, ok := gotPutBody["message"].(string)
-		if !ok || !strings.Contains(message, "feat: publish gallery image to misaka") {
+		if !ok || !strings.HasPrefix(message, "feat: publish gallery photo ") {
 			t.Fatalf("unexpected commit message: %#v", gotPutBody["message"])
 		}
 		contentRaw, ok := gotPutBody["content"].(string)
@@ -1023,16 +1033,20 @@ func TestOwnerGalleryPublishWritesGalleryDataViaGitHubContentsAPI(t *testing.T) 
 		if err != nil {
 			t.Fatalf("decode base64 gallery data: %v", err)
 		}
-		if !strings.Contains(updated, `"https://cdn.example/new.jpg",`) {
+		if !strings.Contains(updated, `src: "https://cdn.example/new.jpg",`) {
 			t.Fatalf("expected published image in gallery data, got %q", updated)
+		}
+		if !strings.Contains(updated, "export const galleryPhotos = [\n  {\n    id:") {
+			t.Fatalf("expected the new photo at the top of the array, got %q", updated)
 		}
 
 		payload := decodeOwnerJSONMap(t, rr)
 		item := payload["item"].(map[string]any)
-		if item["albumId"] != "misaka" {
-			t.Fatalf("unexpected album id: %#v", item["albumId"])
+		photoID, _ := item["photoId"].(string)
+		if photoID == "" {
+			t.Fatalf("expected a photo id in the response, got %#v", item["photoId"])
 		}
-		if item["path"] != "main/src/data/galleryAlbums.js" {
+		if item["path"] != "main/src/data/galleryPhotos.js" {
 			t.Fatalf("unexpected publish path: %#v", item["path"])
 		}
 		if item["commitSha"] != "gallery-commit-sha" {
@@ -1328,5 +1342,109 @@ func TestOwnerMomentPublishWritesMomentsDataViaGitHubContentsAPI(t *testing.T) {
 		if item["commitSha"] != "moment-commit-sha" {
 			t.Fatalf("unexpected commit sha: %#v", item["commitSha"])
 		}
+	})
+}
+
+func TestOwnerGalleryUploadAlsoStoresAThumbnail(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		token := seedUnlimitedOwnerSession(t)
+		withOwnerAssetUploader(t, fakeOwnerAssetUploader{
+			result: ownerCOSUploadResult{
+				ObjectKey: "gallery/2026/06/photo.png",
+				URL:       "https://cdn.example/gallery/2026/06/photo.png",
+				MIMEType:  "image/png",
+			},
+		}, func() {
+			var large bytes.Buffer
+			if err := png.Encode(&large, twoToneImage(1600, 1200)); err != nil {
+				t.Fatalf("encode fixture: %v", err)
+			}
+
+			var body bytes.Buffer
+			writer := multipart.NewWriter(&body)
+			part, err := writer.CreateFormFile("file", "photo.png")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := part.Write(large.Bytes()); err != nil {
+				t.Fatal(err)
+			}
+			if err := writer.WriteField("kind", "gallery"); err != nil {
+				t.Fatal(err)
+			}
+			if err := writer.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/owner/assets", &body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+			rr := httptest.NewRecorder()
+
+			ownerRouter(rr, req)
+
+			if rr.Code != http.StatusOK {
+				t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+			}
+			item := decodeOwnerJSONMap(t, rr)["item"].(map[string]any)
+
+			if item["thumbPath"] != "gallery/2026/06/photo-thumb.jpg" {
+				t.Fatalf("thumbnail should sit beside the original, got %#v", item["thumbPath"])
+			}
+			if item["thumbUrl"] == nil || item["thumbUrl"] == "" {
+				t.Fatalf("expected a thumbnail url, got %#v", item["thumbUrl"])
+			}
+			if item["thumbWidth"] != float64(ownerThumbnailMaxEdge) {
+				t.Fatalf("unexpected thumbnail width: %#v", item["thumbWidth"])
+			}
+		})
+	})
+}
+
+func TestOwnerGalleryUploadSurvivesAnUnthumbnailableImage(t *testing.T) {
+	withOwnerControllerTestDB(t, func() {
+		token := seedUnlimitedOwnerSession(t)
+		withOwnerAssetUploader(t, fakeOwnerAssetUploader{
+			result: ownerCOSUploadResult{
+				ObjectKey: "gallery/2026/06/tiny.png",
+				URL:       "https://cdn.example/gallery/2026/06/tiny.png",
+				MIMEType:  "image/png",
+			},
+		}, func() {
+			var body bytes.Buffer
+			writer := multipart.NewWriter(&body)
+			part, err := writer.CreateFormFile("file", "tiny.png")
+			if err != nil {
+				t.Fatal(err)
+			}
+			// 1x1 的图不值得再存一份缩略图，上传本身仍要成功。
+			if _, err := part.Write(validTinyPNGBytes()); err != nil {
+				t.Fatal(err)
+			}
+			if err := writer.WriteField("kind", "gallery"); err != nil {
+				t.Fatal(err)
+			}
+			if err := writer.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/owner/assets", &body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+			rr := httptest.NewRecorder()
+
+			ownerRouter(rr, req)
+
+			if rr.Code != http.StatusOK {
+				t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+			}
+			item := decodeOwnerJSONMap(t, rr)["item"].(map[string]any)
+			if _, ok := item["thumbUrl"]; ok {
+				t.Fatalf("tiny image should not get a thumbnail: %#v", item["thumbUrl"])
+			}
+			if item["url"] != "https://cdn.example/gallery/2026/06/tiny.png" {
+				t.Fatalf("original upload should still be reported: %#v", item["url"])
+			}
+		})
 	})
 }

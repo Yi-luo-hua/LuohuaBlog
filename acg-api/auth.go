@@ -462,7 +462,7 @@ func handleAuthAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filename := "avatar-" + uuid.NewString() + ext
-	result, err := uploader.UploadImage("avatar", "", filename, mimeType, body)
+	result, err := uploader.UploadImage("avatar", filename, mimeType, body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

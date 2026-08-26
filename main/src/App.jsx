@@ -3,8 +3,8 @@ import SiteLayout from "./layouts/SiteLayout";
 import AppConsolePage from "./pages/AppConsolePage";
 import HomePage from "./pages/HomePage";
 import BangumiPage from "./pages/BangumiPage";
-import GalleryAlbumPage from "./pages/GalleryAlbumPage";
 import GalleryPage from "./pages/GalleryPage";
+import GalleryPhotoPage from "./pages/GalleryPhotoPage";
 import MomentsPage from "./pages/MomentsPage";
 import AboutSitePage from "./pages/AboutSitePage";
 import AboutProjectPage from "./pages/AboutProjectPage";
@@ -52,7 +52,7 @@ function App() {
               element={<Navigate to="/bangumi/watching" replace />}
             />
             <Route path="gallery" element={<GalleryPage />} />
-            <Route path="gallery/:albumId" element={<GalleryAlbumPage />} />
+            <Route path="gallery/:photoId" element={<GalleryPhotoPage />} />
             <Route path="moments" element={<MomentsPage />} />
             <Route path="about" element={<AboutSitePage />} />
             <Route

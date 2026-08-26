@@ -119,11 +119,11 @@ func TestDrawAPIWallpaperIgnoresLocalFallbackRows(t *testing.T) {
 	if err := insertWallpaperItems(testDB, []wallpaperItem{
 		{
 			ID:          "local-fallback",
-			URL:         "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/local.jpg",
-			PreviewURL:  "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/local-preview.jpg",
+			URL:         "/cos/gallery/local.jpg",
+			PreviewURL:  "/cos/gallery/local-preview.jpg",
 			Source:      "local-gallery",
 			Author:      "tester",
-			SourceURL:   "https://taozhiyy.top/gallery",
+			SourceURL:   "https://yiluohua.top/gallery",
 			LicenseNote: "local fallback",
 			Kind:        "fallback",
 			Status:      "active",
@@ -240,5 +240,22 @@ func TestWaifuImageToWallpaperItemRejectsPortraitImage(t *testing.T) {
 		Height:     2000,
 	}, time.Now().UTC()); ok {
 		t.Fatal("expected portrait image to be rejected for wallpaper usage")
+	}
+}
+
+func TestFallbackWallpaperNoLongerServesTheTemplateAuthorsPhotos(t *testing.T) {
+	for _, item := range fallbackWallpaperItems {
+		if strings.Contains(item.URL, "tzyy-1330068502") || strings.Contains(item.SourceURL, "taozhiyy") {
+			t.Fatalf("template author's photo still in the fallback pool: %#v", item)
+		}
+	}
+
+	// 本地兜底清空后要退到 API 占位图，而不是 panic。
+	item := fallbackWallpaperItem()
+	if item.Source != "external-api-placeholder" {
+		t.Fatalf("expected the api placeholder when the local pool is empty, got %#v", item)
+	}
+	if strings.Contains(item.URL, "taozhiyy") {
+		t.Fatalf("placeholder still seeded with the template author's name: %s", item.URL)
 	}
 }

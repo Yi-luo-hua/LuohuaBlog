@@ -3,7 +3,9 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -559,15 +561,6 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	album := strings.TrimSpace(r.FormValue("album"))
-	if kind == "gallery" && album == "" {
-		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
-			"error":   "INVALID_ALBUM",
-			"message": "相册上传必须选择相册。",
-		})
-		return
-	}
-
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
@@ -619,7 +612,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := ownerUploadFilename(ext)
-	item, err := uploader.UploadImage(kind, album, name, mimeType, buf)
+	item, err := uploader.UploadImage(kind, name, mimeType, buf)
 	if err != nil {
 		writeJSONStatus(w, http.StatusBadGateway, map[string]any{
 			"error":   "ASSET_UPLOAD_FAILED",
@@ -628,16 +621,33 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, map[string]any{
-		"ok": true,
-		"item": map[string]any{
-			"kind":     kind,
-			"url":      item.URL,
-			"path":     item.ObjectKey,
-			"mimeType": item.MIMEType,
-			"size":     item.Size,
-		},
-	})
+	response := map[string]any{
+		"kind":     kind,
+		"url":      item.URL,
+		"path":     item.ObjectKey,
+		"mimeType": item.MIMEType,
+		"size":     item.Size,
+	}
+	// 相册列表页按等高行排版，一行最高 300px，挂原图太浪费。顺手存一份缩略图，
+	// 列表用它、详情页仍旧给原图。做不出来（webp 解不开、图本来就小）就算了，
+	// 前端拿不到 thumbUrl 会自动退回原图。
+	if kind == "gallery" {
+		if thumb, thumbWidth, thumbHeight, err := buildOwnerThumbnail(buf); err == nil {
+			thumbKey := ownerThumbnailObjectKey(item.ObjectKey)
+			if uploaded, err := uploader.UploadImageAt(thumbKey, "image/jpeg", thumb); err == nil {
+				response["thumbUrl"] = uploaded.URL
+				response["thumbPath"] = uploaded.ObjectKey
+				response["thumbWidth"] = thumbWidth
+				response["thumbHeight"] = thumbHeight
+			} else {
+				log.Println("owner asset: gallery thumbnail upload skipped:", err)
+			}
+		} else if !errors.Is(err, errThumbnailNotWorthIt) {
+			log.Println("owner asset: gallery thumbnail skipped:", err)
+		}
+	}
+
+	writeJSON(w, map[string]any{"ok": true, "item": response})
 }
 
 func ownerUploadServeHandler(w http.ResponseWriter, r *http.Request, name string) {

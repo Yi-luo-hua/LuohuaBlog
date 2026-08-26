@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,16 +16,19 @@ import (
 	"time"
 )
 
-const ownerGalleryDataPath = "main/src/data/galleryAlbums.js"
+const ownerGalleryDataPath = "main/src/data/galleryPhotos.js"
 
+// 相册不再分册：一张照片就是列表里的一条，新发布的插在最前面。
 type ownerGalleryPublishRequest struct {
-	AlbumID    string `json:"albumId"`
-	AlbumTitle string `json:"albumTitle"`
-	ImageURL   string `json:"imageUrl"`
+	ImageURL string `json:"imageUrl"`
+	ThumbURL string `json:"thumbUrl"`
+	Width    int    `json:"width"`
+	Height   int    `json:"height"`
+	Title    string `json:"title"`
 }
 
 type ownerGalleryPublishResult struct {
-	AlbumID       string
+	PhotoID       string
 	ImageURL      string
 	Path          string
 	CommitSHA     string
@@ -56,7 +61,7 @@ func ownerGalleryPublishHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := publisher.publishGalleryImage(body)
+	result, err := publisher.publishGalleryPhoto(body)
 	if err != nil {
 		var publishErr *ownerPublishError
 		if ok := errorAs(err, &publishErr); ok {
@@ -79,7 +84,7 @@ func ownerGalleryPublishHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"ok": true,
 		"item": map[string]any{
-			"albumId":       result.AlbumID,
+			"photoId":       result.PhotoID,
 			"imageUrl":      result.ImageURL,
 			"path":          result.Path,
 			"commitSha":     result.CommitSHA,
@@ -101,7 +106,7 @@ func ownerGalleryPublishHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (p *ownerGitHubPublisher) publishGalleryImage(req ownerGalleryPublishRequest) (ownerGalleryPublishResult, error) {
+func (p *ownerGitHubPublisher) publishGalleryPhoto(req ownerGalleryPublishRequest) (ownerGalleryPublishResult, error) {
 	file, err := p.getGitHubFile(ownerGalleryDataPath)
 	if err != nil {
 		return ownerGalleryPublishResult{}, err
@@ -111,7 +116,7 @@ func (p *ownerGitHubPublisher) publishGalleryImage(req ownerGalleryPublishReques
 		return ownerGalleryPublishResult{}, err
 	}
 	result.Path = ownerGalleryDataPath
-	result.CommitMessage = ownerGalleryPublishCommitMessage(result.AlbumID)
+	result.CommitMessage = ownerGalleryPublishCommitMessage(result.PhotoID)
 	if !result.Changed {
 		return result, nil
 	}
@@ -399,132 +404,103 @@ func (p *ownerGitHubPublisher) createGitHubPullRequest(title, body, head, base s
 
 func buildOwnerGalleryDataUpdate(source string, req ownerGalleryPublishRequest) (string, ownerGalleryPublishResult, error) {
 	imageURL := strings.TrimSpace(req.ImageURL)
-	if !ownerIsPublicImageURL(imageURL) {
-		return "", ownerGalleryPublishResult{}, errors.New("相册图片 URL 必须是公开的 http 或 https 地址")
+	if !ownerIsGalleryImageSource(imageURL) {
+		return "", ownerGalleryPublishResult{}, errors.New("相册图片地址必须是站内 /cos/ 路径，或公开的 http/https 地址")
+	}
+	if !ownerAreUsableDimensions(req.Width, req.Height) {
+		return "", ownerGalleryPublishResult{}, errors.New("相册图片必须带上原始像素宽高")
 	}
 
-	albumID := strings.TrimSpace(req.AlbumID)
-	albumTitle := strings.TrimSpace(req.AlbumTitle)
-	if albumID == "" {
-		albumID = ownerAlbumSlug(albumTitle)
+	arrayOpen := strings.Index(source, ownerGalleryArrayDecl)
+	if arrayOpen < 0 {
+		return "", ownerGalleryPublishResult{}, errors.New("未找到 galleryPhotos 导出")
 	}
-	if albumTitle == "" {
-		albumTitle = albumID
-	}
-	if albumID == "" || albumID == "default" {
-		return "", ownerGalleryPublishResult{}, errors.New("请选择相册或填写自定义相册名")
+	arrayOpen += strings.Index(source[arrayOpen:], "[")
+	if _, ok := findMatchingJS(source, arrayOpen, '[', ']'); !ok {
+		return "", ownerGalleryPublishResult{}, errors.New("galleryPhotos 数组无效")
 	}
 
-	updated, found, changed, err := appendImageToGalleryAlbum(source, albumID, imageURL)
-	if err != nil {
-		return "", ownerGalleryPublishResult{}, err
+	// 同一个地址只收一次，重复发布不会在相册里堆出两张一样的照片。
+	if strings.Contains(source, jsStringLiteral(imageURL)) {
+		return source, ownerGalleryPublishResult{
+			PhotoID:  ownerGalleryPhotoIDFor(imageURL, time.Now().UTC()),
+			ImageURL: imageURL,
+			Changed:  false,
+		}, nil
 	}
-	if !found {
-		updated, err = appendNewGalleryAlbum(source, albumID, albumTitle, imageURL)
-		if err != nil {
-			return "", ownerGalleryPublishResult{}, err
-		}
-		changed = true
+
+	// 缩略图是可选的：webp 解不开、图本来就小，都会没有，那就让列表页退回原图。
+	thumbURL := strings.TrimSpace(req.ThumbURL)
+	if thumbURL != "" && !ownerIsGalleryImageSource(thumbURL) {
+		return "", ownerGalleryPublishResult{}, errors.New("缩略图地址必须是站内 /cos/ 路径，或公开的 http/https 地址")
 	}
+
+	now := time.Now().UTC()
+	photoID := ownerGalleryPhotoIDFor(imageURL, now)
+	entry := newGalleryPhotoLiteral(photoID, imageURL, thumbURL, strings.TrimSpace(req.Title), req.Width, req.Height, now)
+
+	// 插在数组开头——相册按发布时间倒序展示，最新的一张要排在最前面。
+	updated := source[:arrayOpen+1] + "\n" + entry + source[arrayOpen+1:]
 
 	return updated, ownerGalleryPublishResult{
-		AlbumID:  albumID,
+		PhotoID:  photoID,
 		ImageURL: imageURL,
-		Changed:  changed,
+		Changed:  true,
 	}, nil
 }
 
-func appendImageToGalleryAlbum(source, albumID, imageURL string) (string, bool, bool, error) {
-	albumStart, albumEnd, ok := findGalleryAlbumObject(source, albumID)
-	if !ok {
-		return source, false, false, nil
-	}
+const ownerGalleryArrayDecl = "export const galleryPhotos = ["
 
-	object := source[albumStart:albumEnd]
-	if strings.Contains(object, jsStringLiteral(imageURL)) {
-		return source, true, false, nil
+// 前端 isGalleryImageSource 是同一套规则，改这里记得两边一起改。
+func ownerIsGalleryImageSource(value string) bool {
+	source := strings.TrimSpace(value)
+	if source == "" {
+		return false
 	}
-
-	imagesRel := strings.Index(object, "images: [")
-	if imagesRel < 0 {
-		return "", true, false, fmt.Errorf("相册 %q 缺少 images 数组", albumID)
+	// `//host/x` 看着像站内路径，其实会被浏览器解析到别的站点上去。
+	if strings.HasPrefix(source, "//") {
+		return false
 	}
-	arrayOpen := albumStart + imagesRel + strings.Index(object[imagesRel:], "[")
-	arrayClose, ok := findMatchingJS(source, arrayOpen, '[', ']')
-	if !ok || arrayClose > albumEnd {
-		return "", true, false, fmt.Errorf("相册 %q 的 images 数组无效", albumID)
+	if strings.HasPrefix(source, "/") {
+		return strings.HasPrefix(source, ownerGalleryCOSPrefix) && len(source) > len(ownerGalleryCOSPrefix)
 	}
-
-	return insertGalleryImageBeforeArrayClose(source, arrayOpen, arrayClose, imageURL), true, true, nil
+	return ownerIsPublicImageURL(source)
 }
 
-func appendNewGalleryAlbum(source, albumID, albumTitle, imageURL string) (string, error) {
-	arrayOpen := strings.Index(source, "export const galleryAlbums = [")
-	if arrayOpen < 0 {
-		return "", errors.New("未找到 galleryAlbums 导出")
-	}
-	arrayOpen += strings.Index(source[arrayOpen:], "[")
-	arrayClose, ok := findMatchingJS(source, arrayOpen, '[', ']')
-	if !ok {
-		return "", errors.New("galleryAlbums 数组无效")
-	}
+const ownerGalleryCOSPrefix = "/cos/"
 
-	closeLineStart := strings.LastIndex(source[:arrayClose], "\n") + 1
-	album := newGalleryAlbumLiteral(albumID, albumTitle, imageURL)
-	return source[:closeLineStart] + album + source[closeLineStart:], nil
+const ownerGalleryMaxDimension = 100000
+
+func ownerAreUsableDimensions(width, height int) bool {
+	return width > 0 && height > 0 &&
+		width <= ownerGalleryMaxDimension && height <= ownerGalleryMaxDimension
 }
 
-func findGalleryAlbumObject(source, albumID string) (int, int, bool) {
-	idPattern := "id: " + jsStringLiteral(albumID)
-	idIndex := strings.Index(source, idPattern)
-	if idIndex < 0 {
-		return 0, 0, false
-	}
-	start := strings.LastIndex(source[:idIndex], "{")
-	if start < 0 {
-		return 0, 0, false
-	}
-	end, ok := findMatchingJS(source, start, '{', '}')
-	if !ok {
-		return 0, 0, false
-	}
-	return start, end + 1, true
+// 时间戳加地址摘要：既能按 id 排出先后，也不会两张照片撞在一起。
+func ownerGalleryPhotoIDFor(imageURL string, now time.Time) string {
+	sum := sha1.Sum([]byte(imageURL))
+	return now.Format("20060102-150405") + "-" + hex.EncodeToString(sum[:3])
 }
 
-func insertGalleryImageBeforeArrayClose(source string, arrayOpen, arrayClose int, imageURL string) string {
-	closeLineStart := strings.LastIndex(source[:arrayClose], "\n") + 1
-	closeIndent := leadingWhitespace(source[closeLineStart:arrayClose])
-	entryIndent := galleryArrayEntryIndent(source[arrayOpen+1:arrayClose], closeIndent)
-	entry := entryIndent + jsStringLiteral(imageURL) + ",\n"
-	return source[:closeLineStart] + entry + source[closeLineStart:]
-}
-
-func galleryArrayEntryIndent(arrayBody, closeIndent string) string {
-	lines := strings.Split(arrayBody, "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		trimmed := strings.TrimSpace(lines[i])
-		if strings.HasPrefix(trimmed, `"`) || strings.HasPrefix(trimmed, "`") {
-			return leadingWhitespace(lines[i])
-		}
-	}
-	return closeIndent + "  "
-}
-
-func newGalleryAlbumLiteral(albumID, albumTitle, imageURL string) string {
-	return strings.Join([]string{
+func newGalleryPhotoLiteral(photoID, imageURL, thumbURL, title string, width, height int, publishedAt time.Time) string {
+	lines := []string{
 		"  {",
-		"    id: " + jsStringLiteral(albumID) + ",",
-		"    title: " + jsStringLiteral(albumTitle) + ",",
-		"    eyebrow: \"站长上传\",",
-		"    description: \"由站长控制器上传。\",",
-		"    tone: \"from-[#F6FBFF] via-[#FFF8F1] to-[#FFEAF4]\",",
-		"    accent: \"#FF8FAB\",",
-		"    cover: " + jsStringLiteral(imageURL) + ",",
-		"    images: [",
-		"      " + jsStringLiteral(imageURL) + ",",
-		"    ],",
+		"    id: " + jsStringLiteral(photoID) + ",",
+		"    src: " + jsStringLiteral(imageURL) + ",",
+		"    width: " + strconv.Itoa(width) + ",",
+		"    height: " + strconv.Itoa(height) + ",",
+	}
+	if thumbURL != "" {
+		lines = append(lines, "    thumb: "+jsStringLiteral(thumbURL)+",")
+	}
+	if title != "" {
+		lines = append(lines, "    title: "+jsStringLiteral(title)+",")
+	}
+	lines = append(lines,
+		"    publishedAt: "+jsStringLiteral(publishedAt.Format(time.RFC3339))+",",
 		"  },",
-	}, "\n") + "\n"
+	)
+	return strings.Join(lines, "\n") + "\n"
 }
 
 func findMatchingJS(source string, openIndex int, open, close byte) (int, bool) {
@@ -580,10 +556,6 @@ func jsStringLiteral(value string) string {
 	return strconv.Quote(value)
 }
 
-func leadingWhitespace(value string) string {
-	return value[:len(value)-len(strings.TrimLeft(value, " \t"))]
-}
-
-func ownerGalleryPublishCommitMessage(albumID string) string {
-	return "feat: publish gallery image to " + albumID + " " + time.Now().UTC().Format("20060102-150405")
+func ownerGalleryPublishCommitMessage(photoID string) string {
+	return "feat: publish gallery photo " + photoID
 }

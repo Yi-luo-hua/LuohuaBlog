@@ -76,7 +76,7 @@ export const ownerConsoleModules = [
   {
     id: "gallery",
     title: "相册图片",
-    description: "选择相册、上传 COS，并发布到站内相册数据。",
+    description: "上传照片、记下原始尺寸，并发布到站内相册数据。",
     icon: "G",
     tone: "green",
     status: "待上传 0",

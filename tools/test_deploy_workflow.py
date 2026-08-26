@@ -113,10 +113,23 @@ class DeployWorkflowTests(unittest.TestCase):
         # The media under /cos/ was reverse-proxied from the template author's
         # Tencent COS bucket. It now lives in this repository so that rebuilding
         # the server never depends on a third party's storage again.
+        #
+        # This used to assert a raw file count, which tripped as soon as the
+        # template author's gallery photos were deleted. Name the assets the
+        # site actually loads instead, so the guard tracks intent rather than
+        # ordinary media churn.
         media = ROOT / "assets" / "cos"
         files = [p for p in media.rglob("*") if p.is_file() and p.suffix != ".md"]
+        self.assertGreater(len(files), 20, "site media should be committed")
 
-        self.assertGreater(len(files), 50, "site media should be committed")
+        referenced = [
+            media / "AI自动化博客图片" / "main" / "img" / "hero-1.webp",
+            media / "AI自动化博客图片" / "main" / "videos" / "feature-1.mp4",
+            media / "AI自动化博客图片" / "main" / "audio" / "loop.mp3",
+        ]
+        for path in referenced:
+            self.assertTrue(path.is_file(), f"missing site media {path.relative_to(ROOT)}")
+
         self.assertIn("cos", (ROOT / "deploy" / "deploy-azure.sh").read_text(encoding="utf-8"))
 
     def test_no_source_file_points_at_the_template_authors_bucket(self):

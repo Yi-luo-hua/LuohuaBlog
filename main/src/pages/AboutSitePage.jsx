@@ -19,7 +19,7 @@ import { SiBilibili, SiPixiv } from "react-icons/si";
 
 import { blogPosts } from "virtual:blog-posts";
 import { FEATURED_PROJECT } from "../data/featuredProject.js";
-import { galleryAlbums } from "../data/galleryAlbums.js";
+import { galleryPhotosNewestFirst } from "../data/galleryPhotos.js";
 import { API_BASE } from "../lib/apiBase.js";
 import { cosAsset } from "../lib/cosAsset.js";
 import { copyTextToClipboard } from "../lib/copyTextToClipboard.js";
@@ -327,8 +327,8 @@ const AboutSitePage = () => {
             <small>保存镜头里的片刻</small>
           </div>
           <div className="about-desk-thumbnails" aria-hidden="true">
-            {galleryAlbums.slice(0, 3).map((album) => (
-              <img key={album.id} src={album.cover} alt="" />
+            {galleryPhotosNewestFirst.slice(0, 3).map((photo) => (
+              <img key={photo.id} src={photo.thumb || photo.src} alt="" loading="lazy" />
             ))}
           </div>
           <FiArrowUpRight className="about-desk-corner-icon" aria-hidden="true" />

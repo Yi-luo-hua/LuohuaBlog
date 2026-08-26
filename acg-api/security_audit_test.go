@@ -341,14 +341,13 @@ func TestOwnerGalleryPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
 		token := seedOwnerControllerSession(t, ownerID, true)
-		mockOwnerPublishGitHubFile(t, ownerGalleryDataPath, `export const galleryAlbums = [
-];
+		mockOwnerPublishGitHubFile(t, ownerGalleryDataPath, `export const galleryPhotos = [];
 `)
 
 		req := httptest.NewRequest(
 			http.MethodPost,
 			"/api/owner/gallery/images",
-			bytes.NewBufferString(`{"albumId":"audit-album","imageUrl":"https://cdn.example/private.jpg"}`),
+			bytes.NewBufferString(`{"imageUrl":"https://cdn.example/private.jpg","width":4000,"height":3000,"title":"audit-caption"}`),
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.RemoteAddr = "203.0.113.52:1234"
@@ -368,8 +367,8 @@ func TestOwnerGalleryPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 		if got.ActorUserID != ownerID || got.TargetType != "owner_publish" || got.TargetID != ownerGalleryDataPath {
 			t.Fatalf("unexpected audit actor/target: %#v", got)
 		}
-		if strings.Contains(got.Detail, "audit-album") || strings.Contains(got.Detail, "private.jpg") {
-			t.Fatalf("audit detail must not include gallery album or image url: %#v", got.Detail)
+		if strings.Contains(got.Detail, "audit-caption") || strings.Contains(got.Detail, "private.jpg") {
+			t.Fatalf("audit detail must not include gallery caption or image url: %#v", got.Detail)
 		}
 	})
 }

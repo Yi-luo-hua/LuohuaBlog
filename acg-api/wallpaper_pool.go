@@ -21,30 +21,9 @@ const (
 	wallpaperHTTPClientTimeout = 10 * time.Second
 )
 
-var fallbackWallpaperItems = []wallpaperItem{
-	{
-		ID:          "fallback-ai-blog-0e7e10e2acdb398941c10735a791918d",
-		URL:         "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/0e7e10e2acdb398941c10735a791918d.jpg",
-		PreviewURL:  "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/0e7e10e2acdb398941c10735a791918d.jpg",
-		Source:      "local-gallery",
-		Author:      "taozhiyy",
-		SourceURL:   "https://taozhiyy.top/gallery",
-		LicenseNote: "Local gallery fallback",
-		Kind:        "fallback",
-		Status:      "active",
-	},
-	{
-		ID:          "fallback-misaka-915cdb4184d77e9d06e789755f30f792",
-		URL:         "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/915cdb4184d77e9d06e789755f30f792.jpg",
-		PreviewURL:  "https://tzyy-1330068502.cos.ap-beijing.myqcloud.com/%E6%97%8B%E8%BD%AC%E7%9B%B8%E5%86%8C%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4/915cdb4184d77e9d06e789755f30f792.jpg",
-		Source:      "local-gallery",
-		Author:      "taozhiyy",
-		SourceURL:   "https://taozhiyy.top/gallery/misaka",
-		LicenseNote: "Local gallery fallback",
-		Kind:        "fallback",
-		Status:      "active",
-	},
-}
+// 兜底壁纸。这里原本硬编码着模板作者的两张相册图（连同他的域名和署名），
+// 已经清空——本站自己的图片可以往里加，空着的话就退到下面的 API 占位图。
+var fallbackWallpaperItems = []wallpaperItem{}
 
 type wallpaperItem struct {
 	ID          string    `json:"id"`
@@ -115,7 +94,7 @@ func fetchWaifuWallpapers(limit int) ([]wallpaperItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "taozhiyy-wallpaper-pool/1.0")
+	req.Header.Set("User-Agent", "luohua-wallpaper-pool/1.0")
 	req.Header.Set("Accept", "application/json")
 
 	var body waifuSearchResponse
@@ -293,6 +272,10 @@ func drawAPIWallpaperItem(db *sql.DB) (wallpaperItem, error) {
 }
 
 func fallbackWallpaperItem() wallpaperItem {
+	// 本地兜底为空是正常状态，别让 rand.Intn(0) 把抽壁纸接口打崩。
+	if len(fallbackWallpaperItems) == 0 {
+		return apiFallbackWallpaperItem()
+	}
 	item := fallbackWallpaperItems[rand.Intn(len(fallbackWallpaperItems))]
 	item.AddedAt = time.Now().UTC()
 	return item
@@ -302,8 +285,8 @@ func apiFallbackWallpaperItem() wallpaperItem {
 	seed := time.Now().UTC().Format("20060102150405")
 	return wallpaperItem{
 		ID:          "external-api-placeholder-" + seed,
-		URL:         "https://picsum.photos/seed/taozhiyy-" + seed + "/1920/1080",
-		PreviewURL:  "https://picsum.photos/seed/taozhiyy-" + seed + "/960/540",
+		URL:         "https://picsum.photos/seed/luohua-" + seed + "/1920/1080",
+		PreviewURL:  "https://picsum.photos/seed/luohua-" + seed + "/960/540",
 		Source:      "external-api-placeholder",
 		Author:      "Lorem Picsum",
 		SourceURL:   "https://picsum.photos/",
