@@ -21,6 +21,11 @@ DEPLOY_HOST="${DEPLOY_HOST:-65.52.160.147}"
 DEPLOY_USER="${DEPLOY_USER:-azureuser}"
 DEPLOY_KEY="${DEPLOY_KEY:-E:/TOOLS/blog-server-key.pem}"
 
+# The VM sits overseas and the local route to it can be broken; when set,
+# tunnel every ssh/scp connection through this SOCKS5 proxy instead.
+# Example: DEPLOY_PROXY=127.0.0.1:7890 deploy/deploy-azure.sh main api
+DEPLOY_PROXY="${DEPLOY_PROXY:-}"
+
 WWW_DIR="/var/www/luohua"
 API_DIR="/opt/acg-api"
 DATA_DIR="/var/lib/acg-api"
@@ -66,6 +71,13 @@ SSH_OPTS=(
   -o "UserKnownHostsFile=$DEPLOY_KNOWN_HOSTS"
   -i "$DEPLOY_KEY"
 )
+if [ -n "$DEPLOY_PROXY" ]; then
+  # connect.exe ships with Git for Windows and speaks SOCKS5; on a plain
+  # Linux host `nc -X connect -x` would do the same job.
+  CONNECT_BIN="$(command -v connect.exe || command -v connect)"
+  [ -n "$CONNECT_BIN" ] || { echo "DEPLOY_PROXY set but no connect binary found in PATH" >&2; exit 1; }
+  SSH_OPTS+=(-o "ProxyCommand=$CONNECT_BIN -S $DEPLOY_PROXY %h %p")
+fi
 
 targets=("$@")
 if [ ${#targets[@]} -eq 0 ]; then
