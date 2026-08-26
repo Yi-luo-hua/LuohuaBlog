@@ -13,7 +13,7 @@
 | `acg-api/` | Go + SQLite 后端，Nginx 反代为 `/api`。 |
 | `integrations/` | Obsidian → GitHub 发布桥（MCP）。 |
 | `deploy/` | systemd 单元、Nginx 片段与服务器安装脚本。 |
-| `tools/` | Python 健康检查与仓库守卫测试。 |
+| `tools/` | Python 健康检查、相册收图与仓库守卫测试。 |
 
 ## 本地运行
 

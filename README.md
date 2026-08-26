@@ -13,7 +13,7 @@ The monorepo behind my personal site — main site, blog, and the Go backend tha
 | `acg-api/` | Go + SQLite backend. Nginx exposes it as `/api`. |
 | `integrations/` | Obsidian → GitHub publishing bridge (MCP). |
 | `deploy/` | systemd units, Nginx snippets, and server install scripts. |
-| `tools/` | Python health-check and repo guard tests. |
+| `tools/` | Python health-check, gallery ingest, and repo guard tests. |
 
 ## Running locally
 

@@ -79,7 +79,7 @@ ssh -i "E:\TOOLS\blog-server-key.pem" azureuser@65.52.160.147
 ```text
 /var/www/luohua/main/   # main/dist
 /var/www/luohua/blog/   # blog/public
-/var/www/luohua/cos/    # 站点媒体资源（26 MB，75 个文件），由 Nginx 直接读盘
+/var/www/luohua/cos/    # 站点媒体资源（53 MB，116 个文件），由 Nginx 直接读盘
 ```
 
 ### Go API
@@ -129,7 +129,16 @@ curl -fsS http://127.0.0.1/api/v1/health
 
 校验方式：请求任意 `/cos/` 资源，响应头里不应再出现 `X-Cos-*`。
 
-换服务器时记得把 `/var/www/luohua/cos/` 一起搬走——这些文件只在这台机器上，仓库里没有。
+媒体现在跟着仓库走：源文件在 `assets/cos/`，`deploy/deploy-azure.sh cos` 用 rsync 同步到
+`/var/www/luohua/cos/`。换服务器时不用单独搬这个目录，重新跑一次带 `cos` 的部署即可——
+但反过来说，**只部署代码不带 `cos` 这个 target，新加的图片不会上去，页面会裂**。
+
+往相册加照片有两条路，写进 `main/src/data/galleryPhotos.js` 的条目格式一致：
+
+- `python tools/gallery_ingest.py <目录>`：读原始宽高、生成缩略图、按时间倒序插入，
+  照片落到 `assets/cos/gallery/年/月/`。不需要任何密钥，走的就是上面这条 rsync 通道。
+- 站长控制台上传：走腾讯 COS，需要服务器上配好 `TENCENT_COS_*`，缩略图由 acg-api
+  在上传时生成。
 
 ## 5.1 压缩（改过 nginx.conf，不在仓库里）
 
