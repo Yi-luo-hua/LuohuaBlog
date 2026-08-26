@@ -55,11 +55,21 @@ class BlogPublishBridgeTests(unittest.TestCase):
                 f"{line.strip()} must stay empty or blog/source/images stops being copied",
             )
 
-    def test_tells_the_author_to_deploy_since_nothing_does_it_automatically(self):
+    def test_supports_automatic_deployment_by_default(self):
         readme = (ROOT / "integrations" / "claudian-blog-mcp" / "README.md").read_text(encoding="utf-8")
 
         self.assertIn("deploy-azure.sh blog", self.source)
+        self.assertIn("runDeployBlog", self.source)
+        self.assertIn("syncLocalFilesystem", self.source)
         self.assertIn("deploy-azure.sh blog", readme)
+
+    def test_supports_article_update_and_deletion(self):
+        readme = (ROOT / "integrations" / "claudian-blog-mcp" / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("delete_blog_post", self.source)
+        self.assertIn("deleteNote", self.source)
+        self.assertIn("getFileShaFromGitHub", self.source)
+        self.assertIn("delete_blog_post", readme)
 
 
 if __name__ == "__main__":

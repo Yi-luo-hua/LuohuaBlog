@@ -1,14 +1,15 @@
 import { createInterface } from "node:readline";
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat, writeFile, mkdir, rm } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
 
-const serverInfo = { name: "yi-luo-hua-blog-publisher", version: "2.1.0" };
+const serverInfo = { name: "yi-luo-hua-blog-publisher", version: "2.3.0" };
 const publishTool = {
   name: "publish_blog_post",
   description:
-    "Publish an Obsidian Markdown note to Yi-luo-hua's blog. Use dry_run=true first when the user asks to preview.",
+    "Publish or update an Obsidian Markdown note to Yi-luo-hua's blog with automatic GitHub commit and Azure production deployment. Use dry_run=true first when the user asks to preview.",
   inputSchema: {
     type: "object",
     properties: {
@@ -27,14 +28,50 @@ const publishTool = {
         description:
           "Optional cover override: public HTTPS URL, local vault image path, auto, or none.",
       },
+      deploy: {
+        type: "boolean",
+        default: true,
+        description:
+          "Automatically build and push-deploy the blog to Azure production server after committing to GitHub (defaults to true).",
+      },
       dry_run: {
         type: "boolean",
         default: false,
         description:
-          "Validate and preview the generated post without committing to GitHub.",
+          "Validate and preview the generated post without committing to GitHub or deploying.",
       },
     },
     required: ["source_path"],
+    additionalProperties: false,
+  },
+};
+
+const deleteTool = {
+  name: "delete_blog_post",
+  description:
+    "Delete a published blog post from GitHub repository and remove it from Azure production server. Use dry_run=true first when the user asks to preview.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      post_identifier: {
+        type: "string",
+        description:
+          "Post title, filename (e.g. 'my-post.md'), or path in blog/source/_posts/.",
+      },
+      deploy: {
+        type: "boolean",
+        default: true,
+        description:
+          "Automatically build and remove the post from Azure production server (defaults to true).",
+      },
+      dry_run: {
+        type: "boolean",
+        default: false,
+        description:
+          "Validate and preview the post to be deleted without committing to GitHub or deploying.",
+      },
+    },
+    required: ["post_identifier"],
     additionalProperties: false,
   },
 };
@@ -47,6 +84,10 @@ const resultText = (text, isError = false) => ({
   ...(isError ? { isError: true } : {}),
 });
 
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 const vaultRoot = path.resolve(
   process.env.OBSIDIAN_VAULT_ROOT || process.cwd(),
 );
@@ -56,6 +97,7 @@ const githubOwner = String(
 const githubRepo = String(process.env.BLOG_GITHUB_REPO || "LuohuaBlog").trim();
 const githubBranch = String(process.env.BLOG_GITHUB_BRANCH || "master").trim();
 const githubCli = String(process.env.GITHUB_CLI_PATH || "gh").trim();
+
 // Where committed images land inside the repository, and the URL they get
 // once Hexo copies source/ into public/. Hexo has post_asset_folder off and an
 // empty skip_render, so anything here that it cannot render is copied verbatim.
@@ -511,12 +553,27 @@ const encodedContentPath = (postPath) =>
     .map((part) => encodeURIComponent(part))
     .join("/");
 
+const getFileShaFromGitHub = async (repoPath) => {
+  try {
+    const output = await runGitHub([
+      "api",
+      `repos/${githubOwner}/${githubRepo}/contents/${encodedContentPath(repoPath)}?ref=${encodeURIComponent(githubBranch)}`,
+    ]);
+    const parsed = JSON.parse(output);
+    return parsed.sha || null;
+  } catch {
+    return null;
+  }
+};
+
 const publishToGitHub = async (postPath, title, markdown) => {
+  const existingSha = await getFileShaFromGitHub(postPath);
   const endpoint = `repos/${githubOwner}/${githubRepo}/contents/${encodedContentPath(postPath)}`;
   const payload = {
-    message: `feat: publish ${title}`,
+    message: existingSha ? `feat: update ${title}` : `feat: publish ${title}`,
     content: Buffer.from(markdown, "utf8").toString("base64"),
     branch: githubBranch,
+    ...(existingSha ? { sha: existingSha } : {}),
   };
   const output = await runGitHub(
     ["api", "--method", "PUT", endpoint, "--input", "-"],
@@ -526,7 +583,214 @@ const publishToGitHub = async (postPath, title, markdown) => {
   return {
     path: response.content?.path || postPath,
     commitSha: response.commit?.sha || "",
+    isUpdate: Boolean(existingSha),
   };
+};
+
+const syncGitPull = async () => {
+  return new Promise((resolve) => {
+    const child = spawn("git", ["pull", "--ff-only"], {
+      cwd: repoRoot,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    child.on("error", () => resolve(false));
+    child.on("close", (code) => resolve(code === 0));
+  });
+};
+
+const resolvePublishedPost = async (identifier) => {
+  const raw = String(identifier || "").trim();
+  if (!raw) throw new Error("请指定要删除的文章标题或文件名。");
+
+  const candidates = [];
+  if (raw.startsWith("blog/source/_posts/")) {
+    candidates.push(raw);
+  } else {
+    const basename = raw.endsWith(".md") ? raw : `${raw}.md`;
+    candidates.push(`blog/source/_posts/${basename}`);
+    const stem = postStem(raw.replace(/\.md$/i, ""));
+    if (stem && `${stem}.md` !== basename) {
+      candidates.push(`blog/source/_posts/${stem}.md`);
+    }
+  }
+
+  for (const candidate of candidates) {
+    const sha = await getFileShaFromGitHub(candidate);
+    if (sha) return { repoPath: candidate, sha };
+  }
+
+  // Look up within the posts directory on GitHub
+  try {
+    const output = await runGitHub([
+      "api",
+      `repos/${githubOwner}/${githubRepo}/contents/blog/source/_posts?ref=${encodeURIComponent(githubBranch)}`,
+    ]);
+    const items = JSON.parse(output);
+    if (Array.isArray(items)) {
+      const exactMatches = items.filter(
+        (it) =>
+          it.name.toLowerCase() === raw.toLowerCase() ||
+          it.name.toLowerCase() === `${raw.toLowerCase()}.md`,
+      );
+      if (exactMatches.length === 1) {
+        return { repoPath: exactMatches[0].path, sha: exactMatches[0].sha };
+      }
+      if (exactMatches.length > 1) {
+        throw new Error(
+          `匹配到多个同名候选文章：${exactMatches.map((m) => m.name).join(", ")}，请指定精确路径。`,
+        );
+      }
+
+      // Exact title match check from local or remote files
+      const stemMatches = items.filter(
+        (it) => postStem(it.name.replace(/\.md$/i, "")) === postStem(raw),
+      );
+      if (stemMatches.length === 1) {
+        return { repoPath: stemMatches[0].path, sha: stemMatches[0].sha };
+      }
+      if (stemMatches.length > 1) {
+        throw new Error(
+          `匹配到多个同标题候选文章：${stemMatches.map((m) => m.name).join(", ")}，请指定精确文件名。`,
+        );
+      }
+    }
+  } catch (err) {
+    if (err.message && err.message.includes("候选文章")) throw err;
+  }
+
+  throw new Error(`在仓库中找不到匹配的文章：${raw}`);
+};
+
+const deleteNote = async (args) => {
+  await runGitHub(["auth", "status", "--hostname", "github.com"]);
+  const post = await resolvePublishedPost(args.post_identifier);
+  const shouldDeploy = args.deploy !== false;
+
+  if (args.dry_run) {
+    return resultText(
+      [
+        "删除预检通过",
+        `目标文件：${post.repoPath}`,
+        `仓库：${githubOwner}/${githubRepo} (${githubBranch})`,
+        `自动下架：${shouldDeploy ? "正式删除时将自动重新编译 Hexo 并从 Azure 生产服务器下架" : "仅从 GitHub 仓库删除"}`,
+        "尚未执行删除。",
+      ].join("\n"),
+    );
+  }
+
+  const endpoint = `repos/${githubOwner}/${githubRepo}/contents/${encodedContentPath(post.repoPath)}`;
+  const payload = {
+    message: `chore: delete post ${path.basename(post.repoPath, ".md")}`,
+    sha: post.sha,
+    branch: githubBranch,
+  };
+  const output = await runGitHub(
+    ["api", "--method", "DELETE", endpoint, "--input", "-"],
+    JSON.stringify(payload),
+  );
+  const response = JSON.parse(output);
+  const commitSha = response.commit?.sha || "";
+
+  // Delete local file with directory boundary containment check
+  const postsDir = path.resolve(repoRoot, "blog/source/_posts");
+  const localPostPath = path.resolve(repoRoot, post.repoPath);
+  const relative = path.relative(postsDir, localPostPath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw new Error(`非法文章路径：${post.repoPath}`);
+  }
+  await rm(localPostPath, { force: true });
+
+  let deploySuccess = false;
+  let deployErrorMsg = "";
+  if (shouldDeploy) {
+    try {
+      await syncGitPull();
+      await runDeployBlog();
+      deploySuccess = true;
+    } catch (error) {
+      deployErrorMsg = error.message;
+    }
+  }
+
+  const lines = [
+    deploySuccess ? "文章删除并下架成功" : "文章已从 GitHub 仓库删除",
+    `文件：${post.repoPath}`,
+    `分支：${githubBranch}`,
+    commitSha ? `Commit：${commitSha}` : "",
+  ];
+
+  if (deploySuccess) {
+    lines.push(
+      "",
+      "🗑️ 已自动重新执行 Hexo 编译并从 Azure 生产服务器彻底移除！",
+      "线上访问：https://yiluohua.top/blog/",
+    );
+  } else if (shouldDeploy) {
+    lines.push(
+      "",
+      `⚠️ 生产服务器下架未能自动完成：${deployErrorMsg}`,
+      "文章已从 GitHub 仓库移除，您可手动执行 deploy/deploy-azure.sh blog 完成线上同步。",
+    );
+  }
+
+  return resultText(lines.filter(Boolean).join("\n"));
+};
+
+const findBash = async () => {
+  const customBash = process.env.GIT_BASH_PATH || process.env.BASH_PATH;
+  if (customBash && (await fileExists(customBash))) return customBash;
+  const standardGitBash = "C:\\Program Files\\Git\\bin\\bash.exe";
+  if (await fileExists(standardGitBash)) return standardGitBash;
+  return "bash";
+};
+
+const syncLocalFilesystem = async (postPath, markdown, planned) => {
+  await syncGitPull();
+  const localPostPath = path.resolve(repoRoot, postPath);
+  await mkdir(path.dirname(localPostPath), { recursive: true });
+  await writeFile(localPostPath, markdown, "utf8");
+
+  for (const [sourcePath, plan] of planned) {
+    const localImgPath = path.resolve(repoRoot, plan.repoPath);
+    await mkdir(path.dirname(localImgPath), { recursive: true });
+    await writeFile(localImgPath, plan.bytes);
+  }
+};
+
+const runDeployBlog = async () => {
+  const bashPath = await findBash();
+  return new Promise((resolve, reject) => {
+    const child = spawn(bashPath, ["-c", "deploy/deploy-azure.sh blog"], {
+      cwd: repoRoot,
+      windowsHide: true,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", (error) => {
+      reject(new Error(`无法启动部署脚本：${error.message}`));
+    });
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve(stdout);
+        return;
+      }
+      reject(
+        new Error(
+          stderr.trim() || stdout.trim() || `部署脚本退出码 ${code}`,
+        ),
+      );
+    });
+  });
 };
 
 const publishNote = async (args) => {
@@ -545,6 +809,7 @@ const publishNote = async (args) => {
     String(args.cover_url || "").trim(),
   );
   const previewPost = buildPost(title, body, "");
+  const shouldDeploy = args.deploy !== false;
 
   if (args.dry_run) {
     await runGitHub(["auth", "status", "--hostname", "github.com"]);
@@ -567,7 +832,8 @@ const publishNote = async (args) => {
         `本地图片：${media.localAssets.size} 张`,
         ...[...plannedPreview.values()].map((plan) => `  → ${plan.publicUrl}`),
         `封面：${coverPlan}`,
-        "尚未提交到 GitHub。",
+        `自动部署：${shouldDeploy ? "正式发布时将自动编译并推送至 Azure 生产服务器" : "跳过部署 (仅提交 GitHub)"}`,
+        "尚未提交到 GitHub 与服务器。",
       ].join("\n"),
     );
   }
@@ -588,22 +854,53 @@ const publishNote = async (args) => {
   );
   const published = await publishToGitHub(postPath, title, markdown);
   const repoUrl = `https://github.com/${githubOwner}/${githubRepo}/blob/${githubBranch}/${encodedContentPath(published.path)}`;
-  return resultText(
-    [
-      `发布成功：${title}`,
-      `文件：${published.path}`,
-      `分支：${githubBranch}`,
-      published.commitSha ? `Commit：${published.commitSha}` : "",
-      committed ? `已提交图片：${committed} 张` : "",
-      reused ? `复用已有图片：${reused} 张` : "",
-      `GitHub：${repoUrl}`,
+
+  let deploySuccess = false;
+  let deployErrorMsg = "";
+
+  if (shouldDeploy) {
+    try {
+      await syncLocalFilesystem(postPath, markdown, planned);
+      await runDeployBlog();
+      deploySuccess = true;
+    } catch (error) {
+      deployErrorMsg = error.message;
+    }
+  }
+
+  const lines = [
+    deploySuccess
+      ? `发布并上线成功：${title}`
+      : `GitHub 提交成功：${title}`,
+    `文件：${published.path}`,
+    `分支：${githubBranch}`,
+    published.commitSha ? `Commit：${published.commitSha}` : "",
+    committed ? `已提交图片：${committed} 张` : "",
+    reused ? `复用已有图片：${reused} 张` : "",
+    `GitHub：${repoUrl}`,
+  ];
+
+  if (deploySuccess) {
+    lines.push(
       "",
-      "文章已在 GitHub 上，但线上还是旧的——这里没有自动部署。",
-      "拉取并发布：git pull && deploy/deploy-azure.sh blog",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  );
+      "🚀 已自动完成 Hexo 编译并成功推送至生产服务器！",
+      "线上访问：https://yiluohua.top/blog/",
+    );
+  } else if (shouldDeploy) {
+    lines.push(
+      "",
+      `⚠️ 自动部署未能完成：${deployErrorMsg}`,
+      "文章已安全保存在 GitHub，您可以稍后手动执行：deploy/deploy-azure.sh blog",
+    );
+  } else {
+    lines.push(
+      "",
+      "（已跳过自动部署，仅提交到 GitHub 仓库）",
+      "如需上线请在本地执行：deploy/deploy-azure.sh blog",
+    );
+  }
+
+  return resultText(lines.filter(Boolean).join("\n"));
 };
 
 const handleRequest = async (message) => {
@@ -632,15 +929,25 @@ const handleRequest = async (message) => {
       return;
     }
     if (method === "tools/list") {
-      writeMessage({ jsonrpc: "2.0", id, result: { tools: [publishTool] } });
+      writeMessage({
+        jsonrpc: "2.0",
+        id,
+        result: { tools: [publishTool, deleteTool] },
+      });
       return;
     }
     if (method === "tools/call") {
-      if (params.name !== publishTool.name)
-        throw new Error(`未知工具：${params.name}`);
-      const result = await publishNote(params.arguments || {});
-      writeMessage({ jsonrpc: "2.0", id, result });
-      return;
+      if (params.name === publishTool.name) {
+        const result = await publishNote(params.arguments || {});
+        writeMessage({ jsonrpc: "2.0", id, result });
+        return;
+      }
+      if (params.name === deleteTool.name) {
+        const result = await deleteNote(params.arguments || {});
+        writeMessage({ jsonrpc: "2.0", id, result });
+        return;
+      }
+      throw new Error(`未知工具：${params.name}`);
     }
     writeMessage({
       jsonrpc: "2.0",

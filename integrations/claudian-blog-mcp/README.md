@@ -1,8 +1,8 @@
-# Claudian → 伊洛华博客发布桥
+# Claudian → 伊洛华博客发布桥（一键直达生产上线）
 
-这是一条只从本机向博客发布的 MCP 工具链：
+这是一条从 Obsidian 本机直达生产服务器的端到端自动化 MCP 工具链：
 
-`Obsidian Markdown → Claudian → publish_blog_post → GitHub CLI → GitHub → deploy/deploy-azure.sh blog`
+`Obsidian Markdown → Claudian → publish_blog_post → GitHub Commit → 本地 Hexo 自动构建 → Azure 生产自动推送上线`
 
 ## 1. 文章格式
 
@@ -97,11 +97,27 @@ claude mcp add --scope user yi-luo-hua-blog -- node "E:\TOOLS\BLOG\integrations\
 
 发布工具会先把本地图片提交到 `blog/source/images/` 并替换发布副本中的链接，再通过 GitHub Contents API 把文章写到 `blog/source/_posts/`。
 
-注意：**到这一步文章只是进了 GitHub，线上还是旧的。** 本仓库没有自动部署（继承自模板的拉取式部署指向的是别人的服务器，已删除）。发完要自己跑一次：
+**一键全自动上线**：
+- 默认情况下（`deploy: true`），工具在提交 GitHub 后会**自动在本地执行 Hexo 编译并打包推送至 Azure 生产服务器**，全程无需离开 Obsidian。
+- 如果只想提交 GitHub 暂不上线，可以传入 `deploy: false`。
+- 如果日后需要手动重跑全量部署，可以在本地终端执行：
 
 ```bash
-git pull && deploy/deploy-azure.sh blog
+deploy/deploy-azure.sh blog
 ```
+
+## 5. 修改与删除文章
+
+### 修改文章（覆盖更新）
+在 Obsidian 中直接修改笔记内容或插图后，再次调用 `publish_blog_post`。
+发布桥会自动获取仓库中已有文件的 SHA 签名，执行覆盖更新（Commit 信息标记为 `feat: update <title>`），并自动重新编译推送至生产服务器，线上页面即刻更新。
+
+### 删除文章（下架）
+在 Claudian 中调用 `delete_blog_post` 工具：
+```text
+请帮我删除博客文章，调用 delete_blog_post，post_identifier="文章标题或文件名"，dry_run=true。
+```
+确认无误后执行 `dry_run=false`。工具将自动从 GitHub 仓库移除文章、删除本地文件，并自动重新编译 Hexo 同步清理 Azure 生产服务器，彻底下架旧网页。
 
 ## 安全边界
 
@@ -109,3 +125,4 @@ git pull && deploy/deploy-azure.sh blog
 - GitHub 凭据只由 GitHub CLI 钥匙串管理，不会进入 Obsidian 笔记、MCP 配置或仓库。
 - `dry_run=true` 只检查图片、封面与目标路径，并列出每张图片将来的线上地址，不产生任何 GitHub commit。
 - 图片先于文章提交；若文章提交失败，已提交的图片会成为仓库里的未引用文件。它们在 git 里看得见、删得掉，不像图床那样无法回收。
+
