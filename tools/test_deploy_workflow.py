@@ -122,9 +122,9 @@ class DeployWorkflowTests(unittest.TestCase):
         files = [p for p in media.rglob("*") if p.is_file() and p.suffix != ".md"]
         self.assertGreater(len(files), 20, "site media should be committed")
 
+        # feature-*.mp4 曾经在这个清单里；它们连同打不开的影像档案浮层一起删了。
         referenced = [
             media / "AI自动化博客图片" / "main" / "img" / "hero-1.webp",
-            media / "AI自动化博客图片" / "main" / "videos" / "feature-1.mp4",
             media / "AI自动化博客图片" / "main" / "audio" / "loop.mp3",
         ]
         for path in referenced:

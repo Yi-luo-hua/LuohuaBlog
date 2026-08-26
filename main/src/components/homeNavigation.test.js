@@ -304,18 +304,15 @@ test("does not put the moments entry in feature five", () => {
 
 test("dresses the four bento cards in our own images, not the template's videos", () => {
   const featuresSource = readSource("components/Features.jsx");
-  // 只看 bento 网格那一段。上面的 ARCHIVE_ITEMS 仍在用模板作者的影像档案视频，
-  // 那是另一处入口，不在这条断言的范围里。
   const bentoGrid = featuresSource.slice(featuresSource.indexOf("features-bento-grid"));
   assert.ok(bentoGrid.length > 0);
 
-  // 四张卡片原本铺的是模板作者 COS 目录下的 feature-2..5.mp4。
-  for (const clip of ["feature-2.mp4", "feature-3.mp4", "feature-5.mp4"]) {
-    assert.ok(
-      !bentoGrid.includes("videos/" + clip),
-      "bento card still points at " + clip,
-    );
-  }
+  // 模板作者那批 feature-*.mp4 连同打不开的影像档案浮层一起删掉了，
+  // 整个文件都不该再提到它们。
+  assert.ok(
+    !featuresSource.includes("videos/feature-"),
+    "Features still references the template author's clips",
+  );
 
   for (const image of ["bento-bangumi.jpg", "bento-gallery.jpg", "bento-about.jpg", "bento-project.jpg"]) {
     assert.ok(

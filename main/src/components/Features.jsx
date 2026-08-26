@@ -4,45 +4,8 @@ import LazyVideo from "./LazyVideo";
 import { FEATURED_PROJECT } from "../data/featuredProject.js";
 import { cosAsset } from "../lib/cosAsset.js";
 
-const COS = cosAsset(
-  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main",
-);
-
 // 首页四张卡片原本铺的是模板作者的 feature-*.mp4，换成自己的图，一卡一张。
 const BENTO = cosAsset("home");
-
-const ARCHIVE_ITEMS = [
-  {
-    index: "01",
-    title: "开场影像",
-    subtitle: "片段一",
-    src: `${COS}/videos/feature-1.mp4`,
-    note: "这一组影像里的第一枚碎片，被安静地留作开场。",
-  },
-  {
-    index: "02",
-    title: "碎片独处",
-    subtitle: "进入花园",
-    src: `${COS}/videos/feature-2.mp4`,
-    note: "一个收纳日常念头、随手灵感与短暂心绪的温柔角落。",
-    linkUrl: "/blog/",
-    linkText: "进入花园",
-  },
-  {
-    index: "03",
-    title: "安静影像",
-    subtitle: "片段四",
-    src: `${COS}/videos/feature-4.mp4`,
-    note: "一枚适合停下来多看一会儿的安静影像碎片。",
-  },
-  {
-    index: "04",
-    title: "新的收藏正在路上",
-    subtitle: "待续",
-    src: `${COS}/videos/feature-5.mp4`,
-    note: "下一份值得收藏的内容，会在准备好之后来到这里。",
-  },
-];
 
 export const ExhibitTilt = ({ children, className = "" }) => {
   const [transformStyle, setTransformStyle] = useState("");
@@ -176,170 +139,12 @@ export const ExhibitCard = ({
   );
 };
 
-const ArchiveBook = ({ open, onClose }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeItem = ARCHIVE_ITEMS[activeIndex];
-
-  if (!open) return null;
-
-  const turnPage = (direction) => {
-    setActiveIndex((prev) => {
-      const next = prev + direction;
-      if (next < 0) return ARCHIVE_ITEMS.length - 1;
-      if (next >= ARCHIVE_ITEMS.length) return 0;
-      return next;
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[120] bg-[#120b10]/72 px-4 py-8 backdrop-blur-md md:px-10">
-      <button
-        type="button"
-        className="absolute inset-0 cursor-default"
-        aria-label="关闭影像档案"
-        onClick={onClose}
-      />
-
-      <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col justify-center">
-        <div className="mb-5 flex items-center justify-between text-blue-50">
-          <p className="font-general text-xs uppercase tracking-[0.45em] text-pink-100/75">
-            影像档案
-          </p>
-          <button
-            type="button"
-            className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-blue-50 backdrop-blur-md"
-            onClick={onClose}
-          >
-            关闭
-          </button>
-        </div>
-
-        <div className="relative min-h-[76vh] overflow-hidden rounded-[2rem] border border-[#f6d8c8]/60 bg-[linear-gradient(120deg,#fff8ef,#ffe9df)] shadow-[0_34px_120px_rgba(0,0,0,0.38)]">
-          <div className="absolute left-1/2 top-0 h-full w-px bg-gradient-to-b from-transparent via-[#d8bba9] to-transparent opacity-70" />
-          <div className="absolute inset-6 rounded-[1.5rem] border border-[#f4d5c8]/70" />
-
-          <div className="grid h-full min-h-[76vh] md:grid-cols-[1.7fr_0.42fr]">
-            <div className="relative flex items-center justify-center overflow-hidden p-3 md:p-5 [perspective:1600px]">
-              <div className="absolute inset-5 rounded-[1.5rem] bg-[#241322]/5" />
-              <div className="relative h-[62vh] w-full max-w-6xl [transform-style:preserve-3d]">
-                {ARCHIVE_ITEMS.map((item, itemIndex) => {
-                  const offset = itemIndex - activeIndex;
-                  const absoluteOffset = Math.abs(offset);
-                  const isActive = offset === 0;
-                  const visible = absoluteOffset <= 1;
-
-                  return (
-                    <button
-                      key={item.index}
-                      type="button"
-                      className={`absolute left-1/2 top-[47%] aspect-video w-[100%] max-w-[980px] overflow-hidden rounded-[1.6rem] border bg-[#241322] text-left shadow-[0_26px_80px_rgba(0,0,0,0.28)] transition duration-700 [transform-style:preserve-3d] ${
-                        visible ? "pointer-events-auto" : "pointer-events-none"
-                      }`}
-                      style={{
-                        zIndex: 50 - absoluteOffset,
-                        opacity: isActive ? 1 : visible ? 0.42 : 0,
-                        borderColor: isActive
-                          ? "#ff8fab"
-                          : "rgba(255,255,255,0.28)",
-                        transform: `translate(-50%, -50%) translateX(${offset * 152}px) translateY(${absoluteOffset * 18}px) rotateY(${offset * -24}deg) rotateZ(${offset * 1.6}deg) scale(${1 - absoluteOffset * 0.12})`,
-                      }}
-                      onClick={() => setActiveIndex(itemIndex)}
-                    >
-                      <LazyVideo src={item.src} priority={isActive} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/10 to-white/10" />
-                      <div className="absolute left-5 top-5 rounded-full border border-white/20 bg-white/14 px-4 py-2 font-general text-[10px] uppercase tracking-[0.32em] text-blue-50/85 backdrop-blur-md">
-                        档案卡 {item.index}
-                      </div>
-                      <div className="absolute bottom-5 left-5 right-5 text-blue-50">
-                        <p className="font-general text-[10px] uppercase tracking-[0.32em] text-pink-100/80">
-                          {item.subtitle}
-                        </p>
-                        <h3 className="mt-2 text-4xl font-black leading-none md:text-6xl">
-                          {item.title}
-                        </h3>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                className="absolute bottom-6 left-6 rounded-full border border-[#ead4bf] bg-white/75 px-5 py-2 text-sm font-bold text-[#241322] shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
-                onClick={() => turnPage(-1)}
-              >
-                上一页
-              </button>
-              <button
-                type="button"
-                className="absolute bottom-6 right-6 rounded-full border border-[#ead4bf] bg-white/75 px-5 py-2 text-sm font-bold text-[#241322] shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
-                onClick={() => turnPage(1)}
-              >
-                下一页
-              </button>
-            </div>
-
-            <div className="relative flex flex-col justify-center border-t border-[#ead4bf] bg-white/46 p-5 md:border-l md:border-t-0 md:p-5">
-              <p className="font-general text-[10px] uppercase tracking-[0.35em] text-[#b76e79]">
-                当前片段
-              </p>
-              <h3 className="mt-4 text-4xl font-black leading-none text-[#241322] md:text-5xl">
-                {activeItem.index}
-              </h3>
-              <h4 className="mt-4 text-2xl font-black leading-tight text-[#241322]">
-                {activeItem.title}
-              </h4>
-              <p className="mt-2 text-sm uppercase tracking-[0.25em] text-[#8b6f63]">
-                {activeItem.subtitle}
-              </p>
-              <p className="mt-5 max-w-xs text-sm leading-relaxed text-[#5f4b52]">
-                {activeItem.note}
-              </p>
-
-              <div className="mt-7 flex flex-wrap gap-2">
-                {ARCHIVE_ITEMS.map((item, itemIndex) => (
-                  <button
-                    key={item.index}
-                    type="button"
-                    className={`rounded-full border px-4 py-2 text-xs font-bold transition ${
-                      itemIndex === activeIndex
-                        ? "border-[#ff8fab] bg-[#ff8fab] text-white"
-                        : "border-[#ead4bf] bg-white/70 text-[#241322]"
-                    }`}
-                    onClick={() => setActiveIndex(itemIndex)}
-                  >
-                    {item.index}
-                  </button>
-                ))}
-              </div>
-
-              {activeItem.linkUrl && (
-                <a
-                  href={activeItem.linkUrl}
-                  className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-[#241322] px-5 py-2 text-xs font-bold uppercase text-[#ffe7ef]"
-                >
-                  <TiLocationArrow />
-                  {activeItem.linkText}
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const Features = () => {
-  const [archiveOpen, setArchiveOpen] = useState(false);
-
   return (
     <section
       id="features"
       className="bg-[linear-gradient(180deg,#fff8f1_0%,#ffeef5_46%,#f6fbff_100%)] pb-16 md:pb-52"
     >
-      <ArchiveBook open={archiveOpen} onClose={() => setArchiveOpen(false)} />
-
       <div className="container mx-auto px-3 pt-8 md:px-10 md:pt-10">
         <ExhibitTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-[1.75rem] md:h-[65vh]">
           <ExhibitCard
