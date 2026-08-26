@@ -151,7 +151,7 @@ export const ExhibitCard = ({
       <div className="pointer-events-none absolute -left-1/3 top-0 z-10 h-full w-1/3 skew-x-[-18deg] bg-white/12 blur-xl transition duration-700 group-hover:left-full" />
 
       <div className="absolute inset-0 z-20 flex flex-col justify-between p-4 text-blue-50 md:p-5">
-        <div className="w-fit max-w-2xl rounded-2xl border border-white/15 bg-black/42 px-4 py-3 shadow-[0_18px_58px_rgba(0,0,0,0.25)] backdrop-blur-md">
+        <div className="w-fit max-w-sm rounded-2xl border border-white/15 bg-black/42 px-3.5 py-2.5 shadow-[0_18px_58px_rgba(0,0,0,0.25)] backdrop-blur-md">
           <p className="font-general text-[10px] uppercase tracking-[0.35em] text-pink-100/80">
             {label || `入口 ${index}`}
           </p>
@@ -356,7 +356,6 @@ const Features = () => {
               src={`${BENTO}/bento-bangumi.jpg`}
               label="动画收藏"
               title="番剧收藏"
-              description="正在追、已经看完与暂时搁置的动画，都按自己的节奏收进这面书架。"
               linkUrl="/bangumi"
               linkText="查看番剧"
             />
@@ -367,7 +366,6 @@ const Features = () => {
               src={`${BENTO}/bento-gallery.jpg`}
               label="照片与生活"
               title="相册集"
-              description="收藏镜头里留下的风景、日常与心动瞬间，让每一张照片都有自己的位置。"
               linkUrl="/gallery"
               linkText="打开相册"
             />
@@ -379,7 +377,6 @@ const Features = () => {
               objectPosition="object-top"
               label="个人档案"
               title="关于我"
-              description="关于伊洛华的故事、喜欢的事物与一路走来的小小轨迹，都放在这里。"
               linkUrl="/about"
               linkText="认识我"
             />
