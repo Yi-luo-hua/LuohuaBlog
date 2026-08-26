@@ -262,7 +262,6 @@ SECURITY_TMP=$(mktemp)
 cat >"$SECURITY_TMP" <<'NGX'
 limit_req_zone $binary_remote_addr zone=api_guestbook:10m rate=5r/m;
 limit_req_zone $binary_remote_addr zone=api_auth:10m rate=10r/m;
-limit_req_zone $binary_remote_addr zone=api_chat:10m rate=30r/m;
 NGX
 run_sudo mkdir -p /etc/nginx/conf.d
 run_sudo install -m 0644 "$SECURITY_TMP" "$SECURITY_CONF"
@@ -303,26 +302,6 @@ location = /api/guestbook/messages {
 
 location = /api/owner/gate {
     limit_req zone=api_auth burst=20 nodelay;
-    proxy_pass http://127.0.0.1:8787;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}
-
-location = /api/chat {
-    limit_req zone=api_chat burst=30 nodelay;
-    proxy_pass http://127.0.0.1:8787;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}
-
-location = /api/ai/image {
-    limit_req zone=api_chat burst=30 nodelay;
     proxy_pass http://127.0.0.1:8787;
     proxy_http_version 1.1;
     proxy_set_header Host $host;

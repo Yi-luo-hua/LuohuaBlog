@@ -13,7 +13,7 @@ The monorepo behind my personal site — main site, blog, and the Go backend tha
 | `acg-api/` | Go + SQLite backend. Nginx exposes it as `/api`. |
 | `integrations/` | Obsidian → GitHub publishing bridge (MCP). |
 | `deploy/` | systemd units, Nginx snippets, and server install scripts. |
-| `tools/` | Python health-check, gallery ingest, and repo guard tests. |
+| `tools/` | Python gallery ingest, font build, and repo guard tests. |
 
 ## Running locally
 
@@ -34,7 +34,7 @@ The site runs on an Azure for Students VM in East Asia at
 `/blog/`, while the owner PWA host is `https://app.yiluohua.top`. Nginx redirects
 plain HTTP and public-IP requests to HTTPS, and Certbot renews the Let's Encrypt
 certificate automatically. API write methods are available over TLS; features
-that require owner, AI, SMTP, GitHub, or storage credentials still remain
+that require owner, SMTP, GitHub, or storage credentials still remain
 disabled until those secrets are configured on the server.
 
 Deployment is a manual build-and-upload, not a timer — there is no automatic
@@ -51,7 +51,6 @@ and recovery procedure.
 | Public data | `GET /api/v1/health`, `/api/v1/bangumi/list`, `/api/v1/wallpapers/draw`, `/api/v1/github/commits`, `/api/server/info` |
 | Guestbook | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id` |
 | Owner gate | `GET/POST/DELETE /api/owner/gate` — one password, no accounts |
-| AI | `GET/POST /api/chat`, `/api/ai/image`; `GET /api/chat/stats`, `/api/ai/image/gallery` |
 | Owner only | `GET /api/owner/status`, `POST /api/owner/publish`, `/friends`, `/moments`, `/gallery/images`, `/assets` |
 
 Owner-only routes commit through the GitHub Contents API, so they need a token with write access to this repository.
@@ -62,7 +61,6 @@ Every secret lives on the server, never in this repository. Copy `acg-api/.env.e
 
 - **Runtime** — `ACG_API_ADDR` (default `:8787`), `ACG_DATA_DIR` (default `./data`)
 - **Owner gate** — `OWNER_GATE_PASSWORD` (the password typed on `/app`, at least 6 characters), optional `OWNER_DISPLAY_NAME`
-- **AI** — `DEEPSEEK_API_KEY`, `AGNES_API_KEY`
 - **Mail** — `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_NOTIFY_TO` (use an app password, never the account password)
 - **Publishing** — `OWNER_PUBLISH_GITHUB_TOKEN`
 - **Storage** — `TENCENT_COS_SECRET_ID`, `TENCENT_COS_SECRET_KEY`, `TENCENT_COS_BUCKET`, `TENCENT_COS_REGION`

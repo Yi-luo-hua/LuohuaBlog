@@ -90,13 +90,6 @@ func ownerRouter(w http.ResponseWriter, r *http.Request) {
 		}
 		ownerMomentPublishHandler(w, r)
 		return
-	case path == "ai/fixed-answers":
-		if r.Method != http.MethodPost {
-			methodNotAllowed(w)
-			return
-		}
-		ownerFixedAnswerCreateHandler(w, r)
-		return
 	case strings.HasPrefix(path, "notifications/") && strings.HasSuffix(path, "/read"):
 		if r.Method != http.MethodPatch {
 			methodNotAllowed(w)
@@ -184,17 +177,7 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	aiToday, err := ownerTodayAISuccess()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 	drafts, err := listOwnerDrafts(ownerLatestDraftLimit)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fixedAnswers, err := listAIFixedAnswers(db, ownerFixedAnswerLimit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -205,10 +188,6 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 			"displayName": ownerSess.DisplayName,
 		},
 		"notifications": notifications,
-		"ai": map[string]any{
-			"today":        aiToday,
-			"fixedAnswers": fixedAnswers,
-		},
 		"uploads": map[string]any{
 			"maxBytes": ownerUploadMaxBytes,
 			"baseURL":  "/api/owner/uploads/",
@@ -236,43 +215,6 @@ func ownerEmailDirectoryHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func ownerFixedAnswerCreateHandler(w http.ResponseWriter, r *http.Request) {
-	if _, ok := requireOwnerSession(w, r); !ok {
-		return
-	}
-
-	var body struct {
-		Question string `json:"question"`
-		Answer   string `json:"answer"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
-			"error":   "INVALID_JSON",
-			"message": "请求内容格式不正确。",
-		})
-		return
-	}
-
-	question := strings.TrimSpace(body.Question)
-	answer := strings.TrimSpace(body.Answer)
-	if !validAIFixedAnswerInput(question, answer) {
-		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
-			"error":   "INVALID_FIXED_ANSWER",
-			"message": "固定答案需要填写问题和答案，且内容不能过长。",
-		})
-		return
-	}
-
-	item, err := upsertAIFixedAnswer(db, question, answer)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, map[string]any{
-		"ok":   true,
-		"item": item,
-	})
-}
 
 func ownerDraftListHandler(w http.ResponseWriter, r *http.Request) {
 	if _, ok := requireOwnerSession(w, r); !ok {
@@ -736,16 +678,6 @@ func notificationSourceLabel(channel string) string {
 	default:
 		return "站长提醒"
 	}
-}
-
-func ownerTodayAISuccess() (int, error) {
-	var total int
-	prefix := time.Now().UTC().Format("2006-01-02") + "T"
-	err := db.QueryRow(
-		`SELECT COALESCE(SUM(success), 0) FROM ai_chat_hourly WHERE bucket LIKE ? || '%'`,
-		prefix,
-	).Scan(&total)
-	return total, err
 }
 
 func listOwnerDrafts(limit int) ([]ownerDraftRow, error) {

@@ -1,5 +1,5 @@
 [Unit]
-Description=Taozhiyy API (acg-api + blog AI chat)
+Description=Taozhiyy API (acg-api)
 After=network.target
 
 [Service]

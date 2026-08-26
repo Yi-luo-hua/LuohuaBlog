@@ -51,10 +51,8 @@ func main() {
 	go func() {
 		t := time.NewTicker(24 * time.Hour)
 		cleanupCache(cacheDir, 7*24*time.Hour)
-		pruneChatHourlyStats(db)
 		for range t.C {
 			cleanupCache(cacheDir, 7*24*time.Hour)
-			pruneChatHourlyStats(db)
 		}
 	}()
 
@@ -77,19 +75,14 @@ func main() {
 		}
 		writeJSON(w, map[string]string{"status": "ok", "bangumi": bangumiStatus})
 	})
-	mux.HandleFunc("/api/chat/stats", chatStatsHandler)
 	mux.HandleFunc("/api/server/info", serverInfoHandler)
 	mux.HandleFunc("/api/client/network", clientNetworkHandler)
-	mux.HandleFunc("/api/chat", chatHandler)
-	mux.HandleFunc("/api/ai/image/gallery", aiImageGalleryHandler)
-	mux.HandleFunc("/api/ai/image", aiImageHandler)
 	mux.HandleFunc("/api/owner/", ownerRouter)
 	mux.HandleFunc("/api/integrations/obsidian/publish", obsidianPublishHandler)
 	mux.HandleFunc("/api/v1/sync/trigger", syncTriggerHandler(cfg))
 
-	deepseekReady := chatConfigured()
 	bangumiReady := strings.TrimSpace(cfg.BangumiUsername) != "" || strings.TrimSpace(cfg.BangumiAccessToken) != ""
-	log.Printf("acg-api on %s | bangumi=%v | deepseek=%v\n", addr, bangumiReady, deepseekReady)
+	log.Printf("acg-api on %s | bangumi=%v\n", addr, bangumiReady)
 	log.Fatal(http.ListenAndServe(addr, withCORS(mux)))
 }
 
@@ -420,4 +413,28 @@ func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	enc := json.NewEncoder(w)
 	_ = enc.Encode(v)
+}
+
+func writeJSONStatus(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	enc := json.NewEncoder(w)
+	_ = enc.Encode(v)
+}
+
+func clientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		if len(parts) > 0 {
+			return strings.TrimSpace(parts[0])
+		}
+	}
+	if xri := strings.TrimSpace(r.Header.Get("X-Real-IP")); xri != "" {
+		return xri
+	}
+	host := r.RemoteAddr
+	if i := strings.LastIndex(host, ":"); i >= 0 {
+		return host[:i]
+	}
+	return host
 }

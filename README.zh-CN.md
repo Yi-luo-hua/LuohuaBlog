@@ -13,7 +13,7 @@
 | `acg-api/` | Go + SQLite 后端，Nginx 反代为 `/api`。 |
 | `integrations/` | Obsidian → GitHub 发布桥（MCP）。 |
 | `deploy/` | systemd 单元、Nginx 片段与服务器安装脚本。 |
-| `tools/` | Python 健康检查、相册收图与仓库守卫测试。 |
+| `tools/` | Python 相册收图、字体提取与仓库守卫测试。 |
 
 ## 本地运行
 
@@ -33,7 +33,7 @@ cd main && npm install && npm run dev
 [https://yiluohua.top](https://yiluohua.top)，博客位于 `/blog/`，站长 PWA 位于
 `https://app.yiluohua.top`。Nginx 会把明文 HTTP 和公网 IP 请求重定向到 HTTPS，
 Let's Encrypt 证书由 Certbot 自动续期。API 写请求已经可以通过 TLS 使用；依赖站长、
-AI、SMTP、GitHub 或对象存储密钥的功能仍会保持未配置状态，直到服务器端补齐对应密钥。
+SMTP、GitHub 或对象存储密钥的功能仍会保持未配置状态，直到服务器端补齐对应密钥。
 
 部署方式是手工构建后上传，不是定时拉取，也没有启用自动部署。主机信息、目录结构、
 服务名、TLS 配置和恢复步骤都在
@@ -48,7 +48,6 @@ AI、SMTP、GitHub 或对象存储密钥的功能仍会保持未配置状态，�
 | 公开数据 | `GET /api/v1/health`、`/api/v1/bangumi/list`、`/api/v1/wallpapers/draw`、`/api/v1/github/commits`、`/api/server/info` |
 | 留言板 | `GET/POST /api/guestbook/messages`、`PATCH/DELETE /api/guestbook/messages/:id` |
 | 站长门禁 | `GET/POST/DELETE /api/owner/gate` —— 一个密码，没有账号 |
-| AI | `GET/POST /api/chat`、`/api/ai/image`；`GET /api/chat/stats`、`/api/ai/image/gallery` |
 | 仅站长 | `GET /api/owner/status`，`POST /api/owner/publish`、`/friends`、`/moments`、`/gallery/images`、`/assets` |
 
 仅站长的路由通过 GitHub Contents API 提交，因此需要一个对本仓库有写权限的 token。
@@ -59,7 +58,6 @@ AI、SMTP、GitHub 或对象存储密钥的功能仍会保持未配置状态，�
 
 - **运行时** —— `ACG_API_ADDR`（默认 `:8787`）、`ACG_DATA_DIR`（默认 `./data`）
 - **站长门禁** —— `OWNER_GATE_PASSWORD`（进 `/app` 输的那个密码，至少 6 位）、可选 `OWNER_DISPLAY_NAME`
-- **AI** —— `DEEPSEEK_API_KEY`、`AGNES_API_KEY`
 - **邮件** —— `SMTP_HOST`、`SMTP_PORT`、`SMTP_USER`、`SMTP_PASS`、`MAIL_NOTIFY_TO`（用授权码，别用账号密码）
 - **发布** —— `OWNER_PUBLISH_GITHUB_TOKEN`
 - **对象存储** —— `TENCENT_COS_SECRET_ID`、`TENCENT_COS_SECRET_KEY`、`TENCENT_COS_BUCKET`、`TENCENT_COS_REGION`

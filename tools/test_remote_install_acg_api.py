@@ -35,7 +35,6 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
 
         self.assertIn("limit_req_zone $binary_remote_addr zone=api_guestbook:10m rate=5r/m;", text)
         self.assertIn("limit_req_zone $binary_remote_addr zone=api_auth:10m rate=10r/m;", text)
-        self.assertIn("limit_req_zone $binary_remote_addr zone=api_chat:10m rate=30r/m;", text)
         self.assertIn("run_sudo mkdir -p /etc/nginx/conf.d", text)
         self.assertIn('add_header X-Frame-Options "SAMEORIGIN" always;', text)
         self.assertIn('add_header X-Content-Type-Options "nosniff" always;', text)
@@ -44,7 +43,6 @@ class RemoteInstallAcgApiTests(unittest.TestCase):
         self.assertIn('add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;', text)
         self.assertIn("limit_req zone=api_guestbook burst=10 nodelay;", text)
         self.assertIn("limit_req zone=api_auth burst=20 nodelay;", text)
-        self.assertIn("limit_req zone=api_chat burst=30 nodelay;", text)
 
     def test_nginx_snippet_proxies_cos_assets_with_security_headers(self):
         text = SCRIPT_PATH.read_text(encoding="utf-8")
@@ -141,15 +139,6 @@ class SyncAuthEnvTests(unittest.TestCase):
         self.assertIn("SMTP_FROM_NAME", text)
         self.assertIn("MAIL_NOTIFY_TO", text)
 
-    def test_syncs_agnes_image_generation_env_keys(self):
-        text = SYNC_ENV_SCRIPT_PATH.read_text(encoding="utf-8")
-
-        self.assertIn("AGNES_API_KEY", text)
-        self.assertIn("AGNES_BASE_URL", text)
-        self.assertIn("AGNES_IMAGE_MODEL", text)
-        self.assertIn("DASHSCOPE_API_KEY", text)
-        self.assertIn("DASHSCOPE_BASE_URL", text)
-        self.assertIn("AI_IMAGE_MODEL", text)
 
 
 if __name__ == "__main__":

@@ -73,25 +73,6 @@ func migrateAll(db *sql.DB) error {
 			repo_count INTEGER NOT NULL DEFAULT 0,
 			updated_at TEXT NOT NULL
 		);`,
-		`CREATE TABLE IF NOT EXISTS ai_chat_quota (
-			identity_key TEXT NOT NULL,
-			quota_date TEXT NOT NULL,
-			used INTEGER NOT NULL DEFAULT 0,
-			last_request_at TEXT,
-			PRIMARY KEY (identity_key, quota_date)
-		);`,
-		`CREATE TABLE IF NOT EXISTS ai_chat_hourly (
-			bucket TEXT PRIMARY KEY,
-			success INTEGER NOT NULL DEFAULT 0,
-			upstream_error INTEGER NOT NULL DEFAULT 0,
-			quota_denied INTEGER NOT NULL DEFAULT 0,
-			rate_denied INTEGER NOT NULL DEFAULT 0,
-			not_configured INTEGER NOT NULL DEFAULT 0,
-			guest_calls INTEGER NOT NULL DEFAULT 0,
-			user_calls INTEGER NOT NULL DEFAULT 0,
-			owner_calls INTEGER NOT NULL DEFAULT 0,
-			owner_tokens INTEGER NOT NULL DEFAULT 0
-		);`,
 		// The site has no accounts: a session row simply means somebody
 		// passed the owner gate on this browser.
 		`CREATE TABLE IF NOT EXISTS sessions (
@@ -123,29 +104,6 @@ func migrateAll(db *sql.DB) error {
 			created_at TEXT NOT NULL
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_security_audit_logs_created ON security_audit_logs(created_at DESC);`,
-		`CREATE TABLE IF NOT EXISTS ai_fixed_answers (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			question TEXT NOT NULL,
-			normalized_question TEXT NOT NULL UNIQUE,
-			answer TEXT NOT NULL,
-			status TEXT NOT NULL DEFAULT 'active',
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL
-		);`,
-		`CREATE INDEX IF NOT EXISTS idx_ai_fixed_answers_status_updated ON ai_fixed_answers(status, updated_at DESC, id DESC);`,
-		`CREATE TABLE IF NOT EXISTS ai_image_generations (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER,
-			identity_key TEXT NOT NULL,
-			prompt TEXT NOT NULL,
-			model TEXT NOT NULL,
-			size TEXT NOT NULL,
-			image_url TEXT NOT NULL,
-			object_key TEXT NOT NULL,
-			provider_request_id TEXT NOT NULL DEFAULT '',
-			created_at TEXT NOT NULL
-		);`,
-		`CREATE INDEX IF NOT EXISTS idx_ai_image_generations_user_created ON ai_image_generations(user_id, created_at DESC);`,
 		`CREATE TABLE IF NOT EXISTS wallpaper_pool (
 			id TEXT PRIMARY KEY,
 			url TEXT NOT NULL,
@@ -193,13 +151,7 @@ func migrateAll(db *sql.DB) error {
 	if err := dropAccountTables(db); err != nil {
 		return err
 	}
-	if err := ensureColumn(db, "ai_chat_hourly", "owner_calls", "INTEGER NOT NULL DEFAULT 0"); err != nil {
-		return err
-	}
-	if err := ensureColumn(db, "ai_chat_hourly", "owner_tokens", "INTEGER NOT NULL DEFAULT 0"); err != nil {
-		return err
-	}
-	if err := ensureColumn(db, "ai_fixed_answers", "normalized_question", "TEXT NOT NULL DEFAULT ''"); err != nil {
+	if err := dropAITables(db); err != nil {
 		return err
 	}
 	for _, column := range []struct {
@@ -434,6 +386,18 @@ func dropAccountTables(db *sql.DB) error {
 		}
 	}
 	for _, table := range []string{"users", "login_challenges"} {
+		if _, err := db.Exec(`DROP TABLE IF EXISTS ` + table); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// dropAITables retires the AI chat and image features. A database written
+// before their removal still carries the chat quota, hourly stats, fixed
+// answers and image generation tables; none of them mean anything now.
+func dropAITables(db *sql.DB) error {
+	for _, table := range []string{"ai_chat_quota", "ai_chat_hourly", "ai_fixed_answers", "ai_image_generations"} {
 		if _, err := db.Exec(`DROP TABLE IF EXISTS ` + table); err != nil {
 			return err
 		}

@@ -55,13 +55,6 @@ export const ownerConsoleScreens = [
     title: "邮箱目录",
     subtitle: "只在站长后台查看注册用户邮箱和留言联系邮箱。",
   },
-  {
-    id: "ai",
-    navLabel: "AI 状态",
-    icon: "AI",
-    title: "AI 调试区",
-    subtitle: "把满意答案保存为用户侧固定回复。",
-  },
 ];
 
 export const ownerConsoleModules = [
@@ -148,12 +141,6 @@ export const ownerConsoleAvatars = [
     label: "站长",
     initial: "站",
     gradient: "linear-gradient(135deg, #ff9fbd, #ffd56f)",
-  },
-  {
-    id: "ai",
-    label: "AI",
-    initial: "AI",
-    gradient: "linear-gradient(135deg, #9cc9ff, #c9b8ff)",
   },
   {
     id: "gallery",

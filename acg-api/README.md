@@ -28,8 +28,6 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 - `GET /api/v1/guestbook?limit=50`
 - `POST /api/v1/guestbook` — JSON `{ "name": "...", "content": "..." }`
 - `GET /api/v1/bangumi/list?status=watching|watched|wish`
-- `GET /api/chat` — quota status (blog AI assistant)
-- `POST /api/chat` — `{ "message": "...", "pageUrl", "pageTitle" }` → DeepSeek-v4-flash (see `blog/AI-ASSISTANT.md`)
 - `GET /api/owner/gate` — 这台浏览器是否已解锁 `{ "unlocked", "configured" }`
 - `POST /api/owner/gate` — `{ "password" }`，对上 `OWNER_GATE_PASSWORD` 就下发 `acg_session` cookie
 - `DELETE /api/owner/gate` — 锁回去，清掉这台设备的会话
@@ -40,7 +38,7 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 
 | 方法 | 路径 | 控制器文件 | 说明 |
 |------|------|------|------|
-| GET | `/api/owner/status` | `owner_controller.go` | 返回未读留言提醒、AI 今日调用数、草稿和上传限制。 |
+| GET | `/api/owner/status` | `owner_controller.go` | 返回未读留言提醒、草稿和上传限制。 |
 | GET/POST | `/api/owner/drafts` | `owner_controller.go` | 读取和保存站长草稿。 |
 | PATCH | `/api/owner/notifications/:id/read` | `owner_controller.go` | 只写入 `owner_read_at`，不会隐藏公开留言。 |
 | POST | `/api/owner/uploads` | `owner_controller.go` | 保存本地临时图片到 `ACG_DATA_DIR/owner-uploads`，最大 8 MiB。 |

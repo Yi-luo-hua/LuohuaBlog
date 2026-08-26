@@ -23,7 +23,6 @@ test("restores the owner controller screen map from the prototype", () => {
       "friend",
       "inbox",
       "emails",
-      "ai",
     ],
   );
   assert.equal(ownerConsoleScreens[0].title, "站长工作台");
@@ -43,7 +42,7 @@ test("keeps the prototype task modules and notification badge content", () => {
 });
 
 test("defines avatar choices and the original publish automation steps", () => {
-  assert.equal(ownerConsoleAvatars.length, 5);
+  assert.equal(ownerConsoleAvatars.length, 4);
   assert.equal(ownerConsoleAvatars[0].initial, "TC");
   assert.deepEqual(publishSteps, [
     "检查内容",

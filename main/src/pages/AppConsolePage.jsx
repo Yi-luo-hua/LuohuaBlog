@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiBell, FiRefreshCw, FiUpload, FiX } from "react-icons/fi";
-import { fetchChatStats } from "../services/chatStatsApi";
 import {
-  createOwnerFixedAnswer,
   createOwnerDraft,
   fetchOwnerEmails,
   fetchOwnerStatus,
@@ -29,10 +27,8 @@ import {
 import { lockOwnerGate } from "../services/ownerGateApi";
 import {
   getBackendHealthLabel,
-  getOwnerFixedAnswers,
   getOwnerGuestbookContacts,
   getOwnerSessionLabel,
-  getStatsSnapshot,
 } from "../pwa/appConsoleState";
 import {
   areUsableDimensions,
@@ -58,7 +54,7 @@ categories: [建站]
 - 真实 owner 状态
 - 真实图片上传
 - 真实 Markdown 草稿
-- 真实留言提醒与 AI 统计
+- 真实留言提醒
 `;
 
 const defaultMobileMaterial =
@@ -78,11 +74,6 @@ const defaultMoment = {
   content: "今天也想把小碎片写下来",
 };
 
-const initialCandidateAnswers = [
-  "这是站长控制台里的 AI 调试区，满意答案会保存到后端固定问答库。",
-  "固定答案保存后，网站右下角 AI 助手遇到相同问题会优先返回这条回复。",
-  "如果没有命中固定答案，AI 助手会继续走 DeepSeek 正常聊天链路。",
-];
 
 const fetchBackendHealth = async () => {
   const res = await fetch("/api/v1/health", {
@@ -136,7 +127,6 @@ const notificationSourceLabel = (source) => {
 const AppConsolePage = () => {
   const [activeScreen, setActiveScreen] = useState("home");
   const [health, setHealth] = useState(null);
-  const [stats, setStats] = useState(null);
   const [ownerStatus, setOwnerStatus] = useState(null);
   const [ownerEmails, setOwnerEmails] = useState(null);
   const [error, setError] = useState("");
@@ -163,12 +153,6 @@ const AppConsolePage = () => {
   const [mobileToast, setMobileToast] = useState(
     "把图片和文字交给 AI 后，第一阶段会先保存为真实草稿，不直接发线上。",
   );
-  const [aiQuestion, setAiQuestion] = useState("网站 AI 助手是怎么做出来的？");
-  const [candidateAnswers, setCandidateAnswers] = useState(initialCandidateAnswers);
-  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState(0);
-  const [manualAnswer, setManualAnswer] = useState("");
-  const [answerToast, setAnswerToast] = useState("");
-  const [answerSaveBusy, setAnswerSaveBusy] = useState(false);
   const [galleryURLInput, setGalleryURLInput] = useState("");
   const [galleryTitleInput, setGalleryTitleInput] = useState("");
   const [galleryUploads, setGalleryUploads] = useState([]);
@@ -192,20 +176,18 @@ const AppConsolePage = () => {
 
   const loadConsole = useCallback(async () => {
     setError("");
-    const [healthResult, statsResult, ownerStatusResult, ownerEmailsResult] =
+    const [healthResult, ownerStatusResult, ownerEmailsResult] =
       await Promise.allSettled([
         fetchBackendHealth(),
-        fetchChatStats(14),
         fetchOwnerStatus(),
         fetchOwnerEmails(),
       ]);
 
     if (healthResult.status === "fulfilled") setHealth(healthResult.value);
-    if (statsResult.status === "fulfilled") setStats(statsResult.value);
     if (ownerStatusResult.status === "fulfilled") setOwnerStatus(ownerStatusResult.value);
     if (ownerEmailsResult.status === "fulfilled") setOwnerEmails(ownerEmailsResult.value);
 
-    const requiredFailures = [healthResult, statsResult].some(
+    const requiredFailures = [healthResult].some(
       (result) => result.status === "rejected",
     );
     if (requiredFailures) {
@@ -228,12 +210,10 @@ const AppConsolePage = () => {
   const activeMeta = screenMap[activeScreen] || screenMap.home;
   const ownerLabel = getOwnerSessionLabel(ownerStatus);
   const healthLabel = getBackendHealthLabel(health);
-  const statsSnapshot = useMemo(() => getStatsSnapshot(stats), [stats]);
   const liveNotifications = ownerStatus?.notifications?.items || ownerConsoleNotifications;
   const notificationTotal =
     ownerStatus?.notifications?.total ?? getNotificationTotal(ownerConsoleNotifications);
   const guestbookContacts = getOwnerGuestbookContacts(ownerEmails);
-  const fixedAnswers = getOwnerFixedAnswers(ownerStatus);
   const liveDrafts = ownerStatus?.drafts?.items || [];
   const draftCount = ownerStatus?.drafts?.total ?? liveDrafts.length;
   const previewBody = useMemo(
@@ -734,37 +714,6 @@ const AppConsolePage = () => {
     }
   };
 
-  const testAiQuestion = () => {
-    const question = aiQuestion.trim() || "用户问题";
-    setCandidateAnswers([
-      `关于“${question}”，可以先在控制台内调试回答，再保存为网站 AI 的固定回复。`,
-      "保存后的固定答案会进入后端库，用户侧 AI 助手遇到同样问题会优先命中。",
-      "没有命中固定答案的问题会继续走模型聊天，不影响原来的 AI 使用流程。",
-    ]);
-    setSelectedAnswerIndex(0);
-    setAnswerToast("已生成 3 条候选答案。");
-  };
-
-  const saveFixedAnswer = async () => {
-    const question = aiQuestion.trim() || "未命名问题";
-    const answer = manualAnswer.trim() || candidateAnswers[selectedAnswerIndex] || "";
-    if (!answer) {
-      setAnswerToast("请先选一条候选答案，或手动填写最终答案。");
-      return;
-    }
-    setAnswerSaveBusy(true);
-    setError("");
-    try {
-      await createOwnerFixedAnswer({ question, answer });
-      setManualAnswer("");
-      setAnswerToast("已同步到后端固定答案库，网站 AI 会优先命中这条回复。");
-      await loadConsole();
-    } catch (e) {
-      setAnswerToast(e.message || "固定答案保存失败。");
-    } finally {
-      setAnswerSaveBusy(false);
-    }
-  };
 
   const handleSync = async () => {
     try {
@@ -968,11 +917,6 @@ const AppConsolePage = () => {
                       <span>消息提醒</span>
                       <strong>{notificationTotal}</strong>
                       <em>guestbook + friends</em>
-                    </article>
-                    <article className="owner-stat-card">
-                      <span>今日 AI</span>
-                      <strong>{statsSnapshot.today}</strong>
-                      <em>{statsSnapshot.model}</em>
                     </article>
                   </div>
                 </section>
@@ -1582,110 +1526,7 @@ const AppConsolePage = () => {
             </div>
           </section>
 
-          <section className={`owner-screen ${activeScreen === "ai" ? "active" : ""}`}>
-            <div className="owner-panel owner-glass">
-              <div className="owner-panel-title">
-                <h2>AI 使用情况</h2>
-                <StatusTag>今天</StatusTag>
-              </div>
-              <div className="owner-mini-metrics">
-                <div>
-                  <span>今天</span>
-                  <b>{statsSnapshot.today}</b>
-                </div>
-                <div>
-                  <span>周期</span>
-                  <b>{statsSnapshot.period}</b>
-                </div>
-                <div>
-                  <span>成功率</span>
-                  <b>{statsSnapshot.successRate}</b>
-                </div>
-                <div>
-                  <span>已配置</span>
-                  <b>{statsSnapshot.configured ? "是" : "否"}</b>
-                </div>
-              </div>
-            </div>
 
-            <div className="owner-ai-workbench">
-              <section className="owner-debug-box owner-glass">
-                <div className="owner-panel-title">
-                  <h2>AI 调试区</h2>
-                  <StatusTag>后端同步</StatusTag>
-                </div>
-                <div className="owner-field">
-                  <label htmlFor="aiQuestion">测试问题</label>
-                  <textarea
-                    id="aiQuestion"
-                    value={aiQuestion}
-                    onChange={(e) => setAiQuestion(e.target.value)}
-                  />
-                </div>
-                <div className="owner-quick-line">
-                  <button type="button" className="owner-secondary" onClick={testAiQuestion}>
-                    生成候选答案
-                  </button>
-                  <button
-                    type="button"
-                    className="owner-primary"
-                    onClick={saveFixedAnswer}
-                    disabled={answerSaveBusy}
-                  >
-                    {answerSaveBusy ? "保存中..." : "保存固定答案"}
-                  </button>
-                </div>
-                <div className="owner-panel-title owner-panel-title--spaced">
-                  <h2>候选答案</h2>
-                  <StatusTag>选择一条</StatusTag>
-                </div>
-                <div className="owner-candidate-list">
-                  {candidateAnswers.map((answer, index) => (
-                    <button
-                      type="button"
-                      key={answer}
-                      className={selectedAnswerIndex === index ? "selected" : ""}
-                      onClick={() => {
-                        setSelectedAnswerIndex(index);
-                        setAnswerToast("已选择一条候选答案。");
-                      }}
-                    >
-                      {answer}
-                    </button>
-                  ))}
-                </div>
-                <div className="owner-field owner-field--spaced">
-                  <label htmlFor="manualAnswer">手动最终答案</label>
-                  <textarea
-                    id="manualAnswer"
-                    placeholder="在这里改写或补全最终答案。"
-                    value={manualAnswer}
-                    onChange={(e) => setManualAnswer(e.target.value)}
-                  />
-                </div>
-                <p className="owner-answer-toast">{answerToast}</p>
-              </section>
-
-              <aside className="owner-debug-box owner-glass">
-                <div className="owner-panel-title">
-                  <h2>已保存答案</h2>
-                  <StatusTag>后端固定答案</StatusTag>
-                </div>
-                <div className="owner-fixed-list">
-                  {fixedAnswers.length ? (
-                    fixedAnswers.map((item) => (
-                      <article key={item.id || `${item.question}-${item.answer}`}>
-                        <strong>{item.question}</strong>
-                        <p>{item.answer}</p>
-                      </article>
-                    ))
-                  ) : (
-                    <article className="owner-empty-row">暂无后端固定答案</article>
-                  )}
-                </div>
-              </aside>
-            </div>
-          </section>
         </section>
       </div>
 

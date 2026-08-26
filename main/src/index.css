@@ -6514,8 +6514,6 @@ body {
 .owner-notice-list,
 .owner-inbox-list,
 .owner-draft-list,
-.owner-fixed-list,
-.owner-candidate-list,
 .owner-step-list {
   display: grid;
   gap: 12px;
@@ -6646,7 +6644,6 @@ body {
 
 .owner-panel,
 .owner-form-shell,
-.owner-debug-box,
 .owner-agent-card,
 .owner-agent-preview {
   border-radius: 26px;
@@ -6720,9 +6717,7 @@ body {
 .owner-task-row,
 .owner-notice,
 .owner-message,
-.owner-draft-item,
-.owner-fixed-list article,
-.owner-candidate-list button {
+.owner-draft-item {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.68);
@@ -6737,8 +6732,7 @@ body {
   gap: 10px;
 }
 
-.owner-user-row strong,
-.owner-fixed-list strong {
+.owner-user-row strong {
   display: block;
   font-size: 13px;
 }
@@ -7068,8 +7062,7 @@ body {
   padding: 16px;
 }
 
-.owner-agent-toast,
-.owner-answer-toast {
+.owner-agent-toast {
   margin: 10px 0 0;
   color: #47719d;
   font-size: 12px;
@@ -7115,7 +7108,6 @@ body {
 
 .owner-preview-card p,
 .owner-message p,
-.owner-fixed-list p,
 .owner-friend-preview p {
   margin: 0;
   color: var(--owner-muted);
@@ -7229,35 +7221,6 @@ body {
 .owner-data-table td:last-child {
   border-top-right-radius: 15px;
   border-bottom-right-radius: 15px;
-}
-
-.owner-ai-workbench {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 14px;
-  align-items: start;
-  margin-top: 14px;
-}
-
-.owner-candidate-list button {
-  padding: 13px;
-  color: #536579;
-  text-align: left;
-  line-height: 1.65;
-}
-
-.owner-candidate-list button.selected {
-  border-color: rgba(123, 183, 255, 0.56);
-  background: rgba(239, 247, 255, 0.84);
-  color: #314c68;
-}
-
-.owner-fixed-list article {
-  padding: 13px;
-}
-
-.owner-fixed-list p {
-  margin-top: 6px;
 }
 
 .owner-bottom-nav {
@@ -7410,8 +7373,7 @@ body {
     display: none;
   }
 
-  .owner-form-shell,
-  .owner-ai-workbench {
+  .owner-form-shell {
     grid-template-columns: 1fr;
   }
 

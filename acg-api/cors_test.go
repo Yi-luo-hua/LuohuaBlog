@@ -10,7 +10,7 @@ import (
 func TestCORSAllowsConfiguredOriginWithCredentials(t *testing.T) {
 	t.Setenv("ACG_ALLOWED_ORIGINS", "https://taozhiyy.top,http://localhost:5173")
 
-	req := httptest.NewRequest(http.MethodOptions, "/api/chat", nil)
+	req := httptest.NewRequest(http.MethodOptions, "/api/guestbook/messages", nil)
 	req.Header.Set("Origin", "https://taozhiyy.top")
 	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
 	rr := httptest.NewRecorder()
@@ -39,7 +39,7 @@ func TestCORSAllowsConfiguredOriginWithCredentials(t *testing.T) {
 func TestCORSDoesNotUseWildcardWithCredentials(t *testing.T) {
 	t.Setenv("ACG_ALLOWED_ORIGINS", "https://taozhiyy.top")
 
-	req := httptest.NewRequest(http.MethodGet, "/api/chat", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/guestbook/messages", nil)
 	req.Header.Set("Origin", "https://evil.example")
 	rr := httptest.NewRecorder()
 

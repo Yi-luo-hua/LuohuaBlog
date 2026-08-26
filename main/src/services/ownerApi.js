@@ -106,19 +106,6 @@ export async function publishOwnerMoment(payload) {
   return parseResponse(res);
 }
 
-export async function createOwnerFixedAnswer(payload) {
-  const res = await fetch("/api/owner/ai/fixed-answers", {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      ...JSON_HEADERS,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-  return parseResponse(res);
-}
-
 export function isPublicImageURL(value) {
   try {
     const url = new URL(value);
