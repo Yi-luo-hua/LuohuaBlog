@@ -47,7 +47,7 @@ func TestAIImagePostGlobalIPRateLimit(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		t.Setenv("DASHSCOPE_API_KEY", "sk-test")
 		userID := seedOwnerControllerUser(t, "artist@example.com", false)
-		token := seedOwnerControllerSession(t, userID, false)
+		token := seedOwnerControllerSession(t, userID, true)
 		prev := aiImagePostLimiter
 		aiImagePostLimiter = newIPRateLimiter(1, time.Minute)
 		t.Cleanup(func() { aiImagePostLimiter = prev })

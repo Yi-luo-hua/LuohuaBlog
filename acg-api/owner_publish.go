@@ -192,7 +192,6 @@ func ownerPublishHandler(w http.ResponseWriter, r *http.Request) {
 			),
 		},
 		"owner": map[string]any{
-			"email":       ownerSess.Email,
 			"displayName": ownerSess.DisplayName,
 		},
 	})

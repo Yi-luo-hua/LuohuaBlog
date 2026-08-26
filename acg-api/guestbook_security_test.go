@@ -128,28 +128,3 @@ func TestLegacyGuestbookRejectsUnsafePayloads(t *testing.T) {
 		})
 	}
 }
-
-func TestGuestbookCreateRejectsUnsafeLoggedInNickname(t *testing.T) {
-	withGuestbookTestDB(t, func() {
-		userID := seedGuestbookTestUser(t, "login@example.com", "<img src=x>", false)
-		sessionToken := seedGuestbookTestSession(t, userID, false)
-
-		rr := postGuestbookMessageWithSession(
-			t,
-			`{"content":"hello from account","channel":"guestbook"}`,
-			"127.0.0.1:3456",
-			sessionToken,
-		)
-
-		if rr.Code != http.StatusBadRequest {
-			t.Fatalf("expected 400 for unsafe logged-in nickname, got %d body=%s", rr.Code, rr.Body.String())
-		}
-		payload := decodeJSONMap(t, rr)
-		if payload["error"] != "UNSAFE_CONTENT" {
-			t.Fatalf("expected UNSAFE_CONTENT, got %#v", payload["error"])
-		}
-		if count := guestbookMessageCount(t); count != 0 {
-			t.Fatalf("unsafe logged-in nickname should not be stored, found %d rows", count)
-		}
-	})
-}

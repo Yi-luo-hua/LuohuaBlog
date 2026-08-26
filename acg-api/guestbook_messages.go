@@ -332,7 +332,11 @@ func guestbookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	)
 	if cu != nil {
 		avatar = cu.Avatar
-		userID = sql.NullInt64{Int64: cu.ID, Valid: true}
+		// With the account system gone the owner has no user id; keep the
+		// column NULL so future data cleanup won't mistake 0 for a real account.
+		if cu.ID != 0 {
+			userID = sql.NullInt64{Int64: cu.ID, Valid: true}
+		}
 		isLogin = 1
 		if cu.Role == "admin" {
 			isAdminUser = 1
@@ -476,25 +480,16 @@ func guestbookReplyRecipientEmail(parentID int64) string {
 	if parentID <= 0 {
 		return ""
 	}
+	// The contact address a visitor typed with the message is now the only
+	// way to reach them — there is no account to fall back to.
 	var contactEmail string
-	var userID sql.NullInt64
 	if err := db.QueryRow(
-		`SELECT contact_email, user_id FROM guestbook_messages WHERE id = ? AND status != 'deleted'`,
+		`SELECT contact_email FROM guestbook_messages WHERE id = ? AND status != 'deleted'`,
 		parentID,
-	).Scan(&contactEmail, &userID); err != nil {
+	).Scan(&contactEmail); err != nil {
 		return ""
 	}
-	if email := normalizeEmail(contactEmail); email != "" {
-		return email
-	}
-	if !userID.Valid {
-		return ""
-	}
-	var email string
-	if err := db.QueryRow(`SELECT email FROM users WHERE id = ?`, userID.Int64).Scan(&email); err != nil {
-		return ""
-	}
-	return normalizeEmail(email)
+	return normalizeEmail(contactEmail)
 }
 
 func guestbookOwnerMailSubject(channel string, reply bool) string {

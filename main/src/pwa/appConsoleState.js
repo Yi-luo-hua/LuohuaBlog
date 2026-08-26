@@ -1,7 +1,6 @@
-export function getOwnerSessionLabel(auth) {
-  if (!auth?.loggedIn) return "站长未确认";
-  if (auth?.user?.isOwner && !auth?.unlimited) return "站长安全验证待完成";
-  return auth?.user?.displayName || auth?.user?.email || "站长";
+export function getOwnerSessionLabel(ownerStatus) {
+  if (!ownerStatus?.owner) return "未解锁";
+  return ownerStatus.owner.displayName || "站长";
 }
 
 export function getBackendHealthLabel(health) {
@@ -19,19 +18,6 @@ export function getStatsSnapshot(stats) {
   };
 }
 
-export function getOwnerRegisteredUsers(ownerEmails) {
-  const items = ownerEmails?.registeredUsers;
-  if (!Array.isArray(items)) return [];
-  return items
-    .filter((item) => item?.email)
-    .map((item) => ({
-      id: item.id,
-      email: item.email,
-      displayName: item.displayName || "",
-      createdAt: item.createdAt || "",
-    }));
-}
-
 export function getOwnerGuestbookContacts(ownerEmails) {
   const items = ownerEmails?.guestbookContacts;
   if (!Array.isArray(items)) return [];
@@ -43,7 +29,6 @@ export function getOwnerGuestbookContacts(ownerEmails) {
       nickname: item.nickname || "",
       content: item.content || "",
       contactEmail: item.contactEmail,
-      accountEmail: item.accountEmail || "",
       createdAt: item.createdAt || "",
     }));
 }

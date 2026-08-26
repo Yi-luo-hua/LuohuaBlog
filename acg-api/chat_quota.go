@@ -4,15 +4,10 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
 )
-
-func formatUserID(id int64) string {
-	return fmt.Sprintf("%d", id)
-}
 
 const (
 	guestDailyLimit = 10
@@ -28,19 +23,12 @@ type chatIdentity struct {
 }
 
 func resolveChatIdentity(r *http.Request) chatIdentity {
-	if sess, ok := sessionFromRequest(r); ok {
-		if sess.Unlimited {
-			return chatIdentity{
-				Key:       "user:" + formatUserID(sess.UserID),
-				IsLogin:   true,
-				Limit:     0,
-				Unlimited: true,
-			}
-		}
+	if isOwnerRequest(r) {
 		return chatIdentity{
-			Key:     "user:" + formatUserID(sess.UserID),
-			IsLogin: true,
-			Limit:   userDailyLimit,
+			Key:       "owner",
+			IsLogin:   true,
+			Limit:     0,
+			Unlimited: true,
 		}
 	}
 	raw := clientIP(r) + "|" + r.UserAgent()
@@ -271,10 +259,10 @@ func quotaErrBody(id chatIdentity, snap quotaSnapshot, qe *quotaError) map[strin
 
 func chatQuotaJSON(snap quotaSnapshot) map[string]any {
 	return map[string]any{
-		"limit":       snap.Limit,
-		"used":        snap.Used,
-		"remaining":   snap.Remaining,
-		"isLogin":     snap.IsLogin,
-		"unlimited":   snap.Unlimited,
+		"limit":     snap.Limit,
+		"used":      snap.Used,
+		"remaining": snap.Remaining,
+		"isLogin":   snap.IsLogin,
+		"unlimited": snap.Unlimited,
 	}
 }

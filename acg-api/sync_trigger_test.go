@@ -141,10 +141,9 @@ func TestSyncTriggerReportsAlreadyRunning(t *testing.T) {
 	})
 }
 
-func TestSyncTriggerRejectsNonOwnerSession(t *testing.T) {
+func TestSyncTriggerRejectsUnknownSession(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		userID := seedOwnerControllerUser(t, "reader@example.com", false)
-		token := seedOwnerControllerSession(t, userID, false)
+		token := "not-a-real-session"
 		queued := 0
 		prev := syncTriggerQueue
 		syncTriggerQueue = func(AppConfig) bool { queued++; return true }
@@ -156,11 +155,11 @@ func TestSyncTriggerRejectsNonOwnerSession(t *testing.T) {
 
 		syncTriggerHandler(AppConfig{})(rr, req)
 
-		if rr.Code != http.StatusForbidden {
-			t.Fatalf("expected 403 for non-owner sync trigger, got %d body=%s", rr.Code, rr.Body.String())
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("expected 401 for a locked sync trigger, got %d body=%s", rr.Code, rr.Body.String())
 		}
 		if queued != 0 {
-			t.Fatalf("non-owner request should not queue sync, queued=%d", queued)
+			t.Fatalf("a locked request should not queue sync, queued=%d", queued)
 		}
 	})
 }

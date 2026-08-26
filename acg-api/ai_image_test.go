@@ -118,8 +118,8 @@ func TestAIImageGenerateRejectsAnonymous(t *testing.T) {
 func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		t.Setenv("DASHSCOPE_API_KEY", "sk-test")
-		userID := seedOwnerControllerUser(t, "artist@example.com", false)
-		token := seedOwnerControllerSession(t, userID, false)
+		userID := seedOwnerControllerUser(t, "artist@example.com", true)
+		token := seedOwnerControllerSession(t, userID, true)
 		gen := &fakeAIImageGenerator{
 			result: aiImageProviderResult{
 				ImageURL:  "https://dashscope-result.example/temp.png",
@@ -172,8 +172,8 @@ func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 					if payload["promptExtend"] != false {
 						t.Fatalf("prompt extension must stay disabled, got %#v", payload["promptExtend"])
 					}
-					if got := int(payload["remaining"].(float64)); got != 2 {
-						t.Fatalf("expected remaining 2, got %d", got)
+					if payload["unlimited"] != true {
+						t.Fatalf("the owner generates without a daily cap, got %#v", payload["unlimited"])
 					}
 					if gen.calls != 1 || gen.prompt != "一只坐在月亮上的猫" || gen.size != "1024*1024" {
 						t.Fatalf("unexpected generator call: calls=%d prompt=%q size=%q", gen.calls, gen.prompt, gen.size)
@@ -183,7 +183,7 @@ func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 					}
 
 					var count int
-					if err := db.QueryRow(`SELECT COUNT(*) FROM ai_image_generations WHERE user_id = ? AND image_url = ?`, userID, uploader.result.URL).Scan(&count); err != nil {
+					if err := db.QueryRow(`SELECT COUNT(*) FROM ai_image_generations WHERE identity_key = ? AND image_url = ?`, "image:owner", uploader.result.URL).Scan(&count); err != nil {
 						t.Fatalf("query ai image generations: %v", err)
 					}
 					if count != 1 {
@@ -191,8 +191,8 @@ func TestAIImageGenerateUploadsCOSForLoggedInUser(t *testing.T) {
 					}
 					var recordedPrompt, createdAt string
 					if err := db.QueryRow(
-						`SELECT prompt, created_at FROM ai_image_generations WHERE user_id = ? AND image_url = ?`,
-						userID,
+						`SELECT prompt, created_at FROM ai_image_generations WHERE identity_key = ? AND image_url = ?`,
+						"image:owner",
 						uploader.result.URL,
 					).Scan(&recordedPrompt, &createdAt); err != nil {
 						t.Fatalf("query generated-image plaza fields: %v", err)
@@ -213,8 +213,8 @@ func TestAIImageGenerateRequiresConfiguredProvider(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		t.Setenv("DASHSCOPE_API_KEY", "")
 		t.Setenv("AGNES_API_KEY", "")
-		userID := seedOwnerControllerUser(t, "artist@example.com", false)
-		token := seedOwnerControllerSession(t, userID, false)
+		userID := seedOwnerControllerUser(t, "artist@example.com", true)
+		token := seedOwnerControllerSession(t, userID, true)
 		req := httptest.NewRequest(
 			http.MethodPost,
 			"/api/ai/image",
@@ -369,8 +369,8 @@ func TestAgnesImageGeneratorReturnsStructuredHTTPError(t *testing.T) {
 func TestAIImageContentPolicyFailureTellsUserToRevisePrompt(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		t.Setenv("AGNES_API_KEY", "agnes-test")
-		userID := seedOwnerControllerUser(t, "artist@example.com", false)
-		token := seedOwnerControllerSession(t, userID, false)
+		userID := seedOwnerControllerUser(t, "artist@example.com", true)
+		token := seedOwnerControllerSession(t, userID, true)
 		gen := &fakeAIImageGenerator{
 			err: &aiImageProviderHTTPError{
 				Provider:   "agnes",
@@ -436,47 +436,11 @@ func TestParseAgnesImageResponseRequiresURL(t *testing.T) {
 	}
 }
 
-func TestAIImageGenerateEnforcesDailyLimit(t *testing.T) {
-	withOwnerControllerTestDB(t, func() {
-		t.Setenv("DASHSCOPE_API_KEY", "sk-test")
-		userID := seedOwnerControllerUser(t, "artist@example.com", false)
-		token := seedOwnerControllerSession(t, userID, false)
-		if _, err := db.Exec(
-			`INSERT INTO ai_chat_quota (identity_key, quota_date, used, last_request_at) VALUES (?, ?, 3, ?)`,
-			"image:user:"+formatUserID(userID),
-			todayDate(),
-			time.Now().UTC().Add(-time.Hour).Format(time.RFC3339),
-		); err != nil {
-			t.Fatalf("seed image quota: %v", err)
-		}
-		gen := &fakeAIImageGenerator{}
-		withAIImageGenerator(t, gen, func() {
-			req := httptest.NewRequest(
-				http.MethodPost,
-				"/api/ai/image",
-				bytes.NewBufferString(`{"prompt":"一只坐在月亮上的猫"}`),
-			)
-			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
-			rr := httptest.NewRecorder()
-
-			aiImageHandler(rr, req)
-
-			if rr.Code != http.StatusTooManyRequests {
-				t.Fatalf("expected 429, got %d body=%s", rr.Code, rr.Body.String())
-			}
-			if gen.calls != 0 {
-				t.Fatalf("generator should not be called after quota denial")
-			}
-		})
-	})
-}
-
 func TestAIImageGenerateRollsBackQuotaWhenUploadFails(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		t.Setenv("DASHSCOPE_API_KEY", "sk-test")
-		userID := seedOwnerControllerUser(t, "artist@example.com", false)
-		token := seedOwnerControllerSession(t, userID, false)
+		userID := seedOwnerControllerUser(t, "artist@example.com", true)
+		token := seedOwnerControllerSession(t, userID, true)
 		gen := &fakeAIImageGenerator{
 			result: aiImageProviderResult{
 				ImageURL:  "https://dashscope-result.example/temp.png",
@@ -506,7 +470,7 @@ func TestAIImageGenerateRollsBackQuotaWhenUploadFails(t *testing.T) {
 					if rr.Code != http.StatusBadGateway {
 						t.Fatalf("expected 502, got %d body=%s", rr.Code, rr.Body.String())
 					}
-					used, _, err := loadQuota(db, "image:user:"+formatUserID(userID), todayDate())
+					used, _, err := loadQuota(db, "image:owner", todayDate())
 					if err != nil {
 						t.Fatalf("load quota: %v", err)
 					}

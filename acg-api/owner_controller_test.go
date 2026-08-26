@@ -59,44 +59,22 @@ func decodeBase64String(raw string) (string, error) {
 	return string(buf), nil
 }
 
+// Accounts no longer exist: seeding an "owner" just means minting a session
+// cookie, which is what passing the gate leaves behind.
 func seedOwnerControllerUser(t *testing.T, email string, isOwner bool) int64 {
 	t.Helper()
-	now := time.Now().UTC().Format(time.RFC3339)
-	ownerFlag := 0
-	if isOwner {
-		ownerFlag = 1
-	}
-	res, err := db.Exec(
-		`INSERT INTO users (email, display_name, password_hash, created_at, is_owner) VALUES (?, ?, 'hash', ?, ?)`,
-		email,
-		nicknameFromEmail(email),
-		now,
-		ownerFlag,
-	)
-	if err != nil {
-		t.Fatalf("insert user: %v", err)
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		t.Fatalf("user last insert id: %v", err)
-	}
-	return id
+	return 0
 }
 
-func seedOwnerControllerSession(t *testing.T, userID int64, unlimited bool) string {
+func seedOwnerControllerSession(t *testing.T, userID int64, owner bool) string {
 	t.Helper()
-	token := uuid.NewString()
-	unlimitedFlag := 0
-	if unlimited {
-		unlimitedFlag = 1
+	if !owner {
+		return ""
 	}
+	token := uuid.NewString()
 	expires := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
 	if _, err := db.Exec(
-		`INSERT INTO sessions (id, user_id, expires_at, unlimited) VALUES (?, ?, ?, ?)`,
-		token,
-		userID,
-		expires,
-		unlimitedFlag,
+		`INSERT INTO sessions (id, expires_at) VALUES (?, ?)`, token, expires,
 	); err != nil {
 		t.Fatalf("insert session: %v", err)
 	}
@@ -156,7 +134,7 @@ func seedOwnerChatHourlySuccess(t *testing.T, count int) {
 
 func seedUnlimitedOwnerSession(t *testing.T) string {
 	t.Helper()
-	ownerID := seedOwnerControllerUser(t, ownerEmail, true)
+	ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 	return seedOwnerControllerSession(t, ownerID, true)
 }
 
@@ -218,26 +196,23 @@ func TestOwnerStatusRequiresLogin(t *testing.T) {
 	})
 }
 
-func TestOwnerStatusRejectsNonOwner(t *testing.T) {
+func TestOwnerStatusRejectsUnknownSessionCookie(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		userID := seedOwnerControllerUser(t, "user@example.com", false)
-		token := seedOwnerControllerSession(t, userID, false)
 		req := httptest.NewRequest(http.MethodGet, "/api/owner/status", nil)
-		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
+		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: "not-a-real-session"})
 		rr := httptest.NewRecorder()
 
 		ownerRouter(rr, req)
 
-		if rr.Code != http.StatusForbidden {
-			t.Fatalf("expected 403, got %d body=%s", rr.Code, rr.Body.String())
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("expected 401, got %d body=%s", rr.Code, rr.Body.String())
 		}
 	})
 }
 
 func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
-		seedOwnerControllerUser(t, "reader@example.com", false)
+		ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		seedOwnerNotificationMessage(t, "guest", guestbookChannelMain, "hello from guestbook")
 		seedOwnerChatHourlySuccess(t, 3)
@@ -260,16 +235,12 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		}
 
 		payload := decodeOwnerJSONMap(t, rr)
-		users := payload["users"].(map[string]any)
 		notifications := payload["notifications"].(map[string]any)
 		ai := payload["ai"].(map[string]any)
 		uploads := payload["uploads"].(map[string]any)
 
-		if _, ok := users["latest"]; ok {
-			t.Fatalf("owner status should not expose latest users on the home summary")
-		}
-		if got := int(users["total"].(float64)); got != 2 {
-			t.Fatalf("expected users.total 2, got %d", got)
+		if _, ok := payload["users"]; ok {
+			t.Fatalf("owner status should not report user counts now that accounts are gone: %#v", payload["users"])
 		}
 		if got := int(notifications["total"].(float64)); got != 1 {
 			t.Fatalf("expected notifications.total 1, got %d", got)
@@ -291,12 +262,6 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		}
 		if item["nickname"] != "guest" {
 			t.Fatalf("expected notification nickname, got %#v", item["nickname"])
-		}
-		if _, ok := users["registered"]; ok {
-			t.Fatalf("owner status should not expose registered user emails")
-		}
-		if got := int(users["registeredTotal"].(float64)); got != 1 {
-			t.Fatalf("expected users.registeredTotal 1, got %d", got)
 		}
 		if got := int(ai["today"].(float64)); got != 3 {
 			t.Fatalf("expected ai.today 3, got %d", got)
@@ -331,16 +296,12 @@ func TestOwnerEmailsRequiresLogin(t *testing.T) {
 	})
 }
 
-func TestOwnerEmailsReturnsRegisteredUsersAndGuestbookContacts(t *testing.T) {
+func TestOwnerEmailsReturnsGuestbookContacts(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
-		readerID := seedOwnerControllerUser(t, "reader@example.com", false)
-		memberID := seedOwnerControllerUser(t, "member@example.com", false)
+		ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		seedOwnerNotificationMessageWithContact(t, 0, "Visitor", guestbookChannelLink, "friend request", "visitor@example.com")
-		seedOwnerNotificationMessageWithContact(t, memberID, "Member", guestbookChannelMain, "login message", "")
 		seedOwnerNotificationMessageWithContact(t, 0, "NoContact", guestbookChannelMain, "plain guestbook", "")
-		_ = readerID
 
 		req := httptest.NewRequest(http.MethodGet, "/api/owner/emails", nil)
 		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
@@ -352,61 +313,33 @@ func TestOwnerEmailsReturnsRegisteredUsersAndGuestbookContacts(t *testing.T) {
 			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
 		}
 		payload := decodeOwnerJSONMap(t, rr)
-		registered := payload["registeredUsers"].([]any)
-		if len(registered) != 2 {
-			t.Fatalf("expected two registered users, got %d", len(registered))
-		}
-		registeredEmails := make(map[string]bool, len(registered))
-		for _, raw := range registered {
-			user := raw.(map[string]any)
-			registeredEmails[user["email"].(string)] = true
-			if user["createdAt"] == "" {
-				t.Fatalf("expected registered user createdAt")
-			}
-		}
-		if !registeredEmails["reader@example.com"] || !registeredEmails["member@example.com"] {
-			t.Fatalf("expected registered emails, got %#v", registeredEmails)
+		if _, ok := payload["registeredUsers"]; ok {
+			t.Fatalf("there are no accounts left to list: %#v", payload["registeredUsers"])
 		}
 
 		contacts := payload["guestbookContacts"].([]any)
-		if len(contacts) != 2 {
-			t.Fatalf("expected two guestbook contacts, got %d", len(contacts))
+		if len(contacts) != 1 {
+			t.Fatalf("expected one guestbook contact, got %d", len(contacts))
 		}
-		contactsByName := make(map[string]map[string]any, len(contacts))
-		for _, raw := range contacts {
-			item := raw.(map[string]any)
-			contactsByName[item["nickname"].(string)] = item
+		visitor := contacts[0].(map[string]any)
+		if visitor["nickname"] != "Visitor" {
+			t.Fatalf("unexpected contact nickname %#v", visitor["nickname"])
 		}
-		visitor := contactsByName["Visitor"]
 		if visitor["source"] != guestbookChannelLink {
 			t.Fatalf("expected visitor source friends, got %#v", visitor["source"])
 		}
 		if visitor["contactEmail"] != "visitor@example.com" {
 			t.Fatalf("expected submitted contact email, got %#v", visitor["contactEmail"])
 		}
-		if visitor["accountEmail"] != "" {
-			t.Fatalf("expected anonymous visitor accountEmail empty, got %#v", visitor["accountEmail"])
-		}
-		member := contactsByName["Member"]
-		if member["contactEmail"] != "member@example.com" {
-			t.Fatalf("expected member contact fallback, got %#v", member["contactEmail"])
-		}
-		if member["accountEmail"] != "member@example.com" {
-			t.Fatalf("expected member account email, got %#v", member["accountEmail"])
-		}
-		if _, ok := contactsByName["NoContact"]; ok {
-			t.Fatalf("guestbook contact without email should not be included")
-		}
 	})
 }
 
 func TestOwnerStatusReturnsNotificationContactEmail(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
-		memberID := seedOwnerControllerUser(t, "member@example.com", false)
+		ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		seedOwnerNotificationMessageWithContact(t, 0, "Visitor", guestbookChannelLink, "friend request", "visitor@example.com")
-		seedOwnerNotificationMessageWithContact(t, memberID, "Member", guestbookChannelLink, "legacy friend request", "")
+		seedOwnerNotificationMessageWithContact(t, 0, "NoContact", guestbookChannelLink, "no way to reply", "")
 
 		req := httptest.NewRequest(http.MethodGet, "/api/owner/status", nil)
 		req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: token})
@@ -428,8 +361,8 @@ func TestOwnerStatusReturnsNotificationContactEmail(t *testing.T) {
 		if contacts["Visitor"] != "visitor@example.com" {
 			t.Fatalf("expected submitted contact email, got %#v", contacts["Visitor"])
 		}
-		if contacts["Member"] != "member@example.com" {
-			t.Fatalf("expected account email fallback, got %#v", contacts["Member"])
+		if contacts["NoContact"] != "" {
+			t.Fatalf("a message with no contact address has nothing to fall back to, got %#v", contacts["NoContact"])
 		}
 	})
 }

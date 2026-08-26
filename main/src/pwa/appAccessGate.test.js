@@ -1,119 +1,45 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { SITE_HOST } from "../lib/siteIdentity.js";
 import {
-  PWA_AUTH_HOSTNAME,
+  describeGateError,
   getAppAccessState,
-  shouldShowOwnerLoginActions,
-  shouldExposeAppConsole,
-  shouldOpenAppConsoleAtRoot,
-  shouldRequireOwnerLogin,
-  userHasOwnerAppAccess,
+  shouldShowPasswordForm,
 } from "./appAccessGate.js";
 
-test("requires owner login only on the PWA app host", () => {
-  assert.equal(shouldRequireOwnerLogin({ hostname: PWA_AUTH_HOSTNAME }), true);
-  assert.equal(shouldRequireOwnerLogin({ hostname: SITE_HOST }), false);
-  assert.equal(shouldRequireOwnerLogin({ hostname: `www.${SITE_HOST}` }), false);
-  assert.equal(shouldRequireOwnerLogin({ hostname: "localhost" }), false);
+test("shows the console once the gate reports this browser unlocked", () => {
+  assert.equal(getAppAccessState({ unlocked: true }), "allowed");
+  assert.equal(getAppAccessState({ unlocked: true, isLoading: true }), "allowed");
 });
 
-test("allows only owner sessions to enter the PWA app", () => {
-  assert.equal(
-    userHasOwnerAppAccess({ loggedIn: true, unlimited: true, user: { isOwner: true } }),
-    true,
-  );
-  assert.equal(
-    userHasOwnerAppAccess({ loggedIn: true, unlimited: false, user: { isOwner: true } }),
-    false,
-  );
-  assert.equal(
-    userHasOwnerAppAccess({ loggedIn: true, unlimited: true, user: { isOwner: false } }),
-    false,
-  );
-  assert.equal(userHasOwnerAppAccess({ loggedIn: false }), false);
+test("waits while the gate check is still in flight", () => {
+  assert.equal(getAppAccessState({ isLoading: true }), "loading");
+  assert.equal(shouldShowPasswordForm("loading"), false);
 });
 
-test("keeps public site open while blocking non-owner app sessions", () => {
-  assert.equal(
-    getAppAccessState({
-      hostname: SITE_HOST,
-      auth: { loggedIn: false },
-      isLoading: false,
-    }),
-    "allowed",
-  );
-  assert.equal(
-    getAppAccessState({
-      hostname: PWA_AUTH_HOSTNAME,
-      auth: { loggedIn: false },
-      isLoading: false,
-    }),
-    "blocked",
-  );
-  assert.equal(
-    getAppAccessState({
-      hostname: PWA_AUTH_HOSTNAME,
-      auth: { loggedIn: true, unlimited: true, user: { isOwner: true } },
-      isLoading: false,
-    }),
-    "allowed",
-  );
+test("asks for the password when the browser is locked out", () => {
+  assert.equal(getAppAccessState({}), "locked");
+  assert.equal(getAppAccessState({ unlocked: false, isLoading: false }), "locked");
+  assert.equal(shouldShowPasswordForm("locked"), true);
 });
 
-test("reports loading while checking PWA app auth", () => {
+test("turns gate errors into something readable", () => {
   assert.equal(
-    getAppAccessState({
-      hostname: PWA_AUTH_HOSTNAME,
-      auth: null,
-      isLoading: true,
-    }),
-    "loading",
-  );
-});
-
-test("keeps the app visible while an allowed owner session is rechecked", () => {
-  assert.equal(
-    getAppAccessState({
-      hostname: PWA_AUTH_HOSTNAME,
-      auth: { loggedIn: true, unlimited: true, user: { isOwner: true } },
-      isLoading: true,
-    }),
-    "allowed",
-  );
-});
-
-test("shows login actions only after auth check blocks access", () => {
-  assert.equal(shouldShowOwnerLoginActions("loading"), false);
-  assert.equal(shouldShowOwnerLoginActions("allowed"), false);
-  assert.equal(shouldShowOwnerLoginActions("blocked"), true);
-});
-
-test("opens the app console from the PWA host root only", () => {
-  assert.equal(
-    shouldOpenAppConsoleAtRoot({ hostname: PWA_AUTH_HOSTNAME, pathname: "/" }),
-    true,
+    describeGateError({ status: 401, data: { error: "WRONG_PASSWORD" } }),
+    "密码不对，再试一次。",
   );
   assert.equal(
-    shouldOpenAppConsoleAtRoot({ hostname: PWA_AUTH_HOSTNAME, pathname: "/app" }),
-    false,
+    describeGateError({ status: 429, data: { error: "RATE_LIMITED" } }),
+    "尝试太频繁了，等一分钟再试。",
   );
-  assert.equal(
-    shouldOpenAppConsoleAtRoot({ hostname: SITE_HOST, pathname: "/" }),
-    false,
+  assert.match(
+    describeGateError({ status: 503, data: { error: "GATE_NOT_CONFIGURED" } }),
+    /OWNER_GATE_PASSWORD/,
   );
-  assert.equal(
-    shouldOpenAppConsoleAtRoot({ hostname: "localhost", pathname: "/" }),
-    false,
+  assert.match(
+    describeGateError({ status: 503, data: { error: "GATE_PASSWORD_TOO_SHORT" } }),
+    /太短/,
   );
-});
-
-test("exposes the app console only on the PWA host and local development", () => {
-  assert.equal(shouldExposeAppConsole({ hostname: PWA_AUTH_HOSTNAME }), true);
-  assert.equal(shouldExposeAppConsole({ hostname: "localhost" }), true);
-  assert.equal(shouldExposeAppConsole({ hostname: "127.0.0.1" }), true);
-  assert.equal(shouldExposeAppConsole({ hostname: "::1" }), true);
-  assert.equal(shouldExposeAppConsole({ hostname: SITE_HOST }), false);
-  assert.equal(shouldExposeAppConsole({ hostname: `www.${SITE_HOST}` }), false);
+  assert.match(describeGateError({ status: 0 }), /连不上后端/);
+  assert.equal(describeGateError({ status: 500, data: { message: "炸了" } }), "炸了");
 });

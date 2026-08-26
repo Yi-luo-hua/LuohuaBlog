@@ -43,7 +43,6 @@ func main() {
 	if err := migrateAll(db); err != nil {
 		log.Fatal(err)
 	}
-	ensureOwnerAccount(db)
 	seedDefaultACGData(db)
 
 	startSyncLoops(db, cfg, cacheDir)
@@ -84,7 +83,6 @@ func main() {
 	mux.HandleFunc("/api/chat", chatHandler)
 	mux.HandleFunc("/api/ai/image/gallery", aiImageGalleryHandler)
 	mux.HandleFunc("/api/ai/image", aiImageHandler)
-	mux.HandleFunc("/api/auth/", authHandler)
 	mux.HandleFunc("/api/owner/", ownerRouter)
 	mux.HandleFunc("/api/integrations/obsidian/publish", obsidianPublishHandler)
 	mux.HandleFunc("/api/v1/sync/trigger", syncTriggerHandler(cfg))
@@ -186,13 +184,7 @@ func syncTriggerProvidedToken(r *http.Request) string {
 }
 
 func syncTriggerOwnerAuthorized(r *http.Request) bool {
-	sess, ok := sessionFromRequest(r)
-	if !ok || !sess.Unlimited {
-		return false
-	}
-	var isOwner int
-	err := db.QueryRow(`SELECT is_owner FROM users WHERE id = ?`, sess.UserID).Scan(&isOwner)
-	return err == nil && isOwner == 1
+	return isOwnerRequest(r)
 }
 
 func wallpaperDrawHandler(w http.ResponseWriter, r *http.Request) {

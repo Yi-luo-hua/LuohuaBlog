@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiBell, FiRefreshCw, FiUpload, FiX } from "react-icons/fi";
-import { authMe } from "../services/authApi";
 import { fetchChatStats } from "../services/chatStatsApi";
 import {
   createOwnerFixedAnswer,
@@ -27,12 +26,12 @@ import {
   ownerConsoleScreens,
   publishSteps,
 } from "../pwa/appConsoleBlueprint";
+import { lockOwnerGate } from "../services/ownerGateApi";
 import {
   getBackendHealthLabel,
   getOwnerFixedAnswers,
   getOwnerGuestbookContacts,
   getOwnerSessionLabel,
-  getOwnerRegisteredUsers,
   getStatsSnapshot,
 } from "../pwa/appConsoleState";
 import {
@@ -136,7 +135,6 @@ const notificationSourceLabel = (source) => {
 
 const AppConsolePage = () => {
   const [activeScreen, setActiveScreen] = useState("home");
-  const [auth, setAuth] = useState(null);
   const [health, setHealth] = useState(null);
   const [stats, setStats] = useState(null);
   const [ownerStatus, setOwnerStatus] = useState(null);
@@ -194,24 +192,20 @@ const AppConsolePage = () => {
 
   const loadConsole = useCallback(async () => {
     setError("");
-    const [authResult, healthResult, statsResult, ownerStatusResult, ownerEmailsResult] =
+    const [healthResult, statsResult, ownerStatusResult, ownerEmailsResult] =
       await Promise.allSettled([
-        authMe(),
         fetchBackendHealth(),
         fetchChatStats(14),
         fetchOwnerStatus(),
         fetchOwnerEmails(),
       ]);
 
-    if (authResult.status === "fulfilled") {
-      setAuth(authResult.value.ok ? authResult.value.data : { loggedIn: false });
-    }
     if (healthResult.status === "fulfilled") setHealth(healthResult.value);
     if (statsResult.status === "fulfilled") setStats(statsResult.value);
     if (ownerStatusResult.status === "fulfilled") setOwnerStatus(ownerStatusResult.value);
     if (ownerEmailsResult.status === "fulfilled") setOwnerEmails(ownerEmailsResult.value);
 
-    const requiredFailures = [authResult, healthResult, statsResult].some(
+    const requiredFailures = [healthResult, statsResult].some(
       (result) => result.status === "rejected",
     );
     if (requiredFailures) {
@@ -226,17 +220,19 @@ const AppConsolePage = () => {
     };
   }, [loadConsole]);
 
+  const lockConsole = useCallback(async () => {
+    await lockOwnerGate().catch(() => {});
+    window.location.reload();
+  }, []);
+
   const activeMeta = screenMap[activeScreen] || screenMap.home;
-  const ownerLabel = getOwnerSessionLabel(auth);
+  const ownerLabel = getOwnerSessionLabel(ownerStatus);
   const healthLabel = getBackendHealthLabel(health);
   const statsSnapshot = useMemo(() => getStatsSnapshot(stats), [stats]);
   const liveNotifications = ownerStatus?.notifications?.items || ownerConsoleNotifications;
   const notificationTotal =
     ownerStatus?.notifications?.total ?? getNotificationTotal(ownerConsoleNotifications);
-  const registeredUsers = getOwnerRegisteredUsers(ownerEmails);
   const guestbookContacts = getOwnerGuestbookContacts(ownerEmails);
-  const registeredUserTotal =
-    ownerStatus?.users?.registeredTotal ?? ownerStatus?.users?.total ?? registeredUsers.length;
   const fixedAnswers = getOwnerFixedAnswers(ownerStatus);
   const liveDrafts = ownerStatus?.drafts?.items || [];
   const draftCount = ownerStatus?.drafts?.total ?? liveDrafts.length;
@@ -822,6 +818,9 @@ const AppConsolePage = () => {
               </button>
             ))}
           </nav>
+          <button type="button" className="owner-lock-button" onClick={lockConsole}>
+            锁上控制台
+          </button>
         </aside>
 
         <section className="owner-workspace">
@@ -956,8 +955,8 @@ const AppConsolePage = () => {
                   </div>
                   <div className="owner-stats-grid">
                     <article className="owner-stat-card">
-                      <span>注册用户</span>
-                      <strong>{registeredUserTotal}</strong>
+                      <span>留言联系人</span>
+                      <strong>{guestbookContacts.length}</strong>
                       <em>真实数据</em>
                     </article>
                     <article className="owner-stat-card">
@@ -1556,66 +1555,30 @@ const AppConsolePage = () => {
             <div className="owner-content-grid">
               <section className="owner-panel owner-glass">
                 <div className="owner-panel-title">
-                  <h2>注册用户邮箱</h2>
-                  <StatusTag>{registeredUsers.length}</StatusTag>
+                  <h2>留言联系邮箱</h2>
+                  <StatusTag>{guestbookContacts.length}</StatusTag>
                 </div>
-                {registeredUsers.length ? (
-                  <div className="owner-table-wrap">
-                    <table className="owner-data-table">
-                      <thead>
-                        <tr>
-                          <th>昵称</th>
-                          <th>邮箱</th>
-                          <th>注册时间</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {registeredUsers.map((user) => (
-                          <tr key={`${user.email}-${user.createdAt}`}>
-                            <td>{user.displayName || "未设置昵称"}</td>
-                            <td>{user.email}</td>
-                            <td>{user.createdAt || "未知"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <article className="owner-empty-row">暂无注册用户邮箱</article>
-                )}
+                <div className="owner-user-list">
+                  {guestbookContacts.length ? (
+                    guestbookContacts.map((contact) => (
+                      <article
+                        className="owner-user-row owner-user-row--stacked"
+                        key={`${contact.id}-${contact.contactEmail}`}
+                      >
+                        <span className="owner-user-avatar">{userInitial(contact.nickname || contact.contactEmail)}</span>
+                        <span>
+                          <strong>{contact.nickname || "访客"}</strong>
+                          <small>{contact.contactEmail}</small>
+                          {contact.content ? <small>{contact.content}</small> : null}
+                        </span>
+                        <StatusTag>{notificationSourceLabel(contact.source)}</StatusTag>
+                      </article>
+                    ))
+                  ) : (
+                    <article className="owner-empty-row">暂无留言联系邮箱</article>
+                  )}
+                </div>
               </section>
-
-              <aside className="owner-side-stack">
-                <section className="owner-panel owner-glass">
-                  <div className="owner-panel-title">
-                    <h2>留言联系邮箱</h2>
-                    <StatusTag>{guestbookContacts.length}</StatusTag>
-                  </div>
-                  <div className="owner-user-list">
-                    {guestbookContacts.length ? (
-                      guestbookContacts.map((contact) => (
-                        <article
-                          className="owner-user-row owner-user-row--stacked"
-                          key={`${contact.id}-${contact.contactEmail}`}
-                        >
-                          <span className="owner-user-avatar">{userInitial(contact.nickname || contact.contactEmail)}</span>
-                          <span>
-                            <strong>{contact.nickname || "访客"}</strong>
-                            <small>{contact.contactEmail}</small>
-                            {contact.accountEmail && contact.accountEmail !== contact.contactEmail ? (
-                              <small>登录邮箱：{contact.accountEmail}</small>
-                            ) : null}
-                            {contact.content ? <small>{contact.content}</small> : null}
-                          </span>
-                          <StatusTag>{notificationSourceLabel(contact.source)}</StatusTag>
-                        </article>
-                      ))
-                    ) : (
-                      <article className="owner-empty-row">暂无留言联系邮箱</article>
-                    )}
-                  </div>
-                </section>
-              </aside>
             </div>
           </section>
 

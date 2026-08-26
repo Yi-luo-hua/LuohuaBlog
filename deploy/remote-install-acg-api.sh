@@ -301,7 +301,7 @@ location = /api/guestbook/messages {
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 
-location /api/auth/ {
+location = /api/owner/gate {
     limit_req zone=api_auth burst=20 nodelay;
     proxy_pass http://127.0.0.1:8787;
     proxy_http_version 1.1;

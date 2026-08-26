@@ -31,69 +31,59 @@ func latestSecurityAuditLog(t *testing.T) securityAuditLogRow {
 	return row
 }
 
-func TestOwnerLoginFailureWritesSecurityAuditLog(t *testing.T) {
+func TestOwnerGateWrongPasswordWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
+		t.Setenv("OWNER_GATE_PASSWORD", "correct-horse-battery")
+
 		req := httptest.NewRequest(
 			http.MethodPost,
-			"/api/auth/login",
-			bytes.NewBufferString(`{"email":"akesakiko@gmail.com","password":"wrong-password"}`),
+			"/api/owner/gate",
+			bytes.NewBufferString(`{"password":"wrong-password"}`),
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.RemoteAddr = "203.0.113.10:1234"
 		req.Header.Set("User-Agent", "audit-test")
 		rr := httptest.NewRecorder()
 
-		authHandler(rr, req)
+		ownerGateHandler(rr, req)
 
 		if rr.Code != http.StatusUnauthorized {
-			t.Fatalf("expected 401 for failed owner login, got %d body=%s", rr.Code, rr.Body.String())
+			t.Fatalf("expected 401 for wrong gate password, got %d body=%s", rr.Code, rr.Body.String())
 		}
 		got := latestSecurityAuditLog(t)
-		if got.Event != "owner.login" || got.Outcome != "failure" {
+		if got.Event != "owner.gate_unlock" || got.Outcome != "failure" {
 			t.Fatalf("unexpected audit event/outcome: %#v", got)
 		}
-		if got.TargetType != "owner" {
-			t.Fatalf("expected owner target type, got %#v", got)
-		}
 		if strings.Contains(got.Detail, "wrong-password") {
-			t.Fatalf("audit detail must not include submitted password: %#v", got.Detail)
+			t.Fatalf("audit detail must not include the submitted password: %#v", got.Detail)
 		}
 	})
 }
 
-func TestOwnerSecurityVerifyFailureWritesSecurityAuditLog(t *testing.T) {
+func TestOwnerGateUnlockWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		t.Setenv("AUTH_OWNER_SECURITY_ANSWER", "correct-answer")
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
-		challenge, err := createLoginChallenge(ownerID)
-		if err != nil {
-			t.Fatalf("create challenge: %v", err)
-		}
+		t.Setenv("OWNER_GATE_PASSWORD", "correct-horse-battery")
 
 		req := httptest.NewRequest(
 			http.MethodPost,
-			"/api/auth/verify-security",
-			bytes.NewBufferString(`{"challengeToken":"`+challenge+`","answer":"wrong-answer"}`),
+			"/api/owner/gate",
+			bytes.NewBufferString(`{"password":"correct-horse-battery"}`),
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.RemoteAddr = "203.0.113.11:1234"
-		req.Header.Set("User-Agent", "audit-test")
 		rr := httptest.NewRecorder()
 
-		authHandler(rr, req)
+		ownerGateHandler(rr, req)
 
-		if rr.Code != http.StatusUnauthorized {
-			t.Fatalf("expected 401 for wrong security answer, got %d body=%s", rr.Code, rr.Body.String())
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200 for the right gate password, got %d body=%s", rr.Code, rr.Body.String())
 		}
 		got := latestSecurityAuditLog(t)
-		if got.Event != "owner.security_verify" || got.Outcome != "failure" {
+		if got.Event != "owner.gate_unlock" || got.Outcome != "success" {
 			t.Fatalf("unexpected audit event/outcome: %#v", got)
 		}
-		if got.ActorUserID != ownerID {
-			t.Fatalf("expected owner user id %d, got %d", ownerID, got.ActorUserID)
-		}
-		if strings.Contains(got.Detail, "wrong-answer") || strings.Contains(got.Detail, challenge) {
-			t.Fatalf("audit detail must not include submitted answer or challenge token: %#v", got.Detail)
+		if strings.Contains(got.Detail, "correct-horse-battery") {
+			t.Fatalf("audit detail must not include the password: %#v", got.Detail)
 		}
 	})
 }
@@ -171,7 +161,7 @@ func TestGuestbookAdminDeleteWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
+		ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
@@ -227,7 +217,7 @@ func TestOwnerPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerPublishFailureWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
+		ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		t.Setenv("OWNER_PUBLISH_GITHUB_TOKEN", "")
 
@@ -265,7 +255,7 @@ func TestOwnerPublishFailureWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerFriendPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
+		ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		mockOwnerPublishGitHubFile(t, ownerFriendCardsDataPath, `export const friendCards = [
 ];
@@ -302,7 +292,7 @@ func TestOwnerFriendPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerMomentPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
+		ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		mockOwnerPublishGitHubFile(t, ownerMomentsDataPath, `export const moments = [
 ];
@@ -339,7 +329,7 @@ func TestOwnerMomentPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 
 func TestOwnerGalleryPublishSuccessWritesSecurityAuditLog(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
-		ownerID := seedOwnerControllerUser(t, ownerEmail, true)
+		ownerID := seedOwnerControllerUser(t, "owner@example.com", true)
 		token := seedOwnerControllerSession(t, ownerID, true)
 		mockOwnerPublishGitHubFile(t, ownerGalleryDataPath, `export const galleryPhotos = [];
 `)

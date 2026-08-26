@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -26,10 +25,11 @@ const (
 
 var ownerAssetUploadFactory = newOwnerAssetUploader
 
+// ownerAuthedSession is what a handler gets once the gate has been passed.
+// There is only ever one owner, so it carries no identity beyond the label
+// shown in the console header.
 type ownerAuthedSession struct {
-	Session     sessionInfo
 	UserID      int64
-	Email       string
 	DisplayName string
 }
 
@@ -49,6 +49,9 @@ func ownerRouter(w http.ResponseWriter, r *http.Request) {
 	path = strings.Trim(path, "/")
 
 	switch {
+	case path == "gate":
+		ownerGateHandler(w, r)
+		return
 	case path == "status":
 		if r.Method != http.MethodGet {
 			methodNotAllowed(w)
@@ -151,49 +154,23 @@ func ownerRouter(w http.ResponseWriter, r *http.Request) {
 }
 
 func requireOwnerSession(w http.ResponseWriter, r *http.Request) (ownerAuthedSession, bool) {
-	sess, ok := sessionFromRequest(r)
-	if !ok {
+	if !isOwnerRequest(r) {
 		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
-			"error":   "UNAUTHORIZED",
-			"message": "请先登录。",
+			"error":   "LOCKED",
+			"message": "请先输入站长密码。",
 		})
 		return ownerAuthedSession{}, false
 	}
+	return ownerAuthedSession{DisplayName: ownerDisplayName()}, true
+}
 
-	var (
-		email       string
-		displayName string
-		isOwner     int
-	)
-	err := db.QueryRow(
-		`SELECT email, display_name, is_owner FROM users WHERE id = ?`,
-		sess.UserID,
-	).Scan(&email, &displayName, &isOwner)
-	if err == sql.ErrNoRows {
-		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
-			"error":   "UNAUTHORIZED",
-			"message": "登录会话对应的用户不存在。",
-		})
-		return ownerAuthedSession{}, false
+// ownerDisplayName is only cosmetic — the console header needs something to
+// print now that there is no account to read a name from.
+func ownerDisplayName() string {
+	if name := strings.TrimSpace(env("OWNER_DISPLAY_NAME", "")); name != "" {
+		return name
 	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return ownerAuthedSession{}, false
-	}
-	if isOwner != 1 || !sess.Unlimited {
-		writeJSONStatus(w, http.StatusForbidden, map[string]any{
-			"error":   "FORBIDDEN",
-			"message": "需要站长权限。",
-		})
-		return ownerAuthedSession{}, false
-	}
-
-	return ownerAuthedSession{
-		Session:     sess,
-		UserID:      sess.UserID,
-		Email:       email,
-		DisplayName: displayNameOrEmail(email, displayName),
-	}, true
+	return "站长"
 }
 
 func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
@@ -202,16 +179,6 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalUsers, err := ownerUserTotal()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	registeredTotal, err := ownerRegisteredUserTotal()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 	notifications, err := ownerNotificationSummary()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -235,13 +202,7 @@ func ownerStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, map[string]any{
 		"owner": map[string]any{
-			"id":          ownerSess.UserID,
-			"email":       ownerSess.Email,
 			"displayName": ownerSess.DisplayName,
-		},
-		"users": map[string]any{
-			"total":           totalUsers,
-			"registeredTotal": registeredTotal,
 		},
 		"notifications": notifications,
 		"ai": map[string]any{
@@ -264,11 +225,6 @@ func ownerEmailDirectoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	registeredUsers, err := ownerRegisteredUsers()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 	guestbookContacts, err := ownerGuestbookContactEmails(200)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -276,7 +232,6 @@ func ownerEmailDirectoryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, map[string]any{
-		"registeredUsers":   registeredUsers,
 		"guestbookContacts": guestbookContacts,
 	})
 }
@@ -659,54 +614,11 @@ func ownerUploadServeHandler(w http.ResponseWriter, r *http.Request, name string
 	http.ServeFile(w, r, target)
 }
 
-func ownerUserTotal() (int, error) {
-	var total int
-	err := db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
-	return total, err
-}
-
-func ownerRegisteredUserTotal() (int, error) {
-	var total int
-	err := db.QueryRow(`SELECT COUNT(*) FROM users WHERE is_owner = 0`).Scan(&total)
-	return total, err
-}
-
-func ownerRegisteredUsers() ([]map[string]any, error) {
-	rows, err := db.Query(
-		`SELECT id, email, display_name, created_at
-		 FROM users
-		 WHERE is_owner = 0
-		 ORDER BY id DESC`,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	items := make([]map[string]any, 0)
-	for rows.Next() {
-		var id int64
-		var email, displayName, createdAt string
-		if err := rows.Scan(&id, &email, &displayName, &createdAt); err != nil {
-			return nil, err
-		}
-		items = append(items, map[string]any{
-			"id":          id,
-			"email":       email,
-			"displayName": displayNameOrEmail(email, displayName),
-			"createdAt":   createdAt,
-		})
-	}
-	return items, rows.Err()
-}
-
 func ownerGuestbookContactEmails(limit int) ([]map[string]any, error) {
 	rows, err := db.Query(
-		`SELECT gm.id, gm.channel, gm.nickname, gm.content, gm.contact_email, COALESCE(u.email, ''), gm.created_at
+		`SELECT gm.id, gm.channel, gm.nickname, gm.content, gm.contact_email, gm.created_at
 		 FROM guestbook_messages gm
-		 LEFT JOIN users u ON u.id = gm.user_id
-		 WHERE gm.status = 'visible'
-		   AND (TRIM(gm.contact_email) != '' OR COALESCE(u.email, '') != '')
+		 WHERE gm.status = 'visible' AND TRIM(gm.contact_email) != ''
 		 ORDER BY gm.id DESC
 		 LIMIT ?`,
 		limit,
@@ -719,12 +631,11 @@ func ownerGuestbookContactEmails(limit int) ([]map[string]any, error) {
 	items := make([]map[string]any, 0)
 	for rows.Next() {
 		var id int64
-		var channel, nickname, content, submittedEmail, accountEmail, createdAt string
-		if err := rows.Scan(&id, &channel, &nickname, &content, &submittedEmail, &accountEmail, &createdAt); err != nil {
+		var channel, nickname, content, submittedEmail, createdAt string
+		if err := rows.Scan(&id, &channel, &nickname, &content, &submittedEmail, &createdAt); err != nil {
 			return nil, err
 		}
-		accountEmail = normalizeEmail(accountEmail)
-		contactEmail := ownerNotificationContactEmail(submittedEmail, accountEmail)
+		contactEmail := normalizeEmail(submittedEmail)
 		if contactEmail == "" {
 			continue
 		}
@@ -734,7 +645,6 @@ func ownerGuestbookContactEmails(limit int) ([]map[string]any, error) {
 			"nickname":     nickname,
 			"content":      content,
 			"contactEmail": contactEmail,
-			"accountEmail": accountEmail,
 			"createdAt":    createdAt,
 		})
 	}
@@ -743,9 +653,8 @@ func ownerGuestbookContactEmails(limit int) ([]map[string]any, error) {
 
 func ownerNotificationSummary() (map[string]any, error) {
 	rows, err := db.Query(
-		`SELECT gm.id, gm.channel, gm.nickname, gm.content, gm.contact_email, COALESCE(u.email, ''), gm.created_at
+		`SELECT gm.id, gm.channel, gm.nickname, gm.content, gm.contact_email, gm.created_at
 		 FROM guestbook_messages gm
-		 LEFT JOIN users u ON u.id = gm.user_id
 		 WHERE gm.status = 'visible' AND gm.owner_read_at = ''
 		 ORDER BY gm.id DESC
 		 LIMIT 30`,
@@ -759,8 +668,8 @@ func ownerNotificationSummary() (map[string]any, error) {
 	total := 0
 	for rows.Next() {
 		var id int64
-		var channel, nickname, content, contactEmail, accountEmail, createdAt string
-		if err := rows.Scan(&id, &channel, &nickname, &content, &contactEmail, &accountEmail, &createdAt); err != nil {
+		var channel, nickname, content, contactEmail, createdAt string
+		if err := rows.Scan(&id, &channel, &nickname, &content, &contactEmail, &createdAt); err != nil {
 			return nil, err
 		}
 		total += 1
@@ -772,7 +681,7 @@ func ownerNotificationSummary() (map[string]any, error) {
 			"count":        1,
 			"nickname":     nickname,
 			"content":      content,
-			"contactEmail": ownerNotificationContactEmail(contactEmail, accountEmail),
+			"contactEmail": normalizeEmail(contactEmail),
 			"createdAt":    formatGuestbookTime(createdAt),
 		})
 	}
@@ -784,13 +693,6 @@ func ownerNotificationSummary() (map[string]any, error) {
 		"total": total,
 		"items": items,
 	}, nil
-}
-
-func ownerNotificationContactEmail(contactEmail, accountEmail string) string {
-	if email := normalizeEmail(contactEmail); email != "" {
-		return email
-	}
-	return normalizeEmail(accountEmail)
 }
 
 func ownerNotificationTitle(channel string) string {

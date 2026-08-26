@@ -80,7 +80,7 @@ type agnesImageGenerator struct {
 }
 
 func aiImageHandler(w http.ResponseWriter, r *http.Request) {
-	id, userID, loggedIn := resolveAIImageIdentity(r)
+	id, loggedIn := resolveAIImageIdentity(r)
 	configured := aiImageConfigured()
 
 	switch r.Method {
@@ -95,24 +95,25 @@ func aiImageHandler(w http.ResponseWriter, r *http.Request) {
 		out["canGenerate"] = loggedIn && configured && (id.Unlimited || snap.Remaining > 0)
 		out["model"] = aiImageModel()
 		out["promptExtend"] = false
-		out["userId"] = userID
 		writeJSON(w, out)
 	case http.MethodPost:
 		if !allowAPIPost(aiImagePostLimiter, r) {
 			writeAPIRateLimited(w)
 			return
 		}
-		handleAIImagePost(w, r, id, userID, loggedIn, configured)
+		handleAIImagePost(w, r, id, loggedIn, configured)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, userID int64, loggedIn, configured bool) {
+func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, loggedIn, configured bool) {
+	// Visitors have no identity to bill or rate-limit any more, and every
+	// image costs real money, so generating is the owner's alone.
 	if !loggedIn {
 		writeJSONStatus(w, http.StatusUnauthorized, map[string]any{
-			"error":   "LOGIN_REQUIRED",
-			"message": "请先登录后再生图，避免额度被刷爆。",
+			"error":   "LOCKED",
+			"message": "生图只对站长开放，请先输入站长密码。",
 		})
 		return
 	}
@@ -275,7 +276,7 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 		return
 	}
 
-	if err := recordAIImageGeneration(db, userID, id.Key, prompt, providerResult, item); err != nil {
+	if err := recordAIImageGeneration(db, id.Key, prompt, providerResult, item); err != nil {
 		rollbackQuota(db, id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -303,24 +304,16 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 	writeJSON(w, out)
 }
 
-func resolveAIImageIdentity(r *http.Request) (chatIdentity, int64, bool) {
-	sess, ok := sessionFromRequest(r)
-	if !ok {
-		return chatIdentity{Key: "image:guest", IsLogin: false, Limit: 0}, 0, false
-	}
-	if sess.Unlimited {
-		return chatIdentity{
-			Key:       "image:user:" + formatUserID(sess.UserID),
-			IsLogin:   true,
-			Limit:     0,
-			Unlimited: true,
-		}, sess.UserID, true
+func resolveAIImageIdentity(r *http.Request) (chatIdentity, bool) {
+	if !isOwnerRequest(r) {
+		return chatIdentity{Key: "image:guest", IsLogin: false, Limit: 0}, false
 	}
 	return chatIdentity{
-		Key:     "image:user:" + formatUserID(sess.UserID),
-		IsLogin: true,
-		Limit:   aiImageDailyLimit,
-	}, sess.UserID, true
+		Key:       "image:owner",
+		IsLogin:   true,
+		Limit:     0,
+		Unlimited: true,
+	}, true
 }
 
 func aiImageConfigured() bool {
@@ -747,17 +740,12 @@ func aiImageExtFromMIME(mimeType string) string {
 	}
 }
 
-func recordAIImageGeneration(db *sql.DB, userID int64, identityKey, prompt string, providerResult aiImageProviderResult, item ownerCOSUploadResult) error {
+func recordAIImageGeneration(db *sql.DB, identityKey, prompt string, providerResult aiImageProviderResult, item ownerCOSUploadResult) error {
 	now := time.Now().UTC().Format(time.RFC3339)
-	var userValue any
-	if userID > 0 {
-		userValue = userID
-	}
 	_, err := db.Exec(
 		`INSERT INTO ai_image_generations
-		 (user_id, identity_key, prompt, model, size, image_url, object_key, provider_request_id, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		userValue,
+		 (identity_key, prompt, model, size, image_url, object_key, provider_request_id, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		identityKey,
 		prompt,
 		providerResult.Model,

@@ -92,29 +92,13 @@ func migrateAll(db *sql.DB) error {
 			owner_calls INTEGER NOT NULL DEFAULT 0,
 			owner_tokens INTEGER NOT NULL DEFAULT 0
 		);`,
-		`CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			email TEXT NOT NULL UNIQUE,
-			display_name TEXT NOT NULL DEFAULT '',
-			password_hash TEXT NOT NULL,
-			created_at TEXT NOT NULL,
-			is_owner INTEGER NOT NULL DEFAULT 0
-		);`,
-		`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
+		// The site has no accounts: a session row simply means somebody
+		// passed the owner gate on this browser.
 		`CREATE TABLE IF NOT EXISTS sessions (
 			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			expires_at TEXT NOT NULL,
-			unlimited INTEGER NOT NULL DEFAULT 0,
-			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			expires_at TEXT NOT NULL
 		);`,
-		`CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);`,
-		`CREATE TABLE IF NOT EXISTS login_challenges (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			expires_at TEXT NOT NULL,
-			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-		);`,
+		`CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);`,
 		`CREATE TABLE IF NOT EXISTS owner_drafts (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			kind TEXT NOT NULL DEFAULT 'article',
@@ -206,16 +190,7 @@ func migrateAll(db *sql.DB) error {
 	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_guestbook_messages_channel_status_parent_created ON guestbook_messages(channel, status, parent_id, created_at DESC);`); err != nil {
 		return err
 	}
-	if err := ensureColumn(db, "users", "is_owner", "INTEGER NOT NULL DEFAULT 0"); err != nil {
-		return err
-	}
-	if err := ensureColumn(db, "users", "display_name", "TEXT NOT NULL DEFAULT ''"); err != nil {
-		return err
-	}
-	if err := ensureColumn(db, "users", "avatar", "TEXT NOT NULL DEFAULT ''"); err != nil {
-		return err
-	}
-	if err := ensureColumn(db, "sessions", "unlimited", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+	if err := dropAccountTables(db); err != nil {
 		return err
 	}
 	if err := ensureColumn(db, "ai_chat_hourly", "owner_calls", "INTEGER NOT NULL DEFAULT 0"); err != nil {
@@ -432,4 +407,57 @@ func bangumiStatusFromCollectionType(collectionType int) (string, bool) {
 	default:
 		return "", false
 	}
+}
+
+// dropAccountTables retires the old account system. A database written before
+// the owner gate still carries users, login challenges and user-scoped
+// sessions; none of them mean anything now, and the old sessions table cannot
+// even accept a row without a user_id. Everyone is signed out once, then the
+// gate password is the only way back in.
+func dropAccountTables(db *sql.DB) error {
+	legacySessions, err := tableHasColumn(db, "sessions", "user_id")
+	if err != nil {
+		return err
+	}
+	if legacySessions {
+		if _, err := db.Exec(`DROP TABLE sessions`); err != nil {
+			return err
+		}
+		if _, err := db.Exec(`CREATE TABLE sessions (
+			id TEXT PRIMARY KEY,
+			expires_at TEXT NOT NULL
+		)`); err != nil {
+			return err
+		}
+		if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)`); err != nil {
+			return err
+		}
+	}
+	for _, table := range []string{"users", "login_challenges"} {
+		if _, err := db.Exec(`DROP TABLE IF EXISTS ` + table); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func tableHasColumn(db *sql.DB, table, column string) (bool, error) {
+	rows, err := db.Query(`PRAGMA table_info(` + table + `)`)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return false, err
+		}
+		if name == column {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
 }

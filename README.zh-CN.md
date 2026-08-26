@@ -41,13 +41,13 @@ AI、SMTP、GitHub 或对象存储密钥的功能仍会保持未配置状态，�
 
 ## 后端接口
 
-`acg-api` 是从 `acg-api/main.go` 启动的标准 `net/http` 服务：加载 `/opt/acg-api/.env`，在 `ACG_DATA_DIR/acg.db` 打开 SQLite，执行迁移，保留站长账号，并启动后台同步循环。
+`acg-api` 是从 `acg-api/main.go` 启动的标准 `net/http` 服务：加载 `/opt/acg-api/.env`，在 `ACG_DATA_DIR/acg.db` 打开 SQLite，执行迁移，准备站长门禁会话表，并启动后台同步循环。
 
 | 分区 | 路由 |
 | --- | --- |
 | 公开数据 | `GET /api/v1/health`、`/api/v1/bangumi/list`、`/api/v1/wallpapers/draw`、`/api/v1/github/commits`、`/api/server/info` |
 | 留言板 | `GET/POST /api/guestbook/messages`、`PATCH/DELETE /api/guestbook/messages/:id` |
-| 认证 | `POST /api/auth/register`、`/login`、`/verify-security`、`/logout`；`GET /api/auth/me` |
+| 站长门禁 | `GET/POST/DELETE /api/owner/gate` —— 一个密码，没有账号 |
 | AI | `GET/POST /api/chat`、`/api/ai/image`；`GET /api/chat/stats`、`/api/ai/image/gallery` |
 | 仅站长 | `GET /api/owner/status`，`POST /api/owner/publish`、`/friends`、`/moments`、`/gallery/images`、`/assets` |
 
@@ -58,7 +58,7 @@ AI、SMTP、GitHub 或对象存储密钥的功能仍会保持未配置状态，�
 所有密钥只存在于服务器上，不进仓库。复制 `acg-api/.env.example` 后填写：
 
 - **运行时** —— `ACG_API_ADDR`（默认 `:8787`）、`ACG_DATA_DIR`（默认 `./data`）
-- **站长登录** —— `AUTH_OWNER_PASSWORD`、`AUTH_OWNER_SECURITY_ANSWER`
+- **站长门禁** —— `OWNER_GATE_PASSWORD`（进 `/app` 输的那个密码，至少 6 位）、可选 `OWNER_DISPLAY_NAME`
 - **AI** —— `DEEPSEEK_API_KEY`、`AGNES_API_KEY`
 - **邮件** —— `SMTP_HOST`、`SMTP_PORT`、`SMTP_USER`、`SMTP_PASS`、`MAIL_NOTIFY_TO`（用授权码，别用账号密码）
 - **发布** —— `OWNER_PUBLISH_GITHUB_TOKEN`
@@ -70,7 +70,7 @@ AI、SMTP、GitHub 或对象存储密钥的功能仍会保持未配置状态，�
 
 - `VITE_API_BASE` —— 浏览器请求 `/api` 的源；同源部署留空即可
 - `VITE_SITE_HOST` —— 站点公开域名，如 `yourdomain.com`（默认 `example.com`）
-- `VITE_SITE_APP_HOST` —— 站长 PWA 控制台的域名，默认为 `app.<VITE_SITE_HOST>`
+- `VITE_SITE_APP_HOST` —— 站长 PWA 的安装域名，默认为 `app.<VITE_SITE_HOST>`；控制台本身在任何域名的 `/app` 都能打开，凭密码进入
 - `VITE_SITE_PROTOCOL` —— 仅用于覆盖协议；默认按主机推断：裸 IP 和 `localhost`
   用 `http`，域名用 `https`，所以用 IP 部署时不需要再手工改构建产物
 

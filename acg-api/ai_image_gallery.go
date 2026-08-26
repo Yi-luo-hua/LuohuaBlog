@@ -48,10 +48,8 @@ func aiImageGalleryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := db.Query(
-		`SELECT g.prompt, g.image_url, g.object_key, g.size, g.created_at,
-		        COALESCE(u.display_name, ''), COALESCE(u.email, '')
+		`SELECT g.prompt, g.image_url, g.object_key, g.size, g.created_at
 		 FROM ai_image_generations g
-		 LEFT JOIN users u ON u.id = g.user_id
 		 WHERE g.created_at < ?
 		 ORDER BY g.created_at DESC
 		 LIMIT ?`,
@@ -69,13 +67,12 @@ func aiImageGalleryHandler(w http.ResponseWriter, r *http.Request) {
 		ImageURL  string `json:"imageUrl"`
 		Size      string `json:"size"`
 		CreatedAt string `json:"createdAt"`
-		Author    string `json:"author"`
 	}
 	items := make([]item, 0, limit)
 	for rows.Next() {
 		var it item
-		var storedURL, objectKey, displayName, email string
-		if err := rows.Scan(&it.Prompt, &storedURL, &objectKey, &it.Size, &it.CreatedAt, &displayName, &email); err != nil {
+		var storedURL, objectKey string
+		if err := rows.Scan(&it.Prompt, &storedURL, &objectKey, &it.Size, &it.CreatedAt); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -83,7 +80,6 @@ func aiImageGalleryHandler(w http.ResponseWriter, r *http.Request) {
 		if proxyURL := ownerCOSProxyURL(objectKey); proxyURL != "" {
 			it.ImageURL = proxyURL
 		}
-		it.Author = displayNameOrEmail(email, displayName)
 		items = append(items, it)
 	}
 	if err := rows.Err(); err != nil {

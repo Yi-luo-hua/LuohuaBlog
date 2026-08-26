@@ -44,13 +44,13 @@ and recovery procedure.
 
 ## Backend surface
 
-`acg-api` is a plain `net/http` service bootstrapped from `acg-api/main.go`. It loads `/opt/acg-api/.env`, opens SQLite at `ACG_DATA_DIR/acg.db`, runs migrations, reserves the owner account, and starts background sync loops.
+`acg-api` is a plain `net/http` service bootstrapped from `acg-api/main.go`. It loads `/opt/acg-api/.env`, opens SQLite at `ACG_DATA_DIR/acg.db`, runs migrations, prepares the owner gate session table, and starts background sync loops.
 
 | Area | Routes |
 | --- | --- |
 | Public data | `GET /api/v1/health`, `/api/v1/bangumi/list`, `/api/v1/wallpapers/draw`, `/api/v1/github/commits`, `/api/server/info` |
 | Guestbook | `GET/POST /api/guestbook/messages`, `PATCH/DELETE /api/guestbook/messages/:id` |
-| Auth | `POST /api/auth/register`, `/login`, `/verify-security`, `/logout`; `GET /api/auth/me` |
+| Owner gate | `GET/POST/DELETE /api/owner/gate` — one password, no accounts |
 | AI | `GET/POST /api/chat`, `/api/ai/image`; `GET /api/chat/stats`, `/api/ai/image/gallery` |
 | Owner only | `GET /api/owner/status`, `POST /api/owner/publish`, `/friends`, `/moments`, `/gallery/images`, `/assets` |
 
@@ -61,7 +61,7 @@ Owner-only routes commit through the GitHub Contents API, so they need a token w
 Every secret lives on the server, never in this repository. Copy `acg-api/.env.example` and fill it in:
 
 - **Runtime** — `ACG_API_ADDR` (default `:8787`), `ACG_DATA_DIR` (default `./data`)
-- **Owner login** — `AUTH_OWNER_PASSWORD`, `AUTH_OWNER_SECURITY_ANSWER`
+- **Owner gate** — `OWNER_GATE_PASSWORD` (the password typed on `/app`, at least 6 characters), optional `OWNER_DISPLAY_NAME`
 - **AI** — `DEEPSEEK_API_KEY`, `AGNES_API_KEY`
 - **Mail** — `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_NOTIFY_TO` (use an app password, never the account password)
 - **Publishing** — `OWNER_PUBLISH_GITHUB_TOKEN`
@@ -74,7 +74,7 @@ The frontend's own address comes from build-time variables, resolved in
 
 - `VITE_API_BASE` — origin the browser calls for `/api`; leave empty for same-origin
 - `VITE_SITE_HOST` — public host, e.g. `yourdomain.com` (defaults to `example.com`)
-- `VITE_SITE_APP_HOST` — host that gates the owner PWA console, defaults to `app.<VITE_SITE_HOST>`
+- `VITE_SITE_APP_HOST` — host the owner PWA installs from, defaults to `app.<VITE_SITE_HOST>`; the console itself opens at `/app` on any host and is guarded by the password
 - `VITE_SITE_PROTOCOL` — only to override the scheme; by default a bare IP or
   `localhost` resolves to `http` and a domain name to `https`, so an IP-hosted
   build needs no post-build patching

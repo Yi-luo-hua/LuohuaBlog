@@ -65,44 +65,25 @@ func seedGuestbookMessage(t *testing.T, body string, remoteAddr string) map[stri
 	return decodeJSONMap(t, rr)
 }
 
+// seedGuestbookTestUser survives only as a shim: accounts are gone, so a
+// "user" is just the anonymous nickname the message carries.
 func seedGuestbookTestUser(t *testing.T, email, displayName string, isOwner bool) int64 {
 	t.Helper()
-	now := time.Now().UTC().Format(time.RFC3339)
-	ownerFlag := 0
-	if isOwner {
-		ownerFlag = 1
-	}
-	res, err := db.Exec(
-		`INSERT INTO users (email, display_name, password_hash, created_at, is_owner) VALUES (?, ?, 'hash', ?, ?)`,
-		normalizeEmail(email),
-		displayName,
-		now,
-		ownerFlag,
-	)
-	if err != nil {
-		t.Fatalf("insert user: %v", err)
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		t.Fatalf("user last insert id: %v", err)
-	}
-	return id
+	return 0
 }
 
-func seedGuestbookTestSession(t *testing.T, userID int64, unlimited bool) string {
+// seedGuestbookTestSession returns an owner cookie when the caller asked for
+// the privileged case, and an empty token otherwise — an ordinary visitor now
+// carries no session at all.
+func seedGuestbookTestSession(t *testing.T, userID int64, owner bool) string {
 	t.Helper()
-	token := uuid.NewString()
-	unlimitedFlag := 0
-	if unlimited {
-		unlimitedFlag = 1
+	if !owner {
+		return ""
 	}
+	token := uuid.NewString()
 	expires := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
 	if _, err := db.Exec(
-		`INSERT INTO sessions (id, user_id, expires_at, unlimited) VALUES (?, ?, ?, ?)`,
-		token,
-		userID,
-		expires,
-		unlimitedFlag,
+		`INSERT INTO sessions (id, expires_at) VALUES (?, ?)`, token, expires,
 	); err != nil {
 		t.Fatalf("insert session: %v", err)
 	}
@@ -249,7 +230,7 @@ func TestFriendsVisitorTopLevelMessageStoresPrivateContactEmail(t *testing.T) {
 	})
 }
 
-func TestFriendsLoggedInTopLevelMessageStoresPrivateContactEmail(t *testing.T) {
+func TestFriendsTopLevelMessageStoresPrivateContactEmail(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		payload := seedGuestbookMessage(t, `{"nickname":"Friend","content":"friends root","channel":"friends","contactEmail":" Visitor@Example.COM "}`, "127.0.0.1:3456")
 		item := payload["item"].(map[string]any)
@@ -287,7 +268,7 @@ func TestFriendsListDoesNotExposePrivateContactEmail(t *testing.T) {
 	})
 }
 
-func TestFriendsLoggedInTopLevelMessageUsesSubmittedContactEmail(t *testing.T) {
+func TestFriendsTopLevelMessageUsesSubmittedContactEmail(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		userID := seedGuestbookTestUser(t, "login@example.com", "Login", false)
 		sessionToken := seedGuestbookTestSession(t, userID, false)
@@ -310,13 +291,10 @@ func TestFriendsLoggedInTopLevelMessageUsesSubmittedContactEmail(t *testing.T) {
 		if item["nickname"] != "Preferred" {
 			t.Fatalf("expected submitted nickname, got %#v", item["nickname"])
 		}
-		if item["isLoginUser"] != true {
-			t.Fatalf("expected logged-in marker to be preserved, got %#v", item["isLoginUser"])
-		}
 	})
 }
 
-func TestFriendsLoggedInTopLevelMessageRequiresSubmittedContactFields(t *testing.T) {
+func TestFriendsTopLevelMessageRequiresSubmittedContactFields(t *testing.T) {
 	withGuestbookTestDB(t, func() {
 		userID := seedGuestbookTestUser(t, "Login@Example.com", "Login", false)
 		sessionToken := seedGuestbookTestSession(t, userID, false)
@@ -397,46 +375,6 @@ func TestOwnerReplySendsParentContactEmailNotification(t *testing.T) {
 		}
 		if !strings.Contains(message.Subject, "收到回复") || !strings.Contains(message.Body, "owner reply") {
 			t.Fatalf("expected reply subject/body, got subject=%q body=%q", message.Subject, message.Body)
-		}
-	})
-}
-
-func TestOwnerReplyFallsBackToParentUserAccountEmail(t *testing.T) {
-	withGuestbookTestDB(t, func() {
-		userID := seedGuestbookTestUser(t, "member@example.com", "Member", false)
-		now := time.Now().UTC().Format(time.RFC3339)
-		res, err := db.Exec(
-			`INSERT INTO guestbook_messages
-			 (user_id, nickname, avatar, channel, content, contact_email, content_hash, ip_hash, ip_region, ip_masked, user_agent_hash, parent_id, status, is_login_user, is_admin_user, created_at, updated_at)
-			 VALUES (?, 'Member', '', 'friends', 'member request', '', 'content-hash', 'ip-hash', '', '', '', 0, 'visible', 1, 0, ?, ?)`,
-			userID,
-			now,
-			now,
-		)
-		if err != nil {
-			t.Fatalf("insert parent message: %v", err)
-		}
-		parentID, err := res.LastInsertId()
-		if err != nil {
-			t.Fatalf("parent last insert id: %v", err)
-		}
-		ownerID := seedGuestbookTestUser(t, "owner@example.com", "Owner", true)
-		sessionToken := seedGuestbookTestSession(t, ownerID, true)
-		mailer := &capturingGuestbookMailer{}
-		useGuestbookTestMailer(t, mailer)
-
-		rr := postGuestbookMessageWithSession(
-			t,
-			`{"content":"owner reply","channel":"friends","parentId":`+strconv.FormatInt(parentID, 10)+`}`,
-			"127.0.0.1:4567",
-			sessionToken,
-		)
-		if rr.Code != http.StatusOK {
-			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
-		}
-
-		if _, ok := findMailTo(mailer.messages, "member@example.com"); !ok {
-			t.Fatalf("expected reply notification to parent account email, got %#v", mailer.messages)
 		}
 	})
 }

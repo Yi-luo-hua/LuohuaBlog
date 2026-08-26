@@ -6,40 +6,17 @@ import {
   getOwnerFixedAnswers,
   getOwnerGuestbookContacts,
   getOwnerSessionLabel,
-  getOwnerRegisteredUsers,
   getStatsSnapshot,
 } from "./appConsoleState.js";
 
-test("describes an owner session for the app console", () => {
-  assert.equal(
-    getOwnerSessionLabel({
-      loggedIn: true,
-      unlimited: true,
-      user: { displayName: "Tao", email: "owner@example.test", isOwner: true },
-    }),
-    "Tao",
-  );
-
-  assert.equal(
-    getOwnerSessionLabel({
-      loggedIn: true,
-      unlimited: true,
-      user: { email: "owner@example.test", isOwner: true },
-    }),
-    "owner@example.test",
-  );
+test("labels the owner session from the console status payload", () => {
+  assert.equal(getOwnerSessionLabel({ owner: { displayName: "Tao" } }), "Tao");
+  assert.equal(getOwnerSessionLabel({ owner: {} }), "站长");
 });
 
-test("falls back when the owner session is not confirmed", () => {
-  assert.equal(getOwnerSessionLabel({ loggedIn: false }), "站长未确认");
-  assert.equal(
-    getOwnerSessionLabel({
-      loggedIn: true,
-      unlimited: false,
-      user: { isOwner: true, email: "owner@example.test" },
-    }),
-    "站长安全验证待完成",
-  );
+test("says so when the console has not been unlocked", () => {
+  assert.equal(getOwnerSessionLabel(null), "未解锁");
+  assert.equal(getOwnerSessionLabel({}), "未解锁");
 });
 
 test("summarizes backend health responses", () => {
@@ -73,25 +50,6 @@ test("normalizes AI stats for the app console", () => {
   assert.equal(getStatsSnapshot(null).today, "0 / 0");
 });
 
-test("uses the dedicated owner email directory for registered users", () => {
-  const users = getOwnerRegisteredUsers({
-    registeredUsers: [
-      { email: "reader@example.test", displayName: "Reader", createdAt: "2026-06-07T09:00:00Z" },
-      { email: "friend@example.test", displayName: "", createdAt: "2026-06-06T09:00:00Z" },
-      { displayName: "No Email" },
-    ],
-  });
-
-  assert.deepEqual(
-    users.map((user) => [user.email, user.displayName, user.createdAt]),
-    [
-      ["reader@example.test", "Reader", "2026-06-07T09:00:00Z"],
-      ["friend@example.test", "", "2026-06-06T09:00:00Z"],
-    ],
-  );
-  assert.deepEqual(getOwnerRegisteredUsers(null), []);
-});
-
 test("uses the dedicated owner email directory for guestbook contacts", () => {
   const contacts = getOwnerGuestbookContacts({
     guestbookContacts: [
@@ -100,7 +58,6 @@ test("uses the dedicated owner email directory for guestbook contacts", () => {
         source: "friends",
         nickname: "Visitor",
         contactEmail: "visitor@example.test",
-        accountEmail: "",
         content: "friend request",
         createdAt: "2026-06-07T09:00:00Z",
       },
@@ -109,17 +66,16 @@ test("uses the dedicated owner email directory for guestbook contacts", () => {
         source: "guestbook",
         nickname: "Member",
         contactEmail: "member@example.test",
-        accountEmail: "member@example.test",
       },
       { nickname: "NoContact" },
     ],
   });
 
   assert.deepEqual(
-    contacts.map((item) => [item.source, item.nickname, item.contactEmail, item.accountEmail]),
+    contacts.map((item) => [item.source, item.nickname, item.contactEmail]),
     [
-      ["friends", "Visitor", "visitor@example.test", ""],
-      ["guestbook", "Member", "member@example.test", "member@example.test"],
+      ["friends", "Visitor", "visitor@example.test"],
+      ["guestbook", "Member", "member@example.test"],
     ],
   );
   assert.deepEqual(getOwnerGuestbookContacts(null), []);

@@ -8,40 +8,22 @@ import GalleryPhotoPage from "./pages/GalleryPhotoPage";
 import MomentsPage from "./pages/MomentsPage";
 import AboutSitePage from "./pages/AboutSitePage";
 import AboutProjectPage from "./pages/AboutProjectPage";
-import {
-  shouldExposeAppConsole,
-  shouldOpenAppConsoleAtRoot,
-} from "./pwa/appAccessGate";
-import PwaOwnerGate from "./pwa/PwaOwnerGate";
+import OwnerPasswordGate from "./pwa/OwnerPasswordGate";
 
-const RootEntry = () => {
-  const hostname =
-    typeof window === "undefined" ? "" : window.location.hostname;
-  return shouldOpenAppConsoleAtRoot({ hostname, pathname: "/" }) ? (
-    <Navigate to="/app" replace />
-  ) : (
-    <HomePage />
-  );
-};
-
-const AppConsoleEntry = () => {
-  const hostname =
-    typeof window === "undefined" ? "" : window.location.hostname;
-  return shouldExposeAppConsole({ hostname }) ? (
+// /app is reachable from any host; the password box is what stands in the way.
+const AppConsoleEntry = () => (
+  <OwnerPasswordGate>
     <AppConsolePage />
-  ) : (
-    <Navigate to="/" replace />
-  );
-};
+  </OwnerPasswordGate>
+);
 
 function App() {
   return (
-    <PwaOwnerGate>
-      <BrowserRouter>
+    <BrowserRouter>
         <Routes>
           <Route path="app" element={<AppConsoleEntry />} />
           <Route element={<SiteLayout />}>
-            <Route index element={<RootEntry />} />
+            <Route index element={<HomePage />} />
             <Route
               path="bangumi"
               element={<Navigate to="/bangumi/watching" replace />}
@@ -62,8 +44,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
-      </BrowserRouter>
-    </PwaOwnerGate>
+    </BrowserRouter>
   );
 }
 

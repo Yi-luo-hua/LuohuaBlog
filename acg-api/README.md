@@ -30,18 +30,17 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 - `GET /api/v1/bangumi/list?status=watching|watched|wish`
 - `GET /api/chat` — quota status (blog AI assistant)
 - `POST /api/chat` — `{ "message": "...", "pageUrl", "pageTitle" }` → DeepSeek-v4-flash (see `blog/AI-ASSISTANT.md`)
-- `POST /api/auth/register` — 邮箱注册（站长邮箱不可注册）
-- `POST /api/auth/login` — 登录；站长邮箱需再调 `verify-security`
-- `POST /api/auth/verify-security` — `{ "challengeToken", "answer" }` 学号验证 → 无限 AI
-- `POST /api/auth/logout` / `GET /api/auth/me`
+- `GET /api/owner/gate` — 这台浏览器是否已解锁 `{ "unlocked", "configured" }`
+- `POST /api/owner/gate` — `{ "password" }`，对上 `OWNER_GATE_PASSWORD` 就下发 `acg_session` cookie
+- `DELETE /api/owner/gate` — 锁回去，清掉这台设备的会话
 
 ### 站长控制器（`/api/owner/`）
 
-站长控制器统一要求 `acg_session` 登录态，并且用户必须是站长二次验证后的 unlimited session。浏览器只提交内容、图片或公开 URL，GitHub Token、COS 密钥等写入凭据保留在服务器环境变量里。
+站上没有账号体系：拿着 `acg_session` cookie 就是站长，而这个 cookie 只能由 `POST /api/owner/gate` 用正确的 `OWNER_GATE_PASSWORD` 换到。浏览器只提交内容、图片或公开 URL，GitHub Token、COS 密钥等写入凭据保留在服务器环境变量里。
 
 | 方法 | 路径 | 控制器文件 | 说明 |
 |------|------|------|------|
-| GET | `/api/owner/status` | `owner_controller.go` | 返回站长信息、注册用户、未读留言提醒、AI 今日调用数、草稿和上传限制。 |
+| GET | `/api/owner/status` | `owner_controller.go` | 返回未读留言提醒、AI 今日调用数、草稿和上传限制。 |
 | GET/POST | `/api/owner/drafts` | `owner_controller.go` | 读取和保存站长草稿。 |
 | PATCH | `/api/owner/notifications/:id/read` | `owner_controller.go` | 只写入 `owner_read_at`，不会隐藏公开留言。 |
 | POST | `/api/owner/uploads` | `owner_controller.go` | 保存本地临时图片到 `ACG_DATA_DIR/owner-uploads`，最大 8 MiB。 |
