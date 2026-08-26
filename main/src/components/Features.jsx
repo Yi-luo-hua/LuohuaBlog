@@ -8,8 +8,7 @@ const COS = cosAsset(
   "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main",
 );
 
-// 首页四张卡片原本铺的是模板作者的 feature-*.mp4，换成自己的图。
-// 相册集和项目共用同一张超宽图——主体居中，两种宽高比裁下来都不伤画面。
+// 首页四张卡片原本铺的是模板作者的 feature-*.mp4，换成自己的图，一卡一张。
 const BENTO = cosAsset("home");
 
 const ARCHIVE_ITEMS = [
@@ -365,7 +364,7 @@ const Features = () => {
 
           <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:h-auto">
             <ExhibitCard
-              src={`${BENTO}/bento-wide.jpg`}
+              src={`${BENTO}/bento-gallery.jpg`}
               label="照片与生活"
               title="相册集"
               description="收藏镜头里留下的风景、日常与心动瞬间，让每一张照片都有自己的位置。"
@@ -388,7 +387,7 @@ const Features = () => {
 
           <ExhibitTilt className="bento-tilt_2 h-72 rounded-[1.75rem] sm:h-80 md:col-span-2 md:h-auto">
             <ExhibitCard
-              src={`${BENTO}/bento-wide.jpg`}
+              src={`${BENTO}/bento-project.jpg`}
               label="GitHub 项目"
               title={FEATURED_PROJECT.name}
               description={FEATURED_PROJECT.description}

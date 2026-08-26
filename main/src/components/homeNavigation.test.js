@@ -317,7 +317,7 @@ test("dresses the four bento cards in our own images, not the template's videos"
     );
   }
 
-  for (const image of ["bento-bangumi.jpg", "bento-wide.jpg", "bento-about.jpg"]) {
+  for (const image of ["bento-bangumi.jpg", "bento-gallery.jpg", "bento-about.jpg", "bento-project.jpg"]) {
     assert.ok(
       bentoGrid.includes("${BENTO}/" + image),
       "missing bento image " + image,
