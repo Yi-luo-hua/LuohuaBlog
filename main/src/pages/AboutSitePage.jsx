@@ -328,7 +328,7 @@ const AboutSitePage = () => {
           </div>
           <div className="about-desk-thumbnails" aria-hidden="true">
             {galleryPhotosNewestFirst.slice(0, 3).map((photo) => (
-              <img key={photo.id} src={photo.src} alt="" loading="lazy" />
+              <img key={photo.id} src={photo.thumb || photo.src} alt="" loading="lazy" />
             ))}
           </div>
           <FiArrowUpRight className="about-desk-corner-icon" aria-hidden="true" />

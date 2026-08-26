@@ -105,6 +105,8 @@ test("renders the about route as a native React dashboard", () => {
 
   assert.match(routeSource, /import \{ blogPosts \} from "virtual:blog-posts"/);
   assert.match(routeSource, /import \{ galleryPhotosNewestFirst \}/);
+  // 关于页那三个小格子要吃缩略图，别为它们拉三张全分辨率原图（差了 5 MB）。
+  assert.match(routeSource, /src=\{photo\.thumb \|\| photo\.src\}/);
   assert.match(routeSource, /getBangumiCollection\("watching"\)/);
   assert.doesNotMatch(routeSource, /attachShadow|about-preview\.html/);
 });
