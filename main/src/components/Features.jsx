@@ -8,6 +8,10 @@ const COS = cosAsset(
   "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main",
 );
 
+// 首页四张卡片原本铺的是模板作者的 feature-*.mp4，换成自己的图。
+// 相册集和项目共用同一张超宽图——主体居中，两种宽高比裁下来都不伤画面。
+const BENTO = cosAsset("home");
+
 const ARCHIVE_ITEMS = [
   {
     index: "01",
@@ -73,6 +77,24 @@ export const ExhibitTilt = ({ children, className = "" }) => {
   );
 };
 
+// 卡片背景从模板作者的一批 mp4 换成了自己的图片，两种都要能放，
+// 按扩展名分流即可，调用处依旧只传一个 src。
+const IMAGE_SOURCE = /\.(avif|gif|jpe?g|png|webp)$/i;
+
+const ExhibitBackdrop = ({ src, poster, priority, objectPosition }) =>
+  IMAGE_SOURCE.test(String(src)) ? (
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      className={`size-full object-cover ${objectPosition || ""}`}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+    />
+  ) : (
+    <LazyVideo src={src} poster={poster} priority={priority} />
+  );
+
 export const ExhibitCard = ({
   src,
   poster,
@@ -84,11 +106,12 @@ export const ExhibitCard = ({
   linkText,
   videoPriority = false,
   visualOnly = false,
+  objectPosition = "",
 }) => {
   if (visualOnly) {
     return (
       <div className="group relative size-full overflow-hidden">
-        <LazyVideo src={src} poster={poster} priority={videoPriority} />
+        <ExhibitBackdrop src={src} poster={poster} priority={videoPriority} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10" />
         {(label || index) && (
           <div className="pointer-events-none absolute left-5 top-5 rounded-full border border-white/20 bg-white/12 px-4 py-2 font-general text-[10px] uppercase tracking-[0.35em] text-blue-50/80 backdrop-blur-md">
@@ -116,7 +139,12 @@ export const ExhibitCard = ({
       {...linkAttributes}
     >
       <div className="absolute inset-0 z-0">
-        <LazyVideo src={src} poster={poster} priority={videoPriority} />
+        <ExhibitBackdrop
+          src={src}
+          poster={poster}
+          priority={videoPriority}
+          objectPosition={objectPosition}
+        />
       </div>
 
       <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-br from-black/20 via-black/5 to-[#160d14]/78" />
@@ -326,7 +354,7 @@ const Features = () => {
         <div className="features-bento-grid grid w-full grid-cols-1 gap-5 md:grid-cols-2 md:grid-rows-[16rem_16rem_18rem] md:gap-6 lg:grid-rows-[18rem_18rem_20rem]">
           <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:row-span-2 md:h-auto">
             <ExhibitCard
-              src={`${COS}/videos/feature-2.mp4`}
+              src={`${BENTO}/bento-bangumi.jpg`}
               label="动画收藏"
               title="番剧收藏"
               description="正在追、已经看完与暂时搁置的动画，都按自己的节奏收进这面书架。"
@@ -337,7 +365,7 @@ const Features = () => {
 
           <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:h-auto">
             <ExhibitCard
-              src={`${COS}/videos/feature-3.mp4`}
+              src={`${BENTO}/bento-wide.jpg`}
               label="照片与生活"
               title="相册集"
               description="收藏镜头里留下的风景、日常与心动瞬间，让每一张照片都有自己的位置。"
@@ -348,7 +376,8 @@ const Features = () => {
 
           <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:h-auto">
             <ExhibitCard
-              src={`${COS}/videos/feature-4.mp4`}
+              src={`${BENTO}/bento-about.jpg`}
+              objectPosition="object-top"
               label="个人档案"
               title="关于我"
               description="关于伊洛华的故事、喜欢的事物与一路走来的小小轨迹，都放在这里。"
@@ -359,7 +388,7 @@ const Features = () => {
 
           <ExhibitTilt className="bento-tilt_2 h-72 rounded-[1.75rem] sm:h-80 md:col-span-2 md:h-auto">
             <ExhibitCard
-              src={`${COS}/videos/feature-5.mp4`}
+              src={`${BENTO}/bento-wide.jpg`}
               label="GitHub 项目"
               title={FEATURED_PROJECT.name}
               description={FEATURED_PROJECT.description}

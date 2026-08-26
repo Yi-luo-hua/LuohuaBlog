@@ -302,6 +302,37 @@ test("does not put the moments entry in feature five", () => {
   assert.doesNotMatch(featuresSource, /说说入口|碎语入口|进入碎语|进入碎碎念/);
 });
 
+test("dresses the four bento cards in our own images, not the template's videos", () => {
+  const featuresSource = readSource("components/Features.jsx");
+  // 只看 bento 网格那一段。上面的 ARCHIVE_ITEMS 仍在用模板作者的影像档案视频，
+  // 那是另一处入口，不在这条断言的范围里。
+  const bentoGrid = featuresSource.slice(featuresSource.indexOf("features-bento-grid"));
+  assert.ok(bentoGrid.length > 0);
+
+  // 四张卡片原本铺的是模板作者 COS 目录下的 feature-2..5.mp4。
+  for (const clip of ["feature-2.mp4", "feature-3.mp4", "feature-5.mp4"]) {
+    assert.ok(
+      !bentoGrid.includes("videos/" + clip),
+      "bento card still points at " + clip,
+    );
+  }
+
+  for (const image of ["bento-bangumi.jpg", "bento-wide.jpg", "bento-about.jpg"]) {
+    assert.ok(
+      bentoGrid.includes("${BENTO}/" + image),
+      "missing bento image " + image,
+    );
+  }
+
+  // 关于我那张是竖图裁出来的头部特写，靠上对齐才不会把脸切掉。
+  const aboutAt = featuresSource.indexOf("bento-about.jpg");
+  assert.ok(aboutAt > 0);
+  assert.ok(
+    featuresSource.slice(aboutAt, aboutAt + 120).includes('objectPosition="object-top"'),
+    "the about card must pin its crop to the top",
+  );
+});
+
 test("keeps the Misaka showcase fixed above four real homepage destinations", () => {
   const featuresSource = readSource("components/Features.jsx");
   const featuredProjectSource = readSource("data/featuredProject.js");
