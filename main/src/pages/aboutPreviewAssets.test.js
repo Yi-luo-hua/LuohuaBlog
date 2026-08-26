@@ -109,6 +109,17 @@ test("renders the about route as a native React dashboard", () => {
   assert.doesNotMatch(routeSource, /attachShadow|about-preview\.html/);
 });
 
+test("shows the latest article cover inside its about-page bubble", () => {
+  const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const styles = readFileSync(resolve("src/pages/AboutSitePage.css"), "utf8");
+
+  assert.match(routeSource, /latestPost\.cover\s*\?\s*\(/);
+  assert.match(routeSource, /className="about-desk-latest-cover"/);
+  assert.match(routeSource, /src=\{latestPost\.cover\}/);
+  assert.match(styles, /\.about-desk-latest-cover\s*\{[^}]*object-fit:\s*cover/s);
+  assert.match(styles, /\.about-desk-latest\.has-cover::after/);
+});
+
 test("keeps the compact about dashboard links and real music player wired", () => {
   const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
 

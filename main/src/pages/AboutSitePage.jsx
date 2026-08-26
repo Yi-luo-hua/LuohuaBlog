@@ -391,7 +391,20 @@ const AboutSitePage = () => {
           </span>
         </nav>
 
-        <a data-physics-bubble="latest" className="about-desk-card about-desk-latest about-desk-enter" href={latestPost.url}>
+        <a
+          data-physics-bubble="latest"
+          className={`about-desk-card about-desk-latest about-desk-enter${latestPost.cover ? " has-cover" : ""}`}
+          href={latestPost.url}
+          aria-label={`阅读最新文章：${latestPost.title}`}
+        >
+          {latestPost.cover ? (
+            <img
+              className="about-desk-latest-cover"
+              src={latestPost.cover}
+              alt=""
+              aria-hidden="true"
+            />
+          ) : null}
           <div>
             <span><FiBookOpen aria-hidden="true" /> 最新文章</span>
             <strong>{latestPost.title}</strong>
