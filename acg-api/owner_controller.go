@@ -215,7 +215,6 @@ func ownerEmailDirectoryHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
 func ownerDraftListHandler(w http.ResponseWriter, r *http.Request) {
 	if _, ok := requireOwnerSession(w, r); !ok {
 		return

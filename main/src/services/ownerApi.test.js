@@ -266,7 +266,6 @@ test("publishOwnerMoment posts category and content to the real moments endpoint
   assert.equal(result.item.commitSha, "moment-commit-sha");
 });
 
-
 test("isPublicImageURL accepts http and https urls", () => {
   assert.equal(isPublicImageURL("https://cdn.example/a.png"), true);
   assert.equal(isPublicImageURL("http://cdn.example/a.png"), true);

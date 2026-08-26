@@ -140,6 +140,5 @@ class SyncAuthEnvTests(unittest.TestCase):
         self.assertIn("MAIL_NOTIFY_TO", text)
 
 
-
 if __name__ == "__main__":
     unittest.main()

@@ -74,7 +74,6 @@ const defaultMoment = {
   content: "今天也想把小碎片写下来",
 };
 
-
 const fetchBackendHealth = async () => {
   const res = await fetch("/api/v1/health", {
     headers: { Accept: "application/json" },
@@ -713,7 +712,6 @@ const AppConsolePage = () => {
       setArticleUploadBusy(false);
     }
   };
-
 
   const handleSync = async () => {
     try {
@@ -1525,8 +1523,6 @@ const AppConsolePage = () => {
               </section>
             </div>
           </section>
-
-
         </section>
       </div>
 
