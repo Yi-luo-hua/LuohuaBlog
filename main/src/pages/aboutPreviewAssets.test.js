@@ -104,7 +104,7 @@ test("renders the about route as a native React dashboard", () => {
   const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
 
   assert.match(routeSource, /import \{ blogPosts \} from "virtual:blog-posts"/);
-  assert.match(routeSource, /import \{ galleryAlbums \}/);
+  assert.match(routeSource, /import \{ galleryPhotosNewestFirst \}/);
   assert.match(routeSource, /getBangumiCollection\("watching"\)/);
   assert.doesNotMatch(routeSource, /attachShadow|about-preview\.html/);
 });

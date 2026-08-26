@@ -99,20 +99,21 @@ test("uploadOwnerAsset posts multipart form to the owner assets endpoint", async
     return {
       ok: true,
       async json() {
-        return { ok: true, item: { url: "https://cdn.example/gallery/misaka/demo.png" } };
+        return { ok: true, item: { url: "/cos/gallery/2026/08/demo.png" } };
       },
     };
   };
 
   const file = new Blob(["demo"], { type: "image/png" });
-  await uploadOwnerAsset(file, { kind: "gallery", album: "Misaka" });
+  await uploadOwnerAsset(file, { kind: "gallery" });
 
   assert.equal(requestURL, "/api/owner/assets");
   assert.equal(requestOptions.method, "POST");
   assert.equal(requestOptions.credentials, "include");
   assert.ok(requestOptions.body instanceof FormData);
   assert.equal(requestOptions.body.get("kind"), "gallery");
-  assert.equal(requestOptions.body.get("album"), "Misaka");
+  // 相册不再分册，上传表单里也就不该再带 album。
+  assert.equal(requestOptions.body.get("album"), null);
 });
 
 test("publishOwnerGalleryImage posts to the real gallery publish endpoint", async (t) => {
@@ -132,9 +133,9 @@ test("publishOwnerGalleryImage posts to the real gallery publish endpoint", asyn
         return {
           ok: true,
           item: {
-            albumId: "misaka",
-            imageUrl: "https://cdn.example/gallery/misaka/demo.png",
-            path: "main/src/data/galleryAlbums.js",
+            photoId: "20260826-143012-a1b2c3",
+            imageUrl: "/cos/gallery/2026/08/demo.png",
+            path: "main/src/data/galleryPhotos.js",
             commitSha: "commit-sha",
           },
         };
@@ -143,9 +144,11 @@ test("publishOwnerGalleryImage posts to the real gallery publish endpoint", asyn
   };
 
   const payload = {
-    albumId: "misaka",
-    albumTitle: "御坂美琴",
-    imageUrl: "https://cdn.example/gallery/misaka/demo.png",
+    imageUrl: "/cos/gallery/2026/08/demo.png",
+    thumbUrl: "/cos/gallery/2026/08/demo-thumb.jpg",
+    width: 4000,
+    height: 3000,
+    title: "夏天的海",
   };
   const result = await publishOwnerGalleryImage(payload);
 

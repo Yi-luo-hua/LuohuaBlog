@@ -6,21 +6,18 @@ import (
 )
 
 func TestOwnerCOSObjectKeyForGallery(t *testing.T) {
-	key := ownerCOSObjectKey("gallery", "Misaka Album", "20260607-010203-uuid.png")
-	if key != "gallery/misaka-album/20260607-010203-uuid.png" {
+	// 相册不再分册，照片按年月归档。
+	key := ownerCOSObjectKey("gallery", "20260607-010203-uuid.png")
+	if !strings.HasPrefix(key, "gallery/") || !strings.HasSuffix(key, "/20260607-010203-uuid.png") {
 		t.Fatalf("unexpected key: %q", key)
 	}
-}
-
-func TestOwnerCOSObjectKeyForGalleryKeepsChineseAlbumNames(t *testing.T) {
-	key := ownerCOSObjectKey("gallery", "御坂美琴", "20260607-010203-uuid.png")
-	if key != "gallery/御坂美琴/20260607-010203-uuid.png" {
-		t.Fatalf("unexpected key for chinese album: %q", key)
+	if strings.Count(key, "/") != 3 {
+		t.Fatalf("expected gallery/<year>/<month>/<file>, got %q", key)
 	}
 }
 
 func TestOwnerCOSObjectKeyForArticle(t *testing.T) {
-	key := ownerCOSObjectKey("article", "", "20260607-010203-uuid.png")
+	key := ownerCOSObjectKey("article", "20260607-010203-uuid.png")
 	if !strings.HasPrefix(key, "articles/") {
 		t.Fatalf("expected article path prefix, got %q", key)
 	}

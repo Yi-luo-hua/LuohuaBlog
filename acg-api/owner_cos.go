@@ -10,7 +10,6 @@ import (
 	"path"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
@@ -31,7 +30,9 @@ type ownerCOSUploadResult struct {
 }
 
 type ownerAssetUploader interface {
-	UploadImage(kind, album, filename, mimeType string, body []byte) (ownerCOSUploadResult, error)
+	UploadImage(kind, filename, mimeType string, body []byte) (ownerCOSUploadResult, error)
+	// 缩略图要跟原图放在同一个目录、同一个文件名下，所以得能指定对象键。
+	UploadImageAt(objectKey, mimeType string, body []byte) (ownerCOSUploadResult, error)
 }
 
 type ownerTencentCOSUploader struct {
@@ -86,8 +87,11 @@ func newOwnerCOSClient(cfg ownerCOSConfig) *cos.Client {
 	})
 }
 
-func (u ownerTencentCOSUploader) UploadImage(kind, album, filename, mimeType string, body []byte) (ownerCOSUploadResult, error) {
-	objectKey := ownerCOSObjectKey(kind, album, filename)
+func (u ownerTencentCOSUploader) UploadImage(kind, filename, mimeType string, body []byte) (ownerCOSUploadResult, error) {
+	return u.UploadImageAt(ownerCOSObjectKey(kind, filename), mimeType, body)
+}
+
+func (u ownerTencentCOSUploader) UploadImageAt(objectKey, mimeType string, body []byte) (ownerCOSUploadResult, error) {
 	opt := &cos.ObjectPutOptions{
 		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
 			ContentType: mimeType,
@@ -104,40 +108,11 @@ func (u ownerTencentCOSUploader) UploadImage(kind, album, filename, mimeType str
 	}, nil
 }
 
-func ownerAlbumSlug(input string) string {
-	raw := strings.TrimSpace(input)
-	if raw == "" {
-		return "default"
-	}
-
-	var b strings.Builder
-	lastDash := false
-	for _, r := range raw {
-		switch {
-		case unicode.IsLetter(r) || unicode.IsNumber(r):
-			if r <= unicode.MaxASCII {
-				r = unicode.ToLower(r)
-			}
-			b.WriteRune(r)
-			lastDash = false
-		default:
-			if !lastDash && b.Len() > 0 {
-				b.WriteByte('-')
-				lastDash = true
-			}
-		}
-	}
-
-	slug := strings.Trim(b.String(), "-")
-	if slug == "" {
-		return "default"
-	}
-	return slug
-}
-
-func ownerCOSObjectKey(kind, album, filename string) string {
+func ownerCOSObjectKey(kind, filename string) string {
+	// 相册不再分册，照片跟其他资源一样按年月归档。
 	if kind == "gallery" {
-		return path.Join("gallery", ownerAlbumSlug(album), filename)
+		now := time.Now().UTC()
+		return path.Join("gallery", now.Format("2006"), now.Format("01"), filename)
 	}
 	if kind == "ai-image" {
 		now := time.Now().UTC()

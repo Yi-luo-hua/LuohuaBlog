@@ -36,10 +36,11 @@ import {
   getStatsSnapshot,
 } from "../pwa/appConsoleState";
 import {
-  getOwnerGalleryAlbumSelection,
-  ownerCustomGalleryAlbumValue,
-  ownerGalleryAlbumOptions,
-} from "../lib/ownerGalleryAlbums";
+  areUsableDimensions,
+  isGalleryImageSource,
+  measureImageFile,
+  measureImageSource,
+} from "../lib/galleryImageSource";
 import { cosAsset } from "../lib/cosAsset.js";
 
 const screenMap = Object.fromEntries(ownerConsoleScreens.map((screen) => [screen.id, screen]));
@@ -170,9 +171,8 @@ const AppConsolePage = () => {
   const [manualAnswer, setManualAnswer] = useState("");
   const [answerToast, setAnswerToast] = useState("");
   const [answerSaveBusy, setAnswerSaveBusy] = useState(false);
-  const [galleryAlbum, setGalleryAlbum] = useState(ownerGalleryAlbumOptions[0]?.value || "");
-  const [customGalleryAlbum, setCustomGalleryAlbum] = useState("");
   const [galleryURLInput, setGalleryURLInput] = useState("");
+  const [galleryTitleInput, setGalleryTitleInput] = useState("");
   const [galleryUploads, setGalleryUploads] = useState([]);
   const [saveBusy, setSaveBusy] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
@@ -420,19 +420,20 @@ const AppConsolePage = () => {
     setUploadBusy(true);
     setError("");
     try {
-      const albumSelection = getOwnerGalleryAlbumSelection(galleryAlbum, customGalleryAlbum);
-      const uploadAlbum = albumSelection.albumId || albumSelection.albumTitle;
-      if (!uploadAlbum) {
-        throw new Error("请选择相册，或填写自定义相册名。");
+      // 相册按原始像素尺寸排版，所以上传前先在浏览器里把宽高量出来。
+      const size = await measureImageFile(file);
+      if (!areUsableDimensions(size.width, size.height)) {
+        throw new Error("读不出这张图片的像素尺寸，换一张试试。");
       }
-      const data = await uploadOwnerAsset(file, { kind: "gallery", album: uploadAlbum });
+      const data = await uploadOwnerAsset(file, { kind: "gallery" });
       const item = data.item || {};
       setGalleryUploads((current) => [
         {
           name: item.path || item.name || file.name,
           url: item.url || "",
-          albumId: albumSelection.albumId,
-          albumTitle: albumSelection.albumTitle,
+          thumbUrl: item.thumbUrl || "",
+          width: size.width,
+          height: size.height,
         },
         ...current,
       ]);
@@ -452,36 +453,42 @@ const AppConsolePage = () => {
     }
   };
 
-  const handleAddGalleryURL = () => {
+  const handleAddGalleryURL = async () => {
     const next = galleryURLInput.trim();
-    if (!isPublicImageURL(next)) {
-      setError("请输入有效的公开图片 URL。");
-      return;
-    }
-    const albumSelection = getOwnerGalleryAlbumSelection(galleryAlbum, customGalleryAlbum);
-    if (!albumSelection.albumId && !albumSelection.albumTitle) {
-      setError("请选择相册，或填写自定义相册名。");
+    if (!isGalleryImageSource(next)) {
+      setError("请输入站内 /cos/ 开头的路径，或一个公开的图片 URL。");
       return;
     }
     setError("");
-    setGalleryUploads((current) => [
-      {
-        name: "PicGo 图片 URL",
-        url: next,
-        albumId: albumSelection.albumId,
-        albumTitle: albumSelection.albumTitle,
-      },
-      ...current,
-    ]);
-    setGalleryURLInput("");
-    setPublishState({
-      open: true,
-      title: "相册图片链接已加入",
-      activeIndex: -1,
-      failIndex: null,
-      simulated: false,
-      toast: `相册发布将使用 ${next}`,
-    });
+    setUploadBusy(true);
+    try {
+      const size = await measureImageSource(next);
+      if (!areUsableDimensions(size.width, size.height)) {
+        throw new Error("读不出这张图片的像素尺寸，换一个地址试试。");
+      }
+      setGalleryUploads((current) => [
+        {
+          name: next.startsWith("/cos/") ? "站内图片" : "公开图片 URL",
+          url: next,
+          width: size.width,
+          height: size.height,
+        },
+        ...current,
+      ]);
+      setGalleryURLInput("");
+      setPublishState({
+        open: true,
+        title: "相册图片链接已加入",
+        activeIndex: -1,
+        failIndex: null,
+        simulated: false,
+        toast: `相册发布将使用 ${next}（${size.width} × ${size.height}）`,
+      });
+    } catch (e) {
+      setError(e.message || "无法读取这张图片。");
+    } finally {
+      setUploadBusy(false);
+    }
   };
 
   const handlePublishGalleryImage = async () => {
@@ -490,8 +497,8 @@ const AppConsolePage = () => {
       setError("请先上传图片，或添加一个公开图片 URL。");
       return;
     }
-    if (!latest.albumId && !latest.albumTitle) {
-      setError("请选择相册，或填写自定义相册名。");
+    if (!areUsableDimensions(latest.width, latest.height)) {
+      setError("这张图片缺少像素尺寸，请重新上传或重新添加地址。");
       return;
     }
 
@@ -509,23 +516,20 @@ const AppConsolePage = () => {
 
     try {
       const data = await publishOwnerGalleryImage({
-        albumId: latest.albumId || "",
-        albumTitle: latest.albumTitle || "",
         imageUrl: latest.url,
+        thumbUrl: latest.thumbUrl || "",
+        width: latest.width,
+        height: latest.height,
+        title: galleryTitleInput.trim(),
       });
       const item = data.item || {};
       const commitSha = item.commitSha ? `（commit ${item.commitSha.slice(0, 7)}）` : "";
       setGalleryUploads((current) =>
         current.map((entry, index) =>
-          index === 0
-            ? {
-                ...entry,
-                albumId: item.albumId || entry.albumId,
-                published: true,
-              }
-            : entry,
+          index === 0 ? { ...entry, photoId: item.photoId || "", published: true } : entry,
         ),
       );
+      setGalleryTitleInput("");
       setPublishState({
         open: true,
         title: "发布相册图片",
@@ -534,7 +538,7 @@ const AppConsolePage = () => {
         simulated: false,
         toast: item.changed === false
           ? `这张图片已经在 ${item.path || "相册数据"} 中。`
-          : `已发布到 ${item.path || "相册数据"}${commitSha}，GitHub Actions 会从 ${item.branch || "master"} 部署。`,
+          : `已发布到 ${item.path || "相册数据"}${commitSha}，排在相册最前面，GitHub Actions 会从 ${item.branch || "master"} 部署。`,
       });
       await loadConsole();
     } catch (e) {
@@ -1251,34 +1255,19 @@ const AppConsolePage = () => {
             <div className="owner-form-shell owner-glass">
               <div>
                 <div className="owner-field">
-                  <label htmlFor="galleryAlbum">相册</label>
-                  <select
-                    id="galleryAlbum"
-                    value={galleryAlbum}
-                    onChange={(e) => setGalleryAlbum(e.target.value)}
-                  >
-                    {ownerGalleryAlbumOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  <label htmlFor="galleryTitleInput">说明（可选）</label>
+                  <input
+                    id="galleryTitleInput"
+                    value={galleryTitleInput}
+                    placeholder="一句话说明，留空就只显示照片"
+                    onChange={(e) => setGalleryTitleInput(e.target.value)}
+                  />
                 </div>
-                {galleryAlbum === ownerCustomGalleryAlbumValue ? (
-                  <div className="owner-field owner-field--spaced">
-                    <label htmlFor="customGalleryAlbum">自定义相册</label>
-                    <input
-                      id="customGalleryAlbum"
-                      value={customGalleryAlbum}
-                      placeholder="请输入自定义相册名"
-                      onChange={(e) => setCustomGalleryAlbum(e.target.value)}
-                    />
-                  </div>
-                ) : null}
-                <label className="owner-dropzone" htmlFor="galleryUpload">
+                <label className="owner-dropzone owner-field--spaced" htmlFor="galleryUpload">
                   <strong>选择要上传的图片</strong>
                   <span>
-                    上传图片到 COS，或在下方粘贴公开 PicGo 图片 URL。
+                    上传图片到 COS，或在下方填站内 /cos/ 路径、公开图片 URL。
+                    发布后这张会排在相册最前面。
                   </span>
                 </label>
                 <input
@@ -1289,11 +1278,11 @@ const AppConsolePage = () => {
                   hidden
                 />
                 <div className="owner-field owner-field--spaced">
-                  <label htmlFor="galleryURLInput">公开图片 URL</label>
+                  <label htmlFor="galleryURLInput">图片地址</label>
                   <input
                     id="galleryURLInput"
                     value={galleryURLInput}
-                    placeholder="https://cdn.example/gallery/demo.png"
+                    placeholder="/cos/gallery/2026/08/demo.jpg 或 https://cdn.example/demo.png"
                     onChange={(e) => setGalleryURLInput(e.target.value)}
                   />
                 </div>
@@ -1301,7 +1290,7 @@ const AppConsolePage = () => {
                   {(galleryUploads.length ? galleryUploads : [{ name: "暂无上传" }]).map((item) => (
                     <span key={item.url || item.name}>
                       {item.name}
-                      {item.albumTitle ? ` -> ${item.albumTitle}` : ""}
+                      {item.width && item.height ? ` · ${item.width} × ${item.height}` : ""}
                     </span>
                   ))}
                 </div>
@@ -1313,8 +1302,13 @@ const AppConsolePage = () => {
                   >
                     <FiUpload aria-hidden /> {uploadBusy ? "上传中..." : "上传到 COS"}
                   </label>
-                  <button type="button" className="owner-secondary" onClick={handleAddGalleryURL}>
-                    添加 PicGo URL
+                  <button
+                    type="button"
+                    className="owner-secondary"
+                    onClick={handleAddGalleryURL}
+                    disabled={uploadBusy}
+                  >
+                    添加图片地址
                   </button>
                   <button
                     type="button"
@@ -1328,14 +1322,14 @@ const AppConsolePage = () => {
               </div>
               <aside className="owner-preview-card">
                 <div className="owner-kicker">上传预览</div>
-                <div className="owner-cover">相册封面</div>
+                <div className="owner-cover">下一张发布</div>
                 <h2>{galleryUploads[0]?.name || "暂无已上传图片"}</h2>
                 <p>
                   {galleryUploads[0]?.url
-                    ? `真实上传 URL：${galleryUploads[0].url}。目标相册：${
-                        galleryUploads[0].albumTitle || galleryUploads[0].albumId || "相册"
-                      }。`
-                    : "上传图片到 COS，或添加一个公开图片 URL。"}
+                    ? `地址：${galleryUploads[0].url}。原始尺寸：${
+                        galleryUploads[0].width || "?"
+                      } × ${galleryUploads[0].height || "?"}。发布后排在相册最前面。`
+                    : "上传图片到 COS，或填一个站内 /cos/ 路径、公开图片 URL。"}
                 </p>
               </aside>
             </div>

@@ -259,7 +259,7 @@ func handleAIImagePost(w http.ResponseWriter, r *http.Request, id chatIdentity, 
 		return
 	}
 	ext := aiImageExtFromMIME(mimeType)
-	item, err := uploader.UploadImage("ai-image", "", ownerUploadFilename(ext), mimeType, imageBytes)
+	item, err := uploader.UploadImage("ai-image", ownerUploadFilename(ext), mimeType, imageBytes)
 	if err != nil {
 		rollbackQuota(db, id)
 		snap, _ = getQuotaSnapshot(db, id)

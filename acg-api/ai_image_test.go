@@ -36,15 +36,17 @@ type recordingAIImageUploader struct {
 	result   ownerCOSUploadResult
 	err      error
 	kind     string
-	album    string
 	filename string
 	mimeType string
 	body     []byte
 }
 
-func (r *recordingAIImageUploader) UploadImage(kind, album, filename, mimeType string, body []byte) (ownerCOSUploadResult, error) {
+func (r *recordingAIImageUploader) UploadImageAt(objectKey, mimeType string, body []byte) (ownerCOSUploadResult, error) {
+	return r.UploadImage("", objectKey, mimeType, body)
+}
+
+func (r *recordingAIImageUploader) UploadImage(kind, filename, mimeType string, body []byte) (ownerCOSUploadResult, error) {
 	r.kind = kind
-	r.album = album
 	r.filename = filename
 	r.mimeType = mimeType
 	r.body = append([]byte(nil), body...)
