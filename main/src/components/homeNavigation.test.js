@@ -304,8 +304,9 @@ test("does not put the moments entry in feature five", () => {
 
 test("dresses the four bento cards in our own images, not the template's videos", () => {
   const featuresSource = readSource("components/Features.jsx");
-  const bentoGrid = featuresSource.slice(featuresSource.indexOf("features-bento-grid"));
-  assert.ok(bentoGrid.length > 0);
+  const gridAt = featuresSource.indexOf("features-bento-grid");
+  assert.ok(gridAt >= 0, "the bento grid is gone from Features");
+  const bentoGrid = featuresSource.slice(gridAt);
 
   // 模板作者那批 feature-*.mp4 连同打不开的影像档案浮层一起删掉了，
   // 整个文件都不该再提到它们。
@@ -314,7 +315,9 @@ test("dresses the four bento cards in our own images, not the template's videos"
     "Features still references the template author's clips",
   );
 
-  for (const image of ["bento-bangumi.jpg", "bento-gallery.jpg", "bento-about.jpg", "bento-project.jpg"]) {
+  // webp，不是 jpg：四张背景加起来省掉一半体积，而卡片上压着渐变和玻璃面板，
+  // 看不出差别。
+  for (const image of ["bento-bangumi.webp", "bento-gallery.webp", "bento-about.webp", "bento-project.webp"]) {
     assert.ok(
       bentoGrid.includes("${BENTO}/" + image),
       "missing bento image " + image,
@@ -322,7 +325,7 @@ test("dresses the four bento cards in our own images, not the template's videos"
   }
 
   // 关于我那张是竖图裁出来的头部特写，靠上对齐才不会把脸切掉。
-  const aboutAt = featuresSource.indexOf("bento-about.jpg");
+  const aboutAt = featuresSource.indexOf("bento-about.webp");
   assert.ok(aboutAt > 0);
   assert.ok(
     featuresSource.slice(aboutAt, aboutAt + 120).includes('objectPosition="object-top"'),

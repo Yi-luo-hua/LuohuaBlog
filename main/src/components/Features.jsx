@@ -40,11 +40,15 @@ export const ExhibitTilt = ({ children, className = "" }) => {
 };
 
 // 卡片背景从模板作者的一批 mp4 换成了自己的图片，两种都要能放，
-// 按扩展名分流即可，调用处依旧只传一个 src。
-const IMAGE_SOURCE = /\.(avif|gif|jpe?g|png|webp)$/i;
+// 按扩展名分流即可，调用处依旧只传一个 src。视频只剩首页那一段了，
+// 所以认视频、让图片兜底：万一 src 带上了查询串，坏掉的是一张图，
+// 而不是一个永远转不起来的 video。
+const VIDEO_SOURCE = /\.(mp4|webm|mov)(\?|#|$)/i;
 
 const ExhibitBackdrop = ({ src, poster, priority, objectPosition }) =>
-  IMAGE_SOURCE.test(String(src)) ? (
+  VIDEO_SOURCE.test(String(src)) ? (
+    <LazyVideo src={src} poster={poster} priority={priority} />
+  ) : (
     <img
       src={src}
       alt=""
@@ -53,8 +57,6 @@ const ExhibitBackdrop = ({ src, poster, priority, objectPosition }) =>
       loading={priority ? "eager" : "lazy"}
       decoding="async"
     />
-  ) : (
-    <LazyVideo src={src} poster={poster} priority={priority} />
   );
 
 export const ExhibitCard = ({
@@ -73,7 +75,12 @@ export const ExhibitCard = ({
   if (visualOnly) {
     return (
       <div className="group relative size-full overflow-hidden">
-        <ExhibitBackdrop src={src} poster={poster} priority={videoPriority} />
+        <ExhibitBackdrop
+          src={src}
+          poster={poster}
+          priority={videoPriority}
+          objectPosition={objectPosition}
+        />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10" />
         {(label || index) && (
           <div className="pointer-events-none absolute left-5 top-5 rounded-full border border-white/20 bg-white/12 px-4 py-2 font-general text-[10px] uppercase tracking-[0.35em] text-blue-50/80 backdrop-blur-md">
@@ -158,7 +165,7 @@ const Features = () => {
         <div className="features-bento-grid grid w-full grid-cols-1 gap-5 md:grid-cols-2 md:grid-rows-[16rem_16rem_18rem] md:gap-6 lg:grid-rows-[18rem_18rem_20rem]">
           <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:row-span-2 md:h-auto">
             <ExhibitCard
-              src={`${BENTO}/bento-bangumi.jpg`}
+              src={`${BENTO}/bento-bangumi.webp`}
               label="动画收藏"
               title="番剧收藏"
               linkUrl="/bangumi"
@@ -168,7 +175,7 @@ const Features = () => {
 
           <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:h-auto">
             <ExhibitCard
-              src={`${BENTO}/bento-gallery.jpg`}
+              src={`${BENTO}/bento-gallery.webp`}
               label="照片与生活"
               title="相册集"
               linkUrl="/gallery"
@@ -178,7 +185,7 @@ const Features = () => {
 
           <ExhibitTilt className="bento-tilt_1 h-72 rounded-[1.75rem] sm:h-80 md:col-span-1 md:h-auto">
             <ExhibitCard
-              src={`${BENTO}/bento-about.jpg`}
+              src={`${BENTO}/bento-about.webp`}
               objectPosition="object-top"
               label="个人档案"
               title="关于我"
@@ -189,7 +196,7 @@ const Features = () => {
 
           <ExhibitTilt className="bento-tilt_2 h-72 rounded-[1.75rem] sm:h-80 md:col-span-2 md:h-auto">
             <ExhibitCard
-              src={`${BENTO}/bento-project.jpg`}
+              src={`${BENTO}/bento-project.webp`}
               label="GitHub 项目"
               title={FEATURED_PROJECT.name}
               description={FEATURED_PROJECT.description}
