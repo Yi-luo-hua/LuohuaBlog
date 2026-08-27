@@ -34,6 +34,18 @@ const publishTool = {
         description:
           "Automatically build and push-deploy the blog to Azure production server after committing to GitHub (defaults to true).",
       },
+      write_back: {
+        type: "boolean",
+        default: false,
+        description:
+          "Automatically write back the standardized and complemented Frontmatter properties (title, date, categories, tags, description, mathjax, cover) to the source Obsidian note file (defaults to false).",
+      },
+      standardize_only: {
+        type: "boolean",
+        default: false,
+        description:
+          "Only standardize and complement the Obsidian note Frontmatter properties without committing to GitHub or deploying.",
+      },
       dry_run: {
         type: "boolean",
         default: false,
@@ -179,6 +191,208 @@ const formatDate = (date) => {
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
     `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`,
   ].join(" ");
+};
+
+const cleanSummaryText = (text) => {
+  return String(text || "")
+    .replace(/^#+\s+.*$/gm, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`\n]+`/g, "")
+    .replace(/\$\$[\s\S]*?\$\$/g, "")
+    .replace(/\$[^\$\n]+\$/g, "")
+    .replace(/!\[\[.*?\]\]/g, "")
+    .replace(/!\[.*?\]\(.*?\)/g, "")
+    .replace(/\[\[(.*?)(?:\|.*?)?\]\]/g, "$1")
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+    .replace(/>\s*\[!.*?\]-?/g, "")
+    .replace(/[>*_~`#|]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const parseYamlList = (frontMatter, key) => {
+  const pattern = new RegExp(`^${key}\\s*:\\s*(.*)$`, "im");
+  const match = frontMatter.match(pattern);
+  if (!match) return [];
+  const rawValue = match[1].trim();
+  if (rawValue.startsWith("[") && rawValue.endsWith("]")) {
+    return rawValue
+      .slice(1, -1)
+      .split(",")
+      .map((item) => trimYamlScalar(item.trim()))
+      .filter(Boolean);
+  }
+  const lines = frontMatter.split("\n");
+  const listItems = [];
+  let inList = false;
+  for (const line of lines) {
+    const top = line.match(/^([^\s:#][^:]*):\s*(.*)$/);
+    if (top) {
+      if (top[1].trim().toLowerCase() === key.toLowerCase()) {
+        inList = true;
+        if (top[2].trim()) listItems.push(trimYamlScalar(top[2].trim()));
+      } else {
+        inList = false;
+      }
+      continue;
+    }
+    if (inList && /^\s*-\s+(.*)$/.test(line)) {
+      listItems.push(trimYamlScalar(line.match(/^\s*-\s+(.*)$/)[1].trim()));
+    } else if (inList && line.trim() && !/^\s/.test(line)) {
+      inList = false;
+    }
+  }
+  return listItems.filter(Boolean);
+};
+
+const standardizeNoteProperties = async (filePath, rawMarkdown, options = {}) => {
+  const { frontMatter: rawFrontMatter, body } = splitFrontMatter(rawMarkdown);
+  let fileStat = null;
+  try {
+    fileStat = await stat(filePath);
+  } catch {}
+  const now = new Date();
+
+  const complemented = [];
+
+  // 1. Title
+  let title = options.title || frontMatterValue(rawFrontMatter, "title");
+  if (!title) {
+    title = inferredTitle(rawMarkdown, filePath);
+    complemented.push("title (自动提取自标题或文件名)");
+  }
+
+  // 2. Date
+  let date = frontMatterValue(rawFrontMatter, "date");
+  if (!date) {
+    const fileTime = fileStat?.birthtime || fileStat?.mtime || now;
+    date = formatDate(fileTime);
+    complemented.push("date (自动提取自笔记创建时间)");
+  }
+
+  // 3. Categories (博客大类分类)
+  let categories = parseYamlList(rawFrontMatter, "categories");
+  if (!categories.length) {
+    const relDir = path.relative(vaultRoot, path.dirname(filePath));
+    const segments = relDir
+      .split(/[\\/]/)
+      .filter((s) => s && s !== "." && s !== "便签" && s !== "STUDY");
+    if (segments.length) {
+      categories = [segments[segments.length - 1]];
+      complemented.push(`categories (自动归类至文件夹 [${categories[0]}])`);
+    } else {
+      categories = ["随笔"];
+      complemented.push("categories (填充默认分类: 随笔)");
+    }
+  }
+
+  // 4. Tags (博客细粒度标签)
+  let tags = parseYamlList(rawFrontMatter, "tags");
+  if (!tags.length) {
+    const inlineTags = [
+      ...body.matchAll(/#([a-zA-Z0-9_\u4e00-\u9fa5]{2,30})(?:\s|$)/g),
+    ]
+      .map((m) => m[1])
+      .filter((t) => !["note", "todo", "draft"].includes(t.toLowerCase()));
+    if (inlineTags.length) {
+      tags = [...new Set(inlineTags)];
+      complemented.push(`tags (从正文 #${tags.join(", #")} 自动提取)`);
+    } else {
+      tags = [categories[0] || "博客"];
+      complemented.push(`tags (对齐分类默认标签: ${tags[0]})`);
+    }
+  }
+
+  // 5. Description (博客与主页核心摘要)
+  let description = frontMatterValue(rawFrontMatter, "description");
+  if (!description) {
+    const paragraphs = body.split(/\n\s*\n/);
+    for (const p of paragraphs) {
+      const cleaned = cleanSummaryText(p);
+      if (cleaned.length >= 15) {
+        description =
+          cleaned.length > 120 ? `${cleaned.slice(0, 117)}...` : cleaned;
+        break;
+      }
+    }
+    if (!description) {
+      description = `关于 ${title} 的博客文章与记录整理。`;
+    }
+    complemented.push("description (自动提取首段有效文本作为精炼摘要)");
+  }
+
+  // 6. MathJax (LaTeX 数学公式)
+  const hasMath = /\$\$[\s\S]*?\$\$|\$[^\$\n]+\$/.test(body);
+  let mathjax = frontMatterValue(rawFrontMatter, "mathjax");
+  if (mathjax === "") {
+    if (hasMath) {
+      mathjax = "true";
+      complemented.push("mathjax: true (检测到正文中包含 LaTeX 数学公式/矩阵)");
+    }
+  }
+
+  // 7. Cover (封面图)
+  let cover =
+    options.cover_url ||
+    frontMatterValue(rawFrontMatter, "cover") ||
+    "auto";
+
+  // 8. Preserve other custom lines (aliases, related, sticky, draft, comments, toc, etc.)
+  const handledKeys = new Set([
+    "title",
+    "date",
+    "categories",
+    "tags",
+    "description",
+    "mathjax",
+    "cover",
+  ]);
+  const preservedLines = [];
+  for (const line of rawFrontMatter.split("\n")) {
+    const top = line.match(/^([^\s:#][^:]*):\s*(.*)$/);
+    if (top) {
+      const key = top[1].trim().toLowerCase();
+      if (!handledKeys.has(key)) {
+        preservedLines.push(line);
+      }
+    } else if (line.trim() && !line.startsWith("---")) {
+      preservedLines.push(line);
+    }
+  }
+
+  const yamlLines = [
+    `title: ${yamlScalar(title)}`,
+    `date: ${date}`,
+    "categories:",
+    ...categories.map((c) => `  - ${yamlScalar(c)}`),
+    "tags:",
+    ...tags.map((t) => `  - ${yamlScalar(t)}`),
+    `description: ${yamlScalar(description)}`,
+    `cover: ${yamlScalar(cover)}`,
+  ];
+  if (mathjax !== "") {
+    yamlLines.push(`mathjax: ${mathjax}`);
+  }
+  if (preservedLines.length) {
+    yamlLines.push(...preservedLines);
+  }
+
+  const formattedFrontMatter = `---\n${yamlLines.join("\n")}\n---`;
+  const standardizedMarkdown = `${formattedFrontMatter}\n\n${body.replace(/^\n+/, "")}`;
+
+  return {
+    title,
+    date,
+    categories,
+    tags,
+    description,
+    mathjax: mathjax === "true",
+    cover,
+    formattedFrontMatter,
+    standardizedMarkdown,
+    body,
+    complemented,
+  };
 };
 
 const mergeFrontMatter = (rawFrontMatter, title, coverUrl, now) => {
@@ -795,20 +1009,52 @@ const runDeployBlog = async () => {
 
 const publishNote = async (args) => {
   const filePath = resolveVaultNote(String(args.source_path || ""));
-  const body = await readFile(filePath, "utf8");
-  const title = String(args.title || inferredTitle(body, filePath)).trim();
+  const rawBody = await readFile(filePath, "utf8");
+  if (!rawBody.trim() || Buffer.byteLength(rawBody, "utf8") > 200_000) {
+    throw new Error("文章正文不能为空，且不能超过 200000 字节。");
+  }
+
+  const std = await standardizeNoteProperties(filePath, rawBody, {
+    title: args.title,
+    cover_url: args.cover_url,
+  });
+  const title = std.title;
   if (!title || Array.from(title).length > 120) {
     throw new Error("文章标题不能为空，且不能超过 120 个字符。");
   }
-  if (!body.trim() || Buffer.byteLength(body, "utf8") > 200_000) {
-    throw new Error("文章正文不能为空，且不能超过 200000 字节。");
+
+  const isWriteBack = args.write_back === true || args.standardize_only === true;
+  if (isWriteBack) {
+    await writeFile(filePath, std.standardizedMarkdown, "utf8");
   }
+
+  if (args.standardize_only) {
+    const lines = [
+      `✅ 已成功规范化 Obsidian 笔记 Frontmatter 并写回本地文件！`,
+      `文件：${path.relative(vaultRoot, filePath)}`,
+      "",
+      "📋 规范化属性预览（已适配 Hexo 博客与主站）：",
+      `  - 标题 (title): ${std.title}`,
+      `  - 发布时间 (date): ${std.date}`,
+      `  - 文章分类 (categories): [${std.categories.join(", ")}]`,
+      `  - 文章标签 (tags): [${std.tags.join(", ")}]`,
+      `  - 核心摘要 (description): ${std.description}`,
+      `  - 公式支持 (mathjax): ${std.mathjax ? "true (已开启)" : "false"}`,
+      `  - 封面图 (cover): ${std.cover}`,
+    ];
+    if (std.complemented.length) {
+      lines.push("", "💡 智能补全项：", ...std.complemented.map((c) => `  → ${c}`));
+    }
+    lines.push("", "📝 生成的标准 Frontmatter：", "```yaml", std.formattedFrontMatter, "```");
+    return resultText(lines.join("\n"));
+  }
+
   const media = await prepareMedia(
     filePath,
-    body,
-    String(args.cover_url || "").trim(),
+    std.standardizedMarkdown,
+    String(args.cover_url || std.cover || "").trim(),
   );
-  const previewPost = buildPost(title, body, "");
+  const previewPost = buildPost(title, std.standardizedMarkdown, "");
   const shouldDeploy = args.deploy !== false;
 
   if (args.dry_run) {
@@ -824,18 +1070,37 @@ const publishNote = async (args) => {
             : media.bodyImages.length
               ? "自动使用正文第一张图片作为封面"
               : "正文没有图片，不设置封面";
-    return resultText(
-      [
-        `预检通过：${title}`,
-        `目标：${previewPost.postPath}`,
-        `仓库：${githubOwner}/${githubRepo} (${githubBranch})`,
-        `本地图片：${media.localAssets.size} 张`,
-        ...[...plannedPreview.values()].map((plan) => `  → ${plan.publicUrl}`),
-        `封面：${coverPlan}`,
-        `自动部署：${shouldDeploy ? "正式发布时将自动编译并推送至 Azure 生产服务器" : "跳过部署 (仅提交 GitHub)"}`,
-        "尚未提交到 GitHub 与服务器。",
-      ].join("\n"),
+
+    const lines = [
+      `📋 博客发布预检通过：${title}`,
+      "--------------------------------------------------",
+      "🏷️ 规范化属性（已适配 Hexo 博客与主站）：",
+      `  - 标题 (title): ${title}`,
+      `  - 发布时间 (date): ${std.date}`,
+      `  - 文章分类 (categories): [${std.categories.join(", ")}]`,
+      `  - 文章标签 (tags): [${std.tags.join(", ")}]`,
+      `  - 核心摘要 (description): ${std.description}`,
+      `  - 公式支持 (mathjax): ${std.mathjax ? "true (已启用 MathJax 高精度公式/矩阵渲染)" : "false"}`,
+      `  - 封面模式 (cover): ${coverPlan}`,
+    ];
+    if (std.complemented.length) {
+      lines.push("", "💡 智能补全与规范项：", ...std.complemented.map((c) => `  → ${c}`));
+    }
+    lines.push(
+      "",
+      "📝 推荐标准 Frontmatter 预览：",
+      std.formattedFrontMatter,
+      "--------------------------------------------------",
+      `📸 本地图片：${media.localAssets.size} 张`,
+      ...[...plannedPreview.values()].map((plan) => `  → ${plan.publicUrl}`),
+      `🎯 目标路径：${previewPost.postPath}`,
+      `📦 目标仓库：${githubOwner}/${githubRepo} (${githubBranch})`,
+      `🚀 自动部署：${shouldDeploy ? "正式发布时将自动编译并推送至 Azure 生产服务器" : "跳过部署 (仅提交 GitHub)"}`,
+      `💾 本地回写：${args.write_back ? "✅ 已自动将规范化属性写回 Obsidian 原笔记" : "未修改本地笔记（可通过 write_back: true 自动写回）"}`,
+      "",
+      "尚未提交到 GitHub 与生产服务器。",
     );
+    return resultText(lines.filter(Boolean).join("\n"));
   }
 
   await runGitHub(["auth", "status", "--hostname", "github.com"]);

@@ -4,18 +4,28 @@
 
 `Obsidian Markdown → Claudian → publish_blog_post → GitHub Commit → 本地 Hexo 自动构建 → Azure 生产自动推送上线`
 
-## 1. 文章格式
+## 1. 文章格式与标准属性规范
 
-在 Obsidian 中新建 Markdown，推荐保留下面的 front matter：
+在 Obsidian 笔记顶部通过 `---` 配置 YAML 属性，发布桥会自动规范并适配 Hexo Butterfly 博客与 React 主站：
 
 ```markdown
 ---
 title: 我的新文章
-date: 2026-08-24 20:00:00
-tags: [Obsidian, 随笔]
-categories: [记录]
-cover: ./assets/cover.png
-description: 一句话摘要
+date: 2026-08-27 15:30:00
+categories:
+  - 深度学习
+tags:
+  - transformer
+  - 矩阵变换
+description: "文章核心摘要（50~120字），用于主页大卡片、关于我气泡展示与 SEO 描述。"
+cover: auto
+mathjax: true
+sticky: 0
+draft: false
+aliases:
+  - 笔记别名
+related:
+  - '[[相关笔记]]'
 ---
 
 # 我的新文章
@@ -23,25 +33,16 @@ description: 一句话摘要
 正文……
 ```
 
-`title` 也可省略，发布桥会依次采用第一个一级标题和文件名。正文中的本地图片与封面会在正式发布时提交进仓库（见下一节），原 Obsidian 笔记不会被改写。
-
-封面支持四种写法：
-
-```yaml
-# 指定本地图片（也支持 "[[assets/cover.png]]"）
-cover: ./assets/cover.png
-
-# 指定已有外链
-cover: https://example.com/cover.webp
-
-# 留空或 auto：复用正文第一张图片
-cover: auto
-
-# 明确不设置封面
-cover: none
-```
-
-同一张本地图片同时用作正文插图和封面时只提交一次。支持 jpg、jpeg、png、webp、gif、bmp、tif、tiff；单张上限 10 MB，单篇文章最多 40 张。
+### 属性自动规范与智能补全（无需繁琐手写）
+当笔记缺少属性时，发布桥在预检（`dry_run`）或发布时会自动智能补全：
+- **`title`**：自动从首个 `# 标题` 或文件名提取；
+- **`date`**：自动从文件创建时间或当前时刻提取；
+- **`categories`**：自动根据笔记所在文件夹归类（如 `[深度学习]`），默认 `[随笔]`；
+- **`tags`**：自动从正文提取 `#tag`，默认对齐分类；
+- **`description`**：自动清洗提取正文首段（剔除公式代码链接）生成精炼摘要；
+- **`mathjax`**：正文检测到 `$ ... $` 或 `$$ ... $$` LaTeX 数学公式时自动开启 `mathjax: true`；
+- **`cover`**：默认为 `auto`（自动提取正文第 1 张图片作为封面）；
+- **`write_back: true`**：可在预检时将自动规范并补全的标准 Frontmatter **直接写回** Obsidian 原笔记文件！
 
 ## 图片存在哪里
 
