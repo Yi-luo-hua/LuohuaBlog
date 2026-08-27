@@ -150,7 +150,7 @@ const GalleryPhotoPage = () => {
         </div>
       </header>
 
-      {/* 图片展示卡片：w-fit 紧凑包裹，消除任何长宽比例下的大白边 */}
+      {/* 图片展示卡片：严格基于真实宽高比自适应收拢，杜绝任何比例下的空白大白边 */}
       <section className="container mx-auto flex items-center justify-center px-4 pb-8 md:px-10">
         <div
           className="relative inline-flex max-w-full items-center justify-center overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/60 p-2 shadow-[0_28px_80px_rgba(95,75,82,0.14)] backdrop-blur-xl sm:p-3"
@@ -159,7 +159,22 @@ const GalleryPhotoPage = () => {
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
-          <div className="relative flex items-center justify-center overflow-hidden rounded-[1.25rem] select-none">
+          <div
+            className="relative flex items-center justify-center overflow-hidden rounded-[1.25rem] select-none"
+            style={
+              hasSize
+                ? {
+                    aspectRatio: `${photo.width} / ${photo.height}`,
+                    width: `min(100%, calc(74vh * ${photo.width} / ${photo.height}))`,
+                    maxHeight: "74vh",
+                    maxWidth: "100%",
+                  }
+                : {
+                    maxHeight: "74vh",
+                    maxWidth: "100%",
+                  }
+            }
+          >
             <img
               src={photo.src}
               alt={photo.title || "相册原图"}
@@ -167,7 +182,7 @@ const GalleryPhotoPage = () => {
               height={photo.height}
               onClick={handleImageClick}
               draggable={false}
-              className={`max-h-[74vh] max-w-full select-none rounded-[1.25rem] object-contain transition-transform ${
+              className={`h-full w-full select-none rounded-[1.25rem] object-contain transition-transform ${
                 zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
               }`}
               style={{
