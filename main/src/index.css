@@ -879,18 +879,20 @@ body {
   }
 
   .about-latest-heading {
-    line-height: 0.9;
+    line-height: 1.15;
     text-transform: none;
   }
 
   .about-latest-heading > div {
-    padding-inline: clamp(1rem, 5vw, 2.5rem);
+    padding-inline: clamp(1rem, 4vw, 2.5rem);
   }
 
   .about-latest-heading .animated-word {
     max-width: 100%;
-    overflow-wrap: anywhere;
-    font-size: clamp(3.4rem, 16vw, 6.5rem);
+    overflow-wrap: normal;
+    word-break: keep-all;
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    letter-spacing: -0.015em;
   }
 
   .animated-word {

@@ -78,8 +78,13 @@ const stripMarkdown = (body) =>
     .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/```[\s\S]*?```/g, " ")
+    .replace(/\$\$[\s\S]*?\$\$/g, " ")
+    .replace(/\\(?:text|mathrm|mathbf|boldsymbol|mathbb|mathcal)\{([^}]+)\}/g, "$1")
+    .replace(/\$([^$]+)\$/g, "$1")
+    .replace(/\{([^}]+)\}/g, "$1")
+    .replace(/\\[a-zA-Z]+/g, " ")
     .replace(/^[#>*_`~-]+/gm, "")
-    .replace(/[|*_`~]/g, " ")
+    .replace(/[|*`~]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
