@@ -241,8 +241,8 @@ func TestOwnerStatusReturnsSummaryForUnlimitedOwner(t *testing.T) {
 		if item["nickname"] != "guest" {
 			t.Fatalf("expected notification nickname, got %#v", item["nickname"])
 		}
-		if got := int64(uploads["maxBytes"].(float64)); got != 8*1024*1024 {
-			t.Fatalf("expected uploads.maxBytes 8388608, got %d", got)
+		if got := int64(uploads["maxBytes"].(float64)); got != 32*1024*1024 {
+			t.Fatalf("expected uploads.maxBytes 33554432, got %d", got)
 		}
 	})
 }

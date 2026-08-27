@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	ownerUploadMaxBytes   = 8 * 1024 * 1024
+	ownerUploadMaxBytes   = 32 * 1024 * 1024
 	ownerDraftTitleMax    = 120
 	ownerDraftBodyMax     = 200000
 	ownerLatestDraftLimit = 20
@@ -382,7 +382,7 @@ func ownerUploadCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if header.Size > ownerUploadMaxBytes {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "FILE_TOO_LARGE",
-			"message": "上传文件超过 8 MiB 限制。",
+			"message": "上传文件超过 32 MiB 限制。",
 		})
 		return
 	}
@@ -404,7 +404,7 @@ func ownerUploadCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if int64(len(buf)) > ownerUploadMaxBytes {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "FILE_TOO_LARGE",
-			"message": "上传文件超过 8 MiB 限制。",
+			"message": "上传文件超过 32 MiB 限制。",
 		})
 		return
 	}
@@ -484,7 +484,7 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if int64(len(buf)) > ownerUploadMaxBytes {
 		writeJSONStatus(w, http.StatusBadRequest, map[string]any{
 			"error":   "FILE_TOO_LARGE",
-			"message": "上传文件超过 8 MiB 限制。",
+			"message": "上传文件超过 32 MiB 限制。",
 		})
 		return
 	}

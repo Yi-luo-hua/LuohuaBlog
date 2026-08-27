@@ -41,7 +41,7 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 | GET | `/api/owner/status` | `owner_controller.go` | 返回未读留言提醒、草稿和上传限制。 |
 | GET/POST | `/api/owner/drafts` | `owner_controller.go` | 读取和保存站长草稿。 |
 | PATCH | `/api/owner/notifications/:id/read` | `owner_controller.go` | 只写入 `owner_read_at`，不会隐藏公开留言。 |
-| POST | `/api/owner/uploads` | `owner_controller.go` | 保存本地临时图片到 `ACG_DATA_DIR/owner-uploads`，最大 8 MiB。 |
+| POST | `/api/owner/uploads` | `owner_controller.go` | 保存本地临时图片到 `ACG_DATA_DIR/owner-uploads`，最大 32 MiB。 |
 | GET | `/api/owner/uploads/:name` | `owner_controller.go` | 读取本地临时上传图片。 |
 | POST | `/api/owner/assets` | `owner_controller.go` + `owner_cos.go` | 使用服务器端 COS 凭据上传文章/相册图片，返回公开 URL 和对象 key。 |
 | POST | `/api/owner/publish` | `owner_publish.go` | 发布 Markdown 到 `blog/source/_posts/`，通过 GitHub Contents API 产生真实 commit。 |
