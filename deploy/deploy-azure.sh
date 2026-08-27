@@ -101,7 +101,7 @@ upload_dir() {
   local src="$1" dest="$2"
   [ -d "$src" ] || { echo "missing build output: $src" >&2; exit 1; }
   remote "sudo mkdir -p '$dest' && sudo rm -rf '$dest'/* && sudo mkdir -p '$dest'"
-  tar -C "$src" -czf - . |
+  ( tar --warning=no-file-changed --warning=no-file-removed -C "$src" -czf - . || [ $? -le 1 ] ) |
     remote "sudo tar -C '$dest' -xzf - && sudo chown -R www-data:www-data '$dest' && sudo chmod -R 775 '$dest'"
 }
 
@@ -170,6 +170,7 @@ if wants main; then
   ( cd "$REPO_ROOT/main" && npm ci &&
     VITE_API_BASE="" VITE_SITE_HOST="$SITE_HOST" VITE_SITE_APP_HOST="$SITE_APP_HOST" \
       npm run build )
+  sleep 1
   echo "==> uploading main site"
   upload_dir "$REPO_ROOT/main/dist" "$WWW_DIR/main"
 fi
