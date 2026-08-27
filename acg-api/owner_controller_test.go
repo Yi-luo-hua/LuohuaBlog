@@ -470,6 +470,7 @@ func TestOwnerUploadSavesImageForOwner(t *testing.T) {
 
 func TestOwnerAssetUploadNoLongerRequiresAnAlbum(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
+		t.Setenv("COS_LOCAL_DIR", t.TempDir())
 		token := seedUnlimitedOwnerSession(t)
 
 		var body bytes.Buffer
@@ -502,8 +503,10 @@ func TestOwnerAssetUploadNoLongerRequiresAnAlbum(t *testing.T) {
 	})
 }
 
-func TestOwnerAssetUploadRejectsWhenCOSNotConfigured(t *testing.T) {
+func TestOwnerAssetUploadSavesLocalMediaDirectly(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
+		tmpDir := t.TempDir()
+		t.Setenv("COS_LOCAL_DIR", tmpDir)
 		token := seedUnlimitedOwnerSession(t)
 
 		var body bytes.Buffer
@@ -515,7 +518,7 @@ func TestOwnerAssetUploadRejectsWhenCOSNotConfigured(t *testing.T) {
 		if _, err := part.Write(validTinyPNGBytes()); err != nil {
 			t.Fatal(err)
 		}
-		if err := writer.WriteField("kind", "article"); err != nil {
+		if err := writer.WriteField("kind", "gallery"); err != nil {
 			t.Fatal(err)
 		}
 		if err := writer.Close(); err != nil {
@@ -529,19 +532,25 @@ func TestOwnerAssetUploadRejectsWhenCOSNotConfigured(t *testing.T) {
 
 		ownerRouter(rr, req)
 
-		if rr.Code != http.StatusServiceUnavailable {
-			t.Fatalf("expected 503, got %d body=%s", rr.Code, rr.Body.String())
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+		}
+
+		payload := decodeOwnerJSONMap(t, rr)
+		item := payload["item"].(map[string]any)
+		if !strings.HasPrefix(item["url"].(string), "/cos/gallery/") {
+			t.Fatalf("expected /cos/gallery/ url, got %#v", item["url"])
 		}
 	})
 }
 
-func TestOwnerAssetUploadStoresGalleryImageInCOS(t *testing.T) {
+func TestOwnerAssetUploadStoresGalleryImage(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		token := seedUnlimitedOwnerSession(t)
 		withOwnerAssetUploader(t, fakeOwnerAssetUploader{
 			result: ownerCOSUploadResult{
 				ObjectKey: "gallery/2026/06/20260607-010203-uuid.png",
-				URL:       "https://cdn.example/gallery/2026/06/20260607-010203-uuid.png",
+				URL:       "/cos/gallery/2026/06/20260607-010203-uuid.png",
 				MIMEType:  "image/png",
 				Size:      68,
 			},
@@ -578,20 +587,20 @@ func TestOwnerAssetUploadStoresGalleryImageInCOS(t *testing.T) {
 			if item["path"] != "gallery/2026/06/20260607-010203-uuid.png" {
 				t.Fatalf("unexpected object key: %#v", item["path"])
 			}
-			if item["url"] != "https://cdn.example/gallery/2026/06/20260607-010203-uuid.png" {
+			if item["url"] != "/cos/gallery/2026/06/20260607-010203-uuid.png" {
 				t.Fatalf("unexpected url: %#v", item["url"])
 			}
 		})
 	})
 }
 
-func TestOwnerAssetUploadStoresArticleImageInCOS(t *testing.T) {
+func TestOwnerAssetUploadStoresArticleImage(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		token := seedUnlimitedOwnerSession(t)
 		withOwnerAssetUploader(t, fakeOwnerAssetUploader{
 			result: ownerCOSUploadResult{
 				ObjectKey: "articles/2026/06/20260607-010203-uuid.png",
-				URL:       "https://cdn.example/articles/2026/06/20260607-010203-uuid.png",
+				URL:       "/cos/articles/2026/06/20260607-010203-uuid.png",
 				MIMEType:  "image/png",
 				Size:      68,
 			},
@@ -635,7 +644,7 @@ func TestOwnerAssetUploadStoresArticleImageInCOS(t *testing.T) {
 	})
 }
 
-func TestOwnerAssetUploadReturnsBadGatewayWhenUploaderFails(t *testing.T) {
+func TestOwnerAssetUploadReturnsErrorWhenUploaderFails(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {
 		token := seedUnlimitedOwnerSession(t)
 		withOwnerAssetUploader(t, fakeOwnerAssetUploader{
@@ -664,12 +673,13 @@ func TestOwnerAssetUploadReturnsBadGatewayWhenUploaderFails(t *testing.T) {
 
 			ownerRouter(rr, req)
 
-			if rr.Code != http.StatusBadGateway {
-				t.Fatalf("expected 502, got %d body=%s", rr.Code, rr.Body.String())
+			if rr.Code != http.StatusInternalServerError {
+				t.Fatalf("expected 500, got %d body=%s", rr.Code, rr.Body.String())
 			}
 		})
 	})
 }
+
 
 func TestOwnerPublishRequiresOwnerSession(t *testing.T) {
 	withOwnerControllerTestDB(t, func() {

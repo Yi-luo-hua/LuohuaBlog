@@ -500,9 +500,9 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	uploader, err := ownerAssetUploadFactory()
 	if err != nil {
-		writeJSONStatus(w, http.StatusServiceUnavailable, map[string]any{
-			"error":   "ASSET_UPLOAD_NOT_CONFIGURED",
-			"message": "腾讯 COS 上传尚未配置。",
+		writeJSONStatus(w, http.StatusInternalServerError, map[string]any{
+			"error":   "ASSET_UPLOAD_NOT_INITIALIZED",
+			"message": "无法初始化媒体存储目录。",
 		})
 		return
 	}
@@ -510,9 +510,9 @@ func ownerAssetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	name := ownerUploadFilename(ext)
 	item, err := uploader.UploadImage(kind, name, mimeType, buf)
 	if err != nil {
-		writeJSONStatus(w, http.StatusBadGateway, map[string]any{
+		writeJSONStatus(w, http.StatusInternalServerError, map[string]any{
 			"error":   "ASSET_UPLOAD_FAILED",
-			"message": "无法上传资源到腾讯 COS。",
+			"message": "保存图片资源失败。",
 		})
 		return
 	}

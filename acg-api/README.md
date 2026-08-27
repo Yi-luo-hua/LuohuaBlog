@@ -43,7 +43,7 @@ Trigger manual sync: `POST /api/v1/sync/trigger`
 | PATCH | `/api/owner/notifications/:id/read` | `owner_controller.go` | 只写入 `owner_read_at`，不会隐藏公开留言。 |
 | POST | `/api/owner/uploads` | `owner_controller.go` | 保存本地临时图片到 `ACG_DATA_DIR/owner-uploads`，最大 32 MiB。 |
 | GET | `/api/owner/uploads/:name` | `owner_controller.go` | 读取本地临时上传图片。 |
-| POST | `/api/owner/assets` | `owner_controller.go` + `owner_cos.go` | 使用服务器端 COS 凭据上传文章/相册图片，返回公开 URL 和对象 key。 |
+| POST | `/api/owner/assets` | `owner_controller.go` + `owner_cos.go` | 上传文章/相册图片到本地媒体目录（`/var/www/luohua/cos/`），返回公开 `/cos/...` URL 和对象 key。 |
 | POST | `/api/owner/publish` | `owner_publish.go` | 发布 Markdown 到 `blog/source/_posts/`，通过 GitHub Contents API 产生真实 commit。 |
 | POST | `/api/owner/friends` | `owner_friend_publish.go` | 生成友链数据变更分支并创建 Pull Request，检测重复 URL，避免直接写入受保护的 `master`。 |
 | POST | `/api/owner/moments` | `owner_moment_publish.go` | 写入碎语到 `main/src/data/moments.js`，校验年份、日期、分类和内容，按日期插入并返回 commit 信息。 |

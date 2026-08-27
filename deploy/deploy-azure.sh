@@ -102,7 +102,7 @@ upload_dir() {
   [ -d "$src" ] || { echo "missing build output: $src" >&2; exit 1; }
   remote "sudo mkdir -p '$dest' && sudo rm -rf '$dest'/* && sudo mkdir -p '$dest'"
   tar -C "$src" -czf - . |
-    remote "sudo tar -C '$dest' -xzf - && sudo chown -R www-data:www-data '$dest'"
+    remote "sudo tar -C '$dest' -xzf - && sudo chown -R www-data:www-data '$dest' && sudo chmod -R 775 '$dest'"
 }
 
 sync_nginx_site_config() {

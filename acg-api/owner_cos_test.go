@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -23,49 +25,43 @@ func TestOwnerCOSObjectKeyForArticle(t *testing.T) {
 	}
 }
 
-func TestOwnerCOSConfigRequiresSecretFields(t *testing.T) {
-	t.Setenv("TENCENT_COS_SECRET_ID", "")
-	t.Setenv("TENCENT_COS_SECRET_KEY", "")
-	t.Setenv("TENCENT_COS_BUCKET", "")
-	t.Setenv("TENCENT_COS_REGION", "")
-	t.Setenv("COS_SECRET_ID", "")
-	t.Setenv("COS_SECRET_KEY", "")
-	t.Setenv("COS_BUCKET", "")
-	t.Setenv("COS_REGION", "")
+func TestOwnerLocalMediaUploaderUploadsAndStoresFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("COS_LOCAL_DIR", tmpDir)
 
-	_, err := loadOwnerCOSConfig()
-	if err == nil {
-		t.Fatal("expected config error")
-	}
-}
-
-func TestOwnerCOSConfigFallsBackToLegacyCOSKeys(t *testing.T) {
-	t.Setenv("TENCENT_COS_SECRET_ID", "")
-	t.Setenv("TENCENT_COS_SECRET_KEY", "")
-	t.Setenv("TENCENT_COS_BUCKET", "")
-	t.Setenv("TENCENT_COS_REGION", "")
-	t.Setenv("TENCENT_COS_BASE_URL", "")
-	t.Setenv("COS_SECRET_ID", "legacy-id")
-	t.Setenv("COS_SECRET_KEY", "legacy-key")
-	t.Setenv("COS_BUCKET", "legacy-bucket")
-	t.Setenv("COS_REGION", "ap-beijing")
-
-	cfg, err := loadOwnerCOSConfig()
+	uploader, err := newOwnerAssetUploader()
 	if err != nil {
-		t.Fatalf("expected legacy COS keys to configure uploader: %v", err)
+		t.Fatalf("newOwnerAssetUploader failed: %v", err)
 	}
-	if cfg.secretID != "legacy-id" || cfg.secretKey != "legacy-key" || cfg.bucket != "legacy-bucket" || cfg.region != "ap-beijing" {
-		t.Fatalf("unexpected config from legacy keys: %+v", cfg)
+
+	result, err := uploader.UploadImage("gallery", "test.png", "image/png", []byte("fake-png-content"))
+	if err != nil {
+		t.Fatalf("UploadImage failed: %v", err)
 	}
-	if cfg.baseURL != "https://legacy-bucket.cos.ap-beijing.myqcloud.com" {
-		t.Fatalf("unexpected default base URL: %q", cfg.baseURL)
+
+	if !strings.HasPrefix(result.URL, "/cos/gallery/") {
+		t.Fatalf("expected /cos/gallery/ url, got %q", result.URL)
+	}
+	if result.MIMEType != "image/png" {
+		t.Fatalf("expected image/png, got %q", result.MIMEType)
+	}
+	if result.Size != len("fake-png-content") {
+		t.Fatalf("expected size %d, got %d", len("fake-png-content"), result.Size)
+	}
+
+	storedPath := filepath.Join(tmpDir, filepath.FromSlash(result.ObjectKey))
+	content, err := os.ReadFile(storedPath)
+	if err != nil {
+		t.Fatalf("failed to read stored file at %s: %v", storedPath, err)
+	}
+	if string(content) != "fake-png-content" {
+		t.Fatalf("unexpected content: %q", string(content))
 	}
 }
 
-func TestOwnerCOSPublicURLUsesConfiguredBaseURL(t *testing.T) {
-	cfg := ownerCOSConfig{baseURL: "https://cdn.example"}
-	got := ownerCOSPublicURL(cfg, "gallery/misaka/test image.png")
-	if got != "https://cdn.example/gallery/misaka/test%20image.png" {
-		t.Fatalf("unexpected public URL: %q", got)
+func TestOwnerCOSProxyURL(t *testing.T) {
+	got := ownerCOSProxyURL("gallery/2026/08/test image.png")
+	if got != "/cos/gallery/2026/08/test%20image.png" {
+		t.Fatalf("unexpected proxy URL: %q", got)
 	}
 }
