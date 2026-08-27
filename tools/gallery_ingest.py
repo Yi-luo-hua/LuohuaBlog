@@ -204,7 +204,7 @@ def ingest(
         f"{f'，跳过 {skipped} 张已存在' if skipped else ''}："
         f"{total_before/1e6:.1f} MB -> {total_after/1e6:.1f} MB"
     )
-    return 0
+    return written
 
 
 def main() -> int:
@@ -218,7 +218,8 @@ def main() -> int:
         help="PNG 原样保留而不转 JPEG（体积会大很多）",
     )
     args = parser.parse_args()
-    return ingest(args.source, args.prefix.strip("/"), args.dry_run, args.keep_png)
+    ingest(args.source, args.prefix.strip("/"), args.dry_run, args.keep_png)
+    return 0
 
 
 if __name__ == "__main__":
