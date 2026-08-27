@@ -9,6 +9,23 @@
 //   publishedAt  ISO 时间，页面按它倒序排，新的在上面
 export const galleryPhotos = [
   {
+    id: "20260827-131926-494d98",
+    src: "/cos/gallery/2026/08/abaf86343ad1da87.jpg",
+    width: 1200,
+    height: 565,
+    thumb: "/cos/gallery/2026/08/abaf86343ad1da87-thumb.jpg",
+    publishedAt: "2026-08-27T13:19:26Z",
+  },
+  {
+    id: "20260827-131650-a08268",
+    src: "/cos/gallery/2026/08/002a8b6cb8603d77.jpg",
+    width: 1200,
+    height: 685,
+    thumb: "/cos/gallery/2026/08/002a8b6cb8603d77-thumb.jpg",
+    publishedAt: "2026-08-27T13:16:50Z",
+  },
+
+  {
     id: "20260825-160758-6e482a",
     src: "/cos/gallery/2026/08/f5375ba8d7c4e33e.jpg",
     width: 1960,
