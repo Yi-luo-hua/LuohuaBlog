@@ -3,8 +3,8 @@
 /**
  * Obsidian-style LaTeX Math Processor for Hexo.
  * Isolates all LaTeX formulas ($...$ and $$...$$) before Markdown rendering,
- * and wraps them in <script type="math/tex"> blocks so MathJax renders them
- * with 100% precision (preserving matrix linebreaks, subscripts, ampersands).
+ * and wraps them in <script type="math/tex"> blocks while preventing placeholder
+ * leaks into HTML attributes (heading IDs, titles, TOC hrefs).
  */
 
 hexo.extend.filter.register('before_post_render', (data) => {
@@ -46,22 +46,30 @@ hexo.extend.filter.register('before_post_render', (data) => {
 hexo.extend.filter.register('after_post_render', (data) => {
   if (!data._mathBlocks || !data._mathBlocks.length) return data;
 
-  for (let i = 0; i < data._mathBlocks.length; i++) {
-    const item = data._mathBlocks[i];
-    if (item.type === 'block') {
-      const regex = new RegExp(`<p>\\s*MATHBLOCK${i}XYZ\\s*<\\/p>|MATHBLOCK${i}XYZ`, 'g');
-      data.content = data.content.replace(
-        regex,
-        `<div class="math-block" style="overflow-x: auto; text-align: center; margin: 1.25em 0;"><script type="math/tex; mode=display">${item.formula}</script></div>`,
-      );
-    } else {
-      const regex = new RegExp(`MATHINLINE${i}XYZ`, 'g');
-      data.content = data.content.replace(
-        regex,
-        `<span class="math-inline"><script type="math/tex">${item.formula}</script></span>`,
-      );
-    }
-  }
+  const mathBlocks = data._mathBlocks;
 
+  // 1. Inside HTML tags (attributes like id="...", href="...", title="..."), replace with plain formula text
+  let html = data.content.replace(/<[^>]+>/g, (tag) => {
+    return tag.replace(/MATH(BLOCK|INLINE)(\d+)XYZ/g, (m, type, index) => {
+      const item = mathBlocks[Number(index)];
+      if (!item) return m;
+      return item.formula.replace(/["'<>]/g, '').replace(/\\/g, '');
+    });
+  });
+
+  // 2. Outside HTML tags, replace with proper MathJax script containers
+  html = html.replace(/MATH(BLOCK|INLINE)(\d+)XYZ/g, (m, type, index) => {
+    const item = mathBlocks[Number(index)];
+    if (!item) return m;
+    if (item.type === 'block') {
+      return `<div class="math-block" style="overflow-x: auto; text-align: center; margin: 1.25em 0;"><script type="math/tex; mode=display">${item.formula}</script></div>`;
+    }
+    return `<span class="math-inline"><script type="math/tex">${item.formula}</script></span>`;
+  });
+
+  // Clean up any empty <p> wrapper around block math
+  html = html.replace(/<p>\s*(<div class="math-block"[\s\S]*?<\/div>)\s*<\/p>/g, '$1');
+
+  data.content = html;
   return data;
 }, 9999);
