@@ -1,7 +1,7 @@
 ---
 title: Transformer的矩阵变换
 date: 2026-08-27 15:30:51
-cover: /blog/images/2026/08/76808ee94a19-pasted-image-20260827152047.png
+cover: /images/2026/08/76808ee94a19-pasted-image-20260827152047.png
 tags:
 - mcl
 - transformer
@@ -16,7 +16,7 @@ aliases:
 - Transformer矩阵变换
 ---
 
-![Pasted image 20260827152047](/blog/images/2026/08/76808ee94a19-pasted-image-20260827152047.png)
+![Pasted image 20260827152047](/images/2026/08/76808ee94a19-pasted-image-20260827152047.png)
 
 本文将**严格使用《Attention Is All You Need》论文中的原始超参数**：
 *   模型维度（Embedding/隐藏层）：$d_{model} = 512$

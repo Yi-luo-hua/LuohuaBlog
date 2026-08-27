@@ -30,7 +30,7 @@ class BlogPublishBridgeTests(unittest.TestCase):
 
     def test_commits_images_into_the_blog_source_tree(self):
         self.assertIn('blogImageDir = "blog/source/images"', self.source)
-        self.assertIn('blogImagePrefix = "/blog/images"', self.source)
+        self.assertIn('blogImagePrefix = "/images"', self.source)
         self.assertIn("commitLocalAssets", self.source)
 
     def test_image_names_are_content_addressed_so_republishing_is_idempotent(self):

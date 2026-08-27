@@ -102,7 +102,7 @@ const githubCli = String(process.env.GITHUB_CLI_PATH || "gh").trim();
 // once Hexo copies source/ into public/. Hexo has post_asset_folder off and an
 // empty skip_render, so anything here that it cannot render is copied verbatim.
 const blogImageDir = "blog/source/images";
-const blogImagePrefix = "/blog/images";
+const blogImagePrefix = "/images";
 const maxImageBytes = 10 * 1024 * 1024;
 const supportedImageExtensions = new Set([
   ".jpg",
