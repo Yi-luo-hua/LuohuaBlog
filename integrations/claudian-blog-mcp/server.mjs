@@ -761,7 +761,7 @@ const syncLocalFilesystem = async (postPath, markdown, planned) => {
 const runDeployBlog = async () => {
   const bashPath = await findBash();
   return new Promise((resolve, reject) => {
-    const child = spawn(bashPath, ["-c", "deploy/deploy-azure.sh blog"], {
+    const child = spawn(bashPath, ["-c", "deploy/deploy-azure.sh blog main"], {
       cwd: repoRoot,
       windowsHide: true,
       stdio: ["pipe", "pipe", "pipe"],

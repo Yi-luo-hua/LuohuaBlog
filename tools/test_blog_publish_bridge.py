@@ -58,10 +58,10 @@ class BlogPublishBridgeTests(unittest.TestCase):
     def test_supports_automatic_deployment_by_default(self):
         readme = (ROOT / "integrations" / "claudian-blog-mcp" / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("deploy-azure.sh blog", self.source)
+        self.assertIn("deploy-azure.sh blog main", self.source)
         self.assertIn("runDeployBlog", self.source)
         self.assertIn("syncLocalFilesystem", self.source)
-        self.assertIn("deploy-azure.sh blog", readme)
+        self.assertIn("deploy-azure.sh blog main", readme)
 
     def test_supports_article_update_and_deletion(self):
         readme = (ROOT / "integrations" / "claudian-blog-mcp" / "README.md").read_text(encoding="utf-8")

@@ -103,7 +103,7 @@ claude mcp add --scope user yi-luo-hua-blog -- node "E:\TOOLS\BLOG\integrations\
 - 如果日后需要手动重跑全量部署，可以在本地终端执行：
 
 ```bash
-deploy/deploy-azure.sh blog
+deploy/deploy-azure.sh blog main
 ```
 
 ## 5. 修改与删除文章
