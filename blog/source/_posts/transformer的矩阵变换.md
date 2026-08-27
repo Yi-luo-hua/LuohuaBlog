@@ -3,6 +3,7 @@ title: Transformer的矩阵变换
 date: 2026-08-27 15:30:51
 cover: /images/2026/08/76808ee94a19-pasted-image-20260827152047.png
 description: "本文基于《Attention Is All You Need》经典论文超参数，全流程图解与推导 Transformer 架构中编码器与解码器的矩阵维度变换流转。"
+mathjax: true
 tags:
 - mcl
 - transformer
