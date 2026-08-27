@@ -37,8 +37,8 @@ const HERO_MEDIA = {
   },
   3: {
     type: "image",
-    src: `${COS}/img/hero-2.webp`,
-    label: "夏夜烟花",
+    src: "/media/hero-cover-03.webp",
+    label: "夏日微风",
   },
   4: {
     type: "image",
