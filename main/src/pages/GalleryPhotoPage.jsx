@@ -180,13 +180,6 @@ const GalleryPhotoPage = () => {
                   decoding="async"
                 />
               </div>
-
-              {/* 滚轮滑动与缩放贴心提示 */}
-              {isPortrait && fitMode === "scroll" && zoom === 1 && (
-                <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md transition-opacity duration-300">
-                  可使用鼠标滚轮向下滑动赏图 · 点击放大
-                </div>
-              )}
             </div>
           </section>
 
@@ -196,25 +189,19 @@ const GalleryPhotoPage = () => {
             {/* 信息卡片 */}
             <div className="rounded-[1.75rem] border border-white/80 bg-white/70 p-5 sm:p-6 shadow-[0_20px_50px_rgba(95,75,82,0.1)] backdrop-blur-xl">
               <div className="flex items-center justify-between gap-2">
-                <span className="rounded-full bg-[#ff8fab]/20 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#b76e79]">
-                  {index >= 0 ? `PHOTO ${String(index + 1).padStart(2, "0")}` : "PHOTO"}
+                <span className="rounded-full bg-[#ff8fab]/20 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#b76e79]">
+                  {isPortrait ? "竖屏插画" : "横屏壁纸"}
                 </span>
-                {hasSize ? (
-                  <span className="rounded-full bg-[#5f4b52]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#5f4b52]">
-                    {isPortrait ? "竖屏立绘" : "横屏壁纸"}
+                {index >= 0 ? (
+                  <span className="font-mono text-xs font-bold tracking-wider text-[#5f4b52]/70">
+                    #{String(index + 1).padStart(2, "0")}
                   </span>
                 ) : null}
               </div>
 
-              {photo.title ? (
-                <h1 className="mt-4 text-2xl font-black leading-tight text-[#241322] md:text-3xl">
-                  {photo.title}
-                </h1>
-              ) : (
-                <h1 className="mt-4 text-xl font-bold leading-tight text-[#241322]">
-                  插画作品 #{String(index + 1).padStart(2, "0")}
-                </h1>
-              )}
+              <h1 className="mt-4 text-2xl font-black leading-tight text-[#241322] md:text-3xl">
+                {photo.title || `Photo #${String(index + 1).padStart(2, "0")}`}
+              </h1>
 
               <div className="mt-4 space-y-2 border-t border-[#5f4b52]/10 pt-4 text-xs text-[#5f4b52]">
                 {hasSize ? (
