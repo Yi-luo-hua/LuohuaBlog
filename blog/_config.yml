@@ -115,7 +115,7 @@ search:
   content: true
 
 marked:
-  prependRoot: false
+  prependRoot: true
   postAsset: false
   item_lists:
     autonumber: false
