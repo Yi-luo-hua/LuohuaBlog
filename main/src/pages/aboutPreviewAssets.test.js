@@ -124,6 +124,8 @@ test("shows the latest article cover inside its about-page bubble", () => {
 
 test("keeps the compact about dashboard links and real music player wired", () => {
   const routeSource = readFileSync(resolve("src/pages/AboutSitePage.jsx"), "utf8");
+  const manifestSource = readFileSync(resolve("src/data/musicTracks.js"), "utf8");
+  const playerSource = readFileSync(resolve("src/player/MusicPlayerProvider.jsx"), "utf8");
 
   assert.match(routeSource, /to="\/gallery"/);
   assert.match(routeSource, /to="\/bangumi\/watching"/);
@@ -131,7 +133,12 @@ test("keeps the compact about dashboard links and real music player wired", () =
   assert.match(routeSource, /href=\{FEATURED_PROJECT\.githubUrl\}/);
   assert.match(routeSource, /\{FEATURED_PROJECT\.name\}/);
   assert.match(routeSource, /target="_blank"/);
-  assert.match(routeSource, /audio\/loop\.mp3/);
+  // 关于页卡片接的是全局播放器；loop.mp3 的单曲硬编码已移进播放清单，
+  // 由 MusicPlayerProvider 提供多曲目/随机/循环。
+  assert.match(routeSource, /useMusicPlayer\(\)/);
+  assert.doesNotMatch(routeSource, /<audio/);
+  assert.match(manifestSource, /audio\/loop\.mp3/);
+  assert.match(playerSource, /MUSIC_PLAY_MODES = \["order", "repeat", "shuffle", "one"\]/);
   assert.match(routeSource, /我的相册/);
   assert.match(routeSource, /番剧收藏/);
   assert.doesNotMatch(routeSource, /FiHeart|toggleLike|about-liked|about-like-count|data-physics-bubble="likes"/);

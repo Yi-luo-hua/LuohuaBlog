@@ -918,3 +918,10 @@
   .about-desk-grid [data-physics-bubble]:focus-visible,
   .about-desk-grid [data-physics-bubble]:active { scale: 1; }
 }
+
+/* 全局播放器入口：替换掉原先的装饰音量图标，点去 /music 完整播放器。 */
+.about-desk-player-link { flex: 0 0 auto; color: var(--mint); opacity: .75; transition: opacity .2s; }
+.about-desk-player-link svg { width: 24px; height: 24px; stroke-width: 2.2; }
+.about-desk-player-link:hover,
+.about-desk-player-link:focus-visible { opacity: 1; }
+.about-desk-player-controls button:disabled { opacity: .45; cursor: default; background: transparent; }

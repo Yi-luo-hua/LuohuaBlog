@@ -9,6 +9,11 @@ export default [
   ...tailwind.configs["flat/recommended"],
   { ignores: ["dist"] },
   {
+    // vite/tailwind/postcss 配置跑在 Node 里，process 等全局是合法的。
+    files: ["*.config.js"],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
+  },
+  {
     files: ["**/*.{js,jsx}"],
     languageOptions: {
       ecmaVersion: 2020,

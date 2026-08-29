@@ -53,6 +53,15 @@ export default defineConfig({
         target: process.env.VITE_COS_ORIGIN || "http://65.52.160.147",
         changeOrigin: true,
       },
+      // Music library, served in production from /var/www/luohua/music
+      // (uploaded by tools/sync_music.py). Unlike /cos above, this must target
+      // the https domain: the port-80 vhost 308s everything to
+      // https://yiluohua.top and http-proxy does not follow redirects, so an
+      // IP target would degrade the proxy into a passthrough 308.
+      "/audio": {
+        target: process.env.VITE_AUDIO_ORIGIN || "https://yiluohua.top",
+        changeOrigin: true,
+      },
     },
   },
 });

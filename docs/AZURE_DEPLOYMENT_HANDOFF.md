@@ -80,6 +80,7 @@ ssh -i "E:\TOOLS\blog-server-key.pem" azureuser@65.52.160.147
 /var/www/luohua/main/   # main/dist
 /var/www/luohua/blog/   # blog/public
 /var/www/luohua/cos/    # 站点媒体资源（53 MB，116 个文件），由 Nginx 直接读盘
+/var/www/luohua/music/  # 音乐曲库（tools/sync_music.py 上传），由 Nginx 以 /audio/ 读盘
 ```
 
 ### Go API
@@ -117,6 +118,7 @@ curl -fsS http://127.0.0.1/api/v1/health
 | `/blog/` | 读取 `/var/www/luohua/blog/` |
 | `/api/` | 反向代理到 `127.0.0.1:8787` |
 | `/cos/` | `alias /var/www/luohua/cos/`，直接读本机磁盘，缓存 30 天 |
+| `/audio/` | `alias /var/www/luohua/music/`，音乐曲库（mp3/m4a/flac/ogg/wav + 封面图），缓存 30 天；该 location 内联 `types {}` 补了 flac 等 MIME |
 
 **`/cos/` 曾经反向代理到模板作者的腾讯 COS 桶**（`tzyy-1330068502.cos.ap-beijing.myqcloud.com`）：
 首页视频、Hero 图、相册和关于页的图片全部从对方的存储取，走对方的流量，对方删文件或
@@ -132,6 +134,12 @@ curl -fsS http://127.0.0.1/api/v1/health
 媒体现在跟着仓库走：源文件在 `assets/cos/`，`deploy/deploy-azure.sh cos` 用 rsync 同步到
 `/var/www/luohua/cos/`。换服务器时不用单独搬这个目录，重新跑一次带 `cos` 的部署即可——
 但反过来说，**只部署代码不带 `cos` 这个 target，新加的图片不会上去，页面会裂**。
+
+**上面这条原则有一个例外：音乐曲库 `/var/www/luohua/music/`。** 音频文件体积大，刻意不进
+git，也不属于任何 deploy target，只由 `python tools/sync_music.py --source <本地音乐目录>`
+增量上传（该目录同时是生产环境唯一无法从 checkout 重建的数据，与 `${DATA_DIR}` 同待遇——
+换服务器/重装时必须单独把这个目录搬过去，否则清单里的曲目全部 404）。播放清单本体
+`main/src/data/musicTracks.js` 在仓库里，只记录元数据和 `/audio/` URL，不含音频。
 
 往相册加照片有两条路，写进 `main/src/data/galleryPhotos.js` 的条目格式一致：
 

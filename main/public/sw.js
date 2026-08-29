@@ -38,6 +38,7 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/assets/")) return;
   if (url.pathname.startsWith("/cos/")) return;
+  if (url.pathname.startsWith("/audio/")) return;
   if (url.pathname === "/about-preview.html") return;
   if (url.pathname.startsWith("/showcase/") || url.pathname.startsWith("/web/")) return;
 

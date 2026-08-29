@@ -5,11 +5,14 @@
 # no build toolchain, so nothing on it needs Node, Go, or Hexo. Everything is
 # built here and shipped as finished files.
 #
-# Two things on the server are never touched, because losing either one is
+# Three things on the server are never touched, because losing any one is
 # unrecoverable from this repository:
 #
-#   ${API_DIR}/.env   every real secret; the repo only carries the key names
-#   ${DATA_DIR}       the live SQLite database
+#   ${API_DIR}/.env     every real secret; the repo only carries the key names
+#   ${DATA_DIR}         the live SQLite database
+#   ${WWW_DIR}/music    the music library; audio files are deliberately kept
+#                       out of git (large binaries), so no deploy target can
+#                       rebuild it — tools/sync_music.py owns that directory
 #
 # Usage:
 #   deploy/deploy-azure.sh              # build and deploy everything

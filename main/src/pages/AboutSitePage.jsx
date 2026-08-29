@@ -6,13 +6,13 @@ import {
   FiCode,
   FiFilm,
   FiImage,
+  FiList,
   FiMail,
   FiMusic,
   FiPause,
   FiPlay,
   FiSkipBack,
   FiSkipForward,
-  FiVolume2,
 } from "react-icons/fi";
 import { FaGithub, FaQq } from "react-icons/fa";
 import { SiBilibili, SiPixiv } from "react-icons/si";
@@ -23,7 +23,12 @@ import { galleryPhotosNewestFirst } from "../data/galleryPhotos.js";
 import { API_BASE } from "../lib/apiBase.js";
 import { cosAsset } from "../lib/cosAsset.js";
 import { copyTextToClipboard } from "../lib/copyTextToClipboard.js";
+import { formatTime } from "../lib/formatTime.js";
 import { makePosterDataUri, resolveCoverSrc } from "../lib/posterPlaceholder.js";
+import {
+  useMusicPlayer,
+  useMusicProgress,
+} from "../player/MusicPlayerProvider.jsx";
 import { getBangumiCollection, getGithubCommits } from "../services/acgApi.js";
 import aboutFontsHref from "./aboutFonts.css?url";
 import "./AboutSitePage.css";
@@ -36,7 +41,6 @@ const HERO_IMAGES = [
   `${MAIN_ASSET_BASE}/img/about.webp`,
   `${MAIN_ASSET_BASE}/img/hero-3.webp`,
 ];
-const MUSIC_SRC = `${MAIN_ASSET_BASE}/audio/loop.mp3`;
 
 const FALLBACK_POST = {
   title: "博客尚未更新",
@@ -79,12 +83,6 @@ const greetingFor = (hour) => {
 
 const formatClock = (date) =>
   `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-
-const formatTime = (seconds) => {
-  if (!Number.isFinite(seconds)) return "0:00";
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
-};
 
 const CLOCK_SEGMENTS = {
   0: [1, 1, 1, 1, 1, 1, 0],
@@ -137,18 +135,85 @@ const useAboutFonts = () => {
   }, []);
 };
 
+// 播放进度每秒约 4 次更新，独立成组件订阅，避免整页（气泡物理/时钟）跟着重渲染。
+const AboutPlayerCard = () => {
+  const { hasTracks, currentTrack, isPlaying, toggle, next, prev, seek } =
+    useMusicPlayer();
+  const { currentTime, duration } = useMusicProgress();
+  const progressMax = duration || 0;
+
+  return (
+    <section
+      data-physics-bubble="player"
+      className="about-desk-card about-desk-player about-desk-enter"
+      aria-label="音乐播放器"
+    >
+      <div className="about-desk-album-art" aria-hidden="true">
+        <img src={currentTrack?.cover || HERO_IMAGES[2]} alt="" />
+        <FiMusic />
+      </div>
+      <div className="about-desk-player-main">
+        <div className="about-desk-track-title">
+          <div>
+            <strong>
+              {currentTrack ? currentTrack.title : "播放列表还没有歌"}
+            </strong>
+            <span>
+              {currentTrack ? currentTrack.artist : "运行同步脚本或去音乐页看看"}
+            </span>
+          </div>
+          <Link
+            to="/music"
+            className="about-desk-player-link"
+            aria-label="打开音乐播放页"
+            title="打开音乐播放页"
+          >
+            <FiList />
+          </Link>
+        </div>
+        <label className="about-desk-scrubber">
+          <span className="sr-only">音乐播放进度</span>
+          <input
+            type="range"
+            min="0"
+            max={progressMax}
+            step="0.1"
+            value={Math.min(currentTime, progressMax)}
+            disabled={!currentTrack}
+            onChange={(event) => seek(Number(event.target.value))}
+          />
+          <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
+        </label>
+      </div>
+      <div className="about-desk-player-controls">
+        <button type="button" onClick={prev} disabled={!hasTracks} aria-label="上一首">
+          <FiSkipBack />
+        </button>
+        <button
+          type="button"
+          className="is-primary"
+          onClick={toggle}
+          disabled={!hasTracks}
+          aria-label={isPlaying ? "暂停" : "播放"}
+        >
+          {isPlaying ? <FiPause /> : <FiPlay />}
+        </button>
+        <button type="button" onClick={next} disabled={!hasTracks} aria-label="下一首">
+          <FiSkipForward />
+        </button>
+      </div>
+    </section>
+  );
+};
+
 const AboutSitePage = () => {
   useAboutFonts();
-  const audioRef = useRef(null);
   const pageRef = useRef(null);
   const physicsContainerRef = useRef(null);
   const copyNoticeTimerRef = useRef(0);
   const [now, setNow] = useState(() => new Date());
   const [bangumi, setBangumi] = useState([]);
   const [commits, setCommits] = useState({ items: [], repoCount: 0, state: "loading" });
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [copyNotice, setCopyNotice] = useState("");
 
   const latestPost = useMemo(
@@ -197,26 +262,6 @@ const AboutSitePage = () => {
       alive = false;
     };
   }, []);
-
-  const togglePlayback = async () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (audio.paused) {
-      try {
-        await audio.play();
-      } catch {
-        setIsPlaying(false);
-      }
-    } else {
-      audio.pause();
-    }
-  };
-
-  const seekBy = (offset) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + offset));
-  };
 
   const copyContact = async (label, value) => {
     window.clearTimeout(copyNoticeTimerRef.current);
@@ -426,54 +471,7 @@ const AboutSitePage = () => {
           <FiArrowUpRight aria-hidden="true" />
         </a>
 
-        <section data-physics-bubble="player" className="about-desk-card about-desk-player about-desk-enter" aria-label="音乐播放器">
-          <audio
-            ref={audioRef}
-            src={MUSIC_SRC}
-            preload="metadata"
-            loop
-            onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
-            onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-          />
-          <div className="about-desk-album-art" aria-hidden="true">
-            <img src={HERO_IMAGES[2]} alt="" />
-            <FiMusic />
-          </div>
-          <div className="about-desk-player-main">
-            <div className="about-desk-track-title">
-              <div>
-                <strong>{"it's 6pm but I miss u already"}</strong>
-                <span>YaoNie</span>
-              </div>
-              <FiVolume2 aria-hidden="true" />
-            </div>
-            <label className="about-desk-scrubber">
-              <span className="sr-only">音乐播放进度</span>
-              <input
-                type="range"
-                min="0"
-                max={duration || 0}
-                step="0.1"
-                value={Math.min(currentTime, duration || 0)}
-                onChange={(event) => {
-                  if (!audioRef.current) return;
-                  audioRef.current.currentTime = Number(event.target.value);
-                  setCurrentTime(Number(event.target.value));
-                }}
-              />
-              <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
-            </label>
-          </div>
-          <div className="about-desk-player-controls">
-            <button type="button" onClick={() => seekBy(-10)} aria-label="后退 10 秒"><FiSkipBack /></button>
-            <button type="button" className="is-primary" onClick={togglePlayback} aria-label={isPlaying ? "暂停" : "播放"}>
-              {isPlaying ? <FiPause /> : <FiPlay />}
-            </button>
-            <button type="button" onClick={() => seekBy(10)} aria-label="前进 10 秒"><FiSkipForward /></button>
-          </div>
-        </section>
+        <AboutPlayerCard />
 
       </div>
     </main>

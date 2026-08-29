@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useWindowScroll } from "react-use";
-import { cosAsset } from "../lib/cosAsset.js";
+import { useMusicPlayer } from "../player/MusicPlayerProvider.jsx";
 
 const navLinks = [
   { label: "HOME", to: "/", end: true },
@@ -13,11 +13,7 @@ const navLinks = [
 ];
 
 const DRAWER_MS = 220;
-const MAIN_ASSET_BASE = cosAsset(
-  "AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main",
-);
 const githubAvatarSrc = "/github-avatar.png";
-const loopAudioSrc = `${MAIN_ASSET_BASE}/audio/loop.mp3`;
 
 const getNavTheme = (pathname) => {
   if (pathname === "/bangumi" || pathname.startsWith("/bangumi/"))
@@ -26,19 +22,19 @@ const getNavTheme = (pathname) => {
     return "gallery";
   if (pathname === "/moments" || pathname.startsWith("/moments/"))
     return "moments";
+  // /music 和 moments 一样是浅色底，共用浅色导航主题
+  if (pathname === "/music") return "moments";
   if (pathname === "/about" || pathname.startsWith("/about/")) return "about";
   return "dark";
 };
 
 const NavBar = () => {
   const { pathname } = useLocation();
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [isIndicatorActive, setIsIndicatorActive] = useState(false);
+  const { isPlaying, toggle: toggleMusic } = useMusicPlayer();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [drawerMounted, setDrawerMounted] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
 
-  const audioElementRef = useRef(null);
   const navContainerRef = useRef(null);
   const menuBtnRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -54,8 +50,9 @@ const NavBar = () => {
   const isMomentsPage =
     pathname === "/moments" || pathname.startsWith("/moments/");
   const isAboutPage = pathname === "/about" || pathname.startsWith("/about/");
+  const isMusicPage = pathname === "/music";
   const isSubPage =
-    isBangumiPage || isGalleryPage || isMomentsPage || isAboutPage;
+    isBangumiPage || isGalleryPage || isMomentsPage || isAboutPage || isMusicPage;
   const navTheme = getNavTheme(pathname);
   const isLightNav = navTheme !== "dark";
 
@@ -79,8 +76,8 @@ const NavBar = () => {
   }, []);
 
   const toggleAudioIndicator = () => {
-    setIsAudioPlaying((prev) => !prev);
-    setIsIndicatorActive((prev) => !prev);
+    // 什么都不选时点第一次 = 从头开始播清单第一首
+    toggleMusic();
   };
 
   useEffect(() => {
@@ -110,14 +107,6 @@ const NavBar = () => {
       document.body.style.overflow = "";
     };
   }, []);
-
-  useEffect(() => {
-    if (isAudioPlaying) {
-      audioElementRef.current?.play();
-    } else {
-      audioElementRef.current?.pause();
-    }
-  }, [isAudioPlaying]);
 
   useEffect(() => {
     if (!navContainerRef.current) return;
@@ -347,19 +336,14 @@ const NavBar = () => {
                 onClick={toggleAudioIndicator}
                 className="ml-0.5 flex shrink-0 items-center space-x-0.5 sm:ml-2 md:ml-4"
                 type="button"
-                aria-label="Toggle background music"
+                aria-label={isPlaying ? "暂停音乐" : "播放音乐"}
+                title={isPlaying ? "暂停音乐" : "播放音乐"}
               >
-                <audio
-                  ref={audioElementRef}
-                  className="hidden"
-                  src={loopAudioSrc}
-                  loop
-                />
                 {[1, 2, 3, 4].map((bar) => (
                   <div
                     key={bar}
                     className={clsx("indicator-line", {
-                      active: isIndicatorActive,
+                      active: isPlaying,
                       "indicator-line-bili": navTheme === "bili",
                       "indicator-line-ai":
                         navTheme === "gallery" ||
