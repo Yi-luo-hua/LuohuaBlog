@@ -147,7 +147,12 @@ def first_id3(tags, frame: str) -> str | None:
 
 def first_text(tags, *keys: str) -> str | None:
     for key in keys:
-        value = tags.get(key)
+        # VorbisComment（flac/ogg）对不合法的键名直接抛 ValueError，
+        # 而不是返回 None——拿 MP4 的 "©nam" 去问它就会炸。
+        try:
+            value = tags.get(key)
+        except (ValueError, KeyError):
+            continue
         if value:
             return str(value[0])
     return None
@@ -171,15 +176,14 @@ def read_tags(path: Path) -> tuple[str | None, str | None, str | None, bytes | N
         pictures = tags.getall("APIC")
         if pictures:
             cover = pictures[0].data
-    elif hasattr(tags, "pictures"):  # FLAC
-        vorbis = tags.as_dict()
+    elif hasattr(audio, "pictures"):  # FLAC：封面挂在文件对象上，不在 tags 上
         title, artist, album = (
-            first_text(vorbis, "title"),
-            first_text(vorbis, "artist"),
-            first_text(vorbis, "album"),
+            first_text(tags, "title"),
+            first_text(tags, "artist"),
+            first_text(tags, "album"),
         )
-        if tags.pictures:
-            cover = tags.pictures[0].data
+        if audio.pictures:
+            cover = audio.pictures[0].data
     elif hasattr(tags, "get"):  # MP4（m4a）/ VorbisComment（ogg）
         title, artist, album = (
             first_text(tags, "\xa9nam", "title"),
@@ -268,7 +272,11 @@ def render_track(track: dict) -> str:
 
 
 def render_manifest(tracks: list[dict]) -> str:
-    body = ",\n\n".join(render_track(track) for track in tracks)
+    # render_track 每块自带结尾逗号，这里只能用空行连接。再补一个逗号就会写出
+    # "},,"——那在数组字面量里是一个空洞（undefined），不是格式问题而是数据错：
+    # musicTracks 里会混进 undefined，Object.fromEntries 当场抛。清单只有一首时
+    # join 根本不执行，所以这个 bug 一直藏到收录第二首才现形。
+    body = "\n\n".join(render_track(track) for track in tracks)
     return MANIFEST_HEADER + body + "\n" + MANIFEST_FOOTER
 
 
@@ -406,8 +414,10 @@ def sync_music(
         print(f"\n[2/4] 增量上传音频到服务器（只增不删）...")
         upload_staged(staging)
 
+    # existing 是从现行清单解析来的，本身就含预设曲；不排掉就会和 preset 重复一份
+    preset_ids = {track["id"] for track in preset}
     merged = preset + sorted(
-        existing + new_tracks,
+        (track for track in existing + new_tracks if track["id"] not in preset_ids),
         key=lambda track: track["addedAt"],
         reverse=True,
     )

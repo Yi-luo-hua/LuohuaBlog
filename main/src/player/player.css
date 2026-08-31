@@ -1,0 +1,188 @@
+/* 播放器专用样式。深色为基调，唯一的高饱和来源是当前封面取出的 --accent
+   （见 trackAccent.js），其余全是中性灰阶——原来那套紫粉渐变 + 半透明白卡
+   + 浏览器原生滑块正是"塑料感"的来源，这里全部换掉。 */
+
+.player-dark {
+  --player-ink: #0b0a10;
+  --player-raise: rgba(255, 255, 255, 0.045);
+  --player-raise-hover: rgba(255, 255, 255, 0.08);
+  --player-line: rgba(255, 255, 255, 0.09);
+  --player-text: #f3f1f7;
+  --player-muted: rgba(243, 241, 247, 0.5);
+  --player-faint: rgba(243, 241, 247, 0.3);
+  color: var(--player-text);
+}
+
+/* 浅色宿主（关于页的薄荷卡片）借用同一套控件，只把灰阶翻过来。 */
+.player-light {
+  --player-raise: rgba(20, 40, 40, 0.05);
+  --player-raise-hover: rgba(20, 40, 40, 0.09);
+  --player-line: rgba(20, 40, 40, 0.1);
+  --player-text: #34494b;
+  --player-muted: #7b8d8f;
+  --player-faint: #a7b6b6;
+}
+
+/* ---------- 滑块：进度与音量共用 ---------- */
+
+.player-range {
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.player-range:focus { outline: none; }
+
+.player-range::-webkit-slider-runnable-track {
+  height: var(--range-thickness, 4px);
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent) var(--range-fill, 0%),
+    var(--player-line) var(--range-fill, 0%)
+  );
+  transition: height 0.15s ease;
+}
+
+.player-range::-webkit-slider-thumb {
+  width: var(--range-thumb, 11px);
+  height: var(--range-thumb, 11px);
+  margin-top: calc((var(--range-thickness, 4px) - var(--range-thumb, 11px)) / 2);
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--accent-glow, rgba(255, 255, 255, 0.25));
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.player-range::-moz-range-track {
+  height: var(--range-thickness, 4px);
+  border-radius: 999px;
+  background: var(--player-line);
+}
+
+.player-range::-moz-range-progress {
+  height: var(--range-thickness, 4px);
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.player-range::-moz-range-thumb {
+  width: var(--range-thumb, 11px);
+  height: var(--range-thumb, 11px);
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--accent-glow, rgba(255, 255, 255, 0.25));
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* 静止时只剩一条细线，指针进来或键盘聚焦才长出把手——安静，但可抓。 */
+.player-range:hover::-webkit-slider-thumb,
+.player-range:focus-visible::-webkit-slider-thumb,
+.player-range[data-dragging="true"]::-webkit-slider-thumb { opacity: 1; }
+.player-range:hover::-moz-range-thumb,
+.player-range:focus-visible::-moz-range-thumb,
+.player-range[data-dragging="true"]::-moz-range-thumb { opacity: 1; }
+.player-range:hover::-webkit-slider-runnable-track,
+.player-range[data-dragging="true"]::-webkit-slider-runnable-track { height: calc(var(--range-thickness, 4px) + 2px); }
+
+.player-range:disabled { cursor: default; }
+.player-range:disabled::-webkit-slider-runnable-track { background: var(--player-line); }
+.player-range:disabled::-webkit-slider-thumb { opacity: 0; }
+
+/* ---------- 图标按钮 ---------- */
+
+.player-icon-btn {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--player-muted);
+  background: transparent;
+  transition: color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.player-icon-btn:hover:not(:disabled),
+.player-icon-btn:focus-visible:not(:disabled) {
+  color: var(--player-text);
+  background: var(--player-raise-hover);
+  outline: none;
+}
+
+.player-icon-btn:active:not(:disabled) { transform: scale(0.92); }
+.player-icon-btn:disabled { opacity: 0.35; cursor: default; }
+.player-icon-btn[data-active="true"] { color: var(--accent); }
+
+/* ---------- 播放/暂停主按钮 ---------- */
+
+.player-play-btn {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--accent-ink, #12101a);
+  background: var(--accent);
+  box-shadow: 0 10px 26px var(--accent-glow, rgba(0, 0, 0, 0.3));
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.player-play-btn:hover:not(:disabled) { filter: brightness(1.08); transform: scale(1.04); }
+.player-play-btn:active:not(:disabled) { transform: scale(0.95); }
+.player-play-btn:disabled { opacity: 0.4; box-shadow: none; cursor: default; }
+
+/* 缓冲中：外圈转一圈，比换成 spinner 图标更安静 */
+.player-play-btn[data-busy="true"]::after {
+  position: absolute;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: player-spin 0.8s linear infinite;
+  content: "";
+  inset: -6px;
+}
+
+@keyframes player-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 均衡器 ---------- */
+
+.player-eq {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  height: 13px;
+}
+
+.player-eq span {
+  width: 2px;
+  /* 高度必须写死：父级是 align-items:flex-end，空 span 撑不出高度 */
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transform-origin: bottom;
+  animation: player-eq-bar 0.9s ease-in-out infinite;
+}
+
+/* 铺在强调色实底上时（"正在播放"按钮），条子要翻成前景色，否则同色隐形 */
+.player-eq[data-on-accent="true"] span { background: var(--accent-ink); }
+
+@keyframes player-eq-bar {
+  0%, 100% { transform: scaleY(0.28); }
+  50% { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-eq span { animation: none; transform: scaleY(0.6); }
+  .player-play-btn[data-busy="true"]::after { animation-duration: 2.4s; }
+}

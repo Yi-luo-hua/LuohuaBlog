@@ -8,9 +8,6 @@ import {
   FiImage,
   FiList,
   FiMail,
-  FiMusic,
-  FiPause,
-  FiPlay,
   FiSkipBack,
   FiSkipForward,
 } from "react-icons/fi";
@@ -23,12 +20,16 @@ import { galleryPhotosNewestFirst } from "../data/galleryPhotos.js";
 import { API_BASE } from "../lib/apiBase.js";
 import { cosAsset } from "../lib/cosAsset.js";
 import { copyTextToClipboard } from "../lib/copyTextToClipboard.js";
-import { formatTime } from "../lib/formatTime.js";
 import { makePosterDataUri, resolveCoverSrc } from "../lib/posterPlaceholder.js";
 import {
   useMusicPlayer,
   useMusicProgress,
 } from "../player/MusicPlayerProvider.jsx";
+import TrackCover from "../player/TrackCover.jsx";
+import IconButton from "../player/controls/IconButton.jsx";
+import PlayPauseButton from "../player/controls/PlayPauseButton.jsx";
+import Scrubber from "../player/controls/Scrubber.jsx";
+import "../player/player.css";
 import { getBangumiCollection, getGithubCommits } from "../services/acgApi.js";
 import aboutFontsHref from "./aboutFonts.css?url";
 import "./AboutSitePage.css";
@@ -136,71 +137,96 @@ const useAboutFonts = () => {
 };
 
 // 播放进度每秒约 4 次更新，独立成组件订阅，避免整页（气泡物理/时钟）跟着重渲染。
+// 控件用 src/player/controls 里那套共用原语，只把强调色接到本页的薄荷绿上：
+// 歌单页、角上的浮窗、这张卡片从此是同一套按钮的三种配色。
+const ABOUT_PLAYER_ACCENT = {
+  "--accent": "var(--mint)",
+  "--accent-deep": "#42b3a0",
+  "--accent-soft": "rgba(98, 213, 194, 0.18)",
+  "--accent-glow": "rgba(66, 179, 160, 0.26)",
+  "--accent-ink": "#ffffff",
+};
+
 const AboutPlayerCard = () => {
-  const { hasTracks, currentTrack, isPlaying, toggle, next, prev, seek } =
-    useMusicPlayer();
+  const {
+    hasTracks,
+    currentTrack,
+    isPlaying,
+    isBuffering,
+    toggle,
+    next,
+    prev,
+    seek,
+  } = useMusicPlayer();
   const { currentTime, duration } = useMusicProgress();
-  const progressMax = duration || 0;
 
   return (
     <section
       data-physics-bubble="player"
-      className="about-desk-card about-desk-player about-desk-enter"
+      className="about-desk-card about-desk-player about-desk-enter player-light"
       aria-label="音乐播放器"
+      style={ABOUT_PLAYER_ACCENT}
     >
       <div className="about-desk-album-art" aria-hidden="true">
-        <img src={currentTrack?.cover || HERO_IMAGES[2]} alt="" />
-        <FiMusic />
+        {/* 没有封面时走 TrackCover 的散列色块，而不是拿星空插画冒充专辑封面 */}
+        <TrackCover
+          track={currentTrack}
+          className="about-desk-album-fill"
+          iconClassName="about-desk-album-icon"
+        />
       </div>
       <div className="about-desk-player-main">
         <div className="about-desk-track-title">
           <div>
-            <strong>
-              {currentTrack ? currentTrack.title : "播放列表还没有歌"}
-            </strong>
+            <strong>{currentTrack ? currentTrack.title : "歌单还是空的"}</strong>
             <span>
-              {currentTrack ? currentTrack.artist : "运行同步脚本或去音乐页看看"}
+              {currentTrack ? currentTrack.artist : "同步曲库后这里就有歌了"}
             </span>
           </div>
           <Link
             to="/music"
             className="about-desk-player-link"
-            aria-label="打开音乐播放页"
-            title="打开音乐播放页"
+            aria-label="打开歌单"
+            title="打开歌单"
           >
-            <FiList />
+            <FiList aria-hidden="true" />
+            <span>歌单</span>
           </Link>
         </div>
-        <label className="about-desk-scrubber">
-          <span className="sr-only">音乐播放进度</span>
-          <input
-            type="range"
-            min="0"
-            max={progressMax}
-            step="0.1"
-            value={Math.min(currentTime, progressMax)}
-            disabled={!currentTrack}
-            onChange={(event) => seek(Number(event.target.value))}
-          />
-          <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
-        </label>
+        <Scrubber
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={seek}
+          disabled={!currentTrack}
+          className="about-desk-scrubber"
+          label="音乐播放进度"
+        />
       </div>
       <div className="about-desk-player-controls">
-        <button type="button" onClick={prev} disabled={!hasTracks} aria-label="上一首">
-          <FiSkipBack />
-        </button>
-        <button
-          type="button"
-          className="is-primary"
+        <IconButton
+          icon={FiSkipBack}
+          label="上一首"
+          onClick={prev}
+          disabled={!hasTracks}
+          size={31}
+          iconSize={20}
+        />
+        <PlayPauseButton
+          isPlaying={isPlaying}
+          busy={isBuffering}
           onClick={toggle}
           disabled={!hasTracks}
-          aria-label={isPlaying ? "暂停" : "播放"}
-        >
-          {isPlaying ? <FiPause /> : <FiPlay />}
-        </button>
-        <button type="button" onClick={next} disabled={!hasTracks} aria-label="下一首">
-          <FiSkipForward />
-        </button>
+          size={43}
+          iconSize={21}
+        />
+        <IconButton
+          icon={FiSkipForward}
+          label="下一首"
+          onClick={next}
+          disabled={!hasTracks}
+          size={31}
+          iconSize={20}
+        />
       </div>
     </section>
   );

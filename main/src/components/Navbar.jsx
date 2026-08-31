@@ -22,8 +22,6 @@ const getNavTheme = (pathname) => {
     return "gallery";
   if (pathname === "/moments" || pathname.startsWith("/moments/"))
     return "moments";
-  // /music 和 moments 一样是浅色底，共用浅色导航主题
-  if (pathname === "/music") return "moments";
   if (pathname === "/about" || pathname.startsWith("/about/")) return "about";
   return "dark";
 };

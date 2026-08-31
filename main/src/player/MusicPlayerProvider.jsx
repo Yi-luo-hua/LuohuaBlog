@@ -113,6 +113,10 @@ export const MusicPlayerProvider = ({ children }) => {
   );
   const [muted, setMuted] = useState(() => Boolean(stored?.muted));
   const [shuffleOrder, setShuffleOrder] = useState(null);
+  // 自托管的 flac 动辄几十兆，点下播放到出声之间原来什么都不显示；
+  // stalled 让主按钮转起来，failed 让页面能说一句"这首放不出来"。
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   // 事件回调里要读最新状态；直接闭包会拿到旧值，进依赖又会频繁重挂。
   const liveRef = useRef({});
@@ -128,6 +132,7 @@ export const MusicPlayerProvider = ({ children }) => {
     (id, { autoplay = true } = {}) => {
       const track = trackById[id];
       if (!track) return;
+      setFailed(false);
       loadedIdRef.current = id;
       setCurrentId(id);
       const audio = audioRef.current;
@@ -203,14 +208,6 @@ export const MusicPlayerProvider = ({ children }) => {
     audio.currentTime = Math.max(0, Math.min(duration, time));
   }, []);
 
-  const seekBy = useCallback(
-    (offset) => {
-      const audio = audioRef.current;
-      if (audio) seek(audio.currentTime + offset);
-    },
-    [seek],
-  );
-
   const setVolume = useCallback((value) => {
     setVolumeState(Math.min(1, Math.max(0, Number(value) || 0)));
   }, []);
@@ -254,6 +251,8 @@ export const MusicPlayerProvider = ({ children }) => {
     // 整张清单都播不动时停下来，别无限绕圈。
     if (failureCountRef.current >= ids.length) {
       failureCountRef.current = 0;
+      setIsBuffering(false);
+      setFailed(true);
       audioRef.current?.pause();
       return;
     }
@@ -347,6 +346,8 @@ export const MusicPlayerProvider = ({ children }) => {
       currentId,
       currentTrack,
       isPlaying,
+      isBuffering,
+      failed,
       mode,
       volume,
       muted,
@@ -355,7 +356,6 @@ export const MusicPlayerProvider = ({ children }) => {
       next,
       prev,
       seek,
-      seekBy,
       setVolume,
       toggleMute,
       cycleMode,
@@ -365,6 +365,8 @@ export const MusicPlayerProvider = ({ children }) => {
       currentId,
       currentTrack,
       isPlaying,
+      isBuffering,
+      failed,
       mode,
       volume,
       muted,
@@ -373,7 +375,6 @@ export const MusicPlayerProvider = ({ children }) => {
       next,
       prev,
       seek,
-      seekBy,
       setVolume,
       toggleMute,
       cycleMode,
@@ -387,6 +388,9 @@ export const MusicPlayerProvider = ({ children }) => {
       <audio
         ref={audioRef}
         preload="metadata"
+        onWaiting={() => setIsBuffering(true)}
+        onStalled={() => setIsBuffering(true)}
+        onCanPlay={() => setIsBuffering(false)}
         onPlay={() => {
           setIsPlaying(true);
           if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
@@ -395,9 +399,12 @@ export const MusicPlayerProvider = ({ children }) => {
         }}
         onPlaying={() => {
           failureCountRef.current = 0;
+          setIsBuffering(false);
+          setFailed(false);
           setIsPlaying(true);
         }}
         onPause={() => {
+          setIsBuffering(false);
           setIsPlaying(false);
           if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
             navigator.mediaSession.playbackState = "paused";

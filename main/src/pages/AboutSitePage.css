@@ -538,9 +538,10 @@
   padding: 16px 18px;
 }
 .about-desk-album-art { position: relative; overflow: hidden; width: 72px; height: 72px; border-radius: 22px; background: #d9f0eb; }
+/* 封面统一交给 TrackCover：有图铺满，没图是按曲目 id 散列出的色块 */
+.about-desk-album-fill { display: grid; width: 100%; height: 100%; place-items: center; }
 .about-desk-album-art img { width: 100%; height: 100%; object-fit: cover; }
-.about-desk-album-art::after { position: absolute; inset: 0; background: rgba(40, 89, 83, .18); content: ""; }
-.about-desk-album-art svg { position: absolute; left: 50%; top: 50%; z-index: 1; color: white; font-size: 28px; transform: translate(-50%, -50%); }
+.about-desk-album-icon { width: 26px; height: 26px; }
 .about-desk-player-main { min-width: 0; }
 .about-desk-track-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .about-desk-track-title div { min-width: 0; }
@@ -548,17 +549,10 @@
 .about-desk-track-title span { display: block; }
 .about-desk-track-title strong { overflow: hidden; font-size: 17px; font-weight: 820; text-overflow: ellipsis; white-space: nowrap; }
 .about-desk-track-title span { margin-top: 3px; color: #93a3a3; font-size: 13px; }
-.about-desk-track-title > svg { flex: 0 0 auto; width: 24px; height: 24px; color: var(--mint); stroke-width: 2.2; }
-.about-desk-scrubber { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 9px; margin-top: 14px; }
-.about-desk-scrubber input { width: 100%; height: 4px; accent-color: var(--mint); cursor: pointer; }
-.about-desk-scrubber > span:last-child { color: #9aa9a8; font-size: 12px; white-space: nowrap; }
+
+.about-desk-scrubber { margin-top: 12px; }
 .about-desk-player-controls { display: flex; align-items: center; gap: 5px; }
-.about-desk-player-controls button { display: grid; place-items: center; width: 31px; height: 31px; border: 0; border-radius: 50%; color: #64817e; background: transparent; cursor: pointer; }
-.about-desk-player-controls button svg { width: 22px; height: 22px; stroke-width: 2; }
-.about-desk-player-controls button:hover,
-.about-desk-player-controls button:focus-visible { background: rgba(98, 213, 194, .15); outline: none; }
-.about-desk-player-controls button.is-primary { width: 43px; height: 43px; color: white; background: var(--mint); box-shadow: 0 8px 20px rgba(66, 179, 160, .24); }
-.about-desk-player-controls button.is-primary svg { width: 25px; height: 25px; }
+.about-desk-player-controls svg { stroke-width: 2; }
 
 /* Desktop becomes a loose constellation instead of a dashboard grid. */
 @media (min-width: 1200px) {
@@ -919,9 +913,21 @@
   .about-desk-grid [data-physics-bubble]:active { scale: 1; }
 }
 
-/* 全局播放器入口：替换掉原先的装饰音量图标，点去 /music 完整播放器。 */
-.about-desk-player-link { flex: 0 0 auto; color: var(--mint); opacity: .75; transition: opacity .2s; }
-.about-desk-player-link svg { width: 24px; height: 24px; stroke-width: 2.2; }
+/* 歌单入口。整个音乐功能的门面就是这张卡片，所以入口给足提示：
+   图标 + "歌单"两个字的小胶囊，而不是一个需要猜的裸图标。 */
+.about-desk-player-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  color: #3f7a72;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(98, 213, 194, .16);
+  transition: background-color .2s ease, color .2s ease;
+}
+.about-desk-player-link svg { width: 14px; height: 14px; stroke-width: 2.4; }
 .about-desk-player-link:hover,
-.about-desk-player-link:focus-visible { opacity: 1; }
-.about-desk-player-controls button:disabled { opacity: .45; cursor: default; background: transparent; }
+.about-desk-player-link:focus-visible { color: #2c6a61; background: rgba(98, 213, 194, .3); outline: none; }
