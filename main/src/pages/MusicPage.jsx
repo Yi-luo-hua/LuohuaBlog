@@ -226,9 +226,9 @@ const MusicPage = () => {
     setMode,
   } = useMusicPlayer();
 
-  // 歌单封面认"第一首带封面的曲目"——清单里第一条永远是无封面的预设 BGM，
-  // 死认 tracks[0] 会让封面永远退回背景图。切歌时封面不变：这是歌单自己的
-  // 身份，不该跟着正在播的那首换脸。
+  // 歌单封面认"第一首带封面的曲目"，而不是死认 tracks[0]：置顶曲和无标签的
+  // 文件都可能没有内嵌封面，那样封面会平白退回背景图。切歌时封面不变——这是
+  // 歌单自己的身份，不该跟着正在播的那首换脸。
   const cover = tracks.find((track) => track.cover)?.cover || BACKDROP;
 
   const totalLabel = useMemo(

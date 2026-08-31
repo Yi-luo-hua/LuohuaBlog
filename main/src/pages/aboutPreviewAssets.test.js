@@ -133,11 +133,12 @@ test("keeps the compact about dashboard links and real music player wired", () =
   assert.match(routeSource, /href=\{FEATURED_PROJECT\.githubUrl\}/);
   assert.match(routeSource, /\{FEATURED_PROJECT\.name\}/);
   assert.match(routeSource, /target="_blank"/);
-  // 关于页卡片接的是全局播放器；loop.mp3 的单曲硬编码已移进播放清单，
-  // 由 MusicPlayerProvider 提供多曲目/随机/循环。
+  // 关于页卡片接的是全局播放器，自己不再挂 <audio>：曲目由 MusicPlayerProvider
+  // 从播放清单里取，清单则由 tools/sync_music.py 生成。这里只钉"清单里有真曲目"，
+  // 不钉具体某一首——曲库是会变的（原先那首硬编码的 loop.mp3 已经不在了）。
   assert.match(routeSource, /useMusicPlayer\(\)/);
   assert.doesNotMatch(routeSource, /<audio/);
-  assert.match(manifestSource, /audio\/loop\.mp3/);
+  assert.match(manifestSource, /src: "\/audio\/[0-9a-f]{16}\.\w+"/);
   assert.match(playerSource, /MUSIC_PLAY_MODES = \["order", "repeat", "shuffle", "one"\]/);
   assert.match(routeSource, /我的相册/);
   assert.match(routeSource, /番剧收藏/);

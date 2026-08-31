@@ -28,13 +28,23 @@ test("track ids are unique", () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test("preset BGM keeps the URL-encoded COS path used by the old navbar audio", () => {
-  const preset = musicTracks.find((track) => track.id === "preset-loop");
-  assert.ok(preset, "preset-loop track missing");
-  assert.equal(
-    preset.src,
-    "/cos/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E5%8D%9A%E5%AE%A2%E5%9B%BE%E7%89%87/main/audio/loop.mp3",
-  );
-  assert.ok(preset.title.length > 0);
-  assert.ok(preset.artist.length > 0);
+// 生成器曾经把每块的结尾逗号和 join 的逗号叠在一起写出 "},,"——那在数组
+// 字面量里是一个空洞，musicTracks 里会混进 undefined，播放器建索引时当场抛。
+// 清单只有一首时 join 根本不执行，所以这个 bug 藏到收录第二首才现形。
+test("manifest has no array holes", () => {
+  for (let index = 0; index < musicTracks.length; index += 1) {
+    assert.ok(index in musicTracks, `hole at index ${index}`);
+    assert.ok(musicTracks[index], `undefined entry at index ${index}`);
+  }
+});
+
+test("covers, when present, live beside the audio under /audio/", () => {
+  for (const track of musicTracks) {
+    if (!track.cover) continue;
+    assert.match(
+      track.cover,
+      /^\/(audio|cos)\//,
+      `track ${track.id} cover must stay same-origin: ${track.cover}`,
+    );
+  }
 });
