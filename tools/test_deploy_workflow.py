@@ -68,16 +68,65 @@ class DeployWorkflowTests(unittest.TestCase):
         posts = list(posts_dir.glob("*.md"))
 
         self.assertTrue(posts, "the Hexo blog should contain at least one post")
+        # Hexo's root is already /blog/, so any absolute path a post writes is
+        # resolved under it: /images/x.png becomes /blog/images/x.png. Writing
+        # the prefix by hand yields /blog/blog/x.png, which only survives
+        # because of a rewrite rule in deploy/nginx-luohua.conf — at the cost
+        # of a redirect round trip per asset. Catch every /blog/ prefix, not
+        # just the /blog/images/ spelling that happened to slip through once.
+        offenders = []
         for post in posts:
-            text = post.read_text(encoding="utf-8")
-            self.assertNotIn(
-                "/blog/images/",
-                text,
-                f"{post.name} must use /images/... because Hexo root already adds /blog/",
-            )
+            for number, line in enumerate(
+                post.read_text(encoding="utf-8").splitlines(), start=1
+            ):
+                for match in re.finditer(r"(?<![\w:/])/blog/", line):
+                    offenders.append(f"{post.name}:{number}: {line.strip()[:100]}")
+                    del match
+        self.assertEqual(
+            offenders,
+            [],
+            "posts must not prefix paths with /blog/ — Hexo's root adds it:\n"
+            + "\n".join(offenders),
+        )
 
         cover = ROOT / "blog" / "source" / "images" / "2026" / "08" / "9a3db927692f-6a8b417000732-1787511152.webp"
         self.assertTrue(cover.is_file(), "the blog test post cover must be versioned")
+
+    def test_post_front_matter_has_no_orphaned_list_items(self):
+        """A list item may only follow its own key, never a scalar.
+
+        publish_blog_post re-emits categories/tags in normalized form and drops
+        the original key line. It used to keep the lines *under* that key, so
+        the orphaned "- item" lines landed after the last scalar and YAML
+        folded them into it: gpt-1流程分析.md parsed mathjax as the string
+        "true - 深度学习 - transformer - ..." instead of the boolean true.
+        """
+        key_line = re.compile(r"^([^\s:#][^:]*):\s*(.*)$")
+        item_line = re.compile(r"^\s*-\s")
+        offenders = []
+
+        for post in (ROOT / "blog" / "source" / "_posts").glob("*.md"):
+            lines = post.read_text(encoding="utf-8").splitlines()
+            try:
+                end = lines.index("---", 1)
+            except ValueError:
+                continue
+            owner = None
+            for number, line in enumerate(lines[1:end], start=2):
+                if item_line.match(line):
+                    if owner is None:
+                        offenders.append(f"{post.name}:{number}: 列表项没有归属的键")
+                    elif owner[1]:
+                        offenders.append(
+                            f"{post.name}:{number}: 列表项跟在标量 "
+                            f"`{owner[0]}: {owner[1]}` 后面"
+                        )
+                    continue
+                match = key_line.match(line)
+                if match:
+                    owner = (match.group(1).strip(), match.group(2).strip())
+
+        self.assertEqual(offenders, [], "; ".join(offenders))
 
     def test_workflow_does_not_reference_the_deleted_build_subsite(self):
         text = WORKFLOW_PATH.read_text(encoding="utf-8")

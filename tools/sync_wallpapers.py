@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""自动将本地壁纸插图同步至博客相册并部署上线。
+r"""自动将本地壁纸插图同步至博客相册并部署上线。
 
-默认监听/读取：F:\图\表情包壁纸\壁纸插图
+默认监听/读取：F:\blogload\photo（上传暂存区）
 工作流程：
 1. 扫描目标目录中的新图片（自动跳过已存在的图片）；
 2. 生成 900px 高性能 Web 缩略图并优化原图体积；
@@ -31,7 +31,8 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from gallery_ingest import ingest
 
-DEFAULT_SOURCE = Path(r"F:\图\表情包壁纸\壁纸插图")
+# 上传暂存区：想上线的图片丢进这个目录，和 F:\blogload\music 并列。
+DEFAULT_SOURCE = Path(r"F:\blogload\photo")
 
 
 def find_bash() -> str:

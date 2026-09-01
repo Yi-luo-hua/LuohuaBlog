@@ -12,12 +12,6 @@ tags:
   - fine-tuning
 description: 本文将严格使用 OpenAI GPT-1 论文《Improving Language Understanding by Generative Pre-Training》中的原始超参数：
 mathjax: true
-  - 深度学习
-  - transformer
-  - gpt-1
-  - deep-learning
-  - pre-training
-  - fine-tuning
 related:
   - "[[Transformer的矩阵变换]]"
   - "[[Pre-LN vs Post-LN]]"

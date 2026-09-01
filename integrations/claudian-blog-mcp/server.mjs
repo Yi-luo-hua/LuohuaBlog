@@ -347,16 +347,24 @@ const standardizeNoteProperties = async (filePath, rawMarkdown, options = {}) =>
     "mathjax",
     "cover",
   ]);
+  // A handled key is re-emitted in normalized form above, so its own line is
+  // dropped here — and so must be the lines that belong to it. A list value
+  // spans several lines that carry no key of their own; keeping them while
+  // dropping their parent leaves orphaned "- item" lines dangling after the
+  // last scalar, which YAML then folds into that scalar. That is how
+  // gpt-1流程分析.md ended up with mathjax parsed as
+  // "true - 深度学习 - transformer - ...".
   const preservedLines = [];
+  let insideHandledKey = false;
   for (const line of rawFrontMatter.split("\n")) {
     const top = line.match(/^([^\s:#][^:]*):\s*(.*)$/);
     if (top) {
-      const key = top[1].trim().toLowerCase();
-      if (!handledKeys.has(key)) {
-        preservedLines.push(line);
-      }
+      insideHandledKey = handledKeys.has(top[1].trim().toLowerCase());
+      if (!insideHandledKey) preservedLines.push(line);
     } else if (line.trim() && !line.startsWith("---")) {
-      preservedLines.push(line);
+      // Continuation of the key above: an indented item, or the unindented
+      // "- item" form Obsidian itself writes.
+      if (!insideHandledKey) preservedLines.push(line);
     }
   }
 

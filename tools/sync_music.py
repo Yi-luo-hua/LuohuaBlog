@@ -52,7 +52,9 @@ except ImportError:
     raise SystemExit(1)
 
 AUDIO_EXTS = {".mp3", ".m4a", ".flac", ".ogg", ".wav"}
-DEFAULT_SOURCE = Path(r"F:\音乐")
+# 上传暂存区：想上线的音频丢进这个目录（可带 艺术家/专辑 子目录，会递归扫）。
+# 和个人曲库分开，避免"整个曲库都会被传上去"的误操作。
+DEFAULT_SOURCE = Path(r"F:\blogload\music")
 COVER_MAX_PX = 500
 
 # --transcode 的目标格式。选 AAC 而不是同码率下音质更好的 Opus，是因为播放器

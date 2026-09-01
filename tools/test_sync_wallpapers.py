@@ -11,7 +11,7 @@ import sync_wallpapers
 
 class SyncWallpapersTests(unittest.TestCase):
     def test_default_source_is_set(self):
-        self.assertEqual(str(sync_wallpapers.DEFAULT_SOURCE), r"F:\图\表情包壁纸\壁纸插图")
+        self.assertEqual(str(sync_wallpapers.DEFAULT_SOURCE), r"F:\blogload\photo")
 
     @patch("sync_wallpapers.ingest")
     def test_sync_skips_deploy_when_no_new_photos(self, mock_ingest):
