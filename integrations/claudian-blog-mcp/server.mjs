@@ -116,6 +116,48 @@ const githubCli = String(process.env.GITHUB_CLI_PATH || "gh").trim();
 const blogImageDir = "blog/source/images";
 const blogImagePrefix = "/images";
 const maxImageBytes = 10 * 1024 * 1024;
+
+// Images ride along in git, so they have to earn their place. A pasted
+// screenshot lands as a ~1 MB PNG and stores at about a tenth of that as WebP
+// with no visible loss, which keeps "clone the repo and the blog is whole"
+// affordable instead of making it a reason to move images off to a server.
+// Compression runs through Pillow, the same library tools/gallery_ingest.py
+// already uses, so this adds no dependency the repo did not already have.
+const imageMaxEdge = 1920;
+const imageWebpQuality = 85;
+const pythonPath = String(process.env.BLOG_PYTHON_PATH || "python").trim();
+const compressScript = [
+  "import sys, io",
+  "from PIL import Image",
+  "im = Image.open(sys.argv[1])",
+  // Animated GIFs would come out as a single frame; leave them alone.
+  "sys.exit(3) if getattr(im, 'n_frames', 1) > 1 else None",
+  `im.thumbnail((${imageMaxEdge}, ${imageMaxEdge}))`,
+  "buf = io.BytesIO()",
+  `im.save(buf, format='WEBP', quality=${imageWebpQuality}, method=6)`,
+  "sys.stdout.buffer.write(buf.getvalue())",
+].join("\n");
+
+// Returns the smaller WebP encoding, or null to keep the original bytes —
+// for an animated GIF, an image Pillow cannot open, a missing Pillow, or a
+// re-encode that came out no smaller than what it started from.
+const compressImage = async (filePath, original) => {
+  if (path.extname(filePath).toLowerCase() === ".gif") return null;
+  return new Promise((resolve) => {
+    const child = spawn(pythonPath, ["-c", compressScript, filePath], {
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const chunks = [];
+    child.stdout.on("data", (chunk) => chunks.push(chunk));
+    child.on("error", () => resolve(null));
+    child.on("close", (code) => {
+      if (code !== 0) return resolve(null);
+      const out = Buffer.concat(chunks);
+      resolve(out.byteLength && out.byteLength < original.byteLength ? out : null);
+    });
+  });
+};
 const supportedImageExtensions = new Set([
   ".jpg",
   ".jpeg",
@@ -628,15 +670,23 @@ const mimeTypeFor = (filePath) => {
 // path deterministic, so republishing the same note is a no-op instead of
 // piling up duplicates, and it makes the file safe to cache forever.
 const plannedImage = async (filePath) => {
-  const bytes = await readFile(filePath);
-  if (bytes.byteLength > maxImageBytes) {
+  const original = await readFile(filePath);
+  if (original.byteLength > maxImageBytes) {
     throw new Error(
       `图片超过 ${Math.round(maxImageBytes / 1048576)} MB：${path.basename(filePath)}`,
     );
   }
   mimeTypeFor(filePath); // rejects formats the blog will not serve
+
+  const compressed = await compressImage(filePath, original);
+  const bytes = compressed || original;
+  // Hash what actually gets stored, not the source file. The name is a cache
+  // key here — retuning the quality has to yield a new URL, or browsers keep
+  // serving the old encoding from cache. (The music tool hashes the *source*
+  // instead, because there the digest is a track's identity rather than a
+  // cache key, and it must survive a re-encode.)
   const digest = createHash("sha256").update(bytes).digest("hex").slice(0, 12);
-  const extension = path.extname(filePath).toLowerCase();
+  const extension = compressed ? ".webp" : path.extname(filePath).toLowerCase();
   const stem = path
     .basename(filePath, path.extname(filePath))
     .toLowerCase()

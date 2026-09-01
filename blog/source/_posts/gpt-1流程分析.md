@@ -1,7 +1,7 @@
 ---
 title: GPT-1流程分析
 date: 2026-08-27 21:54:04
-cover: /images/2026/08/e716fa619591-pasted-image-20260827214511.png
+cover: /images/2026/08/8590336ad059-pasted-image-20260827214511.webp
 categories:
   - 深度学习
 tags:
@@ -22,7 +22,7 @@ aliases:
   - GPT-1结构与微调机制
 ---
 
-![Pasted image 20260827214511](/images/2026/08/e716fa619591-pasted-image-20260827214511.png)
+![Pasted image 20260827214511](/images/2026/08/8590336ad059-pasted-image-20260827214511.webp)
 本文将**严格使用 OpenAI GPT-1 论文《Improving Language Understanding by Generative Pre-Training》中的原始超参数**：
 
 *   **模型架构**：12 层 Decoder-only Transformer
@@ -176,7 +176,7 @@ $$\text{GELU}(x) = x \cdot \Phi(x) = x \cdot P(X \le x), \quad X \sim \mathcal{N
 
 $$\text{GELU}(x) \approx 0.5x \left(1 + \tanh\left(\sqrt{\frac{2}{\pi}} \left(x + 0.044715 x^3\right)\right)\right)$$
 
-![GELU vs ReLU 激活函数对比](/images/2026/08/a40da0847fb5-relu-vs-gelu.png)
+![GELU vs ReLU 激活函数对比](/images/2026/08/5ebd28ca6bc0-relu-vs-gelu.webp)
 
 
 > [!tip] GELU 与 ReLU 的对比
@@ -350,7 +350,7 @@ GPT-1 在评估的 **12 个主流 NLP 数据集中的 9 个上刷新了 SOTA 记
 
 为了验证这一点，作者在不进行任何监督微调的前提下，设计启发式规则测试预训练模型的 Zero-Shot 能力：
 
-![Zero-Shot 性能演化趋势](/images/2026/08/8ec2f8706bff-zero-shot-trends.png)
+![Zero-Shot 性能演化趋势](/images/2026/08/abb28749c4cd-zero-shot-trends.webp)
 
 
 ##### 启发式设计方案：

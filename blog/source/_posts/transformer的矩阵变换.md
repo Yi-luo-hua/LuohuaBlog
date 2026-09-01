@@ -1,7 +1,7 @@
 ---
 title: Transformer的矩阵变换
 date: 2026-08-27
-cover: /images/2026/08/76808ee94a19-pasted-image-20260827152047.png
+cover: /images/2026/08/2fe710e7924d-pasted-image-20260827152047.webp
 description: 以论文原始超参数（d_model=512、h=8）为例，逐步拆解 Transformer 从输入嵌入到输出概率的完整矩阵维度变换流程，涵盖 Encoder 的 QKV 生成、多头拆分、注意力计算、FFN，Decoder 的掩码自注意力、交叉注意力、KV Cache 推理加速，以及 Adam 优化器、学习率调度、标签平滑、Dropout 等训练细节。
 categories:
   - 深度学习
@@ -18,7 +18,7 @@ aliases:
   - Transformer矩阵变换
 ---
 
-![Pasted image 20260827152047](/images/2026/08/76808ee94a19-pasted-image-20260827152047.png)
+![Pasted image 20260827152047](/images/2026/08/2fe710e7924d-pasted-image-20260827152047.webp)
 
 本文将**严格使用《Attention Is All You Need》论文中的原始超参数**：
 *   模型维度（Embedding/隐藏层）：$d_{model} = 512$
