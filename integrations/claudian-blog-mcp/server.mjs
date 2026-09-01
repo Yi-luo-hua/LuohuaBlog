@@ -357,13 +357,17 @@ const standardizeNoteProperties = async (filePath, rawMarkdown, options = {}) =>
   const preservedLines = [];
   let insideHandledKey = false;
   for (const line of rawFrontMatter.split("\n")) {
-    const top = line.match(/^([^\s:#][^:]*):\s*(.*)$/);
+    // A list item is never a key, even when its text contains a colon:
+    // `- "AI: 入门"` otherwise matches the key pattern, resets the flag, and
+    // lets the very orphans this loop exists to drop back through.
+    const isListItem = /^\s*-\s/.test(line);
+    const top = isListItem ? null : line.match(/^([^\s:#][^:]*):\s*(.*)$/);
     if (top) {
       insideHandledKey = handledKeys.has(top[1].trim().toLowerCase());
       if (!insideHandledKey) preservedLines.push(line);
     } else if (line.trim() && !line.startsWith("---")) {
-      // Continuation of the key above: an indented item, or the unindented
-      // "- item" form Obsidian itself writes.
+      // Continuation of the key above: a list item, or an indented value —
+      // including the unindented "- item" form Obsidian itself writes.
       if (!insideHandledKey) preservedLines.push(line);
     }
   }

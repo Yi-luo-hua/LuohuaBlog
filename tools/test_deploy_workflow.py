@@ -107,6 +107,12 @@ class DeployWorkflowTests(unittest.TestCase):
 
         for post in (ROOT / "blog" / "source" / "_posts").glob("*.md"):
             lines = post.read_text(encoding="utf-8").splitlines()
+            # Only scan a real front-matter block. Without the opening-fence
+            # check, a post that has none would have its body scanned up to the
+            # first `---` horizontal rule, and prose like "Options: the
+            # following" above a bullet list would be reported as an orphan.
+            if not lines or lines[0].strip() != "---":
+                continue
             try:
                 end = lines.index("---", 1)
             except ValueError:
