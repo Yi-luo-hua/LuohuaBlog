@@ -3,7 +3,14 @@ import { useEffect } from "react";
 const DESKTOP_QUERY = "(min-width: 1200px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const BUBBLE_SELECTOR = "[data-physics-bubble]";
-const DRAG_BLOCK_SELECTOR = "button, input, audio, select, textarea";
+// Interactive descendants a card must not steal the pointer from. Dragging
+// calls setPointerCapture on the card, which retargets the following pointerup
+// to the card — the browser then fires `click` on the card instead of on what
+// was actually pressed, and the control silently does nothing. `a` belongs here
+// for the links nested inside cards (the player card's 歌单 link, the commit
+// links). A card that *is* a link stays draggable: onPointerDown only bails when
+// the matched element is a descendant, not the card itself.
+const DRAG_BLOCK_SELECTOR = "a, button, input, audio, select, textarea";
 // Gap a dragged card shoves its neighbours to. Nothing pushes at rest, so the
 // authored layout is reproduced exactly even where it overlaps on purpose.
 const DRAG_PUSH_CLEARANCE = 16;

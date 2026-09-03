@@ -275,6 +275,11 @@ test("wires every desktop bubble into the elastic drag physics layer", () => {
   assert.match(physicsSource, /import\("matter-js"\)/);
   assert.match(physicsSource, /Bodies\.rectangle/);
   assert.match(physicsSource, /Body\.setVelocity/);
+  // Dragging captures the pointer on the card, which retargets the click away
+  // from whatever was pressed inside it. Every interactive descendant has to be
+  // listed here or it goes dead — `a` was missing, so the player card's 歌单
+  // link and the commit links did nothing when clicked.
+  assert.match(physicsSource, /DRAG_BLOCK_SELECTOR = "a, button, input/);
   assert.match(physicsSource, /DRAG_PUSH_STIFFNESS/);
   assert.match(physicsSource, /DRAG_PUSH_CLEARANCE\s*=\s*16/);
   assert.match(physicsSource, /layoutOffsetWithin\(element, container\)/);
